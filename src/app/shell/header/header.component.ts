@@ -44,6 +44,7 @@ export class HeaderComponent implements OnInit {
           command: () => this.toggleTheme(),
         },
         { separator: true },
+        { label: 'Settings', icon: 'pi pi-cog', command: () => this.router.navigate(['/settings']) },
         { label: 'Logout', icon: 'pi pi-sign-out', command: () => this.auth.logout() },
       ],
     },
