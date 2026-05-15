@@ -35,7 +35,6 @@ export class SidebarComponent {
     { label: 'Attendance',    icon: 'pi pi-check-square',   route: '/attendance'    },
     { label: 'Announcements', icon: 'pi pi-megaphone',      route: '/announcements' },
     { label: 'Analytics',     icon: 'pi pi-chart-bar',      route: '/analytics'     },
-    { label: 'Settings',   icon: 'pi pi-cog',           route: '/settings'   },
   ];
 
   toggleCollapse(): void {
