@@ -13,7 +13,8 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DatePickerModule } from 'primeng/datepicker';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { AnnouncementsService } from '../announcements.service';
 import {
@@ -39,28 +40,32 @@ import {
     DatePickerModule,
     ToastModule,
     TooltipModule,
+    ConfirmDialogModule,
   ],
-  providers: [MessageService],
+  providers: [ConfirmationService, MessageService],
   templateUrl: './announcements-list.component.html',
 })
 export class AnnouncementsListComponent implements OnInit {
   private readonly service    = inject(AnnouncementsService);
   private readonly messageSvc = inject(MessageService);
+  private readonly confirmSvc = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
 
   announcements = signal<AnnouncementDto[]>([]);
   loading       = signal(false);
-  showCreate    = signal(false);
+  showForm      = signal(false);
+  editingId     = signal<string | null>(null);
+  selected      = signal<AnnouncementDto | null>(null);
 
   readonly categoryOptions = ANNOUNCEMENT_CATEGORY_OPTIONS;
 
-  // create form state
-  createTitle    = '';
-  createBody     = '';
-  createCategory: AnnouncementCategory | null = null;
-  createStartAt: Date | null = null;
-  createEndAt:   Date | null = null;
-  createIsPinned = false;
+  // form state (used for both create and edit)
+  formTitle    = '';
+  formBody     = '';
+  formCategory: AnnouncementCategory | null = null;
+  formStartAt: Date | null = null;
+  formEndAt:   Date | null = null;
+  formIsPinned = false;
 
   ngOnInit(): void {
     this.load();
@@ -71,10 +76,14 @@ export class AnnouncementsListComponent implements OnInit {
     this.service.getAnnouncements().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: items => {
         this.announcements.set(items);
+        const current = this.selected();
+        if (current) {
+          this.selected.set(items.find(i => i.id === current.id) ?? null);
+        }
         this.loading.set(false);
       },
       error: () => {
-        this.messageSvc.add({ severity: 'error', summary: '오류', detail: '공지를 불러올 수 없습니다.' });
+        this.messageSvc.add({ severity: 'error', summary: 'Error', detail: 'Failed to load announcements.' });
         this.loading.set(false);
       },
     });
@@ -90,38 +99,113 @@ export class AnnouncementsListComponent implements OnInit {
     return isNaN(d.getTime()) ? value : d.toLocaleString();
   }
 
-  onCreateSubmit(): void {
-    if (!this.createTitle.trim() || !this.createBody.trim() || !this.createCategory || !this.createStartAt) {
-      this.messageSvc.add({ severity: 'warn', summary: '입력 오류', detail: '제목, 내용, 분류, 시작일은 필수입니다.' });
+  openCreate(): void {
+    this.resetForm();
+    this.editingId.set(null);
+    this.showForm.set(true);
+  }
+
+  selectRow(item: AnnouncementDto): void {
+    this.selected.set(this.selected()?.id === item.id ? null : item);
+  }
+
+  clearSelection(): void {
+    this.selected.set(null);
+  }
+
+  openEdit(item: AnnouncementDto, event?: Event): void {
+    event?.stopPropagation();
+    this.editingId.set(item.id);
+    this.formTitle    = item.title;
+    this.formBody     = item.body;
+    this.formCategory = item.category;
+    this.formStartAt  = new Date(item.startAt);
+    this.formEndAt    = item.endAt ? new Date(item.endAt) : null;
+    this.formIsPinned = item.isPinned;
+    this.showForm.set(true);
+  }
+
+  cancelForm(): void {
+    this.showForm.set(false);
+    this.editingId.set(null);
+    this.resetForm();
+  }
+
+  onFormSubmit(): void {
+    if (!this.formTitle.trim() || !this.formBody.trim() || !this.formCategory || !this.formStartAt) {
+      this.messageSvc.add({ severity: 'warn', summary: 'Validation error', detail: 'Title, content, category, and start date are required.' });
       return;
     }
-    this.service.createAnnouncement({
-      title:    this.createTitle.trim(),
-      body:     this.createBody.trim(),
-      category: this.createCategory,
-      startAt:  this.createStartAt.toISOString(),
-      endAt:    this.createEndAt ? this.createEndAt.toISOString() : null,
-      isPinned: this.createIsPinned,
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+
+    const payload = {
+      title:    this.formTitle.trim(),
+      body:     this.formBody.trim(),
+      category: this.formCategory,
+      startAt:  this.formStartAt.toISOString(),
+      endAt:    this.formEndAt ? this.formEndAt.toISOString() : null,
+      isPinned: this.formIsPinned,
+    };
+
+    const id = this.editingId();
+    const obs$ = id
+      ? this.service.updateAnnouncement(id, payload)
+      : this.service.createAnnouncement(payload);
+
+    obs$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.messageSvc.add({ severity: 'success', summary: '완료', detail: '공지가 생성되었습니다.' });
-        this.resetCreateForm();
-        this.showCreate.set(false);
+        this.messageSvc.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: id ? 'Announcement updated.' : 'Announcement created.',
+        });
+        this.cancelForm();
         this.load();
       },
       error: err => {
-        const detail = err?.message ?? '생성에 실패했습니다.';
-        this.messageSvc.add({ severity: 'error', summary: '오류', detail });
+        const detail = err?.message ?? (id ? 'Failed to update announcement.' : 'Failed to create announcement.');
+        this.messageSvc.add({ severity: 'error', summary: 'Error', detail });
       },
     });
   }
 
-  private resetCreateForm(): void {
-    this.createTitle    = '';
-    this.createBody     = '';
-    this.createCategory = null;
-    this.createStartAt  = null;
-    this.createEndAt    = null;
-    this.createIsPinned = false;
+  confirmDelete(item: AnnouncementDto, event: Event): void {
+    event.stopPropagation();
+    this.confirmSvc.confirm({
+      target: event.target as EventTarget,
+      message: `Delete announcement "${item.title}"?`,
+      header: 'Delete Announcement',
+      icon: 'pi pi-exclamation-triangle',
+      acceptIcon: 'pi pi-trash',
+      acceptLabel: 'Delete',
+      rejectLabel: 'Cancel',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.deleteAnnouncement(item),
+    });
+  }
+
+  private deleteAnnouncement(item: AnnouncementDto): void {
+    this.service.deleteAnnouncement(item.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.messageSvc.add({ severity: 'success', summary: 'Deleted', detail: 'Announcement deleted.' });
+          if (this.editingId() === item.id) this.cancelForm();
+          if (this.selected()?.id === item.id) this.selected.set(null);
+          this.load();
+        },
+        error: err => {
+          const detail = err?.message ?? 'Failed to delete announcement.';
+          this.messageSvc.add({ severity: 'error', summary: 'Error', detail });
+        },
+      });
+  }
+
+  private resetForm(): void {
+    this.formTitle    = '';
+    this.formBody     = '';
+    this.formCategory = null;
+    this.formStartAt  = null;
+    this.formEndAt    = null;
+    this.formIsPinned = false;
   }
 }
