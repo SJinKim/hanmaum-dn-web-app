@@ -19,10 +19,19 @@ export interface CreateAnnouncementRequest {
   isPinned?: boolean;
 }
 
+export interface UpdateAnnouncementRequest {
+  title: string;
+  body: string;
+  category: AnnouncementCategory;
+  startAt: string;       // ISO OffsetDateTime
+  endAt: string | null;
+  isPinned: boolean;
+}
+
 export const ANNOUNCEMENT_CATEGORY_LABELS: Record<AnnouncementCategory, string> = {
-  NOTICE:   '공지',
-  MINISTRY: '사역',
-  EVENT:    '행사',
+  NOTICE:   'Notice',
+  MINISTRY: 'Ministry',
+  EVENT:    'Event',
 };
 
 export const ANNOUNCEMENT_CATEGORY_OPTIONS =
