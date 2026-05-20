@@ -41,6 +41,12 @@ export class ApiService {
     );
   }
 
+  put<T>(path: string, body: unknown): Observable<T> {
+    return this.unwrap(
+      this.http.put<ApiResponse<T>>(`${this.base}${path}`, body)
+    );
+  }
+
   patch<T>(path: string, body: unknown): Observable<T> {
     return this.unwrap(
       this.http.patch<ApiResponse<T>>(`${this.base}${path}`, body)

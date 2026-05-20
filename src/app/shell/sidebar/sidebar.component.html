@@ -1,21 +1,9 @@
 <aside
-  class="relative flex flex-col bg-white border-r border-gray-100 flex-shrink-0 transition-all duration-200"
+  class="relative flex flex-col h-full bg-white border-r border-gray-100 flex-shrink-0 transition-all duration-200"
   [style.width]="sidebarWidth()"
 >
-  <!-- Brand -->
-  <div class="px-5 py-4 border-b border-gray-50 flex-shrink-0 overflow-hidden">
-    <div class="text-[15px] font-extrabold text-primary tracking-tight whitespace-nowrap">
-      한마음 D+N
-    </div>
-    @if (!collapsed()) {
-      <div class="text-[9px] text-tertiary font-medium uppercase tracking-widest mt-0.5">
-        Church Management
-      </div>
-    }
-  </div>
-
   <!-- Nav -->
-  <nav class="flex-1 py-2 overflow-hidden">
+  <nav class="flex-1 pb-2 overflow-hidden">
     @for (item of navItems; track item.route) {
       <a
         [routerLink]="item.route"
@@ -33,33 +21,6 @@
       </a>
     }
   </nav>
-
-  <!-- Bottom: Logout + User -->
-  <div class="border-t border-gray-50 py-2 flex-shrink-0 overflow-hidden">
-    <button
-      (click)="auth.logout()"
-      class="flex items-center gap-2.5 px-5 py-2.5 w-full text-[13px] font-medium text-red-500 hover:bg-red-50 transition-colors whitespace-nowrap overflow-hidden"
-      [pTooltip]="collapsed() ? 'Logout' : ''"
-      tooltipPosition="right"
-    >
-      <i class="pi pi-sign-out text-sm w-4 flex-shrink-0"></i>
-      @if (!collapsed()) {
-        <span class="tracking-tight">Logout</span>
-      }
-    </button>
-
-    <div class="flex items-center gap-2.5 px-4 py-2 overflow-hidden">
-      <div class="w-7 h-7 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-        {{ userInitials() }}
-      </div>
-      @if (!collapsed()) {
-        <div class="overflow-hidden">
-          <div class="text-[12px] font-semibold text-primary tracking-tight truncate">{{ auth.username() }}</div>
-          <div class="text-[10px] text-tertiary">Administrator</div>
-        </div>
-      }
-    </div>
-  </div>
 
   <!-- Collapse toggle — vertically centered on right edge -->
   <button

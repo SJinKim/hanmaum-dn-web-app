@@ -7,32 +7,8 @@
     <p class="text-[13px] text-tertiary mt-1">Manage members, roles, and status.</p>
   </div>
 
-  <!-- Pending banner -->
-  @if (pendingCount() > 0) {
-    <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
-      <span class="text-[12px] font-bold text-amber-700">
-        <span aria-hidden="true">⚠️</span> {{ pendingCount() }} member{{ pendingCount() === 1 ? '' : 's' }} awaiting approval
-      </span>
-      <button
-        (click)="showPendingOnly()"
-        class="text-[11px] font-bold text-primary underline hover:no-underline tracking-tight"
-      >
-        Show pending only →
-      </button>
-    </div>
-  }
-
   <!-- Filters row -->
   <div class="flex items-center gap-3 mb-5">
-    <p-select
-      [options]="roleOptions"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="activeRole()"
-      (ngModelChange)="onRoleChange($event)"
-      styleClass="h-9 text-[12px]"
-      placeholder="All Roles"
-    />
     <p-select
       [options]="statusOptions"
       optionLabel="label"
@@ -41,6 +17,15 @@
       (ngModelChange)="onStatusChange($event)"
       styleClass="h-9 text-[12px]"
       placeholder="All Status"
+    />
+    <p-select
+      [options]="baptismOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="activeBaptism()"
+      (ngModelChange)="onBaptismChange($event)"
+      styleClass="h-9 text-[12px]"
+      placeholder="All Baptism"
     />
     <div class="flex-1 flex items-center gap-2 h-9 bg-white border border-gray-200 rounded-lg px-3">
       <i class="pi pi-search text-tertiary text-[12px]"></i>
@@ -117,7 +102,7 @@
 
           <!-- Baptism -->
           <td class="px-4 py-3 text-[12px] text-secondary">
-            {{ member.baptism ?? '—' }}
+            {{ baptismLabel(member.baptism) }}
           </td>
 
           <!-- Last Active -->

@@ -5,6 +5,7 @@ export interface MemberSummary {
   firstName: string;
   email: string | null;
   memberStatus: MemberStatus;
+  baptism: Baptism | null;
   groupName: string | null;
   role?: 'ADMIN' | 'MEMBER';
   updatedAt?: string;

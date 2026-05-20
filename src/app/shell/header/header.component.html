@@ -1,39 +1,46 @@
-<header class="h-[52px] bg-white border-b border-gray-100 flex items-center gap-3 px-5 flex-shrink-0 z-10">
+<header class="h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-5 flex-shrink-0 z-10">
 
-  <!-- Search -->
-  <div class="flex-1 flex items-center gap-2 h-[34px] bg-neutral border border-gray-200 rounded-lg px-3 text-[12px] text-tertiary">
-    <i class="pi pi-search text-[12px]"></i>
-    <span class="tracking-tight">Search congregation, records, or events...</span>
+  <!-- Brand -->
+  <div class="flex flex-col leading-tight">
+    <span class="text-[15px] font-extrabold text-primary tracking-tight whitespace-nowrap">
+      한마음 D+N
+    </span>
+    <span class="text-[9px] text-tertiary font-medium uppercase tracking-widest mt-0.5">
+      Church Management
+    </span>
   </div>
 
-  <!-- Bell -->
-  <button
-    aria-label="Notifications"
-    class="w-8 h-8 rounded-lg bg-neutral border border-gray-200 flex items-center justify-center text-secondary hover:text-primary transition-colors"
-  >
-    <i class="pi pi-bell text-[13px]"></i>
-  </button>
+  <!-- Right cluster: pending shortcut + avatar -->
+  <div class="flex items-center gap-2">
 
-  <!-- Help -->
-  <button
-    aria-label="Help"
-    class="w-8 h-8 rounded-lg bg-neutral border border-gray-200 flex items-center justify-center text-secondary hover:text-primary transition-colors"
-  >
-    <i class="pi pi-question-circle text-[13px]"></i>
-  </button>
+    @if (showPendingBanner()) {
+      <button
+        type="button"
+        (click)="goToPending()"
+        class="flex items-center gap-2 h-8 px-3 mr-12 bg-amber-50 border border-amber-200 rounded-lg text-[12px] font-bold text-amber-700 hover:bg-amber-100 transition-colors tracking-tight"
+        [attr.aria-label]="pendingCount() + ' members awaiting approval — show pending only'"
+      >
+        <i class="pi pi-exclamation-triangle text-[11px]"></i>
+        <span>{{ pendingCount() }} pending</span>
+        <i class="pi pi-arrow-right text-[10px]"></i>
+      </button>
+    }
 
-  <!-- Branch dropdown -->
-  <div class="flex items-center gap-1.5 h-8 bg-neutral border border-gray-200 rounded-lg px-3 text-[11px] font-semibold text-primary tracking-tight">
-    Main Sanctuary
-    <i class="pi pi-chevron-down text-[9px]"></i>
-  </div>
-
-  <!-- Avatar -->
-  <div
-    class="w-8 h-8 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center"
-    [attr.title]="username()"
-  >
-    {{ initials() }}
+    <button
+      type="button"
+      aria-label="Account menu"
+      aria-haspopup="true"
+      (click)="toggleMenu($event)"
+      [attr.title]="auth.username()"
+      class="w-8 h-8 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center hover:opacity-90 transition-opacity"
+    >
+      {{ initials() }}
+    </button>
+    <p-menu #userMenu [model]="menuItems()" [popup]="true" appendTo="body">
+      <ng-template pTemplate="submenuheader" let-item>
+        <span class="font-bold text-primary">{{ item.label }}</span>
+      </ng-template>
+    </p-menu>
   </div>
 
 </header>

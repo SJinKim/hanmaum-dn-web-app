@@ -2,7 +2,6 @@ import { Component, inject, signal, computed, PLATFORM_ID } from '@angular/core'
 import { isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
-import { AuthService } from '../../core/services/auth.service';
 
 interface NavItem {
   label: string;
@@ -15,9 +14,9 @@ interface NavItem {
   standalone: true,
   imports: [RouterModule, TooltipModule],
   templateUrl: './sidebar.component.html',
+  host: { class: 'flex self-stretch' },
 })
 export class SidebarComponent {
-  readonly auth = inject(AuthService);
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly collapsed = signal(
@@ -29,18 +28,13 @@ export class SidebarComponent {
     this.collapsed() ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width-expanded)'
   );
 
-  readonly userInitials = computed(() => {
-    const name = this.auth.username();
-    return name ? name.slice(0, 2).toUpperCase() : 'AU';
-  });
-
   readonly navItems: NavItem[] = [
     { label: 'Home',       icon: 'pi pi-home',          route: '/'           },
     { label: 'Members',    icon: 'pi pi-users',         route: '/members'    },
     { label: 'Ministry',   icon: 'pi pi-sitemap',       route: '/ministry'   },
-    { label: 'Attendance', icon: 'pi pi-calendar-check',route: '/attendance' },
-    { label: 'Analytics',  icon: 'pi pi-chart-bar',     route: '/analytics'  },
-    { label: 'Settings',   icon: 'pi pi-cog',           route: '/settings'   },
+    { label: 'Attendance',    icon: 'pi pi-check-square',   route: '/attendance'    },
+    { label: 'Announcements', icon: 'pi pi-megaphone',      route: '/announcements' },
+    { label: 'Analytics',     icon: 'pi pi-chart-bar',      route: '/analytics'     },
   ];
 
   toggleCollapse(): void {
