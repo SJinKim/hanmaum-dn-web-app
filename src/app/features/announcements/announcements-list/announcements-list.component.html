@@ -103,9 +103,11 @@
       <div class="flex items-start justify-between gap-4 mb-6 pb-4 border-b border-gray-50">
         <div class="flex-1">
           <div class="flex items-center gap-2 mb-2">
-            <span class="text-[10px] font-bold text-tertiary uppercase tracking-widest">
-              {{ categoryLabel(item.category) }}
-            </span>
+            <p-tag
+              [value]="categoryLabel(item.category)"
+              [severity]="categoryTag(item.category).severity"
+              [style]="categoryTag(item.category).style ?? null"
+            />
             @if (item.isPinned) {
               <p-tag value="Pinned" severity="warn" icon="pi pi-thumbtack" />
             }
@@ -187,7 +189,13 @@
         class="cursor-pointer hover:bg-gray-50"
       >
         <td class="font-medium">{{ item.title }}</td>
-        <td>{{ categoryLabel(item.category) }}</td>
+        <td>
+          <p-tag
+            [value]="categoryLabel(item.category)"
+            [severity]="categoryTag(item.category).severity"
+            [style]="categoryTag(item.category).style ?? null"
+          />
+        </td>
         <td class="text-gray-500">{{ formatDateTime(item.startAt) }}</td>
         <td class="text-gray-500">{{ formatDateTime(item.endAt) }}</td>
         <td>

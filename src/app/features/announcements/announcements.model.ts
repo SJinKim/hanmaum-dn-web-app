@@ -37,3 +37,18 @@ export const ANNOUNCEMENT_CATEGORY_LABELS: Record<AnnouncementCategory, string> 
 export const ANNOUNCEMENT_CATEGORY_OPTIONS =
   (Object.entries(ANNOUNCEMENT_CATEGORY_LABELS) as [AnnouncementCategory, string][])
     .map(([value, label]) => ({ value, label }));
+
+export type AnnouncementCategorySeverity =
+  'info' | 'success' | 'warn' | 'danger' | 'secondary' | 'contrast';
+
+export interface AnnouncementCategoryTagConfig {
+  severity?: AnnouncementCategorySeverity;
+  style?:    Record<string, string>;
+}
+
+export const ANNOUNCEMENT_CATEGORY_TAGS:
+  Record<AnnouncementCategory, AnnouncementCategoryTagConfig> = {
+  NOTICE:   { severity: 'info' },
+  MINISTRY: { severity: 'success' },
+  EVENT:    { style: { background: '#ede9fe', color: '#5b21b6' } },
+};

@@ -20,7 +20,9 @@ import { AnnouncementsService } from '../announcements.service';
 import {
   ANNOUNCEMENT_CATEGORY_LABELS,
   ANNOUNCEMENT_CATEGORY_OPTIONS,
+  ANNOUNCEMENT_CATEGORY_TAGS,
   AnnouncementCategory,
+  AnnouncementCategoryTagConfig,
   AnnouncementDto,
 } from '../announcements.model';
 
@@ -91,6 +93,10 @@ export class AnnouncementsListComponent implements OnInit {
 
   categoryLabel(category: AnnouncementCategory): string {
     return ANNOUNCEMENT_CATEGORY_LABELS[category];
+  }
+
+  categoryTag(category: AnnouncementCategory): AnnouncementCategoryTagConfig {
+    return ANNOUNCEMENT_CATEGORY_TAGS[category];
   }
 
   formatDateTime(value: string | null): string {
