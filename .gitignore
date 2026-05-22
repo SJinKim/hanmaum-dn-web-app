@@ -38,4 +38,7 @@ testem.log
 Thumbs.db
 
 # Environment (never commit secrets)
+.env
+.env.local
+.env.*.local
 src/environments/environment.local.ts
