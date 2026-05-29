@@ -21,9 +21,53 @@ low-risk addition later.
 ## Non-goals (YAGNI)
 
 - No backend entity, DTO, Flyway migration, or service changes.
-- No changes to the `Member` / `CreateMemberRequest` / `UpdateMemberRequest` model shapes.
-- No display of training/ministry in the member **detail** view — this is the form only.
+- No changes to the `CreateMemberRequest` / `UpdateMemberRequest` request shapes.
 - No hard validation gating save; incomplete cards are simply ignored on collect.
+
+## Detail view (added 2026-05-29)
+
+The member **detail** view (`MemberDetailComponent`) also gets the three tabs
+(Basic Info / Training / Ministry), read-only:
+
+- The role badge (`MEMBER`/`ADMIN`) is removed from the header; the status badge stays.
+- **Basic Info** = the existing fields grid.
+- **Training** / **Ministry** render the member's history as read-only rows
+  (`type` + `MM/YY`, ministry as `MM/YY – MM/YY` or `MM/YY – now`), with a
+  "No trainings/ministries recorded" empty state.
+- To let these auto-populate when the backend lands, optional `trainings?` /
+  `ministries?: …Record[]` fields are added to the **`Member`** interface only.
+  The backend doesn't send them yet, so they arrive `undefined` → empty state. No
+  other model/request shapes change.
+
+## Detail view revision — boxes instead of tabs (added 2026-05-30)
+
+The tabbed detail view leaves the card mostly empty (only one section visible at a
+time). The **detail view only** drops the tabs and shows everything at once as
+separate boxes. The **edit/add form** (`MemberEditComponent`) keeps its tabs unchanged.
+
+Scope: `MemberDetailComponent` (`.html` + `.ts`) only. No model, service, or backend
+changes.
+
+Layout (responsive):
+
+- **Basic Info box** — the existing card, unchanged content: avatar + name + status
+  header at the top (kept exactly as it is now), then the Basic Info / Church Info
+  fields grid directly below. Only the tab bar is removed.
+- **Training box** + **Ministry box** — two boxes side-by-side in a 2-column grid
+  below the Basic Info box. They collapse to a single stacked column below the `md`
+  breakpoint. Each keeps its existing read-only rows and empty state.
+- Each box reuses the existing card chrome (`bg-white rounded-xl border border-gray-100
+  shadow-sm`) with a small uppercase section heading.
+- Widen the page container from `max-w-3xl` to `max-w-4xl` to give the side-by-side
+  pair room; full-width on mobile.
+
+TS cleanup: remove the now-dead tab machinery — the `activeTab` signal, `selectTab()`,
+and the `ActiveTab` type. `trainings()` / `ministries()` and the label/format helpers
+stay. No new imports.
+
+Testing: layout-only change, no new logic → no new unit tests. Verify visually: all
+three boxes visible at once, Training/Ministry side-by-side on desktop and stacked on
+mobile, empty states still render.
 
 ## Tab chrome
 
