@@ -30,6 +30,7 @@ import {
 import { MemberNameCellComponent } from './cells/member-name-cell.component';
 import { BadgeCellComponent } from './cells/badge-cell.component';
 import { TrainingChipsCellComponent } from './cells/training-chips-cell.component';
+import { MinistryChipsCellComponent } from './cells/ministry-chips-cell.component';
 import {
   MemberActionsCellComponent,
   MemberActionsContext,
@@ -128,12 +129,11 @@ export class MembersListComponent implements OnInit {
       filter: false,
     },
     {
-      // TODO: wire up to a real `ministry` field once exposed in MemberSummary.
       headerName: 'Ministry',
       colId: 'ministry',
-      width: 140,
-      valueGetter: () => null,
-      valueFormatter: () => '—',
+      width: 200,
+      valueGetter: p => p.data?.activeMinistries ?? [],
+      cellRenderer: MinistryChipsCellComponent,
       sortable: false,
       filter: false,
     },

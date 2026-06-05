@@ -60,6 +60,9 @@ html, body {
   // Training chips: grey = completed, orange = in progress.
   &.badge-training-completed { background: #f3f4f6; color: #4b5563; }
   &.badge-training-progress  { background: #ffedd5; color: #c2410c; }
+
+  // Ministry chips: blue = currently active.
+  &.badge-ministry-active { background: #dbeafe; color: #1d4ed8; }
 }
 
 // Compact selects for the member-edit training/ministry date rows,
