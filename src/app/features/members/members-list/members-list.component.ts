@@ -1,36 +1,49 @@
-// src/app/features/members/members-list/members-list.component.ts
 import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, Subject, switchMap, BehaviorSubject } from 'rxjs';
+import { Router, ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { TableModule, TableLazyLoadEvent } from 'primeng/table';
-import { InputTextModule } from 'primeng/inputtext';
+import { AgGridAngular } from 'ag-grid-angular';
+import {
+  ColDef,
+  GridApi,
+  GridOptions,
+  GridReadyEvent,
+  RowClassParams,
+  RowClickedEvent,
+  ModuleRegistry,
+  AllCommunityModule,
+  themeQuartz,
+} from 'ag-grid-community';
+
 import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { MemberService } from '../member.service';
-import { MemberSummary, MemberStatus, Baptism, BAPTISM_LABELS } from '../../../core/models/member.model';
+import {
+  MemberSummary,
+  Baptism,
+  BAPTISM_LABELS,
+} from '../../../core/models/member.model';
+import { MemberNameCellComponent } from './cells/member-name-cell.component';
+import { BadgeCellComponent } from './cells/badge-cell.component';
+import { TrainingChipsCellComponent } from './cells/training-chips-cell.component';
+import {
+  MemberActionsCellComponent,
+  MemberActionsContext,
+} from './cells/member-actions-cell.component';
 
-type StatusFilter  = MemberStatus | null;
-type RoleFilter    = 'ADMIN' | 'MEMBER' | null;
-type BaptismFilter = Baptism | null;
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
   selector: 'app-members-list',
   standalone: true,
   imports: [
-    DatePipe,
     FormsModule,
-    TableModule,
-    InputTextModule,
+    AgGridAngular,
     ButtonModule,
-    SelectModule,
     ConfirmDialogModule,
     ToastModule,
   ],
@@ -45,72 +58,183 @@ export class MembersListComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly destroyRef     = inject(DestroyRef);
 
+  theme = themeQuartz.withParams({
+    fontFamily: 'Manrope, sans-serif',
+    fontSize: 12,
+    headerFontWeight: 700,
+    headerBackgroundColor: '#ffffff',
+    headerTextColor: '#1f2937',
+    backgroundColor: '#ffffff',
+    foregroundColor: '#1f2937',
+    rowHoverColor: '#f9fafb',
+    borderColor: '#f3f4f6',
+    cellHorizontalPadding: 16,
+    wrapperBorderRadius: 0,
+    wrapperBorder: false,
+  });
   members      = signal<MemberSummary[]>([]);
-  totalRecords = signal(0);
   pendingCount = this.memberService.pendingCount;
   loading      = signal(false);
   searchTerm   = '';
-  activeStatus  = signal<StatusFilter>(null);
-  activeRole    = signal<RoleFilter>(null);
-  activeBaptism = signal<BaptismFilter>(null);
 
-  page = 0;
-  size = 20;
+  private gridApi?: GridApi<MemberSummary>;
+  private pendingStatusFilter = false;
 
-  readonly roleOptions = [
-    { label: 'All Roles', value: null },
-    { label: 'Admin',     value: 'ADMIN' },
-    { label: 'Member',    value: 'MEMBER' },
+  private readonly koCollator = new Intl.Collator('ko', { sensitivity: 'base' });
+
+  private readonly actionsContext: MemberActionsContext = {
+    onApprove: (member, event) => this.confirmApprove(member, event),
+    onEdit:    (member, event) => this.goToEdit(member, event),
+  };
+
+  readonly columnDefs: ColDef<MemberSummary>[] = [
+    {
+      headerName: 'Name',
+      colId: 'name',
+      flex: 2,
+      minWidth: 220,
+      valueGetter: p => `${p.data?.lastName ?? ''}${p.data?.firstName ?? ''}`,
+      cellRenderer: MemberNameCellComponent,
+      filter: 'agTextColumnFilter',
+      sortable: true,
+      comparator: (a: string, b: string) => this.koCollator.compare(a, b),
+      sort: 'asc',
+      getQuickFilterText: p => `${p.data?.lastName ?? ''}${p.data?.firstName ?? ''} ${p.data?.email ?? ''}`,
+    },
+    {
+      headerName: 'Status',
+      field: 'memberStatus',
+      width: 120,
+      cellRenderer: BadgeCellComponent,
+      filter: 'agTextColumnFilter',
+      sortable: true,
+    },
+    {
+      headerName: 'Church Group',
+      field: 'groupName',
+      width: 160,
+      valueFormatter: p => (p.value as string | null) ?? '—',
+      filter: 'agTextColumnFilter',
+      sortable: true,
+      comparator: (a: string, b: string) => this.koCollator.compare(a ?? '', b ?? ''),
+    },
+    {
+      headerName: 'Training',
+      colId: 'training',
+      width: 220,
+      valueGetter: p => p.data?.trainings ?? [],
+      cellRenderer: TrainingChipsCellComponent,
+      sortable: false,
+      filter: false,
+    },
+    {
+      // TODO: wire up to a real `ministry` field once exposed in MemberSummary.
+      headerName: 'Ministry',
+      colId: 'ministry',
+      width: 140,
+      valueGetter: () => null,
+      valueFormatter: () => '—',
+      sortable: false,
+      filter: false,
+    },
+    {
+      headerName: 'Baptism',
+      field: 'baptism',
+      width: 140,
+      valueFormatter: p => this.baptismLabel(p.value as Baptism | null | undefined),
+      filter: 'agTextColumnFilter',
+      filterValueGetter: p => this.baptismLabel(p.data?.baptism),
+      sortable: true,
+    },
+    {
+      headerName: 'Last Active',
+      field: 'updatedAt',
+      width: 140,
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      valueFormatter: p => (p.value ? new Date(p.value).toISOString().slice(0, 10) : '—'),
+      filterParams: {
+        comparator: (filterDate: Date, cellValue: string | undefined) => {
+          if (!cellValue) return -1;
+          const cell = new Date(cellValue);
+          const cellDay = new Date(cell.getFullYear(), cell.getMonth(), cell.getDate()).getTime();
+          const filterDay = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate()).getTime();
+          if (cellDay < filterDay) return -1;
+          if (cellDay > filterDay) return 1;
+          return 0;
+        },
+      },
+    },
+    {
+      headerName: 'Approve',
+      colId: 'approve',
+      width: 120,
+      cellRenderer: MemberActionsCellComponent,
+      cellRendererParams: { action: 'approve' },
+      sortable: false,
+      filter: false,
+    },
+    {
+      headerName: 'Edit',
+      colId: 'edit',
+      width: 80,
+      cellRenderer: MemberActionsCellComponent,
+      cellRendererParams: { action: 'edit' },
+      sortable: false,
+      filter: false,
+    },
   ];
 
-  readonly statusOptions = [
-    { label: 'All Status', value: null      },
-    { label: 'Active',     value: 'ACTIVE'  },
-    { label: 'Inactive',   value: 'INACTIVE'},
-    { label: 'Pending',    value: 'PENDING' },
-    { label: 'Deleted',    value: 'DELETED' },
-  ];
+  readonly defaultColDef: ColDef = {
+    resizable: true,
+  };
 
-  readonly baptismOptions = [
-    { label: 'All Baptism', value: null as Baptism | null },
-    ...(Object.entries(BAPTISM_LABELS) as [Baptism, string][])
-      .map(([value, label]) => ({ label, value })),
-  ];
-
-  private readonly search$ = new Subject<string>();
-  private readonly loadTrigger$ = new BehaviorSubject<void>(undefined);
+  readonly gridOptions: GridOptions<MemberSummary> = {
+    rowHeight: 56,
+    headerHeight: 40,
+    pagination: true,
+    paginationPageSize: 20,
+    paginationPageSizeSelector: [20, 50, 100],
+    context: this.actionsContext,
+    getRowClass: (params: RowClassParams<MemberSummary>) =>
+      params.data?.memberStatus === 'PENDING' ? 'row-pending' : '',
+  };
 
   ngOnInit(): void {
-    this.destroyRef.onDestroy(() => this.search$.complete());
-    this.destroyRef.onDestroy(() => this.loadTrigger$.complete());
-
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
-        const status = params.get('status') as StatusFilter;
-        if (status && status !== this.activeStatus()) {
-          this.activeStatus.set(status);
+        if (params.get('status') === 'PENDING') {
+          this.pendingStatusFilter = true;
+          this.applyPendingFilter();
         }
       });
 
-    this.loadTrigger$
-      .pipe(
-        switchMap(() =>
-          this.memberService.getMembers({
-            search: this.searchTerm,
-            status: this.activeStatus(),
-            role: this.activeRole() ?? undefined,
-            baptism: this.activeBaptism() ?? undefined,
-            page: this.page,
-            size: this.size,
-          })
-        ),
-        takeUntilDestroyed(this.destroyRef)
-      )
+    this.loadAll();
+    this.memberService.refreshPendingCount();
+  }
+
+  onGridReady(event: GridReadyEvent<MemberSummary>): void {
+    this.gridApi = event.api;
+    if (this.pendingStatusFilter) this.applyPendingFilter();
+  }
+
+  private applyPendingFilter(): void {
+    if (!this.gridApi) return;
+    this.gridApi.setColumnFilterModel('memberStatus', {
+      filterType: 'text',
+      type: 'equals',
+      filter: 'PENDING',
+    }).then(() => this.gridApi?.onFilterChanged());
+  }
+
+  private loadAll(): void {
+    this.loading.set(true);
+    this.memberService.getMembers({ page: 0, size: 1000 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: res => {
-          this.members.set(this.sortByKoreanName(res.content));
-          this.totalRecords.set(res.totalElements);
+          this.members.set(res.content);
           this.loading.set(false);
         },
         error: () => {
@@ -118,35 +242,23 @@ export class MembersListComponent implements OnInit {
           this.loading.set(false);
         },
       });
-
-    this.memberService.refreshPendingCount();
-    this.search$
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe(term => { this.searchTerm = term; this.loadPage(0); });
   }
 
-  loadPage(page: number): void {
-    this.page = page;
-    this.loading.set(true);
-    this.loadTrigger$.next();
+  onSearch(term: string): void { this.searchTerm = term; }
+
+  onRowClicked(event: RowClickedEvent<MemberSummary>): void {
+    if (event.data) this.goToDetail(event.data);
   }
 
-  onSearch(term: string): void { this.search$.next(term); }
-
-  onStatusChange(value: StatusFilter): void   { this.activeStatus.set(value);  this.loadPage(0); }
-  onRoleChange(value: RoleFilter): void       { this.activeRole.set(value);    this.loadPage(0); }
-  onBaptismChange(value: BaptismFilter): void { this.activeBaptism.set(value); this.loadPage(0); }
-  showPendingOnly(): void                   { this.activeStatus.set('PENDING'); this.loadPage(0); }
-
-  onPageChange(event: TableLazyLoadEvent): void {
-    const first = event.first ?? 0;
-    const rows  = event.rows  ?? this.size;
-    this.size = rows;
-    this.loadPage(first / rows);
+  goToDetail(member: MemberSummary): void {
+    this.router.navigate(['/members', member.publicId]);
   }
 
-  goToDetail(member: MemberSummary): void { this.router.navigate(['/members', member.publicId]); }
-  goToEdit(member: MemberSummary, event: Event): void { event.stopPropagation(); this.router.navigate(['/members', member.publicId, 'edit']); }
+  goToEdit(member: MemberSummary, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/members', member.publicId, 'edit']);
+  }
+
   goToCreate(): void { this.router.navigate(['/members', 'new']); }
 
   confirmApprove(member: MemberSummary, event: Event): void {
@@ -166,29 +278,18 @@ export class MembersListComponent implements OnInit {
     this.memberService.approveMember(member.publicId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => { this.messageService.add({ severity: 'success', summary: 'Done', detail: 'Member approved.' }); this.loadPage(this.page); this.memberService.refreshPendingCount(); },
-        error: () => { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Approval failed.' }); },
+        next: () => {
+          this.messageService.add({ severity: 'success', summary: 'Done', detail: 'Member approved.' });
+          this.loadAll();
+          this.memberService.refreshPendingCount();
+        },
+        error: () => {
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Approval failed.' });
+        },
       });
   }
 
-  statusBadgeClass(status: MemberStatus): string {
-    const map: Record<MemberStatus, string> = { ACTIVE: 'badge-active', INACTIVE: 'badge-inactive', PENDING: 'badge-pending', DELETED: 'badge-deleted' };
-    return map[status] ?? '';
-  }
-
-  roleBadgeClass(role?: string): string { return role === 'ADMIN' ? 'badge-admin' : 'badge-member'; }
-
-  showingFrom(): number { return this.page * this.size + 1; }
-  showingTo(): number   { return Math.min((this.page + 1) * this.size, this.totalRecords()); }
-
   baptismLabel(b?: Baptism | null): string {
     return b ? BAPTISM_LABELS[b] : '—';
-  }
-
-  private sortByKoreanName(list: MemberSummary[]): MemberSummary[] {
-    const collator = new Intl.Collator('ko', { sensitivity: 'base' });
-    return [...list].sort((a, b) =>
-      collator.compare(`${a.lastName}${a.firstName}`, `${b.lastName}${b.firstName}`),
-    );
   }
 }
