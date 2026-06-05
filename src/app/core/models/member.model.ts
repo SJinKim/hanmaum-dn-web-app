@@ -15,6 +15,8 @@ export interface MemberSummary {
   latestTraining?: string | null;
   /** All trainings, ordered by progression — rendered as chips in the grid. */
   trainings?: SummaryTraining[];
+  /** Names of currently-active ministries — rendered as chips in the grid. */
+  activeMinistries?: string[];
 }
 
 /** Full detail DTO — used in detail + edit views */

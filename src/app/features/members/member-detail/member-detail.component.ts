@@ -124,4 +124,14 @@ export class MemberDetailComponent implements OnInit {
   private mmYy(month: number, year: number): string {
     return `${String(month).padStart(2, '0')}/${String(year % 100).padStart(2, '0')}`;
   }
+
+  /** "MM/YY – MM/YY", or "MM/YY – 현재" when ongoing. */
+  ministryRange(m: MinistryHistory): string {
+    const s = monthYearFromCompletedAt(m.startDate);
+    const start = s.month && s.year ? this.mmYy(s.month, s.year) : '—';
+    if (!m.endDate) return `${start} – 현재`;
+    const e = monthYearFromCompletedAt(m.endDate);
+    const end = e.month && e.year ? this.mmYy(e.month, e.year) : '—';
+    return `${start} – ${end}`;
+  }
 }

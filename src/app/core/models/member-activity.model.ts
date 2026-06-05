@@ -65,17 +65,40 @@ export const TRAINING_TYPE_OPTIONS = Object.entries(TRAINING_TYPE_LABELS)
 // --- MINISTRY ---
 
 /**
- * A member's ministry registration as returned by the backend
- * (`GET /members/{id}` → `ministries`). This is the *real* persisted shape:
- * a member registered to a Ministry entity for a `registrationPeriod`
- * (a 4-char year, e.g. "2024") with a registration status. It is read-only
- * here — registrations are managed under the Ministry feature, not the member form.
+ * A member's ministry assignment as returned by `GET /members/{id}` → `ministries`.
+ * `endDate` null ⇒ currently active. Dates are first-of-month ISO strings 'YYYY-MM-DD'.
  */
 export interface MinistryHistory {
   ministryPublicId: string;
   name: string;
-  registrationPeriod: string;   // 4-char year, e.g. "2024"
-  status: string;               // RegistrationStatus, e.g. "APPROVED" | "PENDING"
+  startDate: string;        // ISO 'YYYY-MM-DD'
+  endDate: string | null;   // null = ongoing
+  note: string | null;
+}
+
+/** Ministry option from `GET /ministries` (summary list). */
+export interface MinistryCatalogEntry {
+  publicId: string;
+  name: string;
+}
+
+/** A single item in the `PUT /members/{id}/ministries` request body. */
+export interface MemberMinistryItem {
+  ministryPublicId: string;
+  startDate: string;        // 'YYYY-MM-DD' first-of-month
+  endDate: string | null;   // null = ongoing
+  note: string | null;
+}
+
+/** The ministry editor's per-card value. */
+export interface MinistryFormValue {
+  ministryPublicId: string | null;
+  startMonth: number | null;
+  startYear: number | null;
+  endMonth: number | null;
+  endYear: number | null;
+  ongoing: boolean;
+  note: string | null;
 }
 
 // --- DATE OPTIONS (shared) ---
@@ -147,4 +170,14 @@ export function mapFormValueToItem(
   const completedAt =
     value.status === 'COMPLETED' ? completedAtFromMonthYear(value.month, value.year) : null;
   return { trainingPublicId, status: value.status, completedAt };
+}
+
+/** first-of-month ISO → {month, year}; reuses the training helper. */
+export function firstOfMonthToMonthYear(iso: string | null): { month: number | null; year: number | null } {
+  return monthYearFromCompletedAt(iso);
+}
+
+/** {month, year} → first-of-month ISO 'YYYY-MM-01', or null. Reuses the training helper. */
+export function monthYearToFirstOfMonth(month: number | null, year: number | null): string | null {
+  return completedAtFromMonthYear(month, year);
 }
