@@ -231,6 +231,73 @@
 
       </div><!-- /Training box -->
 
+      <!-- Ministry box -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <div class="flex items-center justify-between pb-1 border-b border-gray-50 mb-4">
+          <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest">Ministries</div>
+          <span class="text-[11px] text-tertiary">{{ ministries.length }}</span>
+        </div>
+
+        @if (ministries.length === 0) {
+          <div class="text-[13px] text-tertiary py-6 text-center border border-dashed border-gray-200 rounded-lg mb-4">
+            No ministries added yet.
+          </div>
+        }
+
+        <div class="flex flex-col gap-3 mb-4" formArrayName="ministries">
+          @for (group of ministries.controls; track $index; let i = $index) {
+            <div [formGroupName]="i" class="date-select-compact flex flex-col gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
+              <div class="flex items-end gap-2">
+                <div class="flex flex-col gap-1 flex-1">
+                  <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Ministry</label>
+                  <p-select formControlName="ministryPublicId" [options]="ministryOptions()" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+                </div>
+                <button type="button" (click)="removeMinistry(i)" aria-label="Remove ministry"
+                  class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-tertiary hover:text-red-500 hover:border-red-300 transition-colors">
+                  <i class="pi pi-trash text-[12px]"></i>
+                </button>
+              </div>
+
+              <div class="flex items-end gap-3 flex-wrap">
+                <div class="flex flex-col gap-1">
+                  <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">From</label>
+                  <div class="flex items-center gap-1">
+                    <p-select formControlName="startMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
+                    <p-select formControlName="startYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
+                  </div>
+                </div>
+
+                @if (!group.get('ongoing')!.value) {
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">To</label>
+                    <div class="flex items-center gap-1">
+                      <p-select formControlName="endMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
+                      <p-select formControlName="endYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
+                    </div>
+                  </div>
+                }
+
+                <label class="flex items-center gap-1 pb-1.5 ml-auto cursor-pointer">
+                  <p-checkbox formControlName="ongoing" [binary]="true" (onChange)="onMinistryOngoingChange(i)" />
+                  <span class="text-[11px] font-semibold text-secondary">Ongoing</span>
+                </label>
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Note</label>
+                <input pInputText formControlName="note" maxlength="500" placeholder="Optional" class="w-full text-[13px]" />
+              </div>
+            </div>
+          }
+        </div>
+
+        <button type="button" (click)="addMinistry()"
+          class="flex items-center gap-2 h-9 px-4 rounded-lg border border-dashed border-gray-300 text-secondary text-[12px] font-semibold hover:border-primary hover:text-primary transition-colors tracking-tight mb-2">
+          <i class="pi pi-plus text-[11px]"></i>
+          Add Ministry
+        </button>
+      </div><!-- /Ministry box -->
+
       <!-- Actions -->
       <div class="lg:col-span-3 flex justify-end gap-3">
         <button

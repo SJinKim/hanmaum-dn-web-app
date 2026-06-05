@@ -1,4 +1,4 @@
-import { Component, OnInit, DestroyRef, inject, signal } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   AbstractControl,
@@ -43,6 +43,12 @@ import {
   UserTraining,
   mapUserTrainingToFormValue,
   mapFormValueToItem,
+  MinistryCatalogEntry,
+  MemberMinistryItem,
+  MinistryFormValue,
+  MinistryHistory,
+  monthYearToFirstOfMonth,
+  firstOfMonthToMonthYear,
 } from '../../../core/models/member-activity.model';
 import {
   PHONE_COUNTRIES,
@@ -90,6 +96,11 @@ export class MemberEditComponent implements OnInit {
   /** Training catalog from the backend — maps the form's type enum to a publicId. */
   private readonly trainingCatalog = signal<TrainingCatalogEntry[]>([]);
 
+  /** Ministry catalog from the backend — populates the ministry select options. */
+  private readonly ministryCatalog = signal<MinistryCatalogEntry[]>([]);
+  readonly ministryOptions = computed(() =>
+    this.ministryCatalog().map(m => ({ value: m.publicId, label: m.name })));
+
   readonly phoneCountryOptions = PHONE_COUNTRIES;
   readonly statusOptions       = MEMBER_STATUS_OPTIONS;
   readonly genderOptions       = GENDER_OPTIONS;
@@ -116,9 +127,11 @@ export class MemberEditComponent implements OnInit {
     churchRole:      [''],
     memberStatus:    [null as string | null],
     trainings:       this.fb.array<FormGroup>([]),
+    ministries:      this.fb.array<FormGroup>([]),
   });
 
   get trainings(): FormArray<FormGroup> { return this.form.get('trainings') as FormArray<FormGroup>; }
+  get ministries(): FormArray<FormGroup> { return this.form.get('ministries') as FormArray<FormGroup>; }
 
   private publicId?: string;
 
@@ -135,6 +148,11 @@ export class MemberEditComponent implements OnInit {
     this.memberService.getTrainingCatalog().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: catalog => this.trainingCatalog.set(catalog),
     });
+
+    // Load the ministry catalog (needed to populate ministry select options).
+    this.memberService.getMinistryCatalog()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: c => this.ministryCatalog.set(c) });
 
     // Re-validate the local number whenever the country changes.
     this.form.get('phoneCountry')!.valueChanges
@@ -176,9 +194,8 @@ export class MemberEditComponent implements OnInit {
       memberStatus:     member.memberStatus,
     });
 
-    // Training is persisted here. Ministry registrations are read-only and managed
-    // under the Ministry feature — not editable on this form (see member detail view).
     this.rebuildActivities(member.trainings ?? []);
+    this.rebuildMinistries(member.ministries ?? []);
   }
 
   save(): void {
@@ -190,7 +207,8 @@ export class MemberEditComponent implements OnInit {
     const raw = this.form.getRawValue();
     const phoneNumber = normalizeToE164(raw.phoneCountry as PhoneCountry, raw.phoneLocal ?? '') ?? undefined;
 
-    const trainingItems = this.collectTrainingItems();
+    const trainingItems  = this.collectTrainingItems();
+    const ministryItems  = this.collectMinistryItems();
     const toIso = (d: Date | null | undefined) => d ? d.toISOString().split('T')[0] : undefined;
 
     const isEdit = this.isEdit() && !!this.publicId;
@@ -233,10 +251,11 @@ export class MemberEditComponent implements OnInit {
       member$ = this.memberService.createMember(req);
     }
 
-    // Persist the member, then replace its training set with whatever the form holds.
+    // Persist the member, then replace its training and ministry sets with what the form holds.
     member$
       .pipe(
         switchMap(member => this.persistTrainings(member, trainingItems)),
+        switchMap(member => this.persistMinistries(member, ministryItems)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
@@ -340,6 +359,66 @@ export class MemberEditComponent implements OnInit {
       .map(mapUserTrainingToFormValue)
       .filter((v): v is TrainingFormValue => v !== null)
       .forEach(v => this.trainings.push(this.newTrainingGroup(v)));
+  }
+
+  // --- Ministry cards ---
+
+  addMinistry(): void { this.ministries.push(this.newMinistryGroup()); }
+  removeMinistry(index: number): void { this.ministries.removeAt(index); }
+
+  onMinistryOngoingChange(index: number): void {
+    const g = this.ministries.at(index);
+    const ongoing = g.get('ongoing')!.value;
+    const em = g.get('endMonth')!, ey = g.get('endYear')!;
+    if (ongoing) { em.reset(null); ey.reset(null); em.disable(); ey.disable(); }
+    else { em.enable(); ey.enable(); }
+  }
+
+  private newMinistryGroup(value?: MinistryFormValue): FormGroup {
+    const ongoing = value?.ongoing ?? true;
+    const group = this.fb.group({
+      ministryPublicId: [value?.ministryPublicId ?? null as string | null, Validators.required],
+      startMonth: [value?.startMonth ?? null as number | null, Validators.required],
+      startYear:  [value?.startYear  ?? null as number | null, Validators.required],
+      endMonth:   [value?.endMonth   ?? null as number | null],
+      endYear:    [value?.endYear    ?? null as number | null],
+      ongoing:    [ongoing],
+      note:       [value?.note       ?? null as string | null],
+    });
+    if (ongoing) { group.get('endMonth')!.disable(); group.get('endYear')!.disable(); }
+    return group;
+  }
+
+  private collectMinistryItems(): MemberMinistryItem[] {
+    return this.ministries.controls
+      .map(c => c.getRawValue())
+      .filter(v => v.ministryPublicId && v.startMonth && v.startYear)
+      .map(v => ({
+        ministryPublicId: v.ministryPublicId as string,
+        startDate: monthYearToFirstOfMonth(v.startMonth, v.startYear)!,
+        endDate: v.ongoing ? null : monthYearToFirstOfMonth(v.endMonth, v.endYear),
+        note: (v.note as string | null)?.trim() || null,
+      }));
+  }
+
+  private rebuildMinistries(ministries: MinistryHistory[] = []): void {
+    this.ministries.clear();
+    ministries.forEach(m => {
+      const s = firstOfMonthToMonthYear(m.startDate);
+      const e = firstOfMonthToMonthYear(m.endDate);
+      this.ministries.push(this.newMinistryGroup({
+        ministryPublicId: m.ministryPublicId,
+        startMonth: s.month, startYear: s.year,
+        endMonth: e.month, endYear: e.year,
+        ongoing: m.endDate === null,
+        note: m.note,
+      }));
+    });
+  }
+
+  private persistMinistries(member: Member, items: MemberMinistryItem[]): Observable<Member> {
+    if (this.ministryCatalog().length === 0) return of(member);
+    return this.memberService.replaceMemberMinistries(member.publicId, items);
   }
 
   goBack(): void {
