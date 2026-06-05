@@ -44,7 +44,7 @@ export interface Member {
    * `PUT /members/{id}/trainings`. See member-activity.model.ts.
    */
   trainings?: UserTraining[];
-  /** Ministry registration history — read-only; managed under the Ministry feature. */
+  /** Ministry assignment history (start/end dates) — edited via `PUT /members/{id}/ministries`. */
   ministries?: MinistryHistory[];
 }
 

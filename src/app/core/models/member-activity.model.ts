@@ -7,9 +7,11 @@
  * `TrainingType` enum below. The mapping helpers at the bottom of this file bridge
  * the two shapes.
  *
- * Ministry is read-only here: `GET /members/{id}` → `ministries` returns
- * {@link MinistryHistory} (a projection of the member's ministry registrations).
- * Registrations are created/managed under the Ministry feature, not the member form.
+ * Ministry assignments are admin-managed on the member form: `GET /members/{id}` →
+ * `ministries` returns {@link MinistryHistory} (start/end-date assignments), edited via
+ * `PUT /members/{id}/ministries`. The catalog (`GET /ministries`) is modelled as
+ * {@link MinistryCatalogEntry}; the form value is {@link MinistryFormValue} and the
+ * request item is {@link MemberMinistryItem}.
  */
 
 // --- TRAINING ---
