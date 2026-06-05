@@ -13,6 +13,8 @@ import {
 import {
   TrainingCatalogEntry,
   MemberTrainingItem,
+  MinistryCatalogEntry,
+  MemberMinistryItem,
 } from '../../core/models/member-activity.model';
 
 @Injectable({ providedIn: 'root' })
@@ -78,5 +80,15 @@ export class MemberService {
   /** Replaces the member's entire training set; returns the refreshed member detail. */
   replaceMemberTrainings(publicId: string, trainings: MemberTrainingItem[]): Observable<Member> {
     return this.api.put<Member>(`/v1/members/${publicId}/trainings`, { trainings });
+  }
+
+  /** Ministry options for the member edit form (active ministries only). */
+  getMinistryCatalog(): Observable<MinistryCatalogEntry[]> {
+    return this.api.get<MinistryCatalogEntry[]>('/v1/ministries', { active: true });
+  }
+
+  /** Replaces the member's entire ministry assignment set; returns refreshed detail. */
+  replaceMemberMinistries(publicId: string, ministries: MemberMinistryItem[]): Observable<Member> {
+    return this.api.put<Member>(`/v1/members/${publicId}/ministries`, { ministries });
   }
 }
