@@ -15,6 +15,12 @@ import {
   GENDER_LABELS,
   BAPTISM_LABELS,
 } from '../../../core/models/member.model';
+import {
+  UserTraining,
+  MinistryHistory,
+  monthYearFromCompletedAt,
+} from '../../../core/models/member-activity.model';
+import { formatForDisplay } from '../../../core/models/phone.util';
 
 @Component({
   selector: 'app-member-detail',
@@ -37,6 +43,11 @@ export class MemberDetailComponent implements OnInit {
 
   member  = signal<Member | null>(null);
   loading = signal(true);
+
+  readonly formatPhone = formatForDisplay;
+
+  trainings(): UserTraining[]    { return this.member()?.trainings ?? []; }
+  ministries(): MinistryHistory[] { return this.member()?.ministries ?? []; }
 
   ngOnInit(): void {
     const publicId = this.route.snapshot.paramMap.get('publicId')!;
@@ -98,7 +109,19 @@ export class MemberDetailComponent implements OnInit {
     return map[status] ?? '';
   }
 
-  roleBadgeClass(role?: string | null): string {
-    return role === 'ADMIN' ? 'badge-admin' : 'badge-member';
+  // --- Training / ministry display ---
+
+  /** Catalog name as sent by the backend, e.g. "QTBS" / "1on1". */
+  trainingName(t: UserTraining): string { return t.name; }
+
+  /** Completed month/year as "MM/YY"; "진행중" while in progress. */
+  trainingDate(t: UserTraining): string {
+    if (t.status !== 'COMPLETED' || !t.completedAt) return '진행중';
+    const { month, year } = monthYearFromCompletedAt(t.completedAt);
+    return month && year ? this.mmYy(month, year) : '진행중';
+  }
+
+  private mmYy(month: number, year: number): string {
+    return `${String(month).padStart(2, '0')}/${String(year % 100).padStart(2, '0')}`;
   }
 }

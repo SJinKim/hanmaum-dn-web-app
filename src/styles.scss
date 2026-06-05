@@ -9,6 +9,11 @@
 // PrimeNG
 @import "primeicons/primeicons.css";
 
+// AG-Grid (Community) — uses the v33 Theming API, no legacy CSS imports
+.ag-row.row-pending {
+  background-color: #faf5ff; // bg-purple-50
+}
+
 // Design tokens
 :root {
   --color-primary: #2B3A67;
@@ -51,6 +56,22 @@ html, body {
   &.badge-deleted  { background: #fee2e2; color: #b91c1c; }
   &.badge-admin    { background: #1e293b; color: #ffffff; }
   &.badge-member   { background: #e2e8f0; color: #475569; }
+
+  // Training chips: grey = completed, orange = in progress.
+  &.badge-training-completed { background: #f3f4f6; color: #4b5563; }
+  &.badge-training-progress  { background: #ffedd5; color: #c2410c; }
+}
+
+// Compact selects for the member-edit training/ministry date rows,
+// so the month/year pairs fit on a single line inside the narrow boxes.
+.date-select-compact {
+  .p-select-label {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;
+  }
+  .p-select-dropdown {
+    width: 1.25rem;
+  }
 }
 
 // PrimeNG table header
