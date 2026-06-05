@@ -69,4 +69,53 @@ describe('MemberEditComponent — ministry editor', () => {
       note: null,
     }]);
   });
+
+  it('re-toggling ongoing back to true clears and disables the end date', () => {
+    component.addMinistry();
+    const group = component.ministries.at(0);
+
+    // User unchecks Ongoing, enters an end date...
+    group.get('ongoing')!.setValue(false);
+    component.onMinistryOngoingChange(0);
+    group.patchValue({ endMonth: 11, endYear: 2025 });
+
+    // ...then re-checks Ongoing — the end date must be wiped and disabled again.
+    group.get('ongoing')!.setValue(true);
+    component.onMinistryOngoingChange(0);
+
+    expect(group.get('endMonth')!.value).toBeNull();
+    expect(group.get('endYear')!.value).toBeNull();
+    expect(group.get('endMonth')!.disabled).toBeTrue();
+  });
+
+  it('collectMinistryItems() maps a finished card to a real endDate, and drops one missing its end date', () => {
+    // Finished card with an end date → endDate populated.
+    component.addMinistry();
+    const finished = component.ministries.at(0);
+    finished.get('ongoing')!.setValue(false);
+    component.onMinistryOngoingChange(0);
+    finished.patchValue({
+      ministryPublicId: 'abc',
+      startMonth: 3,
+      startYear: 2024,
+      endMonth: 5,
+      endYear: 2025,
+    });
+
+    // Second finished card missing its end date → dropped by the filter.
+    component.addMinistry();
+    const incomplete = component.ministries.at(1);
+    incomplete.get('ongoing')!.setValue(false);
+    component.onMinistryOngoingChange(1);
+    incomplete.patchValue({ ministryPublicId: 'def', startMonth: 1, startYear: 2023 });
+
+    const items: MemberMinistryItem[] = (component as any).collectMinistryItems();
+
+    expect(items).toEqual([{
+      ministryPublicId: 'abc',
+      startDate: '2024-03-01',
+      endDate: '2025-05-01',
+      note: null,
+    }]);
+  });
 });

@@ -392,7 +392,9 @@ export class MemberEditComponent implements OnInit {
   private collectMinistryItems(): MemberMinistryItem[] {
     return this.ministries.controls
       .map(c => c.getRawValue())
-      .filter(v => v.ministryPublicId && v.startMonth && v.startYear)
+      // A finished (not ongoing) assignment must have an end month+year, otherwise it
+      // would be indistinguishable from an active one. Such incomplete cards are dropped.
+      .filter(v => v.ministryPublicId && v.startMonth && v.startYear && (v.ongoing || (v.endMonth && v.endYear)))
       .map(v => ({
         ministryPublicId: v.ministryPublicId as string,
         startDate: monthYearToFirstOfMonth(v.startMonth, v.startYear)!,
@@ -417,7 +419,8 @@ export class MemberEditComponent implements OnInit {
   }
 
   private persistMinistries(member: Member, items: MemberMinistryItem[]): Observable<Member> {
-    if (this.ministryCatalog().length === 0) return of(member);
+    // Unlike trainings, ministry items carry their own ministryPublicId from the form,
+    // so they don't depend on the catalog being loaded — always persist what the form holds.
     return this.memberService.replaceMemberMinistries(member.publicId, items);
   }
 
