@@ -45,9 +45,8 @@ Repurpose `ministry_registrations` (entity `MinistryRegistration` → **`Ministr
 | **Drop** unique constraint `uq_ministry_member_period` | a member may have repeat stints in one ministry over time |
 | **Keep** `ministry_id`, `member_id`, `note`, soft-delete + `delete_entry_at` | unchanged |
 
-> **Table/entity rename:** keep the physical table name `ministry_registrations` for
-> the migration's sake unless trivially renamed; the JPA entity is renamed to
-> `MinistryAssignment`. (Implementation plan decides whether to also rename the table.)
+> **Table/entity rename:** the physical table name stays `ministry_registrations`
+> (decided); only the JPA entity is renamed to `MinistryAssignment`.
 
 ### Flyway migration
 One new migration:
@@ -75,15 +74,17 @@ Follows the `api-contracts` skill — update the contract doc + both consumers.
 **Add** (mirror of `PUT /members/{id}/trainings`) on `MemberController`:
 - `PUT /members/{publicId}/ministries` — `@PreAuthorize("hasRole('ADMIN')")`.
   Body: `List<MemberMinistryItem>` where
-  `MemberMinistryItem = { ministryPublicId: String, startDate: LocalDate, endDate: LocalDate? }`.
+  `MemberMinistryItem = { ministryPublicId: String, startDate: LocalDate, endDate: LocalDate?, note: String? }`.
   Replaces the member's full assignment set (soft-delete removed rows, upsert the rest),
-  mirroring `replaceMemberTrainings`. Returns the updated `MemberDto`.
+  mirroring `replaceMemberTrainings`. `note` max length 500 (matches the column). Returns
+  the updated `MemberDto`.
 
 **Change** DTOs:
 - `MemberSummaryDto.activeMinistry: String?` → **`activeMinistries: List<String> = emptyList()`**
   (names of active assignments, deduped, sorted by name).
 - `MinistryHistoryDto`: replace `registrationPeriod` + `status` with
-  **`startDate: LocalDate`** + **`endDate: LocalDate?`** (keep `ministryPublicId`, `name`).
+  **`startDate: LocalDate`** + **`endDate: LocalDate?`** (keep `ministryPublicId`, `name`,
+  and add **`note: String?`**).
 
 ### Active-ministries query
 Replace `MinistryRegistrationRepository.findApprovedByMemberIds(...)` /
@@ -120,7 +121,8 @@ detail DTO and re-ordered by `startDate DESC`.
   `MemberEditComponent`: a `FormArray` of cards, each with
   - ministry `<select>` (options from `GET /ministries`, loaded like the training catalog),
   - **start** month + year selects (required),
-  - **end** month + year selects + an **"ongoing"** checkbox that clears + disables end.
+  - **end** month + year selects + an **"ongoing"** checkbox that clears + disables end,
+  - an optional **note** text input (max 500 chars).
 - Reuse `MONTH_OPTIONS` / `YEAR_OPTIONS` and the
   `completedAtFromMonthYear` / `monthYearFromCompletedAt` helpers (rename/generalize if
   needed) for first-of-month ↔ month/year mapping.
@@ -129,9 +131,9 @@ detail DTO and re-ordered by `startDate DESC`.
   send an empty list and wipe existing assignments.
 
 ### Member detail view
-- `MinistryHistory` model → `{ ministryPublicId, name, startDate, endDate }`.
+- `MinistryHistory` model → `{ ministryPublicId, name, startDate, endDate, note }`.
 - Render each ministry as `name` + `start – end`, or `name` + `start – present` when
-  `endDate` is null.
+  `endDate` is null; show `note` underneath when present.
 
 ### Tests (web)
 - `MinistryChipsCellComponent`: empty → `—`; N names → N chips.
@@ -142,7 +144,7 @@ detail DTO and re-ordered by `startDate DESC`.
 ## Out of scope / non-goals
 - No granular add/remove ministry endpoints — replace-set only (consistent with trainings).
 - No member-facing ministry self-service (the abandoned flow is removed, not replaced).
-- No physical table rename required for MVP (entity rename only; decided in plan).
+- No physical table rename — table stays `ministry_registrations`; entity renamed only.
 - No change to the Ministry catalog CRUD (`POST/PATCH/DELETE /ministries`) — unchanged.
 
 ## Decision log
@@ -150,3 +152,6 @@ detail DTO and re-ordered by `startDate DESC`.
   Chose the start/end-date model ("Option C"-shaped) because the year-based
   registration flow is being abandoned, so the model had to change regardless;
   full-replace removal chosen to avoid leaving contradictory dead code.
+- **2026-06-05** — Keep the `note` field and surface it in the UI (editor input +
+  detail display). Keep the physical table name `ministry_registrations`; rename the
+  JPA entity only.
