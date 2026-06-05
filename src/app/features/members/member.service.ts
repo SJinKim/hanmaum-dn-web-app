@@ -10,6 +10,10 @@ import {
   CreateMemberRequest,
   UpdateMemberRequest,
 } from '../../core/models/member.model';
+import {
+  TrainingCatalogEntry,
+  MemberTrainingItem,
+} from '../../core/models/member-activity.model';
 
 @Injectable({ providedIn: 'root' })
 export class MemberService {
@@ -64,5 +68,15 @@ export class MemberService {
 
   deleteMember(publicId: string): Observable<void> {
     return this.api.delete(`/v1/members/${publicId}`);
+  }
+
+  /** The admin-managed training catalog used to populate the member edit form. */
+  getTrainingCatalog(): Observable<TrainingCatalogEntry[]> {
+    return this.api.get<TrainingCatalogEntry[]>('/v1/trainings');
+  }
+
+  /** Replaces the member's entire training set; returns the refreshed member detail. */
+  replaceMemberTrainings(publicId: string, trainings: MemberTrainingItem[]): Observable<Member> {
+    return this.api.put<Member>(`/v1/members/${publicId}/trainings`, { trainings });
   }
 }
