@@ -20,9 +20,29 @@
       <h1 class="text-[22px] font-extrabold text-primary tracking-tight">
         {{ isEdit() ? 'Edit Member' : 'Add Member' }}
       </h1>
+
+      <!-- Actions -->
+      <div class="ml-auto flex items-center gap-3">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="h-9 px-5 rounded-lg border border-gray-200 text-secondary text-[12px] font-semibold hover:border-gray-300 transition-colors tracking-tight"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          form="member-edit-form"
+          [disabled]="saving()"
+          class="flex items-center gap-2 h-9 px-5 bg-primary text-white rounded-lg text-[12px] font-bold hover:bg-primary-hover transition-colors disabled:opacity-50 tracking-tight"
+        >
+          <i [class]="saving() ? 'pi pi-spin pi-spinner text-[11px]' : 'pi pi-check text-[11px]'"></i>
+          {{ isEdit() ? 'Save Changes' : 'Add Member' }}
+        </button>
+      </div>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="save()" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <form id="member-edit-form" [formGroup]="form" (ngSubmit)="save()" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
       <!-- Basic Info box -->
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
@@ -297,25 +317,6 @@
           Add Ministry
         </button>
       </div><!-- /Ministry box -->
-
-      <!-- Actions -->
-      <div class="lg:col-span-3 flex justify-end gap-3">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="h-9 px-5 rounded-lg border border-gray-200 text-secondary text-[12px] font-semibold hover:border-gray-300 transition-colors tracking-tight"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          [disabled]="saving()"
-          class="flex items-center gap-2 h-9 px-5 bg-primary text-white rounded-lg text-[12px] font-bold hover:bg-primary-hover transition-colors disabled:opacity-50 tracking-tight"
-        >
-          <i [class]="saving() ? 'pi pi-spin pi-spinner text-[11px]' : 'pi pi-check text-[11px]'"></i>
-          {{ isEdit() ? 'Save Changes' : 'Add Member' }}
-        </button>
-      </div>
 
     </form>
 
