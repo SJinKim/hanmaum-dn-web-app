@@ -1,9 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
 
 import { MemberEditComponent } from './member-edit.component';
+import { MemberService } from '../member.service';
 import { MemberMinistryItem } from '../../../core/models/member-activity.model';
 
 describe('MemberEditComponent — ministry editor', () => {
@@ -117,5 +120,78 @@ describe('MemberEditComponent — ministry editor', () => {
       endDate: '2025-05-01',
       note: null,
     }]);
+  });
+});
+
+// Reproduction of the reported bug: a member loaded with an ONGOING ministry, edited
+// via the real rendered checkbox to a finished (To month/year) assignment, must persist
+// the endDate. Drives the actual DOM through a stubbed MemberService (no HTTP matching).
+describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', () => {
+  const memberWithOngoing = {
+    publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
+    baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, zipCode: null,
+    city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null, groupName: null,
+    profileImageUrl: null, trainings: [],
+    ministries: [{ ministryPublicId: 'min1', name: '찬양팀', startDate: '2024-03-01', endDate: null, note: null }],
+  };
+
+  let replaceSpy: jasmine.Spy;
+
+  function setup() {
+    replaceSpy = jasmine.createSpy('replaceMemberMinistries').and.returnValue(of(memberWithOngoing));
+    const memberServiceStub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([{ publicId: 'min1', name: '찬양팀' }]),
+      getMember: () => of(memberWithOngoing),
+      updateMember: () => of(memberWithOngoing),
+      createMember: () => of(memberWithOngoing),
+      replaceMemberTrainings: () => of(memberWithOngoing),
+      replaceMemberMinistries: replaceSpy,
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
+        { provide: MemberService, useValue: memberServiceStub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges(); // ngOnInit → stubbed loads resolve synchronously via of()
+    return fixture;
+  }
+
+  it('persists endDate when a loaded ongoing ministry is unchecked and given To dates', () => {
+    const fixture = setup();
+    const component = fixture.componentInstance;
+
+    expect(component.ministries.length).toBe(1);
+    const card = component.ministries.at(0);
+    expect(card.get('ongoing')!.value).toBeTrue();
+    expect(card.get('endMonth')!.disabled).toBeTrue();
+
+    // Click the REAL Ongoing checkbox (PrimeNG renders an <input type=checkbox>).
+    const checkbox = fixture.debugElement.query(By.css('p-checkbox input[type="checkbox"]'));
+    expect(checkbox).withContext('ongoing checkbox should be rendered').toBeTruthy();
+    checkbox.nativeElement.click();
+    fixture.detectChanges();
+
+    // The toggle must flip the control AND enable the end-date fields.
+    expect(card.get('ongoing')!.value).withContext('checkbox should set ongoing=false').toBeFalse();
+    expect(card.get('endMonth')!.enabled).withContext('endMonth must be enabled after un-toggling').toBeTrue();
+    expect(card.get('endYear')!.enabled).toBeTrue();
+
+    // User selects To month/year, then saves.
+    card.get('endMonth')!.setValue(11);
+    card.get('endYear')!.setValue(2025);
+    component.save();
+
+    expect(replaceSpy).toHaveBeenCalled();
+    const items = replaceSpy.calls.mostRecent().args[1] as MemberMinistryItem[];
+    expect(items.length).toBe(1);
+    expect(items[0].endDate).withContext('endDate must be persisted, not null').toBe('2025-11-01');
   });
 });
