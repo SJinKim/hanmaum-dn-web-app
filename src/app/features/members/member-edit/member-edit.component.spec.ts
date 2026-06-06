@@ -130,7 +130,8 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
   const memberWithOngoing = {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, zipCode: null,
-    city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null, groupName: null,
+    city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
+    groupPublicId: null, groupName: null,
     profileImageUrl: null, trainings: [],
     ministries: [{ ministryPublicId: 'min1', name: '찬양팀', startDate: '2024-03-01', endDate: null, note: null }],
   };
@@ -142,6 +143,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     const memberServiceStub = {
       getTrainingCatalog: () => of([]),
       getMinistryCatalog: () => of([{ publicId: 'min1', name: '찬양팀' }]),
+      getChurchGroups: () => of([]),
       getMember: () => of(memberWithOngoing),
       updateMember: () => of(memberWithOngoing),
       createMember: () => of(memberWithOngoing),

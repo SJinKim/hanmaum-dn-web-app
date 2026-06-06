@@ -37,6 +37,8 @@ export interface Member {
   memberStatus: MemberStatus;
   role?: 'ADMIN' | 'MEMBER';
   churchRole: string | null;
+  /** publicId of the member's church group — used to pre-select the group on edit. */
+  groupPublicId: string | null;
   groupName: string | null;
   profileImageUrl: string | null;
   /**
@@ -62,6 +64,8 @@ export interface CreateMemberRequest {
   city?: string;
   registrationDate?: string;
   churchRole?: string;
+  /** publicId of the church group to assign. */
+  groupPublicId?: string;
   profileImageUrl?: string;
 }
 
@@ -81,7 +85,16 @@ export interface UpdateMemberRequest {
   registrationDate?: string;
   memberStatus?: MemberStatus;
   churchRole?: string;
+  /** publicId of the church group to assign. */
+  groupPublicId?: string;
   profileImageUrl?: string;
+}
+
+/** Church group option for selection dropdowns (from GET /v1/church-groups). */
+export interface ChurchGroupSummary {
+  publicId: string;
+  division: string | null;
+  name: string;
 }
 
 export type MemberStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'DELETED';
