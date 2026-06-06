@@ -92,7 +92,7 @@ export class MembersListComponent implements OnInit {
     {
       headerName: 'Name',
       colId: 'name',
-      flex: 2,
+      width: 220,
       minWidth: 220,
       valueGetter: p => `${p.data?.lastName ?? ''}${p.data?.firstName ?? ''}`,
       cellRenderer: MemberNameCellComponent,
@@ -131,7 +131,8 @@ export class MembersListComponent implements OnInit {
     {
       headerName: 'Ministry',
       colId: 'ministry',
-      width: 200,
+      flex: 1,
+      minWidth: 360,
       valueGetter: p => p.data?.activeMinistries ?? [],
       cellRenderer: MinistryChipsCellComponent,
       sortable: false,
