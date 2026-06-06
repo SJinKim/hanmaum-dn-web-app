@@ -9,6 +9,7 @@ import {
   Baptism,
   CreateMemberRequest,
   UpdateMemberRequest,
+  ChurchGroupSummary,
 } from '../../core/models/member.model';
 import {
   TrainingCatalogEntry,
@@ -70,6 +71,11 @@ export class MemberService {
 
   deleteMember(publicId: string): Observable<void> {
     return this.api.delete(`/v1/members/${publicId}`);
+  }
+
+  /** All church groups — populates the "Church Group" select in the member edit form. */
+  getChurchGroups(): Observable<ChurchGroupSummary[]> {
+    return this.api.get<ChurchGroupSummary[]>('/v1/church-groups');
   }
 
   /** The admin-managed training catalog used to populate the member edit form. */

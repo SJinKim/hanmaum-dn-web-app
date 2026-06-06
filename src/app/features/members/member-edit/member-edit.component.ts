@@ -30,6 +30,7 @@ import {
   Gender,
   Baptism,
   MemberStatus,
+  ChurchGroupSummary,
 } from '../../../core/models/member.model';
 import {
   TRAINING_TYPE_OPTIONS,
@@ -101,6 +102,14 @@ export class MemberEditComponent implements OnInit {
   readonly ministryOptions = computed(() =>
     this.ministryCatalog().map(m => ({ value: m.publicId, label: m.name })));
 
+  /** Church groups from the backend — populates the "Church Group" select. */
+  private readonly churchGroups = signal<ChurchGroupSummary[]>([]);
+  readonly groupOptions = computed(() =>
+    this.churchGroups().map(g => ({
+      value: g.publicId,
+      label: g.division ? `${g.name} (${g.division})` : g.name,
+    })));
+
   readonly phoneCountryOptions = PHONE_COUNTRIES;
   readonly statusOptions       = MEMBER_STATUS_OPTIONS;
   readonly genderOptions       = GENDER_OPTIONS;
@@ -124,7 +133,7 @@ export class MemberEditComponent implements OnInit {
     zipCode:         [''],
     city:            [''],
     registrationDate:[null as Date | null],
-    churchRole:      [''],
+    groupPublicId:   [null as string | null],
     memberStatus:    [null as string | null],
     trainings:       this.fb.array<FormGroup>([]),
     ministries:      this.fb.array<FormGroup>([]),
@@ -153,6 +162,11 @@ export class MemberEditComponent implements OnInit {
     this.memberService.getMinistryCatalog()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: c => this.ministryCatalog.set(c) });
+
+    // Load church groups (needed to populate the "Church Group" select options).
+    this.memberService.getChurchGroups()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: g => this.churchGroups.set(g) });
 
     // Re-validate the local number whenever the country changes.
     this.form.get('phoneCountry')!.valueChanges
@@ -190,7 +204,7 @@ export class MemberEditComponent implements OnInit {
       zipCode:          member.zipCode ?? '',
       city:             member.city ?? '',
       registrationDate: member.registrationDate ? new Date(member.registrationDate) : null,
-      churchRole:       member.churchRole ?? '',
+      groupPublicId:    member.groupPublicId ?? null,
       memberStatus:     member.memberStatus,
     });
 
@@ -230,7 +244,7 @@ export class MemberEditComponent implements OnInit {
         zipCode:          raw.zipCode || undefined,
         city:             raw.city || undefined,
         registrationDate: toIso(raw.registrationDate),
-        churchRole:       raw.churchRole || undefined,
+        groupPublicId:    raw.groupPublicId || undefined,
         memberStatus:     (raw.memberStatus as MemberStatus) ?? undefined,
       };
       member$ = this.memberService.updateMember(this.publicId!, req);
