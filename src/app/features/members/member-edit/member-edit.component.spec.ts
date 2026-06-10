@@ -129,7 +129,7 @@ describe('MemberEditComponent — ministry editor', () => {
 describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', () => {
   const memberWithOngoing = {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
-    baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, zipCode: null,
+    baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
     city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
     groupPublicId: null, groupName: null,
     profileImageUrl: null, trainings: [],

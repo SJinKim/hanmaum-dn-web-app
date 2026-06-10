@@ -31,6 +31,7 @@ export interface Member {
   phoneNumber: string | null;
   email: string | null;
   street: string | null;
+  houseNumber: string | null;
   zipCode: string | null;
   city: string | null;
   registrationDate: string | null;
@@ -60,6 +61,7 @@ export interface CreateMemberRequest {
   phoneNumber?: string;
   email?: string;
   street?: string;
+  houseNumber?: string;
   zipCode?: string;
   city?: string;
   registrationDate?: string;
@@ -80,6 +82,7 @@ export interface UpdateMemberRequest {
   phoneNumber?: string;
   email?: string;
   street?: string;
+  houseNumber?: string;
   zipCode?: string;
   city?: string;
   registrationDate?: string;
