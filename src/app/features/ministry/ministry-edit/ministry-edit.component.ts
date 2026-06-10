@@ -65,13 +65,16 @@ export class MinistryEditComponent implements OnInit {
     this.publicId = this.route.snapshot.paramMap.get('publicId') ?? '';
     this.isEdit   = !!this.publicId;
 
-    this.memberService.getMembers({ size: 500 })
+    this.memberService.getMembers({ size: 500, status: 'ACTIVE' })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: page => {
           this.memberOptions.set(
             page.content.map(m => ({ value: m.publicId, label: `${m.lastName}${m.firstName}` }))
           );
+        },
+        error: () => {
+          this.messageService.add({ severity: 'error', summary: '오류', detail: '회원 목록을 불러올 수 없습니다.' });
         },
       });
 
