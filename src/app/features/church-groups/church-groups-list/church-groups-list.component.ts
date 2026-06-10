@@ -177,14 +177,17 @@ export class ChurchGroupsListComponent implements OnInit {
     const newcomersCol: ColGroupDef = {
       headerName: '새가족',
       children: [{
-        headerName: '',
-        field: NEWCOMERS_KEY,
-        width: 80,
-        cellRenderer: GroupMemberCellComponent,
-        cellRendererParams: { centered: true },
-        sortable: false,
-        filter: false,
-        resizable: false,
+        headerName: '새가족',
+        children: [{
+          headerName: '',
+          field: NEWCOMERS_KEY,
+          width: 80,
+          cellRenderer: GroupMemberCellComponent,
+          cellRendererParams: { centered: true },
+          sortable: false,
+          filter: false,
+          resizable: false,
+        }],
       }],
     };
 
