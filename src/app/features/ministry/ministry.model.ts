@@ -36,6 +36,7 @@ export interface ActiveMinistryMemberDto {
   fullName: string;
   startDate: string;  // 'YYYY-MM-DD'
   note: string | null;
+  gender: 'M' | 'F' | null;
 }
 
 export interface CreateMinistryRequest {
