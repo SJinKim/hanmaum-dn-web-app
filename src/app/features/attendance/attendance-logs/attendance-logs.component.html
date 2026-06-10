@@ -12,8 +12,9 @@
 
   <!-- Date range filter -->
   <div class="flex items-center gap-3 mb-6">
-    <label class="text-sm text-gray-600 whitespace-nowrap">기간 필터:</label>
+    <label for="attendanceDateRange" class="text-sm text-gray-600 whitespace-nowrap">기간 필터:</label>
     <p-datepicker
+      inputId="attendanceDateRange"
       [(ngModel)]="dateRange"
       selectionMode="range"
       [readonlyInput]="true"
