@@ -24,7 +24,7 @@ export const CATEGORY_CONFIG: Record<MemberCategory, CategoryConfig> = {
   ONE_ON_ONE_WAITING:     { label: '일대일대기',       color: '#fef08a' },
   QBS_COMPLETED:          { label: '큐비세수료',       color: '#bae6fd' },
   DISCIPLESHIP_COMPLETED: { label: '제자반수료',       color: '#ffffff' },
-  UNBAPTIZED:             { label: '세레X / 확인대상', color: '#fed7aa' },
+  UNBAPTIZED:             { label: '세례X / 확인대상', color: '#fed7aa' },
   DEFAULT:                { label: '',                 color: '#f9fafb' },
 };
 
