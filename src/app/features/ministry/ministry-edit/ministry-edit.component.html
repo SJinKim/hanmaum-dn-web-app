@@ -35,10 +35,20 @@
           ></textarea>
         </div>
 
-        <!-- Leader publicId -->
+        <!-- Team leader select -->
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700">리더 publicId</label>
-          <input pInputText [(ngModel)]="form.leaderPublicId" placeholder="리더 회원 publicId (선택)" />
+          <label class="text-sm font-medium text-gray-700">팀장</label>
+          <p-select
+            [(ngModel)]="form.leaderPublicId"
+            [options]="memberOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [filter]="true"
+            filterBy="label"
+            [showClear]="true"
+            placeholder="팀장 선택 (선택사항)"
+            styleClass="w-full"
+          />
         </div>
 
         <!-- Image URL -->
