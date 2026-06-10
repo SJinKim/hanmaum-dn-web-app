@@ -81,7 +81,7 @@ export interface MinistryHistory {
 /** Ministry option from `GET /ministries` (summary list). */
 export interface MinistryCatalogEntry {
   publicId: string;
-  name: string;
+  title: string;
 }
 
 /** A single item in the `PUT /members/{id}/ministries` request body. */

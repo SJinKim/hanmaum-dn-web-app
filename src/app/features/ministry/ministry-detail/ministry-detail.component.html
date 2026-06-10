@@ -14,34 +14,90 @@
   } @else if (ministry()) {
     <!-- Info card -->
     <p-card class="mb-6">
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_16rem]">
         <div>
-          <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">부서명</p>
-          <p class="font-semibold text-gray-800">{{ ministry()!.name }}</p>
+          <div class="mb-4 flex items-start gap-3">
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">사역 제목</p>
+              <p class="text-xl font-semibold text-gray-800">{{ ministry()!.title }}</p>
+              <p class="mt-1 text-gray-600">{{ ministry()!.subtitle }}</p>
+            </div>
+            <p-tag
+              class="ml-auto"
+              [value]="ministry()!.isActive ? '활성' : '비활성'"
+              [severity]="ministry()!.isActive ? 'success' : 'secondary'"
+            />
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">사역 소개</p>
+            <p class="text-gray-700 whitespace-pre-wrap">{{ ministry()!.about }}</p>
+          </div>
         </div>
-        <div>
-          <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">상태</p>
-          <p-tag
-            [value]="ministry()!.isActive ? '활성' : '비활성'"
-            [severity]="ministry()!.isActive ? 'success' : 'secondary'"
+
+        @if (ministry()!.imageUrl) {
+          <img
+            [src]="ministry()!.imageUrl"
+            [alt]="ministry()!.title"
+            class="h-44 w-full rounded-lg object-cover"
           />
-        </div>
-        <div>
-          <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">짧은 설명</p>
-          <p class="text-gray-700">{{ ministry()!.shortDescription }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">팀장</p>
-          <p class="text-gray-700">{{ ministry()!.leader?.fullName ?? '—' }}</p>
-        </div>
-        @if (ministry()!.longDescription) {
-          <div class="col-span-2">
-            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">긴 설명</p>
-            <p class="text-gray-700 whitespace-pre-wrap">{{ ministry()!.longDescription }}</p>
+        } @else {
+          <div class="flex h-44 items-center justify-center rounded-lg bg-gray-100 text-gray-400">
+            <i class="pi pi-image text-3xl"></i>
           </div>
         }
       </div>
     </p-card>
+
+    <div class="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <!-- Requirements -->
+      <p-card>
+        <h2 class="mb-3 text-base font-semibold text-gray-700">지원 자격</h2>
+        @if (ministry()!.requirements.length) {
+          <ul class="flex list-disc flex-col gap-2 pl-5 text-sm text-gray-700">
+            @for (requirement of ministry()!.requirements; track $index) {
+              <li>{{ requirement }}</li>
+            }
+          </ul>
+        } @else {
+          <p class="text-sm text-gray-400">등록된 지원 자격이 없습니다.</p>
+        }
+      </p-card>
+
+      <!-- Schedules -->
+      <p-card>
+        <h2 class="mb-3 text-base font-semibold text-gray-700">사역 일정</h2>
+        @if (ministry()!.schedules.length) {
+          <div class="flex flex-col gap-3">
+            @for (schedule of ministry()!.schedules; track $index) {
+              <div>
+                <p class="text-sm font-medium text-gray-700">{{ schedule.description }}</p>
+                <p class="text-xs text-gray-500">{{ schedule.startTime }} – {{ schedule.endTime }}</p>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-sm text-gray-400">등록된 일정이 없습니다.</p>
+        }
+      </p-card>
+
+      <!-- Contacts -->
+      <p-card>
+        <h2 class="mb-3 text-base font-semibold text-gray-700">연락처</h2>
+        @if (ministry()!.contacts.length) {
+          <div class="flex flex-col gap-3">
+            @for (contact of ministry()!.contacts; track $index) {
+              <div>
+                <p class="text-xs text-gray-400">{{ contact.role }}</p>
+                <p class="text-sm font-medium text-gray-700">{{ contact.name }}</p>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-sm text-gray-400">등록된 연락처가 없습니다.</p>
+        }
+      </p-card>
+    </div>
 
     <!-- Active members -->
     <h2 class="text-lg font-semibold text-gray-700 mb-4">현재 활동 회원</h2>
