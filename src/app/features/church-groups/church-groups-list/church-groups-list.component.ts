@@ -16,10 +16,10 @@ import { MemberSummary, ChurchGroupSummary } from '../../../core/models/member.m
   imports: [],
   templateUrl: './church-groups-list.component.html',
   styles: [`
-    .cg-table { border-collapse: collapse; font-size: 11px; table-layout: fixed; }
+    .cg-table { border-collapse: collapse; font-size: 14px; table-layout: fixed; width: 100%; }
     .cg-table th, .cg-table td {
       border: 1px solid #e5e7eb;
-      padding: 2px 6px;
+      padding: 5px 8px;
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
@@ -27,9 +27,9 @@ import { MemberSummary, ChurchGroupSummary } from '../../../core/models/member.m
     }
     .cg-table th { background: #f9fafb; font-weight: 700; }
     .cg-corner { background: #fff; }
-    .cg-group, .cg-leader, .cg-cell, .cg-newcomers-head { width: 90px; }
-    .cg-idx-label, .cg-idx-cell { width: 36px; }
-    .cg-cell { text-align: left; height: 24px; }
+    .cg-group, .cg-leader, .cg-cell, .cg-newcomers-head { width: 6%; }
+    .cg-idx-label, .cg-idx-cell { width: 2.5%; }
+    .cg-cell { text-align: left; height: 34px; }
     .cg-center { text-align: center; }
     .cg-empty { background: #fafafa; }
   `],
