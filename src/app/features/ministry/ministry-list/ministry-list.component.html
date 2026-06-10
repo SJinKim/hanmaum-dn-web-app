@@ -29,9 +29,9 @@
   >
     <ng-template pTemplate="header">
       <tr>
-        <th>부서명</th>
-        <th>짧은 설명</th>
-        <th>팀장</th>
+        <th>사역 제목</th>
+        <th>부제목</th>
+        <th>연락처</th>
         <th>상태</th>
         <th class="w-28">관리</th>
       </tr>
@@ -39,9 +39,19 @@
 
     <ng-template pTemplate="body" let-ministry>
       <tr class="cursor-pointer" (click)="goToDetail(ministry)">
-        <td class="font-medium">{{ ministry.name }}</td>
-        <td class="text-gray-500">{{ ministry.shortDescription }}</td>
-        <td class="text-gray-500">{{ ministry.leaderName ?? '—' }}</td>
+        <td class="font-medium">{{ ministry.title }}</td>
+        <td class="text-gray-500">{{ ministry.subtitle }}</td>
+        <td class="text-gray-500">
+          @if (ministry.contacts.length) {
+            <div class="flex flex-col gap-1">
+              @for (contact of ministry.contacts; track $index) {
+                <span>{{ contact.role }}: {{ contact.name }}</span>
+              }
+            </div>
+          } @else {
+            —
+          }
+        </td>
         <td>
           <p-tag
             [value]="ministry.isActive ? '활성' : '비활성'"
@@ -49,7 +59,7 @@
           />
         </td>
         <td>
-          <div class="flex gap-1" (click)="$event.stopPropagation()">
+          <div class="flex gap-1">
             <p-button
               icon="pi pi-pencil"
               severity="info"

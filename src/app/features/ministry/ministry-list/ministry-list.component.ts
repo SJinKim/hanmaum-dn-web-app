@@ -84,7 +84,7 @@ export class MinistryListComponent implements OnInit {
     event.stopPropagation();
     this.confirmService.confirm({
       target: event.target as EventTarget,
-      message: `'${m.name}' 부서를 비활성화하시겠습니까?`,
+      message: `'${m.title}' 부서를 비활성화하시겠습니까?`,
       header: '부서 비활성화',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: '비활성화',
