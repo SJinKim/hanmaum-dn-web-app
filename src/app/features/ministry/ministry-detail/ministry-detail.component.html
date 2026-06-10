@@ -55,28 +55,31 @@
         <tr>
           <th>회원명</th>
           <th>시작일</th>
-          <th>메모</th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-m>
         <tr>
           <td>
-            <p-button
-              [label]="m.fullName"
-              [text]="true"
-              size="small"
-              (onClick)="goToMember(m.publicId)"
-            />
+            <div class="flex items-center gap-1">
+              @if (m.gender === 'M') {
+                <span class="text-blue-400 text-sm leading-none">♂</span>
+              } @else if (m.gender === 'F') {
+                <span class="text-pink-400 text-sm leading-none">♀</span>
+              }
+              <button
+                class="text-black hover:underline cursor-pointer bg-transparent border-none p-0 font-medium text-sm"
+                (click)="goToMember(m.publicId)"
+              >{{ m.fullName }}</button>
+            </div>
           </td>
           <td class="text-gray-500">{{ formatStartDate(m.startDate) }}</td>
-          <td class="text-gray-500">{{ m.note ?? '—' }}</td>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="3" class="text-center py-8 text-gray-400">
+          <td colspan="2" class="text-center py-8 text-gray-400">
             현재 활동 중인 회원이 없습니다.
           </td>
         </tr>
