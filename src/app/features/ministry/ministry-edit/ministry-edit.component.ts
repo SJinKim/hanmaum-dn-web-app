@@ -9,12 +9,14 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { CheckboxModule } from 'primeng/checkbox';
+import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { MinistryService } from '../ministry.service';
 import { Ministry } from '../ministry.model';
+import { MemberService } from '../../members/member.service';
 
 @Component({
   selector: 'app-ministry-edit',
@@ -27,6 +29,7 @@ import { Ministry } from '../ministry.model';
     InputTextModule,
     TextareaModule,
     CheckboxModule,
+    SelectModule,
     ToastModule,
     ProgressSpinnerModule,
   ],
@@ -35,6 +38,7 @@ import { Ministry } from '../ministry.model';
 })
 export class MinistryEditComponent implements OnInit {
   private readonly ministryService = inject(MinistryService);
+  private readonly memberService   = inject(MemberService);
   private readonly route           = inject(ActivatedRoute);
   private readonly router          = inject(Router);
   private readonly messageService  = inject(MessageService);
@@ -44,12 +48,14 @@ export class MinistryEditComponent implements OnInit {
   loading  = signal(false);
   saving   = signal(false);
 
+  memberOptions = signal<{ value: string; label: string }[]>([]);
+
   form = {
     name:             '',
     shortDescription: '',
     longDescription:  '',
     imageUrl:         '',
-    leaderPublicId:   '',
+    leaderPublicId:   null as string | null,
     isActive:         true,
   };
 
@@ -58,6 +64,16 @@ export class MinistryEditComponent implements OnInit {
   ngOnInit(): void {
     this.publicId = this.route.snapshot.paramMap.get('publicId') ?? '';
     this.isEdit   = !!this.publicId;
+
+    this.memberService.getMembers({ size: 500 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: page => {
+          this.memberOptions.set(
+            page.content.map(m => ({ value: m.publicId, label: `${m.lastName}${m.firstName}` }))
+          );
+        },
+      });
 
     if (this.isEdit) {
       this.loading.set(true);
@@ -76,7 +92,7 @@ export class MinistryEditComponent implements OnInit {
     this.form.shortDescription = m.shortDescription;
     this.form.longDescription  = m.longDescription ?? '';
     this.form.imageUrl         = m.imageUrl ?? '';
-    this.form.leaderPublicId   = m.leader?.publicId ?? '';
+    this.form.leaderPublicId   = m.leader?.publicId ?? null;
     this.form.isActive         = m.isActive;
   }
 
@@ -96,7 +112,7 @@ export class MinistryEditComponent implements OnInit {
       };
       if (this.form.longDescription.trim()) req['longDescription'] = this.form.longDescription.trim();
       if (this.form.imageUrl.trim())        req['imageUrl']        = this.form.imageUrl.trim();
-      if (this.form.leaderPublicId.trim())  req['leaderPublicId']  = this.form.leaderPublicId.trim();
+      if (this.form.leaderPublicId)         req['leaderPublicId']  = this.form.leaderPublicId;
 
       this.ministryService.updateMinistry(this.publicId, req).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
@@ -115,7 +131,7 @@ export class MinistryEditComponent implements OnInit {
       };
       if (this.form.longDescription.trim()) req['longDescription'] = this.form.longDescription.trim();
       if (this.form.imageUrl.trim())        req['imageUrl']        = this.form.imageUrl.trim();
-      if (this.form.leaderPublicId.trim())  req['leaderPublicId']  = this.form.leaderPublicId.trim();
+      if (this.form.leaderPublicId)         req['leaderPublicId']  = this.form.leaderPublicId;
 
       this.ministryService.createMinistry(req as never).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: m => {
