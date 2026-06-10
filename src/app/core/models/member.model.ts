@@ -10,6 +10,7 @@ export interface MemberSummary {
   baptism: Baptism | null;
   groupPublicId?: string | null;
   groupName: string | null;
+  churchRole?: string | null;
   role?: 'ADMIN' | 'MEMBER';
   updatedAt?: string;
   /** Latest completed training name (highest sort order), or null. */

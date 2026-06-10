@@ -51,7 +51,7 @@ export class ChurchGroupsListComponent implements OnInit {
   );
 
   readonly columnDefs = computed<(ColDef | ColGroupDef)[]>(() =>
-    this.buildColumnDefs(this.groups()),
+    this.buildColumnDefs(this.groups(), this.members()),
   );
 
   readonly filterCategories = FILTER_CATEGORIES;
@@ -59,7 +59,8 @@ export class ChurchGroupsListComponent implements OnInit {
 
   readonly gridOptions: GridOptions = {
     rowHeight: 36,
-    headerHeight: 40,
+    headerHeight: 32,
+    groupHeaderHeight: 32,
     suppressMovableColumns: true,
     suppressCellFocus: true,
     domLayout: 'autoHeight',
@@ -127,24 +128,51 @@ export class ChurchGroupsListComponent implements OnInit {
     };
   }
 
-  private buildColumnDefs(groups: ChurchGroupSummary[]): (ColDef | ColGroupDef)[] {
+  private buildColumnDefs(groups: ChurchGroupSummary[], members: MemberSummary[]): (ColDef | ColGroupDef)[] {
+    const leaderOf = (groupPublicId: string): string => {
+      const m = members.find(m => m.groupPublicId === groupPublicId && m.churchRole === '순장');
+      return m ? m.lastName + m.firstName : '';
+    };
+
+    const indexCol: ColGroupDef = {
+      headerName: '',
+      children: [{
+        headerName: '순',
+        children: [{
+          headerName: '순장',
+          width: 50,
+          valueGetter: params => (params.node?.rowIndex ?? 0) + 1,
+          cellStyle: { textAlign: 'center', fontSize: '11px' },
+          sortable: false,
+          filter: false,
+          resizable: false,
+        }],
+      }],
+    };
+
     const byDivision = new Map<string, ChurchGroupSummary[]>();
     for (const g of groups) {
       const div = g.division ?? '';
       if (!byDivision.has(div)) byDivision.set(div, []);
       byDivision.get(div)!.push(g);
     }
-    return Array.from(byDivision.entries()).map(([div, divGroups]) => ({
+
+    const divisionCols: ColGroupDef[] = Array.from(byDivision.entries()).map(([div, divGroups]) => ({
       headerName: div,
       children: divGroups.map(g => ({
         headerName: g.name,
-        field: `grp_${g.publicId}`,
-        width: 100,
-        cellRenderer: GroupMemberCellComponent,
-        sortable: false,
-        filter: false,
-        resizable: false,
+        children: [{
+          headerName: leaderOf(g.publicId),
+          field: `grp_${g.publicId}`,
+          width: 100,
+          cellRenderer: GroupMemberCellComponent,
+          sortable: false,
+          filter: false,
+          resizable: false,
+        }],
       })),
     }));
+
+    return [indexCol, ...divisionCols];
   }
 }
