@@ -45,9 +45,24 @@ export interface MatrixCell {
   oneOnOneSignupFilled: boolean;
 }
 
-export type MatrixRow = Record<string, MatrixCell | null>;
+export interface GroupColumn {
+  publicId: string;
+  division: string | null;
+  name: string;
+  leader: string;
+  members: MatrixCell[];
+}
 
-export const NEWCOMERS_KEY = 'grp_newcomers';
+export interface DivisionGroup {
+  division: string;
+  groups: GroupColumn[];
+}
+
+export interface ChurchGroupMatrix {
+  divisions: DivisionGroup[];
+  newcomers: MatrixCell[];
+  rowCount: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ChurchGroupsService {
@@ -79,40 +94,60 @@ export class ChurchGroupsService {
     return 'DEFAULT';
   }
 
-  buildMatrix(members: MemberSummary[], groups: ChurchGroupSummary[]): MatrixRow[] {
-    const groupMap = new Map<string, MatrixCell[]>();
-    for (const g of groups) groupMap.set(g.publicId, []);
+  buildMatrix(members: MemberSummary[], groups: ChurchGroupSummary[]): ChurchGroupMatrix {
+    const toCell = (m: MemberSummary): MatrixCell => ({
+      publicId: m.publicId,
+      displayName: m.lastName + m.firstName,
+      category: this.computeCategory(m),
+      isNextGroupLeader: m.isNextGroupLeader ?? false,
+      oneOnOneSignupFilled: m.oneOnOneSignupFilled ?? false,
+    });
+
+    const leaderOf = (groupPublicId: string): string => {
+      const leader = members.find(
+        m => m.groupPublicId === groupPublicId && m.churchRole === '순장',
+      );
+      return leader ? leader.lastName + leader.firstName : '';
+    };
+
+    const columns = new Map<string, GroupColumn>();
+    for (const g of groups) {
+      columns.set(g.publicId, {
+        publicId: g.publicId,
+        division: g.division,
+        name: g.name,
+        leader: leaderOf(g.publicId),
+        members: [],
+      });
+    }
 
     const newcomers: MatrixCell[] = [];
-
     for (const m of members) {
-      const cell: MatrixCell = {
-        publicId: m.publicId,
-        displayName: m.lastName + m.firstName,
-        category: this.computeCategory(m),
-        isNextGroupLeader: m.isNextGroupLeader ?? false,
-        oneOnOneSignupFilled: m.oneOnOneSignupFilled ?? false,
-      };
-      if (m.groupPublicId && groupMap.has(m.groupPublicId)) {
-        groupMap.get(m.groupPublicId)!.push(cell);
+      const cell = toCell(m);
+      if (m.groupPublicId && columns.has(m.groupPublicId)) {
+        columns.get(m.groupPublicId)!.members.push(cell);
       } else {
         newcomers.push(cell);
       }
     }
 
-    const groupMaxLen = Math.max(0, ...Array.from(groupMap.values()).map(a => a.length));
-    const totalRows = Math.max(groupMaxLen, newcomers.length);
-
-    const rows: MatrixRow[] = [];
-    for (let i = 0; i < totalRows; i++) {
-      const row: MatrixRow = {};
-      for (const [pubId, cells] of groupMap) {
-        row[`grp_${pubId}`] = cells[i] ?? null;
+    const divisions: DivisionGroup[] = [];
+    const divIndex = new Map<string, DivisionGroup>();
+    for (const col of columns.values()) {
+      const key = col.division ?? '';
+      let group = divIndex.get(key);
+      if (!group) {
+        group = { division: key, groups: [] };
+        divIndex.set(key, group);
+        divisions.push(group);
       }
-      row[NEWCOMERS_KEY] = newcomers[i] ?? null;
-      rows.push(row);
+      group.groups.push(col);
     }
-    return rows;
+
+    const columnLengths = Array.from(columns.values()).map(c => c.members.length);
+    const rowCount = Math.max(0, ...columnLengths, newcomers.length);
+
+    return { divisions, newcomers, rowCount };
   }
 
   patchMemberFlags(

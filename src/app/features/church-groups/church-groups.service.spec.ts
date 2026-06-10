@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ChurchGroupsService, NEWCOMERS_KEY } from './church-groups.service';
+import { ChurchGroupsService } from './church-groups.service';
 import { MemberSummary, ChurchGroupSummary } from '../../core/models/member.model';
 
 function makeMember(overrides: Partial<MemberSummary> = {}): MemberSummary {
@@ -87,43 +87,73 @@ describe('ChurchGroupsService', () => {
   describe('buildMatrix', () => {
     const group1: ChurchGroupSummary = { publicId: 'g1', division: '느헤미야', name: '믿음' };
     const group2: ChurchGroupSummary = { publicId: 'g2', division: '느헤미야', name: '소망' };
+    const group3: ChurchGroupSummary = { publicId: 'g3', division: '다니엘', name: '온유' };
 
-    it('returns empty array when no members', () => {
-      const rows = service.buildMatrix([], [group1]);
-      expect(rows).toEqual([]);
+    it('returns rowCount 0 and empty newcomers when no members', () => {
+      const m = service.buildMatrix([], [group1]);
+      expect(m.rowCount).toBe(0);
+      expect(m.newcomers).toEqual([]);
+      expect(m.divisions.length).toBe(1);
+      expect(m.divisions[0].groups[0].members).toEqual([]);
     });
 
-    it('places members in correct group column', () => {
-      const m = makeMember({ groupPublicId: 'g1' });
-      const rows = service.buildMatrix([m], [group1, group2]);
-      expect(rows.length).toBe(1);
-      expect(rows[0]['grp_g1']).toBeTruthy();
-      expect(rows[0]['grp_g2']).toBeNull();
+    it('groups columns by division in stable order', () => {
+      const m = service.buildMatrix([], [group1, group2, group3]);
+      expect(m.divisions.map(d => d.division)).toEqual(['느헤미야', '다니엘']);
+      expect(m.divisions[0].groups.map(g => g.name)).toEqual(['믿음', '소망']);
+      expect(m.divisions[1].groups.map(g => g.name)).toEqual(['온유']);
     });
 
-    it('row count equals the largest group size', () => {
+    it('places members in the correct group column', () => {
+      const member = makeMember({ groupPublicId: 'g1' });
+      const m = service.buildMatrix([member], [group1, group2]);
+      expect(m.divisions[0].groups[0].members.length).toBe(1);
+      expect(m.divisions[0].groups[1].members.length).toBe(0);
+    });
+
+    it('rowCount equals the largest column size', () => {
       const members = [
         makeMember({ publicId: 'a', groupPublicId: 'g1' }),
         makeMember({ publicId: 'b', groupPublicId: 'g1' }),
         makeMember({ publicId: 'c', groupPublicId: 'g2' }),
       ];
-      const rows = service.buildMatrix(members, [group1, group2]);
-      expect(rows.length).toBe(2);
-      expect(rows[1]['grp_g2']).toBeNull();
+      const m = service.buildMatrix(members, [group1, group2]);
+      expect(m.rowCount).toBe(2);
     });
 
-    it('places members with no groupPublicId in the newcomers column', () => {
-      const m = makeMember({ groupPublicId: null });
-      const rows = service.buildMatrix([m], [group1]);
-      expect(rows.length).toBe(1);
-      expect(rows[0][NEWCOMERS_KEY]).toBeTruthy();
-      expect(rows[0]['grp_g1']).toBeNull();
+    it('rowCount accounts for the newcomers column', () => {
+      const members = [
+        makeMember({ publicId: 'a', groupPublicId: null }),
+        makeMember({ publicId: 'b', groupPublicId: null }),
+      ];
+      const m = service.buildMatrix(members, [group1]);
+      expect(m.rowCount).toBe(2);
+      expect(m.newcomers.length).toBe(2);
+    });
+
+    it('places members with no groupPublicId in newcomers', () => {
+      const member = makeMember({ groupPublicId: null });
+      const m = service.buildMatrix([member], [group1]);
+      expect(m.newcomers.length).toBe(1);
+      expect(m.divisions[0].groups[0].members.length).toBe(0);
+    });
+
+    it('resolves the 순장 leader name for a group', () => {
+      const leader = makeMember({ publicId: 'L', groupPublicId: 'g1', lastName: '서', firstName: '준', churchRole: '순장' });
+      const m = service.buildMatrix([leader], [group1]);
+      expect(m.divisions[0].groups[0].leader).toBe('서준');
+    });
+
+    it('leader is empty string when no 순장 in the group', () => {
+      const member = makeMember({ publicId: 'x', groupPublicId: 'g1', churchRole: null });
+      const m = service.buildMatrix([member], [group1]);
+      expect(m.divisions[0].groups[0].leader).toBe('');
     });
 
     it('cell displayName is lastName+firstName', () => {
-      const m = makeMember({ publicId: 'x', groupPublicId: 'g1', lastName: '이', firstName: '영희' });
-      const rows = service.buildMatrix([m], [group1]);
-      expect(rows[0]['grp_g1']?.displayName).toBe('이영희');
+      const member = makeMember({ publicId: 'x', groupPublicId: 'g1', lastName: '이', firstName: '영희' });
+      const m = service.buildMatrix([member], [group1]);
+      expect(m.divisions[0].groups[0].members[0].displayName).toBe('이영희');
     });
   });
 });
