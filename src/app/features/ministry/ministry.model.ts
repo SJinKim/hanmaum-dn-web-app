@@ -31,6 +31,13 @@ export interface RegistrationDto {
   note: string | null;
 }
 
+export interface ActiveMinistryMemberDto {
+  publicId: string;   // member public ID
+  fullName: string;
+  startDate: string;  // 'YYYY-MM-DD'
+  note: string | null;
+}
+
 export interface CreateMinistryRequest {
   name: string;
   shortDescription: string;

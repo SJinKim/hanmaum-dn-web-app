@@ -5,6 +5,7 @@ import {
   Ministry,
   MinistrySummary,
   RegistrationDto,
+  ActiveMinistryMemberDto,
   CreateMinistryRequest,
   UpdateMinistryRequest,
 } from './ministry.model';
@@ -43,5 +44,9 @@ export class MinistryService {
 
   removeRegistration(ministryPublicId: string, regPublicId: string): Observable<void> {
     return this.api.delete(`/v1/ministries/${ministryPublicId}/registrations/${regPublicId}`);
+  }
+
+  getActiveMembers(publicId: string): Observable<ActiveMinistryMemberDto[]> {
+    return this.api.get<ActiveMinistryMemberDto[]>(`/v1/ministries/${publicId}/members`);
   }
 }
