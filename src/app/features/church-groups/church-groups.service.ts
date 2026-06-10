@@ -37,6 +37,12 @@ export const FILTER_CATEGORIES: MemberCategory[] = [
   'UNBAPTIZED',
 ];
 
+/**
+ * Left-to-right order of divisions in the matrix. Divisions not listed here
+ * keep their incoming (division-name) order and render after the listed ones.
+ */
+export const DIVISION_ORDER: readonly string[] = ['NEHEMIA', 'DANIEL'];
+
 export interface MatrixCell {
   publicId: string;
   displayName: string;
@@ -112,6 +118,9 @@ export class ChurchGroupsService {
 
     const columns = new Map<string, GroupColumn>();
     for (const g of groups) {
+      // Groups without a division (e.g. 새가족) are not real 순 columns — their
+      // members fall into the 새가족순 newcomers column below.
+      if (!g.division) continue;
       columns.set(g.publicId, {
         publicId: g.publicId,
         division: g.division,
@@ -143,6 +152,12 @@ export class ChurchGroupsService {
       }
       group.groups.push(col);
     }
+
+    const rank = (division: string): number => {
+      const i = DIVISION_ORDER.indexOf(division);
+      return i === -1 ? DIVISION_ORDER.length : i;
+    };
+    divisions.sort((a, b) => rank(a.division) - rank(b.division));
 
     const columnLengths = Array.from(columns.values()).map(c => c.members.length);
     const rowCount = Math.max(0, ...columnLengths, newcomers.length);

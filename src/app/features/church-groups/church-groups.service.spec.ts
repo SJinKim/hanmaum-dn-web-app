@@ -104,6 +104,23 @@ describe('ChurchGroupsService', () => {
       expect(m.divisions[1].groups.map(g => g.name)).toEqual(['온유']);
     });
 
+    it('orders NEHEMIA before DANIEL regardless of input order', () => {
+      const daniel: ChurchGroupSummary = { publicId: 'd1', division: 'DANIEL', name: '온유' };
+      const nehemia: ChurchGroupSummary = { publicId: 'n1', division: 'NEHEMIA', name: '믿음' };
+      const m = service.buildMatrix([], [daniel, nehemia]);
+      expect(m.divisions.map(d => d.division)).toEqual(['NEHEMIA', 'DANIEL']);
+    });
+
+    it('excludes groups with no division and folds their members into newcomers', () => {
+      const newFamily: ChurchGroupSummary = { publicId: 'nf', division: null, name: '새가족' };
+      const member = makeMember({ publicId: 'x', groupPublicId: 'nf' });
+      const m = service.buildMatrix([member], [group1, newFamily]);
+      expect(m.divisions.map(d => d.division)).toEqual(['느헤미야']);
+      expect(m.divisions.some(d => d.groups.some(g => g.name === '새가족'))).toBe(false);
+      expect(m.newcomers.length).toBe(1);
+      expect(m.newcomers[0].publicId).toBe('x');
+    });
+
     it('places members in the correct group column', () => {
       const member = makeMember({ groupPublicId: 'g1' });
       const m = service.buildMatrix([member], [group1, group2]);
