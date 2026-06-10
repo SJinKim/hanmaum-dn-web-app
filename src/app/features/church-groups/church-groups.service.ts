@@ -119,7 +119,11 @@ export class ChurchGroupsService {
     return 'DEFAULT';
   }
 
-  buildMatrix(members: MemberSummary[], groups: ChurchGroupSummary[]): ChurchGroupMatrix {
+  buildMatrix(
+    members: MemberSummary[],
+    groups: ChurchGroupSummary[],
+    newcomersLeaderName = '',
+  ): ChurchGroupMatrix {
     const toCell = (m: MemberSummary): MatrixCell => ({
       publicId: m.publicId,
       displayName: m.lastName + m.firstName,
@@ -154,7 +158,9 @@ export class ChurchGroupsService {
       const cell = toCell(m);
       if (m.groupPublicId && columns.has(m.groupPublicId)) {
         columns.get(m.groupPublicId)!.members.push(cell);
-      } else {
+      } else if (cell.displayName !== newcomersLeaderName) {
+        // The 새가족 팀장 is shown in the column header (순장 row), so they are
+        // not also listed as a newcomer cell.
         newcomers.push(cell);
       }
     }

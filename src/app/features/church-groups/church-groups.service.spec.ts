@@ -168,6 +168,13 @@ describe('ChurchGroupsService', () => {
       expect(m.divisions[0].groups[0].leader).toBe('');
     });
 
+    it('excludes the newcomers leader (팀장) from the newcomers cells', () => {
+      const leader = makeMember({ publicId: 'lead', groupPublicId: null, lastName: '정', firstName: '현우' });
+      const other = makeMember({ publicId: 'oth', groupPublicId: null, lastName: '김', firstName: '철수' });
+      const m = service.buildMatrix([leader, other], [group1], '정현우');
+      expect(m.newcomers.map(c => c.displayName)).toEqual(['김철수']);
+    });
+
     it('cell displayName is lastName+firstName', () => {
       const member = makeMember({ publicId: 'x', groupPublicId: 'g1', lastName: '이', firstName: '영희' });
       const m = service.buildMatrix([member], [group1]);

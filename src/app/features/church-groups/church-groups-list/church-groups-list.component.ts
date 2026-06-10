@@ -45,7 +45,7 @@ export class ChurchGroupsListComponent implements OnInit {
   private groups = signal<ChurchGroupSummary[]>([]);
 
   readonly matrix = computed<ChurchGroupMatrix>(() =>
-    this.service.buildMatrix(this.members(), this.groups()),
+    this.service.buildMatrix(this.members(), this.groups(), this.newcomersLeader()),
   );
 
   readonly rowIndices = computed<number[]>(() =>
