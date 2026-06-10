@@ -52,8 +52,9 @@
 
         <div class="grid grid-cols-2 gap-4 mb-6">
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Last Name <span class="text-red-500">*</span></label>
+            <label for="memberLastName" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Last Name <span class="text-red-500">*</span></label>
             <input
+              id="memberLastName"
               pInputText
               formControlName="lastName"
               placeholder="Last name"
@@ -66,8 +67,9 @@
           </div>
 
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">First Name <span class="text-red-500">*</span></label>
+            <label for="memberFirstName" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">First Name <span class="text-red-500">*</span></label>
             <input
+              id="memberFirstName"
               pInputText
               formControlName="firstName"
               placeholder="First name"
@@ -81,23 +83,23 @@
 
           @if (isEdit()) {
             <div class="flex flex-col gap-1">
-              <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Discriminator</label>
-              <input pInputText formControlName="discriminator" placeholder="e.g. 1남" class="w-full text-[13px]" />
+              <label for="memberDiscriminator" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Discriminator</label>
+              <input id="memberDiscriminator" pInputText formControlName="discriminator" placeholder="e.g. 1남" class="w-full text-[13px]" />
             </div>
           }
 
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Gender</label>
-            <p-select formControlName="gender" [options]="genderOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+            <label for="memberGender" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Gender</label>
+            <p-select inputId="memberGender" formControlName="gender" [options]="genderOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
           </div>
 
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Date of Birth</label>
-            <p-datepicker formControlName="birthDate" dateFormat="yy-mm-dd" placeholder="YYYY-MM-DD" [showIcon]="true" class="w-full" />
+            <label for="memberBirthDate" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Date of Birth</label>
+            <p-datepicker inputId="memberBirthDate" formControlName="birthDate" dateFormat="yy-mm-dd" placeholder="YYYY-MM-DD" [showIcon]="true" class="w-full" />
           </div>
 
           <div class="flex flex-col gap-1 col-span-2">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Phone</label>
+            <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Phone</span>
             <div class="flex items-center gap-2">
               <p-select
                 formControlName="phoneCountry"
@@ -120,8 +122,9 @@
           </div>
 
           <div class="flex flex-col gap-1 col-span-2">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Email</label>
+            <label for="memberEmail" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Email</label>
             <input
+              id="memberEmail"
               pInputText
               formControlName="email"
               type="email"
@@ -140,26 +143,26 @@
 
         <div class="grid grid-cols-2 gap-4 mb-6">
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Baptism</label>
-            <p-select formControlName="baptism" [options]="baptismOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+            <label for="memberBaptism" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Baptism</label>
+            <p-select inputId="memberBaptism" formControlName="baptism" [options]="baptismOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
           </div>
 
           @if (isEdit()) {
             <div class="flex flex-col gap-1">
-              <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Church Group</label>
-              <p-select formControlName="groupPublicId" [options]="groupOptions()" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" class="w-full" />
+              <label for="memberChurchGroup" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Church Group</label>
+              <p-select inputId="memberChurchGroup" formControlName="groupPublicId" [options]="groupOptions()" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" class="w-full" />
             </div>
           }
 
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Registration Date</label>
-            <p-datepicker formControlName="registrationDate" dateFormat="yy-mm-dd" placeholder="YYYY-MM-DD" [showIcon]="true" class="w-full" />
+            <label for="memberRegistrationDate" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Registration Date</label>
+            <p-datepicker inputId="memberRegistrationDate" formControlName="registrationDate" dateFormat="yy-mm-dd" placeholder="YYYY-MM-DD" [showIcon]="true" class="w-full" />
           </div>
 
           @if (isEdit()) {
             <div class="flex flex-col gap-1">
-              <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Status</label>
-              <p-select formControlName="memberStatus" [options]="statusOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+              <label for="memberStatus" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Status</label>
+              <p-select inputId="memberStatus" formControlName="memberStatus" [options]="statusOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
             </div>
           }
         </div>
@@ -169,20 +172,20 @@
 
         <div class="grid grid-cols-2 gap-4">
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Street</label>
-            <input pInputText formControlName="street" placeholder="Street name" class="w-full text-[13px]" />
+            <label for="memberStreet" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Street</label>
+            <input id="memberStreet" pInputText formControlName="street" placeholder="Street name" class="w-full text-[13px]" />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Street No.</label>
-            <input pInputText formControlName="houseNumber" placeholder="Nr." class="w-full text-[13px]" />
+            <label for="memberHouseNumber" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Street No.</label>
+            <input id="memberHouseNumber" pInputText formControlName="houseNumber" placeholder="Nr." class="w-full text-[13px]" />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Zip Code</label>
-            <input pInputText formControlName="zipCode" placeholder="00000" class="w-full text-[13px]" />
+            <label for="memberZipCode" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Zip Code</label>
+            <input id="memberZipCode" pInputText formControlName="zipCode" placeholder="00000" class="w-full text-[13px]" />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-[11px] font-semibold text-secondary uppercase tracking-widest">City</label>
-            <input pInputText formControlName="city" placeholder="City" class="w-full text-[13px]" />
+            <label for="memberCity" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">City</label>
+            <input id="memberCity" pInputText formControlName="city" placeholder="City" class="w-full text-[13px]" />
           </div>
         </div>
 
@@ -208,8 +211,8 @@
             <div [formGroupName]="i" class="date-select-compact flex flex-col gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
               <div class="flex items-end gap-2">
                 <div class="flex flex-col gap-1 flex-1">
-                  <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Training</label>
-                  <p-select formControlName="type" [options]="availableTrainingOptions(i)" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+                  <label [for]="'memberTrainingType-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Training</label>
+                  <p-select [inputId]="'memberTrainingType-' + i" formControlName="type" [options]="availableTrainingOptions(i)" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
                 </div>
                 <button
                   type="button"
@@ -226,7 +229,7 @@
                   <span class="pb-1.5 text-[12px] font-semibold text-secondary">In progress</span>
                 } @else {
                   <div class="flex flex-col gap-1">
-                    <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Completed in</label>
+                    <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Completed in</span>
                     <div class="flex items-center gap-1">
                       <p-select formControlName="month" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
                       <p-select formControlName="year" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
@@ -234,8 +237,8 @@
                   </div>
                 }
 
-                <label class="flex items-center gap-1 pb-1.5 ml-auto cursor-pointer">
-                  <p-checkbox formControlName="inProgress" [binary]="true" (onChange)="onTrainingInProgressChange(i)" />
+                <label [for]="'memberTrainingInProgress-' + i" class="flex items-center gap-1 pb-1.5 ml-auto cursor-pointer">
+                  <p-checkbox [inputId]="'memberTrainingInProgress-' + i" formControlName="inProgress" [binary]="true" (onChange)="onTrainingInProgressChange(i)" />
                   <span class="text-[11px] font-semibold text-secondary">In progress</span>
                 </label>
               </div>
@@ -273,8 +276,8 @@
             <div [formGroupName]="i" class="date-select-compact flex flex-col gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
               <div class="flex items-end gap-2">
                 <div class="flex flex-col gap-1 flex-1">
-                  <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Ministry</label>
-                  <p-select formControlName="ministryPublicId" [options]="ministryOptions()" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+                  <label [for]="'memberMinistry-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Ministry</label>
+                  <p-select [inputId]="'memberMinistry-' + i" formControlName="ministryPublicId" [options]="ministryOptions()" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
                 </div>
                 <button type="button" (click)="removeMinistry(i)" aria-label="Remove ministry"
                   class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-tertiary hover:text-red-500 hover:border-red-300 transition-colors">
@@ -284,7 +287,7 @@
 
               <div class="flex items-end gap-3 flex-wrap">
                 <div class="flex flex-col gap-1">
-                  <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">From</label>
+                  <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">From</span>
                   <div class="flex items-center gap-1">
                     <p-select formControlName="startMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
                     <p-select formControlName="startYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
@@ -293,7 +296,7 @@
 
                 @if (!group.get('ongoing')!.value) {
                   <div class="flex flex-col gap-1">
-                    <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">To</label>
+                    <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">To</span>
                     <div class="flex items-center gap-1">
                       <p-select formControlName="endMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
                       <p-select formControlName="endYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
@@ -301,15 +304,15 @@
                   </div>
                 }
 
-                <label class="flex items-center gap-1 pb-1.5 ml-auto cursor-pointer">
-                  <p-checkbox formControlName="ongoing" [binary]="true" (onChange)="onMinistryOngoingChange(i)" />
+                <label [for]="'memberMinistryOngoing-' + i" class="flex items-center gap-1 pb-1.5 ml-auto cursor-pointer">
+                  <p-checkbox [inputId]="'memberMinistryOngoing-' + i" formControlName="ongoing" [binary]="true" (onChange)="onMinistryOngoingChange(i)" />
                   <span class="text-[11px] font-semibold text-secondary">Ongoing</span>
                 </label>
               </div>
 
               <div class="flex flex-col gap-1">
-                <label class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Note</label>
-                <input pInputText formControlName="note" maxlength="500" placeholder="Optional" class="w-full text-[13px]" />
+                <label [for]="'memberMinistryNote-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Note</label>
+                <input [id]="'memberMinistryNote-' + i" pInputText formControlName="note" maxlength="500" placeholder="Optional" class="w-full text-[13px]" />
               </div>
             </div>
           }

@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ChartModule } from 'primeng/chart';
+import { ChartData, ChartOptions } from 'chart.js';
 import { MemberService } from '../members/member.service';
 import { MemberSummary, MemberStatus } from '../../core/models/member.model';
 import { MinistryService } from '../ministry/ministry.service';
@@ -38,8 +39,8 @@ export class HomeComponent implements OnInit {
 
   readonly statCards = signal<StatCard[]>([]);
 
-  chartData: any;
-  chartOptions: any;
+  chartData: ChartData<'line'>;
+  chartOptions: ChartOptions<'line'>;
 
   constructor() {
     const primary   = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim()   || '#2B3A67';
