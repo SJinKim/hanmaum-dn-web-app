@@ -93,9 +93,13 @@
           <div class="font-medium text-gray-800">{{ formatPhone(member()!.phoneNumber) }}</div>
         </div>
 
-        <div class="col-span-2">
+        <div>
           <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Street</div>
           <div class="font-medium text-gray-800">{{ member()!.street ?? '—' }}</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Street No.</div>
+          <div class="font-medium text-gray-800">{{ member()!.houseNumber ?? '—' }}</div>
         </div>
         <div>
           <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Zip Code</div>
