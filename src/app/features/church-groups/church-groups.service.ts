@@ -47,6 +47,8 @@ export interface MatrixCell {
 
 export type MatrixRow = Record<string, MatrixCell | null>;
 
+export const NEWCOMERS_KEY = 'grp_newcomers';
+
 @Injectable({ providedIn: 'root' })
 export class ChurchGroupsService {
   private readonly memberService = inject(MemberService);
@@ -81,24 +83,33 @@ export class ChurchGroupsService {
     const groupMap = new Map<string, MatrixCell[]>();
     for (const g of groups) groupMap.set(g.publicId, []);
 
+    const newcomers: MatrixCell[] = [];
+
     for (const m of members) {
-      if (!m.groupPublicId || !groupMap.has(m.groupPublicId)) continue;
-      groupMap.get(m.groupPublicId)!.push({
+      const cell: MatrixCell = {
         publicId: m.publicId,
         displayName: m.lastName + m.firstName,
         category: this.computeCategory(m),
         isNextGroupLeader: m.isNextGroupLeader ?? false,
         oneOnOneSignupFilled: m.oneOnOneSignupFilled ?? false,
-      });
+      };
+      if (m.groupPublicId && groupMap.has(m.groupPublicId)) {
+        groupMap.get(m.groupPublicId)!.push(cell);
+      } else {
+        newcomers.push(cell);
+      }
     }
 
-    const maxLen = Math.max(0, ...Array.from(groupMap.values()).map(a => a.length));
+    const groupMaxLen = Math.max(0, ...Array.from(groupMap.values()).map(a => a.length));
+    const totalRows = Math.max(groupMaxLen, newcomers.length);
+
     const rows: MatrixRow[] = [];
-    for (let i = 0; i < maxLen; i++) {
+    for (let i = 0; i < totalRows; i++) {
       const row: MatrixRow = {};
       for (const [pubId, cells] of groupMap) {
         row[`grp_${pubId}`] = cells[i] ?? null;
       }
+      row[NEWCOMERS_KEY] = newcomers[i] ?? null;
       rows.push(row);
     }
     return rows;

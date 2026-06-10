@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ChurchGroupsService } from './church-groups.service';
+import { ChurchGroupsService, NEWCOMERS_KEY } from './church-groups.service';
 import { MemberSummary, ChurchGroupSummary } from '../../core/models/member.model';
 
 function makeMember(overrides: Partial<MemberSummary> = {}): MemberSummary {
@@ -112,10 +112,12 @@ describe('ChurchGroupsService', () => {
       expect(rows[1]['grp_g2']).toBeNull();
     });
 
-    it('ignores members with no groupPublicId', () => {
+    it('places members with no groupPublicId in the newcomers column', () => {
       const m = makeMember({ groupPublicId: null });
       const rows = service.buildMatrix([m], [group1]);
-      expect(rows).toEqual([]);
+      expect(rows.length).toBe(1);
+      expect(rows[0][NEWCOMERS_KEY]).toBeTruthy();
+      expect(rows[0]['grp_g1']).toBeNull();
     });
 
     it('cell displayName is lastName+firstName', () => {

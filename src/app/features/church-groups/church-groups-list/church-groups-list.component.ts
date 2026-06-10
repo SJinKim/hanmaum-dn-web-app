@@ -14,6 +14,7 @@ import {
   CATEGORY_CONFIG,
   FILTER_CATEGORIES,
   MatrixRow,
+  NEWCOMERS_KEY,
 } from '../church-groups.service';
 import { MemberSummary, ChurchGroupSummary } from '../../../core/models/member.model';
 import { GroupMemberCellComponent } from './cells/group-member-cell.component';
@@ -173,6 +174,20 @@ export class ChurchGroupsListComponent implements OnInit {
       })),
     }));
 
-    return [indexCol, ...divisionCols];
+    const newcomersCol: ColGroupDef = {
+      headerName: '새가족',
+      children: [{
+        headerName: '',
+        field: NEWCOMERS_KEY,
+        width: 80,
+        cellRenderer: GroupMemberCellComponent,
+        cellRendererParams: { centered: true },
+        sortable: false,
+        filter: false,
+        resizable: false,
+      }],
+    };
+
+    return [indexCol, ...divisionCols, newcomersCol];
   }
 }

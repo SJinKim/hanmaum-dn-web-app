@@ -19,6 +19,7 @@ interface CellContext {
     @if (cell) {
       <div
         class="member-cell"
+        [class.centered]="centered"
         [style.background-color]="bgColor"
         [style.opacity]="isVisible ? '1' : '0.15'"
         (click)="pop.toggle($event)">
@@ -44,6 +45,7 @@ interface CellContext {
   `,
   styles: [`
     :host { display: flex; align-items: stretch; height: 100%; }
+    .member-cell.centered { justify-content: center; }
     .member-cell {
       cursor: pointer;
       padding: 2px 6px;
@@ -70,14 +72,17 @@ export class GroupMemberCellComponent implements ICellRendererAngularComp {
   cell: MatrixCell | null = null;
   bgColor = '#f9fafb';
   isVisible = true;
+  centered = false;
 
   private context!: CellContext;
 
-  agInit(params: ICellRendererParams<MatrixRow, MatrixCell | null> & { context: CellContext }): void {
+  agInit(params: ICellRendererParams<MatrixRow, MatrixCell | null> & { context: CellContext; centered?: boolean }): void {
+    this.centered = !!params.centered;
     this.update(params);
   }
 
-  refresh(params: ICellRendererParams<MatrixRow, MatrixCell | null> & { context: CellContext }): boolean {
+  refresh(params: ICellRendererParams<MatrixRow, MatrixCell | null> & { context: CellContext; centered?: boolean }): boolean {
+    this.centered = !!params.centered;
     this.update(params);
     return true;
   }
