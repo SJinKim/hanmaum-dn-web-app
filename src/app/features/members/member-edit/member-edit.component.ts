@@ -247,7 +247,10 @@ export class MemberEditComponent implements OnInit {
         zipCode:          raw.zipCode || undefined,
         city:             raw.city || undefined,
         registrationDate: toIso(raw.registrationDate),
-        groupPublicId:    raw.groupPublicId || undefined,
+        // Always send the group: a chosen publicId assigns it, a blank string
+        // clears it (backend treats "" as "remove the group"). Omitting it would
+        // leave the existing group untouched, so a cleared select must send "".
+        groupPublicId:    raw.groupPublicId ?? '',
         memberStatus:     (raw.memberStatus as MemberStatus) ?? undefined,
       };
       member$ = this.memberService.updateMember(this.publicId!, req);
