@@ -119,6 +119,9 @@ export class ChurchGroupsListComponent implements OnInit {
                 ),
               );
             },
+            error: () => {
+              this.gridApi?.refreshCells({ force: true });
+            },
           });
       },
     };

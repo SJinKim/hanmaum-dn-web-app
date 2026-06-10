@@ -69,10 +69,10 @@ export class ChurchGroupsService {
         t => t.name.toLowerCase().includes(name.toLowerCase()) && t.status === status,
       );
 
-    if (has('일대일', 'IN_PROGRESS')) return 'ONE_ON_ONE_IN_PROGRESS';
-    if (has('QBS', 'COMPLETED') && member.oneOnOneSignupFilled) return 'ONE_ON_ONE_WAITING';
-    if (has('QBS', 'COMPLETED')) return 'QBS_COMPLETED';
-    if (has('제자반', 'COMPLETED')) return 'DISCIPLESHIP_COMPLETED';
+    if (has('1on1', 'IN_PROGRESS')) return 'ONE_ON_ONE_IN_PROGRESS';
+    if (has('qtbs', 'COMPLETED') && member.oneOnOneSignupFilled) return 'ONE_ON_ONE_WAITING';
+    if (has('qtbs', 'COMPLETED')) return 'QBS_COMPLETED';
+    if (has('discipleship', 'COMPLETED')) return 'DISCIPLESHIP_COMPLETED';
     if (!member.baptism || member.baptism === 'UNBAPTIZED') return 'UNBAPTIZED';
     return 'DEFAULT';
   }

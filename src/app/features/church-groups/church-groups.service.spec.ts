@@ -35,34 +35,34 @@ describe('ChurchGroupsService', () => {
     it('NEXT_LEADER overrides any training status', () => {
       const m = makeMember({
         isNextGroupLeader: true,
-        trainings: [{ name: '일대일', status: 'IN_PROGRESS' }],
+        trainings: [{ name: '1on1', status: 'IN_PROGRESS' }],
       });
       expect(service.computeCategory(m)).toBe('NEXT_LEADER');
     });
 
-    it('returns ONE_ON_ONE_IN_PROGRESS when 일대일 is IN_PROGRESS', () => {
-      const m = makeMember({ trainings: [{ name: '일대일', status: 'IN_PROGRESS' }] });
+    it('returns ONE_ON_ONE_IN_PROGRESS when 1on1 is IN_PROGRESS', () => {
+      const m = makeMember({ trainings: [{ name: '1on1', status: 'IN_PROGRESS' }] });
       expect(service.computeCategory(m)).toBe('ONE_ON_ONE_IN_PROGRESS');
     });
 
-    it('returns ONE_ON_ONE_WAITING when QBS COMPLETED and signup filled', () => {
+    it('returns ONE_ON_ONE_WAITING when QTBS COMPLETED and signup filled', () => {
       const m = makeMember({
-        trainings: [{ name: 'QBS', status: 'COMPLETED' }],
+        trainings: [{ name: 'QTBS', status: 'COMPLETED' }],
         oneOnOneSignupFilled: true,
       });
       expect(service.computeCategory(m)).toBe('ONE_ON_ONE_WAITING');
     });
 
-    it('returns QBS_COMPLETED when QBS COMPLETED but signup NOT filled', () => {
+    it('returns QBS_COMPLETED when QTBS COMPLETED but signup NOT filled', () => {
       const m = makeMember({
-        trainings: [{ name: 'QBS', status: 'COMPLETED' }],
+        trainings: [{ name: 'QTBS', status: 'COMPLETED' }],
         oneOnOneSignupFilled: false,
       });
       expect(service.computeCategory(m)).toBe('QBS_COMPLETED');
     });
 
-    it('returns DISCIPLESHIP_COMPLETED when 제자반 COMPLETED', () => {
-      const m = makeMember({ trainings: [{ name: '제자반', status: 'COMPLETED' }] });
+    it('returns DISCIPLESHIP_COMPLETED when Discipleship COMPLETED', () => {
+      const m = makeMember({ trainings: [{ name: 'Discipleship', status: 'COMPLETED' }] });
       expect(service.computeCategory(m)).toBe('DISCIPLESHIP_COMPLETED');
     });
 
@@ -78,8 +78,8 @@ describe('ChurchGroupsService', () => {
       expect(service.computeCategory(makeMember({ baptism: 'GENERAL_BAPTIZED' }))).toBe('DEFAULT');
     });
 
-    it('QBS IN_PROGRESS does not trigger QBS_COMPLETED', () => {
-      const m = makeMember({ trainings: [{ name: 'QBS', status: 'IN_PROGRESS' }] });
+    it('QTBS IN_PROGRESS does not trigger QBS_COMPLETED', () => {
+      const m = makeMember({ trainings: [{ name: 'QTBS', status: 'IN_PROGRESS' }] });
       expect(service.computeCategory(m)).not.toBe('QBS_COMPLETED');
     });
   });
