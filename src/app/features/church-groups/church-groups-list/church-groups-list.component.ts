@@ -39,6 +39,7 @@ export class ChurchGroupsListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(true);
+  readonly newcomersLeader = signal('');
 
   private members = signal<MemberSummary[]>([]);
   private groups = signal<ChurchGroupSummary[]>([]);
@@ -59,9 +60,10 @@ export class ChurchGroupsListComponent implements OnInit {
       .loadDashboardData()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ members, groups }) => {
+        next: ({ members, groups, newcomersLeader }) => {
           this.members.set(members);
           this.groups.set(groups);
+          this.newcomersLeader.set(newcomersLeader);
           this.loading.set(false);
         },
         error: () => this.loading.set(false),

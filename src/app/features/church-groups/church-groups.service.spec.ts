@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ChurchGroupsService } from './church-groups.service';
 import { MemberSummary, ChurchGroupSummary } from '../../core/models/member.model';
+import { MinistrySummary } from '../ministry/ministry.model';
 
 function makeMember(overrides: Partial<MemberSummary> = {}): MemberSummary {
   return {
@@ -171,6 +172,36 @@ describe('ChurchGroupsService', () => {
       const member = makeMember({ publicId: 'x', groupPublicId: 'g1', lastName: '이', firstName: '영희' });
       const m = service.buildMatrix([member], [group1]);
       expect(m.divisions[0].groups[0].members[0].displayName).toBe('이영희');
+    });
+  });
+
+  describe('resolveNewcomersLeader', () => {
+    function makeMinistry(overrides: Partial<MinistrySummary> = {}): MinistrySummary {
+      return {
+        publicId: 'min-1',
+        name: '선교팀',
+        shortDescription: '',
+        imageUrl: null,
+        leaderName: null,
+        isActive: true,
+        ...overrides,
+      };
+    }
+
+    it('returns the leader name of the ministry whose name contains 새가족', () => {
+      const ministries = [
+        makeMinistry({ name: '선교팀', leaderName: '김선교' }),
+        makeMinistry({ name: '새가족팀', leaderName: '정현우' }),
+      ];
+      expect(service.resolveNewcomersLeader(ministries)).toBe('정현우');
+    });
+
+    it('returns empty string when no 새가족 ministry exists', () => {
+      expect(service.resolveNewcomersLeader([makeMinistry({ name: '선교팀', leaderName: '김선교' })])).toBe('');
+    });
+
+    it('returns empty string when the 새가족 ministry has no leader', () => {
+      expect(service.resolveNewcomersLeader([makeMinistry({ name: '새가족팀', leaderName: null })])).toBe('');
     });
   });
 });

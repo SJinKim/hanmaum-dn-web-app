@@ -29,7 +29,7 @@
             @for (div of matrix().divisions; track $index) {
               <th class="cg-division" [attr.colspan]="div.groups.length">{{ div.division }}</th>
             }
-            <th class="cg-newcomers-head" rowspan="3">새가족순</th>
+            <th class="cg-newcomers-head" rowspan="2">새가족순</th>
           </tr>
           <!-- Row 2: 순 names -->
           <tr>
@@ -40,7 +40,7 @@
               }
             }
           </tr>
-          <!-- Row 3: 순장 names -->
+          <!-- Row 3: 순장 names (incl. the 새가족 ministry 팀장) -->
           <tr>
             <th class="cg-idx-label">순장</th>
             @for (div of matrix().divisions; track $index) {
@@ -48,6 +48,7 @@
                 <th class="cg-leader">{{ group.leader }}</th>
               }
             }
+            <th class="cg-leader">{{ newcomersLeader() }}</th>
           </tr>
         </thead>
         <tbody>

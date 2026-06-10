@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map } from 'rxjs';
 import { MemberService } from '../members/member.service';
+import { MinistryService } from '../ministry/ministry.service';
+import { MinistrySummary } from '../ministry/ministry.model';
 import { MemberSummary, ChurchGroupSummary } from '../../core/models/member.model';
 import { SummaryTraining } from '../../core/models/member-activity.model';
 
@@ -73,14 +75,31 @@ export interface ChurchGroupMatrix {
 @Injectable({ providedIn: 'root' })
 export class ChurchGroupsService {
   private readonly memberService = inject(MemberService);
+  private readonly ministryService = inject(MinistryService);
 
-  loadDashboardData(): Observable<{ members: MemberSummary[]; groups: ChurchGroupSummary[] }> {
+  loadDashboardData(): Observable<{
+    members: MemberSummary[];
+    groups: ChurchGroupSummary[];
+    newcomersLeader: string;
+  }> {
     return forkJoin({
       members: this.memberService
         .getMembers({ status: 'ACTIVE', size: 9999 })
         .pipe(map(p => p.content)),
       groups: this.memberService.getChurchGroups(),
-    });
+      ministries: this.ministryService.getMinistries(true),
+    }).pipe(
+      map(({ members, groups, ministries }) => ({
+        members,
+        groups,
+        newcomersLeader: this.resolveNewcomersLeader(ministries),
+      })),
+    );
+  }
+
+  /** Leader (팀장) name of the 새가족 ministry — shown atop the 새가족순 column. */
+  resolveNewcomersLeader(ministries: MinistrySummary[]): string {
+    return ministries.find(m => m.name.includes('새가족'))?.leaderName ?? '';
   }
 
   computeCategory(member: MemberSummary): MemberCategory {
