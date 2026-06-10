@@ -29,12 +29,13 @@ export class SidebarComponent {
   );
 
   readonly navItems: NavItem[] = [
-    { label: 'Home',       icon: 'pi pi-home',          route: '/'           },
-    { label: 'Members',    icon: 'pi pi-users',         route: '/members'    },
-    { label: 'Ministry',   icon: 'pi pi-sitemap',       route: '/ministry'   },
-    { label: 'Attendance',    icon: 'pi pi-check-square',   route: '/attendance'    },
-    { label: 'Announcements', icon: 'pi pi-megaphone',      route: '/announcements' },
-    { label: 'Analytics',     icon: 'pi pi-chart-bar',      route: '/analytics'     },
+    { label: 'Home',          icon: 'pi pi-home',         route: '/'             },
+    { label: 'Members',       icon: 'pi pi-users',        route: '/members'      },
+    { label: 'Ministry',      icon: 'pi pi-sitemap',      route: '/ministry'     },
+    { label: 'Attendance',    icon: 'pi pi-check-square', route: '/attendance'   },
+    { label: 'Announcements', icon: 'pi pi-megaphone',    route: '/announcements'},
+    { label: 'Church Groups', icon: 'pi pi-th-large',     route: '/church-groups'},
+    { label: 'Analytics',     icon: 'pi pi-chart-bar',    route: '/analytics'    },
   ];
 
   toggleCollapse(): void {

@@ -35,6 +35,12 @@ export const APP_ROUTES: Routes = [
         loadChildren: () =>
           import('./features/announcements/announcements.routes').then(m => m.ANNOUNCEMENTS_ROUTES),
       },
+      {
+        path: 'church-groups',
+        loadChildren: () =>
+          import('./features/church-groups/church-groups.routes')
+            .then(m => m.CHURCH_GROUPS_ROUTES),
+      },
     ],
   },
   {
