@@ -67,7 +67,10 @@
                   @if (group.members[i]; as cell) {
                     <td class="cg-cell" [class.cg-div-end]="groupLast"
                         [style.background-color]="categoryConfig[cell.category].color"
-                        [class.opacity-20]="isDimmed(cell.category)">{{ cell.displayName }}</td>
+                        [class.opacity-20]="isDimmed(cell.category)"
+                        [class.cg-candidate]="highlightModeActive() && cell.category === 'DISCIPLESHIP_COMPLETED'"
+                        [class.cg-interactive]="highlightModeActive() && cell.category === 'NEXT_LEADER'"
+                        (click)="isCellClickable(cell.category) && toggleCellHighlight(cell.publicId)">{{ cell.displayName }}</td>
                   } @else {
                     <td class="cg-cell cg-empty" [class.cg-div-end]="groupLast"></td>
                   }
@@ -76,7 +79,10 @@
               @if (matrix().newcomers[i]; as cell) {
                 <td class="cg-cell cg-center"
                     [style.background-color]="categoryConfig[cell.category].color"
-                    [class.opacity-20]="isDimmed(cell.category)">{{ cell.displayName }}</td>
+                    [class.opacity-20]="isDimmed(cell.category)"
+                    [class.cg-candidate]="highlightModeActive() && cell.category === 'DISCIPLESHIP_COMPLETED'"
+                    [class.cg-interactive]="highlightModeActive() && cell.category === 'NEXT_LEADER'"
+                    (click)="isCellClickable(cell.category) && toggleCellHighlight(cell.publicId)">{{ cell.displayName }}</td>
               } @else {
                 <td class="cg-cell cg-empty"></td>
               }
@@ -87,3 +93,9 @@
     </div>
   }
 </div>
+
+@if (patchError()) {
+  <div class="fixed bottom-4 right-4 bg-red-500 text-white text-sm px-4 py-2 rounded shadow-lg z-50">
+    저장 실패. 다시 시도해주세요.
+  </div>
+}
