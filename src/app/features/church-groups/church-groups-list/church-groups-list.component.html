@@ -9,6 +9,7 @@
       <button
         type="button"
         (click)="toggleCategory(cat)"
+        [attr.aria-pressed]="activeCategories().has(cat)"
         class="flex items-center gap-2 rounded px-1 py-0.5 transition-opacity cursor-pointer"
         [class.opacity-40]="isDimmed(cat)"
         [class.ring-1]="activeCategories().has(cat)"

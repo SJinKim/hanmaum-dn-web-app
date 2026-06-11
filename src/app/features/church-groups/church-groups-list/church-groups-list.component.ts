@@ -60,7 +60,7 @@ export class ChurchGroupsListComponent implements OnInit {
   readonly filterCategories = FILTER_CATEGORIES;
   readonly categoryConfig = CATEGORY_CONFIG;
 
-  readonly activeCategories = signal<Set<MemberCategory>>(new Set());
+  readonly activeCategories = signal<ReadonlySet<MemberCategory>>(new Set());
 
   toggleCategory(cat: MemberCategory): void {
     this.activeCategories.update(current => {
