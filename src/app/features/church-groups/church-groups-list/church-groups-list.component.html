@@ -6,12 +6,18 @@
   <!-- Legend box (above the table) -->
   <div class="inline-flex flex-col gap-1 rounded-md border border-gray-200 bg-white p-3 w-fit">
     @for (cat of filterCategories; track cat) {
-      <div class="flex items-center gap-2">
+      <button
+        type="button"
+        (click)="toggleCategory(cat)"
+        class="flex items-center gap-2 rounded px-1 py-0.5 transition-opacity cursor-pointer"
+        [class.opacity-40]="isDimmed(cat)"
+        [class.ring-1]="activeCategories().has(cat)"
+        [class.ring-gray-500]="activeCategories().has(cat)">
         <span
           class="inline-block w-4 h-4 rounded-sm border border-gray-200"
           [style.background-color]="categoryConfig[cat].color"></span>
         <span class="text-xs text-gray-700">{{ categoryConfig[cat].label }}</span>
-      </div>
+      </button>
     }
   </div>
 
@@ -27,25 +33,25 @@
           <tr>
             <th class="cg-corner"></th>
             @for (div of matrix().divisions; track $index) {
-              <th class="cg-division" [attr.colspan]="div.groups.length">{{ div.division }}</th>
+              <th class="cg-division cg-div-end" [attr.colspan]="div.groups.length">{{ div.division }}</th>
             }
             <th class="cg-newcomers-head" rowspan="2">새가족순</th>
           </tr>
           <!-- Row 2: 순 names -->
           <tr>
             <th class="cg-idx-label">순</th>
-            @for (div of matrix().divisions; track $index) {
-              @for (group of div.groups; track group.publicId) {
-                <th class="cg-group">{{ group.name }}</th>
+            @for (div of matrix().divisions; track $index; let divLast = $last) {
+              @for (group of div.groups; track group.publicId; let groupLast = $last) {
+                <th class="cg-group" [class.cg-div-end]="groupLast">{{ group.name }}</th>
               }
             }
           </tr>
           <!-- Row 3: 순장 names (incl. the 새가족 ministry 팀장) -->
           <tr>
             <th class="cg-idx-label">순장</th>
-            @for (div of matrix().divisions; track $index) {
-              @for (group of div.groups; track group.publicId) {
-                <th class="cg-leader">{{ group.leader }}</th>
+            @for (div of matrix().divisions; track $index; let divLast = $last) {
+              @for (group of div.groups; track group.publicId; let groupLast = $last) {
+                <th class="cg-leader" [class.cg-div-end]="groupLast">{{ group.leader }}</th>
               }
             }
             <th class="cg-leader">{{ newcomersLeader() }}</th>
@@ -55,17 +61,21 @@
           @for (i of rowIndices(); track i) {
             <tr>
               <td class="cg-idx-cell">{{ i + 1 }}</td>
-              @for (div of matrix().divisions; track $index) {
-                @for (group of div.groups; track group.publicId) {
+              @for (div of matrix().divisions; track $index; let divLast = $last) {
+                @for (group of div.groups; track group.publicId; let groupLast = $last) {
                   @if (group.members[i]; as cell) {
-                    <td class="cg-cell" [style.background-color]="categoryConfig[cell.category].color">{{ cell.displayName }}</td>
+                    <td class="cg-cell" [class.cg-div-end]="groupLast"
+                        [style.background-color]="categoryConfig[cell.category].color"
+                        [class.opacity-20]="isDimmed(cell.category)">{{ cell.displayName }}</td>
                   } @else {
-                    <td class="cg-cell cg-empty"></td>
+                    <td class="cg-cell cg-empty" [class.cg-div-end]="groupLast"></td>
                   }
                 }
               }
               @if (matrix().newcomers[i]; as cell) {
-                <td class="cg-cell cg-center" [style.background-color]="categoryConfig[cell.category].color">{{ cell.displayName }}</td>
+                <td class="cg-cell cg-center"
+                    [style.background-color]="categoryConfig[cell.category].color"
+                    [class.opacity-20]="isDimmed(cell.category)">{{ cell.displayName }}</td>
               } @else {
                 <td class="cg-cell cg-empty"></td>
               }
