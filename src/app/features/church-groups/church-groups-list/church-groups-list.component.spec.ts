@@ -53,5 +53,15 @@ describe('ChurchGroupsListComponent', () => {
       component.toggleCategory('NEXT_LEADER');
       expect(component.isDimmed('UNBAPTIZED')).toBeFalse();
     });
+
+    it('does not dim DISCIPLESHIP_COMPLETED when only NEXT_LEADER is active', () => {
+      component.toggleCategory('NEXT_LEADER');
+      expect(component.isDimmed('DISCIPLESHIP_COMPLETED')).toBeFalse();
+    });
+
+    it('still dims other non-NEXT_LEADER categories when NEXT_LEADER is active', () => {
+      component.toggleCategory('NEXT_LEADER');
+      expect(component.isDimmed('ONE_ON_ONE_COMPLETED')).toBeTrue();
+    });
   });
 });

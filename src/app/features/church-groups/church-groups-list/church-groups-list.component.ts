@@ -72,7 +72,9 @@ export class ChurchGroupsListComponent implements OnInit {
 
   isDimmed(cat: MemberCategory): boolean {
     const active = this.activeCategories();
-    return active.size > 0 && !active.has(cat);
+    if (active.size === 0) return false;
+    if (active.has('NEXT_LEADER') && cat === 'DISCIPLESHIP_COMPLETED') return false;
+    return !active.has(cat);
   }
 
   ngOnInit(): void {
