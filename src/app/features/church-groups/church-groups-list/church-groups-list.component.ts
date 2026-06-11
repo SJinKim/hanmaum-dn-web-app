@@ -37,6 +37,12 @@ import { MemberSummary, ChurchGroupSummary } from '../../../core/models/member.m
     .cg-table thead tr:last-child th { border-bottom: 2px solid #9ca3af; }
     .cg-table .cg-newcomers-head { border-bottom: 2px solid #9ca3af; }
     .cg-table .cg-div-end { border-right: 2px solid #000; }
+    @keyframes candidate-pulse {
+      0%, 100% { outline: 2px dashed #a855f7; outline-offset: -2px; }
+      50%       { outline-color: transparent; }
+    }
+    .cg-candidate { animation: candidate-pulse 1.5s ease-in-out infinite; cursor: pointer; }
+    .cg-interactive { cursor: pointer; }
   `],
 })
 export class ChurchGroupsListComponent implements OnInit {
