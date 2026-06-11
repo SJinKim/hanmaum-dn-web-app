@@ -52,10 +52,10 @@
             <th class="cg-idx-label">순장</th>
             @for (div of matrix().divisions; track $index; let divLast = $last) {
               @for (group of div.groups; track group.publicId; let groupLast = $last) {
-                <th class="cg-leader" [class.cg-div-end]="groupLast">{{ group.leader }}</th>
+                <th class="cg-leader" [class.cg-div-end]="groupLast" [style.background-color]="categoryConfig['DISCIPLESHIP_COMPLETED'].color">{{ group.leader }}</th>
               }
             }
-            <th class="cg-leader">{{ newcomersLeader() }}</th>
+            <th class="cg-leader" [style.background-color]="categoryConfig['DISCIPLESHIP_COMPLETED'].color">{{ newcomersLeader() }}</th>
           </tr>
         </thead>
         <tbody>
