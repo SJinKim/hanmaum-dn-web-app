@@ -7,6 +7,7 @@ import {
   CATEGORY_CONFIG,
   FILTER_CATEGORIES,
   ChurchGroupMatrix,
+  MemberCategory,
 } from '../church-groups.service';
 import { MemberSummary, ChurchGroupSummary } from '../../../core/models/member.model';
 
@@ -32,6 +33,10 @@ import { MemberSummary, ChurchGroupSummary } from '../../../core/models/member.m
     .cg-cell { text-align: left; height: 34px; }
     .cg-center { text-align: center; }
     .cg-empty { background: #fafafa; }
+    .cg-table thead tr:nth-child(2) th { border-bottom: 2px solid #9ca3af; }
+    .cg-table thead tr:last-child th { border-bottom: 2px solid #9ca3af; }
+    .cg-table .cg-newcomers-head { border-bottom: 2px solid #9ca3af; }
+    .cg-table .cg-div-end { border-right: 2px solid #000; }
   `],
 })
 export class ChurchGroupsListComponent implements OnInit {
@@ -54,6 +59,21 @@ export class ChurchGroupsListComponent implements OnInit {
 
   readonly filterCategories = FILTER_CATEGORIES;
   readonly categoryConfig = CATEGORY_CONFIG;
+
+  readonly activeCategories = signal<Set<MemberCategory>>(new Set());
+
+  toggleCategory(cat: MemberCategory): void {
+    this.activeCategories.update(current => {
+      const next = new Set(current);
+      next.has(cat) ? next.delete(cat) : next.add(cat);
+      return next;
+    });
+  }
+
+  isDimmed(cat: MemberCategory): boolean {
+    const active = this.activeCategories();
+    return active.size > 0 && !active.has(cat);
+  }
 
   ngOnInit(): void {
     this.service
