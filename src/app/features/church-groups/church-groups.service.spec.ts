@@ -67,6 +67,33 @@ describe('ChurchGroupsService', () => {
       expect(service.computeCategory(m)).toBe('DISCIPLESHIP_COMPLETED');
     });
 
+    it('DISCIPLESHIP_COMPLETED beats QBS_COMPLETED even though QTBS is also completed', () => {
+      const m = makeMember({
+        trainings: [
+          { name: 'QTBS', status: 'COMPLETED' },
+          { name: '1on1', status: 'COMPLETED' },
+          { name: 'Discipleship', status: 'COMPLETED' },
+        ],
+      });
+      expect(service.computeCategory(m)).toBe('DISCIPLESHIP_COMPLETED');
+    });
+
+    it('returns ONE_ON_ONE_COMPLETED when 1on1 is COMPLETED', () => {
+      const m = makeMember({ trainings: [{ name: '1on1', status: 'COMPLETED' }] });
+      expect(service.computeCategory(m)).toBe('ONE_ON_ONE_COMPLETED');
+    });
+
+    it('returns ONE_ON_ONE_COMPLETED when Discipleship is IN_PROGRESS (1on1 already done)', () => {
+      const m = makeMember({
+        trainings: [
+          { name: 'QTBS', status: 'COMPLETED' },
+          { name: '1on1', status: 'COMPLETED' },
+          { name: 'Discipleship', status: 'IN_PROGRESS' },
+        ],
+      });
+      expect(service.computeCategory(m)).toBe('ONE_ON_ONE_COMPLETED');
+    });
+
     it('returns UNBAPTIZED when baptism is null', () => {
       expect(service.computeCategory(makeMember({ baptism: null }))).toBe('UNBAPTIZED');
     });

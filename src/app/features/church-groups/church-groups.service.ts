@@ -8,10 +8,11 @@ import { SummaryTraining } from '../../core/models/member-activity.model';
 
 export type MemberCategory =
   | 'NEXT_LEADER'
+  | 'DISCIPLESHIP_COMPLETED'
+  | 'ONE_ON_ONE_COMPLETED'
   | 'ONE_ON_ONE_IN_PROGRESS'
   | 'ONE_ON_ONE_WAITING'
   | 'QBS_COMPLETED'
-  | 'DISCIPLESHIP_COMPLETED'
   | 'UNBAPTIZED'
   | 'DEFAULT';
 
@@ -22,20 +23,22 @@ export interface CategoryConfig {
 
 export const CATEGORY_CONFIG: Record<MemberCategory, CategoryConfig> = {
   NEXT_LEADER:            { label: '예비순장',         color: '#f9a8d4' },
+  DISCIPLESHIP_COMPLETED: { label: '제자반수료',       color: '#e9d5ff' },
+  ONE_ON_ONE_COMPLETED:   { label: '일대일수료',       color: '#99f6e4' },
   ONE_ON_ONE_IN_PROGRESS: { label: '일대일진행',       color: '#bbf7d0' },
   ONE_ON_ONE_WAITING:     { label: '일대일대기',       color: '#fef08a' },
   QBS_COMPLETED:          { label: '큐비세수료',       color: '#bae6fd' },
-  DISCIPLESHIP_COMPLETED: { label: '제자반수료',       color: '#ffffff' },
   UNBAPTIZED:             { label: '세례X / 확인대상', color: '#fed7aa' },
   DEFAULT:                { label: '',                 color: '#f9fafb' },
 };
 
 export const FILTER_CATEGORIES: MemberCategory[] = [
   'NEXT_LEADER',
+  'DISCIPLESHIP_COMPLETED',
+  'ONE_ON_ONE_COMPLETED',
   'ONE_ON_ONE_IN_PROGRESS',
   'ONE_ON_ONE_WAITING',
   'QBS_COMPLETED',
-  'DISCIPLESHIP_COMPLETED',
   'UNBAPTIZED',
 ];
 
@@ -111,10 +114,11 @@ export class ChurchGroupsService {
         t => t.name.toLowerCase().includes(name.toLowerCase()) && t.status === status,
       );
 
+    if (has('discipleship', 'COMPLETED')) return 'DISCIPLESHIP_COMPLETED';
+    if (has('1on1', 'COMPLETED')) return 'ONE_ON_ONE_COMPLETED';
     if (has('1on1', 'IN_PROGRESS')) return 'ONE_ON_ONE_IN_PROGRESS';
     if (has('qtbs', 'COMPLETED') && member.oneOnOneSignupFilled) return 'ONE_ON_ONE_WAITING';
     if (has('qtbs', 'COMPLETED')) return 'QBS_COMPLETED';
-    if (has('discipleship', 'COMPLETED')) return 'DISCIPLESHIP_COMPLETED';
     if (!member.baptism || member.baptism === 'UNBAPTIZED') return 'UNBAPTIZED';
     return 'DEFAULT';
   }
