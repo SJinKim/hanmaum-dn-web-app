@@ -1,7 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { of, throwError } from 'rxjs';
 import { ChurchGroupsListComponent } from './church-groups-list.component';
+import { ChurchGroupsService } from '../church-groups.service';
+import { MemberSummary } from '../../../core/models/member.model';
 
 describe('ChurchGroupsListComponent', () => {
   let component: ChurchGroupsListComponent;
@@ -62,6 +65,63 @@ describe('ChurchGroupsListComponent', () => {
     it('still dims other non-NEXT_LEADER categories when NEXT_LEADER is active', () => {
       component.toggleCategory('NEXT_LEADER');
       expect(component.isDimmed('ONE_ON_ONE_COMPLETED')).toBeTrue();
+    });
+  });
+
+  describe('toggleCellHighlight', () => {
+    let service: ChurchGroupsService;
+
+    const baseMember: MemberSummary = {
+      publicId: 'pub-1',
+      lastName: '김',
+      firstName: '철수',
+      email: null,
+      memberStatus: 'ACTIVE',
+      baptism: 'GENERAL_BAPTIZED',
+      groupName: null,
+      isNextGroupLeader: false,
+    };
+
+    beforeEach(() => {
+      service = TestBed.inject(ChurchGroupsService);
+      (component as any).members.set([{ ...baseMember }]);
+    });
+
+    it('flips isNextGroupLeader to true optimistically', () => {
+      spyOn(service, 'patchMemberFlags').and.returnValue(of(undefined));
+      component.toggleCellHighlight('pub-1');
+      expect((component as any).members()[0].isNextGroupLeader).toBeTrue();
+    });
+
+    it('flips isNextGroupLeader to false when already true', () => {
+      (component as any).members.set([{ ...baseMember, isNextGroupLeader: true }]);
+      spyOn(service, 'patchMemberFlags').and.returnValue(of(undefined));
+      component.toggleCellHighlight('pub-1');
+      expect((component as any).members()[0].isNextGroupLeader).toBeFalse();
+    });
+
+    it('calls patchMemberFlags with the new value', () => {
+      const spy = spyOn(service, 'patchMemberFlags').and.returnValue(of(undefined));
+      component.toggleCellHighlight('pub-1');
+      expect(spy).toHaveBeenCalledWith('pub-1', { isNextGroupLeader: true });
+    });
+
+    it('reverts isNextGroupLeader on patchMemberFlags failure', () => {
+      spyOn(service, 'patchMemberFlags').and.returnValue(throwError(() => new Error('fail')));
+      component.toggleCellHighlight('pub-1');
+      expect((component as any).members()[0].isNextGroupLeader).toBeFalse();
+    });
+
+    it('sets patchError to true on failure', () => {
+      spyOn(service, 'patchMemberFlags').and.returnValue(throwError(() => new Error('fail')));
+      component.toggleCellHighlight('pub-1');
+      expect(component.patchError()).toBeTrue();
+    });
+
+    it('does nothing when publicId is not found', () => {
+      const spy = spyOn(service, 'patchMemberFlags');
+      component.toggleCellHighlight('unknown-id');
+      expect(spy).not.toHaveBeenCalled();
     });
   });
 });

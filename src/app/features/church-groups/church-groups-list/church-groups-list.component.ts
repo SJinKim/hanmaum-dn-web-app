@@ -61,6 +61,31 @@ export class ChurchGroupsListComponent implements OnInit {
   readonly categoryConfig = CATEGORY_CONFIG;
 
   readonly activeCategories = signal<ReadonlySet<MemberCategory>>(new Set());
+  readonly patchError = signal(false);
+
+  readonly highlightModeActive = computed(() => this.activeCategories().has('NEXT_LEADER'));
+
+  isCellClickable(cat: MemberCategory): boolean {
+    return this.highlightModeActive() && (cat === 'DISCIPLESHIP_COMPLETED' || cat === 'NEXT_LEADER');
+  }
+
+  toggleCellHighlight(publicId: string): void {
+    const current = this.members();
+    const idx = current.findIndex(m => m.publicId === publicId);
+    if (idx === -1) return;
+    const newValue = !current[idx].isNextGroupLeader;
+    this.members.set(current.map((m, i) => i === idx ? { ...m, isNextGroupLeader: newValue } : m));
+
+    this.service.patchMemberFlags(publicId, { isNextGroupLeader: newValue }).subscribe({
+      error: () => {
+        this.members.update(ms =>
+          ms.map(m => m.publicId === publicId ? { ...m, isNextGroupLeader: !newValue } : m),
+        );
+        this.patchError.set(true);
+        setTimeout(() => this.patchError.set(false), 3000);
+      },
+    });
+  }
 
   toggleCategory(cat: MemberCategory): void {
     this.activeCategories.update(current => {
