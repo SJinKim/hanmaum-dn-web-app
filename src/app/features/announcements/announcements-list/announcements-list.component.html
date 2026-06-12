@@ -17,8 +17,9 @@
       </h2>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-1 sm:col-span-2">
-          <label class="text-sm text-gray-600">Title</label>
+          <label for="announcementTitle" class="text-sm text-gray-600">Title</label>
           <input
+            id="announcementTitle"
             pInputText
             type="text"
             placeholder="Announcement title"
@@ -28,8 +29,9 @@
         </div>
 
         <div class="flex flex-col gap-1 sm:col-span-2">
-          <label class="text-sm text-gray-600">Content</label>
+          <label for="announcementContent" class="text-sm text-gray-600">Content</label>
           <textarea
+            id="announcementContent"
             pTextarea
             rows="4"
             placeholder="Announcement content"
@@ -38,8 +40,9 @@
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-sm text-gray-600">Category</label>
+          <label for="announcementCategory" class="text-sm text-gray-600">Category</label>
           <p-select
+            inputId="announcementCategory"
             [options]="categoryOptions"
             optionLabel="label"
             optionValue="value"
@@ -59,8 +62,9 @@
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-sm text-gray-600">Start date</label>
+          <label for="announcementStartDate" class="text-sm text-gray-600">Start date</label>
           <p-datepicker
+            inputId="announcementStartDate"
             [(ngModel)]="formStartAt"
             [showTime]="true"
             [showIcon]="true"
@@ -70,8 +74,9 @@
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-sm text-gray-600">End date (optional)</label>
+          <label for="announcementEndDate" class="text-sm text-gray-600">End date (optional)</label>
           <p-datepicker
+            inputId="announcementEndDate"
             [(ngModel)]="formEndAt"
             [showTime]="true"
             [showIcon]="true"

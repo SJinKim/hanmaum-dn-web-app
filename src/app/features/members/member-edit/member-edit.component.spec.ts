@@ -62,8 +62,7 @@ describe('MemberEditComponent — ministry editor', () => {
       ongoing: true,
     });
 
-    // Access private method via cast
-    const items: MemberMinistryItem[] = (component as any).collectMinistryItems();
+    const items: MemberMinistryItem[] = component['collectMinistryItems']();
 
     expect(items).toEqual([{
       ministryPublicId: 'abc',
@@ -112,7 +111,7 @@ describe('MemberEditComponent — ministry editor', () => {
     component.onMinistryOngoingChange(1);
     incomplete.patchValue({ ministryPublicId: 'def', startMonth: 1, startYear: 2023 });
 
-    const items: MemberMinistryItem[] = (component as any).collectMinistryItems();
+    const items: MemberMinistryItem[] = component['collectMinistryItems']();
 
     expect(items).toEqual([{
       ministryPublicId: 'abc',
@@ -142,7 +141,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     replaceSpy = jasmine.createSpy('replaceMemberMinistries').and.returnValue(of(memberWithOngoing));
     const memberServiceStub = {
       getTrainingCatalog: () => of([]),
-      getMinistryCatalog: () => of([{ publicId: 'min1', name: '찬양팀' }]),
+      getMinistryCatalog: () => of([{ publicId: 'min1', title: '찬양팀' }]),
       getChurchGroups: () => of([]),
       getMember: () => of(memberWithOngoing),
       updateMember: () => of(memberWithOngoing),

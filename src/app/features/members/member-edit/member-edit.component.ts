@@ -100,7 +100,7 @@ export class MemberEditComponent implements OnInit {
   /** Ministry catalog from the backend — populates the ministry select options. */
   private readonly ministryCatalog = signal<MinistryCatalogEntry[]>([]);
   readonly ministryOptions = computed(() =>
-    this.ministryCatalog().map(m => ({ value: m.publicId, label: m.name })));
+    this.ministryCatalog().map(m => ({ value: m.publicId, label: m.title })));
 
   /** Church groups from the backend — populates the "Church Group" select. */
   private readonly churchGroups = signal<ChurchGroupSummary[]>([]);

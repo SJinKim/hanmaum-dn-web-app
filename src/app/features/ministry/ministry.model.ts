@@ -1,25 +1,33 @@
 export interface MinistrySummary {
   publicId: string;
-  name: string;
-  shortDescription: string;
+  title: string;
+  subtitle: string;
   imageUrl: string | null;
-  leaderName: string | null;
+  contacts: MinistryContact[];
   isActive: boolean;
 }
 
 export interface Ministry {
   publicId: string;
-  name: string;
-  shortDescription: string;
-  longDescription: string | null;
+  title: string;
+  subtitle: string;
+  about: string;
+  requirements: string[];
+  schedules: MinistrySchedule[];
+  contacts: MinistryContact[];
   imageUrl: string | null;
-  leader: LeaderDto | null;
   isActive: boolean;
 }
 
-export interface LeaderDto {
-  publicId: string;
-  fullName: string;
+export interface MinistryContact {
+  role: string;
+  name: string;
+}
+
+export interface MinistrySchedule {
+  description: string;
+  startTime: string;
+  endTime: string;
 }
 
 export interface ActiveMinistryMemberDto {
@@ -31,18 +39,22 @@ export interface ActiveMinistryMemberDto {
 }
 
 export interface CreateMinistryRequest {
-  name: string;
-  shortDescription: string;
-  longDescription?: string;
-  imageUrl?: string;
-  leaderPublicId?: string;
+  title: string;
+  subtitle: string;
+  about: string;
+  requirements: string[];
+  schedules: MinistrySchedule[];
+  contacts: MinistryContact[];
+  imageUrl: string | null;
 }
 
 export interface UpdateMinistryRequest {
-  name?: string;
-  shortDescription?: string;
-  longDescription?: string;
-  imageUrl?: string;
-  leaderPublicId?: string;
-  isActive?: boolean;
+  title: string;
+  subtitle: string;
+  about: string;
+  requirements: string[];
+  schedules: MinistrySchedule[];
+  contacts: MinistryContact[];
+  imageUrl: string;
+  isActive: boolean;
 }
