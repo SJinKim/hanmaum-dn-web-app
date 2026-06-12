@@ -4,7 +4,6 @@ import { ApiService } from '../../core/services/api.service';
 import {
   Ministry,
   MinistrySummary,
-  RegistrationDto,
   ActiveMinistryMemberDto,
   CreateMinistryRequest,
   UpdateMinistryRequest,
@@ -34,16 +33,6 @@ export class MinistryService {
 
   deactivateMinistry(publicId: string): Observable<void> {
     return this.api.delete(`/v1/ministries/${publicId}`);
-  }
-
-  getRegistrations(publicId: string, period?: string): Observable<RegistrationDto[]> {
-    const params: Record<string, string | number | boolean> = {};
-    if (period) params['period'] = period;
-    return this.api.get<RegistrationDto[]>(`/v1/ministries/${publicId}/registrations`, params);
-  }
-
-  removeRegistration(ministryPublicId: string, regPublicId: string): Observable<void> {
-    return this.api.delete(`/v1/ministries/${ministryPublicId}/registrations/${regPublicId}`);
   }
 
   getActiveMembers(publicId: string): Observable<ActiveMinistryMemberDto[]> {

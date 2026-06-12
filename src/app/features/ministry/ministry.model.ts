@@ -22,15 +22,6 @@ export interface LeaderDto {
   fullName: string;
 }
 
-export interface RegistrationDto {
-  publicId: string;
-  ministryPublicId: string;
-  memberPublicId: string;
-  memberName: string;
-  registrationPeriod: string;
-  note: string | null;
-}
-
 export interface ActiveMinistryMemberDto {
   publicId: string;   // member public ID
   fullName: string;
