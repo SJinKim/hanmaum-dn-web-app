@@ -53,8 +53,12 @@ export class MemberService {
     return this.api.get<PageResponse<MemberSummary>>('/v1/members', qp);
   }
 
-  approveMember(publicId: string): Observable<Member> {
-    return this.api.patch<Member>(`/v1/members/${publicId}`, { memberStatus: 'ACTIVE' });
+  /** Approves a pending member and assigns their church group in one atomic PATCH. */
+  approveMember(publicId: string, groupPublicId: string): Observable<Member> {
+    return this.api.patch<Member>(`/v1/members/${publicId}`, {
+      memberStatus: 'ACTIVE',
+      groupPublicId,
+    });
   }
 
   getMember(publicId: string): Observable<Member> {
