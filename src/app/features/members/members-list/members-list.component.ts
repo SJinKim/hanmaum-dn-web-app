@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 
 import { AgGridAngular } from 'ag-grid-angular';
 import {
@@ -17,8 +18,7 @@ import {
 } from 'ag-grid-community';
 
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { MemberService } from '../member.service';
@@ -45,17 +45,15 @@ ModuleRegistry.registerModules([AllCommunityModule]);
     FormsModule,
     AgGridAngular,
     ButtonModule,
-    ConfirmDialogModule,
     ToastModule,
   ],
-  providers: [ConfirmationService, MessageService],
+  providers: [MessageService],
   templateUrl: './members-list.component.html',
 })
 export class MembersListComponent implements OnInit {
   private readonly memberService  = inject(MemberService);
   private readonly router         = inject(Router);
   private readonly route          = inject(ActivatedRoute);
-  private readonly confirmService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly destroyRef     = inject(DestroyRef);
 
@@ -84,8 +82,14 @@ export class MembersListComponent implements OnInit {
   private readonly koCollator = new Intl.Collator('ko', { sensitivity: 'base' });
 
   private readonly actionsContext: MemberActionsContext = {
-    onApprove: (member, event) => this.confirmApprove(member, event),
+    churchGroups: [],
+    onApprove: (member, groupPublicId) => this.approveMember(member, groupPublicId),
     onEdit:    (member, event) => this.goToEdit(member, event),
+    onGroupsMissing: () => this.messageService.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: '순 목록을 불러올 수 없습니다.',
+    }),
   };
 
   readonly columnDefs: ColDef<MemberSummary>[] = [
@@ -213,6 +217,12 @@ export class MembersListComponent implements OnInit {
 
     this.loadAll();
     this.memberService.refreshPendingCount();
+    this.memberService.getChurchGroups()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: groups => { this.actionsContext.churchGroups = groups; },
+        error: () => { this.actionsContext.churchGroups = []; },
+      });
   }
 
   onGridReady(event: GridReadyEvent<MemberSummary>): void {
@@ -262,32 +272,17 @@ export class MembersListComponent implements OnInit {
 
   goToCreate(): void { this.router.navigate(['/members', 'new']); }
 
-  confirmApprove(member: MemberSummary, event: Event): void {
-    event.stopPropagation();
-    this.confirmService.confirm({
-      target: event.target as EventTarget,
-      message: `Approve ${member.lastName}${member.firstName}?`,
-      header: 'Approve Member',
-      acceptIcon: 'pi pi-check-circle',
-      acceptLabel: 'Approve',
-      rejectLabel: 'Cancel',
-      accept: () => this.approveMember(member),
-    });
-  }
-
-  private approveMember(member: MemberSummary): void {
-    this.memberService.approveMember(member.publicId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.messageService.add({ severity: 'success', summary: 'Done', detail: 'Member approved.' });
-          this.loadAll();
-          this.memberService.refreshPendingCount();
-        },
-        error: () => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Approval failed.' });
-        },
-      });
+  /** Rejects on failure so the approve cell can stop its spinner. */
+  private async approveMember(member: MemberSummary, groupPublicId: string): Promise<void> {
+    try {
+      await firstValueFrom(this.memberService.approveMember(member.publicId, groupPublicId));
+    } catch (err) {
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Approval failed.' });
+      throw err;
+    }
+    this.messageService.add({ severity: 'success', summary: 'Done', detail: 'Member approved.' });
+    this.loadAll();
+    this.memberService.refreshPendingCount();
   }
 
   baptismLabel(b?: Baptism | null): string {
