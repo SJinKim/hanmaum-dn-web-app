@@ -213,29 +213,29 @@ describe('ChurchGroupsService', () => {
     function makeMinistry(overrides: Partial<MinistrySummary> = {}): MinistrySummary {
       return {
         publicId: 'min-1',
-        name: '선교팀',
-        shortDescription: '',
+        title: '선교팀',
+        subtitle: '',
         imageUrl: null,
-        leaderName: null,
+        contacts: [],
         isActive: true,
         ...overrides,
       };
     }
 
-    it('returns the leader name of the ministry whose name contains 새가족', () => {
+    it('returns the 팀장 contact name of the ministry whose title contains 새가족', () => {
       const ministries = [
-        makeMinistry({ name: '선교팀', leaderName: '김선교' }),
-        makeMinistry({ name: '새가족팀', leaderName: '정현우' }),
+        makeMinistry({ title: '선교팀', contacts: [{ role: '팀장', name: '김선교' }] }),
+        makeMinistry({ title: '새가족팀', contacts: [{ role: '팀장', name: '정현우' }] }),
       ];
       expect(service.resolveNewcomersLeader(ministries)).toBe('정현우');
     });
 
     it('returns empty string when no 새가족 ministry exists', () => {
-      expect(service.resolveNewcomersLeader([makeMinistry({ name: '선교팀', leaderName: '김선교' })])).toBe('');
+      expect(service.resolveNewcomersLeader([makeMinistry({ title: '선교팀', contacts: [{ role: '팀장', name: '김선교' }] })])).toBe('');
     });
 
-    it('returns empty string when the 새가족 ministry has no leader', () => {
-      expect(service.resolveNewcomersLeader([makeMinistry({ name: '새가족팀', leaderName: null })])).toBe('');
+    it('returns empty string when the 새가족 ministry has no 팀장 contact', () => {
+      expect(service.resolveNewcomersLeader([makeMinistry({ title: '새가족팀', contacts: [] })])).toBe('');
     });
   });
 });

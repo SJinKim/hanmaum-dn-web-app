@@ -100,7 +100,11 @@ export class ChurchGroupsService {
 
   /** Leader (팀장) name of the 새가족 ministry — shown atop the 새가족순 column. */
   resolveNewcomersLeader(ministries: MinistrySummary[]): string {
-    return ministries.find(m => m.name.includes('새가족'))?.leaderName ?? '';
+    return (
+      ministries
+        .find(m => m.title.includes('새가족'))
+        ?.contacts.find(c => c.role.includes('팀장'))?.name ?? ''
+    );
   }
 
   computeCategory(member: MemberSummary): MemberCategory {
