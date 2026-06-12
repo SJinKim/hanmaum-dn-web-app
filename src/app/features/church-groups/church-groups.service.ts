@@ -27,7 +27,7 @@ export const CATEGORY_CONFIG: Record<MemberCategory, CategoryConfig> = {
   ONE_ON_ONE_COMPLETED:   { label: '일대일수료',       color: '#99f6e4' },
   ONE_ON_ONE_IN_PROGRESS: { label: '일대일진행',       color: '#bbf7d0' },
   ONE_ON_ONE_WAITING:     { label: '일대일대기',       color: '#fef08a' },
-  QBS_COMPLETED:          { label: '큐비세수료',       color: '#bae6fd' },
+  QBS_COMPLETED:          { label: '큐베세수료',       color: '#bae6fd' },
   UNBAPTIZED:             { label: '세례X / 확인대상', color: '#fed7aa' },
   DEFAULT:                { label: '',                 color: '#f9fafb' },
 };
@@ -52,8 +52,6 @@ export interface MatrixCell {
   publicId: string;
   displayName: string;
   category: MemberCategory;
-  isNextGroupLeader: boolean;
-  oneOnOneSignupFilled: boolean;
 }
 
 export interface GroupColumn {
@@ -132,8 +130,6 @@ export class ChurchGroupsService {
       publicId: m.publicId,
       displayName: m.lastName + m.firstName,
       category: this.computeCategory(m),
-      isNextGroupLeader: m.isNextGroupLeader ?? false,
-      oneOnOneSignupFilled: m.oneOnOneSignupFilled ?? false,
     });
 
     const leaderOf = (groupPublicId: string): string => {
