@@ -165,6 +165,46 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     return fixture;
   }
 
+  it('sends groupPublicId="" when a loaded group is cleared, so the backend removes it', () => {
+    const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of(memberWithOngoing));
+    const memberWithGroup = { ...memberWithOngoing, groupPublicId: 'grp-1', groupName: '믿음' };
+    const memberServiceStub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([{ publicId: 'min1', name: '찬양팀' }]),
+      getChurchGroups: () => of([{ publicId: 'grp-1', division: 'NEHEMIA', name: '믿음' }]),
+      getMember: () => of(memberWithGroup),
+      updateMember: updateSpy,
+      createMember: () => of(memberWithOngoing),
+      replaceMemberTrainings: () => of(memberWithOngoing),
+      replaceMemberMinistries: () => of(memberWithOngoing),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
+        { provide: MemberService, useValue: memberServiceStub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    // Loaded with a group, the form holds its publicId.
+    expect(component.form.get('groupPublicId')!.value).toBe('grp-1');
+
+    // User clears the select (PrimeNG showClear → null), then saves.
+    component.form.get('groupPublicId')!.setValue(null);
+    component.save();
+
+    expect(updateSpy).toHaveBeenCalled();
+    const req = updateSpy.calls.mostRecent().args[1] as { groupPublicId?: string };
+    expect(req.groupPublicId).withContext('cleared group must send "" to clear, not undefined').toBe('');
+  });
+
   it('persists endDate when a loaded ongoing ministry is unchecked and given To dates', () => {
     const fixture = setup();
     const component = fixture.componentInstance;

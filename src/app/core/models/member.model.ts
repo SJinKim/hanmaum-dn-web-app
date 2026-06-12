@@ -8,7 +8,9 @@ export interface MemberSummary {
   email: string | null;
   memberStatus: MemberStatus;
   baptism: Baptism | null;
+  groupPublicId?: string | null;
   groupName: string | null;
+  churchRole?: string | null;
   role?: 'ADMIN' | 'MEMBER';
   updatedAt?: string;
   /** Latest completed training name (highest sort order), or null. */
@@ -17,6 +19,8 @@ export interface MemberSummary {
   trainings?: SummaryTraining[];
   /** Names of currently-active ministries — rendered as chips in the grid. */
   activeMinistries?: string[];
+  isNextGroupLeader?: boolean;
+  oneOnOneSignupFilled?: boolean;
 }
 
 /** Full detail DTO — used in detail + edit views */
@@ -42,6 +46,8 @@ export interface Member {
   groupPublicId: string | null;
   groupName: string | null;
   profileImageUrl: string | null;
+  isNextGroupLeader?: boolean;
+  oneOnOneSignupFilled?: boolean;
   /**
    * Training history — persisted, sent by `GET /members/{id}`. Edited via
    * `PUT /members/{id}/trainings`. See member-activity.model.ts.
@@ -91,6 +97,8 @@ export interface UpdateMemberRequest {
   /** publicId of the church group to assign. */
   groupPublicId?: string;
   profileImageUrl?: string;
+  isNextGroupLeader?: boolean;
+  oneOnOneSignupFilled?: boolean;
 }
 
 /** Church group option for selection dropdowns (from GET /v1/church-groups). */
