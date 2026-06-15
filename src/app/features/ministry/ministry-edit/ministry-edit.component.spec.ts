@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 
 import { MinistryEditComponent } from './ministry-edit.component';
 import { MinistryService } from '../ministry.service';
@@ -13,7 +14,7 @@ describe('MinistryEditComponent', () => {
   beforeEach(() => {
     ministryService = jasmine.createSpyObj<MinistryService>(
       'MinistryService',
-      ['getMinistry', 'createMinistry', 'updateMinistry']
+      ['getMinistry', 'createMinistry', 'updateMinistry', 'uploadImage']
     );
 
     TestBed.configureTestingModule({
@@ -122,5 +123,36 @@ describe('MinistryEditComponent', () => {
     ];
 
     expect(component['buildCreateRequest']()).toBeNull();
+  });
+
+  it('uploads a selected image before creating the ministry and stores the returned URL', () => {
+    const file = new File(['image'], 'ministry.webp', { type: 'image/webp' });
+    const created: Ministry = {
+      publicId: 'ministry-1',
+      title: '찬양팀',
+      subtitle: '예배 찬양',
+      about: '찬양으로 섬깁니다.',
+      requirements: [],
+      schedules: [],
+      contacts: [],
+      imageUrl: 'https://api.example.com/api/v1/media/pcloud/public-code',
+      isActive: true,
+    };
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:preview');
+    ministryService.uploadImage.and.returnValue(of({ imageUrl: created.imageUrl! }));
+    ministryService.createMinistry.and.returnValue(of(created));
+    component.form.title = created.title;
+    component.form.subtitle = created.subtitle;
+    component.form.about = created.about;
+
+    component.onImageSelected({
+      target: { files: [file], value: 'ministry.webp' },
+    } as unknown as Event);
+    component.save();
+
+    expect(ministryService.uploadImage).toHaveBeenCalledOnceWith(file);
+    expect(ministryService.createMinistry).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+      imageUrl: created.imageUrl,
+    }));
   });
 });

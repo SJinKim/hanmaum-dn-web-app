@@ -1,8 +1,9 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize, map, of, switchMap, tap } from 'rxjs';
 
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -40,6 +41,8 @@ import {
   templateUrl: './ministry-edit.component.html',
 })
 export class MinistryEditComponent implements OnInit {
+  @ViewChild('imageInput') private imageInput?: ElementRef<HTMLInputElement>;
+
   private readonly ministryService = inject(MinistryService);
   private readonly route           = inject(ActivatedRoute);
   private readonly router          = inject(Router);
@@ -49,8 +52,10 @@ export class MinistryEditComponent implements OnInit {
   isEdit   = false;
   loading  = signal(false);
   saving   = signal(false);
+  imagePreviewUrl = signal<string | null>(null);
 
   readonly maxStructuredItems = 20;
+  readonly maxImageSizeMb = 10;
 
   form = {
     title:        '',
@@ -64,6 +69,12 @@ export class MinistryEditComponent implements OnInit {
   };
 
   private publicId = '';
+  private selectedImageFile: File | null = null;
+  private previewObjectUrl: string | null = null;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.revokePreviewObjectUrl());
+  }
 
   ngOnInit(): void {
     this.publicId = this.route.snapshot.paramMap.get('publicId') ?? '';
@@ -98,11 +109,30 @@ export class MinistryEditComponent implements OnInit {
 
     this.saving.set(true);
 
-    const request$ = this.isEdit
-      ? this.ministryService.updateMinistry(this.publicId, request as UpdateMinistryRequest)
-      : this.ministryService.createMinistry(request as CreateMinistryRequest);
+    const imageUrl$ = this.selectedImageFile
+      ? this.ministryService.uploadImage(this.selectedImageFile).pipe(
+          map(upload => upload.imageUrl),
+          tap(imageUrl => this.acceptUploadedImage(imageUrl)),
+        )
+      : of(this.form.imageUrl.trim());
 
-    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    imageUrl$.pipe(
+      switchMap(imageUrl => {
+        if (this.isEdit) {
+          return this.ministryService.updateMinistry(this.publicId, {
+            ...(request as UpdateMinistryRequest),
+            imageUrl,
+          });
+        }
+
+        return this.ministryService.createMinistry({
+          ...(request as CreateMinistryRequest),
+          imageUrl: imageUrl || null,
+        });
+      }),
+      finalize(() => this.saving.set(false)),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
       next: ministry => {
         this.messageService.add({
           severity: 'success',
@@ -117,9 +147,40 @@ export class MinistryEditComponent implements OnInit {
           summary: '오류',
           detail: this.isEdit ? '수정에 실패했습니다.' : '생성에 실패했습니다.',
         });
-        this.saving.set(false);
       },
     });
+  }
+
+  onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      this.showValidationError('JPG, PNG, WEBP 이미지만 업로드할 수 있습니다.');
+      input.value = '';
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      this.showValidationError(`이미지는 최대 ${this.maxImageSizeMb}MB까지 업로드할 수 있습니다.`);
+      input.value = '';
+      return;
+    }
+
+    this.revokePreviewObjectUrl();
+    this.selectedImageFile = file;
+    this.previewObjectUrl = URL.createObjectURL(file);
+    this.imagePreviewUrl.set(this.previewObjectUrl);
+  }
+
+  removeImage(): void {
+    this.selectedImageFile = null;
+    this.revokePreviewObjectUrl();
+    this.form.imageUrl = '';
+    if (this.imageInput) {
+      this.imageInput.nativeElement.value = '';
+    }
   }
 
   addRequirement(): void {
@@ -217,6 +278,23 @@ export class MinistryEditComponent implements OnInit {
     this.messageService.add({ severity: 'warn', summary: '입력 오류', detail });
   }
 
+  private acceptUploadedImage(imageUrl: string): void {
+    this.form.imageUrl = imageUrl;
+    this.selectedImageFile = null;
+    this.revokePreviewObjectUrl();
+    if (this.imageInput) {
+      this.imageInput.nativeElement.value = '';
+    }
+  }
+
+  private revokePreviewObjectUrl(): void {
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
+    this.imagePreviewUrl.set(null);
+  }
+
   goBack(): void {
     if (this.isEdit) {
       this.router.navigate(['/ministry', this.publicId]);
@@ -225,3 +303,6 @@ export class MinistryEditComponent implements OnInit {
     }
   }
 }
+
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);

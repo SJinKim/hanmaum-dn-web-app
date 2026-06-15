@@ -30,6 +30,10 @@ export interface MinistrySchedule {
   endTime: string;
 }
 
+export interface MinistryImageUpload {
+  imageUrl: string;
+}
+
 export interface ActiveMinistryMemberDto {
   publicId: string;   // member public ID
   fullName: string;

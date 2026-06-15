@@ -41,6 +41,12 @@ export class ApiService {
     );
   }
 
+  postForm<T>(path: string, body: FormData): Observable<T> {
+    return this.unwrap(
+      this.http.post<ApiResponse<T>>(`${this.base}${path}`, body)
+    );
+  }
+
   put<T>(path: string, body: unknown): Observable<T> {
     return this.unwrap(
       this.http.put<ApiResponse<T>>(`${this.base}${path}`, body)

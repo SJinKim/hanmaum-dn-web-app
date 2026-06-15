@@ -159,10 +159,40 @@
           }
         </div>
 
-        <!-- Image URL -->
-        <div class="flex flex-col gap-1">
-          <label for="ministryImageUrl" class="text-sm font-medium text-gray-700">이미지 URL</label>
-          <input id="ministryImageUrl" pInputText [(ngModel)]="form.imageUrl" placeholder="이미지 URL (선택)" />
+        <!-- Ministry image -->
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <label for="ministryImage" class="text-sm font-medium text-gray-700">사역 이미지</label>
+            <input
+              #imageInput
+              id="ministryImage"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="block w-full rounded-lg border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2.5 file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+              (change)="onImageSelected($event)"
+            />
+            <p class="text-xs text-gray-500">JPG, PNG 또는 WEBP · 최대 {{ maxImageSizeMb }}MB</p>
+          </div>
+
+          @if (imagePreviewUrl() || form.imageUrl) {
+            <div class="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+              <img
+                [src]="imagePreviewUrl() || form.imageUrl"
+                alt="사역 이미지 미리보기"
+                class="h-52 w-full object-cover"
+              />
+              <div class="flex justify-end border-t border-gray-200 bg-white p-2">
+                <p-button
+                  label="이미지 삭제"
+                  icon="pi pi-trash"
+                  severity="danger"
+                  [text]="true"
+                  size="small"
+                  (onClick)="removeImage()"
+                />
+              </div>
+            </div>
+          }
         </div>
 
         <!-- isActive — edit only -->

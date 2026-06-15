@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import {
   Ministry,
+  MinistryImageUpload,
   MinistrySummary,
   ActiveMinistryMemberDto,
   CreateMinistryRequest,
@@ -29,6 +30,12 @@ export class MinistryService {
 
   updateMinistry(publicId: string, req: UpdateMinistryRequest): Observable<Ministry> {
     return this.api.patch<Ministry>(`/v1/ministries/${publicId}`, req);
+  }
+
+  uploadImage(file: File): Observable<MinistryImageUpload> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.api.postForm<MinistryImageUpload>('/v1/ministries/images', formData);
   }
 
   deactivateMinistry(publicId: string): Observable<void> {
