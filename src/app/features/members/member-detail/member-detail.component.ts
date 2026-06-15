@@ -95,7 +95,6 @@ export class MemberDetailComponent implements OnInit {
     });
   }
 
-  statusLabel(status: MemberStatus): string  { return MEMBER_STATUS_LABELS[status]; }
   genderLabel(g: string | null): string       { return g ? (GENDER_LABELS[g as keyof typeof GENDER_LABELS] ?? g) : '—'; }
   baptismLabel(b: string | null): string      { return b ? (BAPTISM_LABELS[b as keyof typeof BAPTISM_LABELS] ?? b) : '—'; }
 
