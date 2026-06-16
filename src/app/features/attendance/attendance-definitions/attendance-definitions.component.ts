@@ -5,10 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
@@ -19,6 +21,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { AttendanceService } from '../attendance.service';
 import {
+  ATTENDANCE_COLUMN_LABELS,
+  DIVISION_LABELS,
   AttendanceGroupCountsResponse,
   ChurchGroupAttendanceCountResponse,
   DAY_OF_WEEK_LABELS,
@@ -35,9 +39,11 @@ import {
     FormsModule,
     TableModule,
     ButtonModule,
+    CheckboxModule,
     TagModule,
     InputTextModule,
     SelectModule,
+    MultiSelectModule,
     DatePickerModule,
     ProgressBarModule,
     DialogModule,
@@ -62,7 +68,14 @@ export class AttendanceDefinitionsComponent implements OnInit {
   showCreate     = signal(false);
   showEditDialog = false;
 
+  // distribution table filter + sort state
+  groupFilter = signal<string[]>([]);
+  activeOnly  = signal(true);
+  sortField   = signal<'attendanceCount' | 'share'>('attendanceCount');
+  sortOrder   = signal<1 | -1>(-1);
+
   readonly dayOptions = DAY_OF_WEEK_OPTIONS;
+  readonly columnLabels = ATTENDANCE_COLUMN_LABELS;
 
   selectedDefinitionId = '';
   selectedDate: Date | null = new Date();
@@ -85,9 +98,33 @@ export class AttendanceDefinitionsComponent implements OnInit {
 
   readonly activeGroupCount = computed(() => this.sortedGroups().length);
 
-  readonly maxGroupCount = computed(() =>
-    Math.max(1, ...this.sortedGroups().map(group => group.attendanceCount)),
+  // church-group options for the distribution filter (exact values)
+  readonly groupFilterOptions = computed(() =>
+    (this.groupCounts()?.groups ?? []).map(group => ({
+      label: this.groupDisplayName(group),
+      value: group.groupPublicId ?? '',
+    })),
   );
+
+  // rows actually rendered: filtered by selected groups, then sorted by the active column
+  readonly displayedGroups = computed(() => {
+    const groups = this.groupCounts()?.groups ?? [];
+    const selected = this.groupFilter();
+    let filtered = selected.length === 0
+      ? groups
+      : groups.filter(group => selected.includes(group.groupPublicId ?? ''));
+
+    if (this.activeOnly()) {
+      filtered = filtered.filter(group => group.attendanceCount > 0);
+    }
+
+    const order = this.sortOrder();
+    return [...filtered].sort((a, b) => {
+      // 비중 is monotonic with attendanceCount (total is constant), so both columns sort identically
+      if (a.attendanceCount !== b.attendanceCount) return order * (a.attendanceCount - b.attendanceCount);
+      return this.groupDisplayName(a).localeCompare(this.groupDisplayName(b), 'ko');
+    });
+  });
 
   // create form state
   createTitle       = '';
@@ -154,6 +191,7 @@ export class AttendanceDefinitionsComponent implements OnInit {
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: counts => {
         this.groupCounts.set(counts);
+        this.groupFilter.set([]);
         this.countsLoading.set(false);
       },
       error: err => {
@@ -166,8 +204,24 @@ export class AttendanceDefinitionsComponent implements OnInit {
   }
 
   groupDisplayName(group: ChurchGroupAttendanceCountResponse): string {
-    if (!group.groupName) return '소속 그룹 없음';
-    return group.groupDivision ? `${group.groupDivision} · ${group.groupName}` : group.groupName;
+    if (!group.groupName) return this.columnLabels.noGroup;
+    return group.groupDivision
+      ? `${this.divisionLabel(group.groupDivision)} · ${group.groupName}`
+      : group.groupName;
+  }
+
+  /** Korean display label for a division, mapping legacy codes (NEHEMIA/DANIEL). */
+  divisionLabel(division: string | null): string {
+    if (!division) return '';
+    return DIVISION_LABELS[division.toUpperCase()] ?? division;
+  }
+
+  /** Division tag color: 느헤미야 → blue (info), 다니엘 → green (success). */
+  divisionSeverity(division: string | null): 'info' | 'success' | 'secondary' {
+    const key = (division ?? '').toUpperCase();
+    if (key.startsWith('NEHEMIA') || division === '느헤미야') return 'info';
+    if (key.startsWith('DANIEL') || division === '다니엘') return 'success';
+    return 'secondary';
   }
 
   groupShare(group: ChurchGroupAttendanceCountResponse): number {
@@ -176,8 +230,18 @@ export class AttendanceDefinitionsComponent implements OnInit {
     return Math.round((group.attendanceCount / total) * 100);
   }
 
-  groupBarValue(group: ChurchGroupAttendanceCountResponse): number {
-    return Math.round((group.attendanceCount / this.maxGroupCount()) * 100);
+  toggleSort(field: 'attendanceCount' | 'share'): void {
+    if (this.sortField() === field) {
+      this.sortOrder.set(this.sortOrder() === 1 ? -1 : 1);
+    } else {
+      this.sortField.set(field);
+      this.sortOrder.set(-1);
+    }
+  }
+
+  sortIcon(field: 'attendanceCount' | 'share'): string {
+    if (this.sortField() !== field) return 'pi pi-sort-alt';
+    return this.sortOrder() === 1 ? 'pi pi-sort-amount-up' : 'pi pi-sort-amount-down';
   }
 
   onCreateSubmit(): void {

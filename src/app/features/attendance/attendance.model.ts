@@ -64,3 +64,28 @@ export const DAY_OF_WEEK_LABELS: Record<DayOfWeek, string> = {
 
 export const DAY_OF_WEEK_OPTIONS = (Object.entries(DAY_OF_WEEK_LABELS) as [DayOfWeek, string][])
   .map(([value, label]) => ({ value, label }));
+
+/**
+ * Column / fallback labels for the attendance distribution table.
+ * Centralized so an i18n pass can swap these for translation keys in one place
+ * instead of hunting through templates.
+ */
+export const ATTENDANCE_COLUMN_LABELS = {
+  division:        '교구',
+  name:            '순',
+  attendanceCount: '출석 수',
+  share:           '비중',
+  distribution:    '분포',
+  noGroup:         '소속 그룹 없음',
+} as const;
+
+/**
+ * Display labels for division codes. The backend already sends Korean
+ * (느헤미야 / 다니엘), but legacy/code forms are mapped here too. Centralized
+ * for the future i18n pass.
+ */
+export const DIVISION_LABELS: Record<string, string> = {
+  NEHEMIA:  '느헤미야',
+  NEHEMIAH: '느헤미야',
+  DANIEL:   '다니엘',
+};
