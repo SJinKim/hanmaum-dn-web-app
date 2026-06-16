@@ -1,7 +1,11 @@
 <div class="p-6">
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">출석 정의 관리</h1>
+  <!-- Page title -->
+  <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div>
+      <div class="text-[10px] font-bold uppercase tracking-widest text-tertiary">Attendance Operations</div>
+      <h1 class="mt-1 text-[26px] font-extrabold tracking-tight text-primary">출석 현황</h1>
+      <p class="mt-1 text-[13px] text-tertiary">예배별 출석을 순 기준으로 집계합니다.</p>
+    </div>
     <p-button
       label="출석 정의 추가"
       icon="pi pi-plus"
@@ -9,14 +13,15 @@
     />
   </div>
 
-  <!-- Inline Create Form -->
+  <!-- Inline Create Form (top of page) -->
   @if (showCreate()) {
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-      <h2 class="text-base font-semibold text-gray-700 mb-4">새 출석 정의</h2>
+    <div class="mb-6 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+      <h2 class="mb-4 text-[13px] font-bold tracking-tight text-primary">새 출석 정의</h2>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="flex flex-col gap-1">
-          <label class="text-sm text-gray-600">제목</label>
+          <label for="createAttendanceTitle" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">제목</label>
           <input
+            id="createAttendanceTitle"
             pInputText
             type="text"
             placeholder="예: 주일 예배"
@@ -26,8 +31,9 @@
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-sm text-gray-600">요일</label>
+          <label for="createAttendanceDay" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">요일</label>
           <p-select
+            inputId="createAttendanceDay"
             [options]="dayOptions"
             optionLabel="label"
             optionValue="value"
@@ -38,8 +44,9 @@
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-sm text-gray-600">시작 시간</label>
+          <label for="createAttendanceStart" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">시작 시간</label>
           <input
+            id="createAttendanceStart"
             pInputText
             type="time"
             [(ngModel)]="createWindowStart"
@@ -47,8 +54,9 @@
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-sm text-gray-600">종료 시간</label>
+          <label for="createAttendanceEnd" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">종료 시간</label>
           <input
+            id="createAttendanceEnd"
             pInputText
             type="time"
             [(ngModel)]="createWindowEnd"
@@ -56,7 +64,7 @@
         </div>
       </div>
 
-      <div class="flex gap-2 mt-4">
+      <div class="mt-4 flex gap-2">
         <p-button label="저장" icon="pi pi-check" (onClick)="onCreateSubmit()" />
         <p-button
           label="취소"
@@ -69,71 +77,264 @@
     </div>
   }
 
-  <!-- Definitions Table -->
-  <p-table
-    [value]="definitions()"
-    [loading]="loading()"
-    styleClass="p-datatable-sm"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th>제목</th>
-        <th>요일</th>
-        <th>시간</th>
-        <th>상태</th>
-        <th class="w-40">관리</th>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="body" let-def>
-      <tr>
-        <td class="font-medium">{{ def.title }}</td>
-        <td>{{ dayLabel(def.dayOfWeek) }}</td>
-        <td class="text-gray-500">{{ formatTime(def.windowStart) }} – {{ formatTime(def.windowEnd) }}</td>
-        <td>
-          <p-tag
-            [value]="def.isActive ? '활성' : '비활성'"
-            [severity]="def.isActive ? 'success' : 'secondary'"
+  <!-- Report controls -->
+  <div class="mb-6 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+    <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <div class="text-[13px] font-bold tracking-tight text-primary">출석 집계</div>
+        <p class="mt-1 text-[11px] text-tertiary">순별 합계만 표시합니다.</p>
+      </div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(14rem,1fr)_12rem_auto] sm:items-end">
+        <div class="flex flex-col gap-1">
+          <label for="attendanceDefinitionFilter" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">Definition</label>
+          <p-select
+            inputId="attendanceDefinitionFilter"
+            [options]="definitions()"
+            optionLabel="title"
+            optionValue="publicId"
+            placeholder="출석 정의 선택"
+            [(ngModel)]="selectedDefinitionId"
+            (ngModelChange)="onDefinitionChange()"
+            styleClass="w-full"
           />
-        </td>
-        <td>
-          <div class="flex gap-1">
-            <p-button
-              icon="pi pi-list"
-              [text]="true"
-              size="small"
-              pTooltip="로그 보기"
-              (onClick)="viewLogs(def)"
-            />
-            <p-button
-              icon="pi pi-pencil"
-              [text]="true"
-              size="small"
-              pTooltip="수정"
-              (onClick)="openEdit(def)"
-            />
-            <p-button
-              icon="pi pi-ban"
-              severity="danger"
-              [text]="true"
-              size="small"
-              pTooltip="비활성화"
-              [disabled]="!def.isActive"
-              (onClick)="confirmDeactivate(def, $event)"
-            />
-          </div>
-        </td>
-      </tr>
-    </ng-template>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="attendanceDateFilter" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">Date</label>
+          <p-datepicker
+            inputId="attendanceDateFilter"
+            [(ngModel)]="selectedDate"
+            [readonlyInput]="true"
+            dateFormat="yy-mm-dd"
+            placeholder="날짜 선택"
+            (onSelect)="onDateChange()"
+            styleClass="w-full"
+          />
+        </div>
+        <p-button
+          label="새로고침"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="loadGroupCounts()"
+        />
+      </div>
+    </div>
 
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="5" class="text-center py-8 text-gray-400">
-          출석 정의가 없습니다.
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+    @if (groupCounts(); as counts) {
+      <div class="mb-5 grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div class="rounded-xl border border-gray-100 bg-neutral p-4">
+          <div class="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-white text-secondary">
+            <i class="pi pi-users text-sm"></i>
+          </div>
+          <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">Total Attendance</div>
+          <div class="mt-1 text-[28px] font-extrabold leading-none tracking-tighter text-primary">{{ counts.totalCount }}</div>
+          <div class="mt-2 text-[10px] text-tertiary">{{ counts.attendanceDate }}</div>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-neutral p-4">
+          <div class="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-white text-secondary">
+            <i class="pi pi-th-large text-sm"></i>
+          </div>
+          <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">Groups With Check-ins</div>
+          <div class="mt-1 text-[28px] font-extrabold leading-none tracking-tighter text-primary">{{ attendingGroupCount() }}</div>
+          <div class="mt-2 text-[10px] text-tertiary">of {{ activeGroupCount() }} active groups</div>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-neutral p-4 md:col-span-2">
+          <div class="mb-2 flex items-start justify-between gap-3">
+            <div>
+              <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">Selected Definition</div>
+              <div class="mt-1 text-[18px] font-extrabold tracking-tight text-primary">{{ counts.definitionTitle }}</div>
+            </div>
+            @if (selectedDefinition(); as def) {
+              <p-tag [value]="def.isActive ? '활성' : '비활성'" [severity]="def.isActive ? 'success' : 'secondary'" />
+            }
+          </div>
+          @if (selectedDefinition(); as def) {
+            <div class="text-[11px] font-medium text-secondary">
+              {{ dayLabel(def.dayOfWeek) }} · {{ formatTime(def.windowStart) }} – {{ formatTime(def.windowEnd) }}
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            inputId="activeOnlyFilter"
+            [binary]="true"
+            [ngModel]="activeOnly()"
+            (ngModelChange)="activeOnly.set($event)"
+          />
+          <label for="activeOnlyFilter" class="cursor-pointer text-[12px] font-medium text-secondary">출석한 순만 보기</label>
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label for="groupDistributionFilter" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">Church Group</label>
+          <p-multiSelect
+            inputId="groupDistributionFilter"
+            [options]="groupFilterOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="groupFilter()"
+            (ngModelChange)="groupFilter.set($event)"
+            placeholder="전체 그룹"
+            [showHeader]="true"
+            [filter]="true"
+            display="chip"
+            styleClass="w-full sm:w-80"
+          />
+        </div>
+      </div>
+
+      <div class="overflow-hidden rounded-xl border border-gray-100">
+        <p-table
+          [value]="displayedGroups()"
+          [loading]="countsLoading()"
+          rowHover
+          [resizableColumns]="true"
+          columnResizeMode="fit"
+          styleClass="p-datatable-sm"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th pResizableColumn style="width: 20%">{{ columnLabels.division }}</th>
+              <th pResizableColumn style="width: 20%">{{ columnLabels.name }}</th>
+              <th pResizableColumn style="width: 20%" class="text-right">
+                <button
+                  type="button"
+                  class="ml-auto inline-flex items-center gap-1 hover:text-primary"
+                  (click)="toggleSort('attendanceCount')"
+                >
+                  {{ columnLabels.attendanceCount }}
+                  <i [class]="sortIcon('attendanceCount')" class="text-[10px]"></i>
+                </button>
+              </th>
+              <th pResizableColumn style="width: 20%" class="text-right">
+                <button
+                  type="button"
+                  class="ml-auto inline-flex items-center gap-1 hover:text-primary"
+                  (click)="toggleSort('share')"
+                >
+                  {{ columnLabels.share }}
+                  <i [class]="sortIcon('share')" class="text-[10px]"></i>
+                </button>
+              </th>
+              <th pResizableColumn style="width: 20%">{{ columnLabels.distribution }}</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-group>
+            <tr>
+              <td>
+                @if (group.groupDivision) {
+                  <p-tag [value]="divisionLabel(group.groupDivision)" [severity]="divisionSeverity(group.groupDivision)" />
+                } @else {
+                  <span class="text-gray-300">—</span>
+                }
+              </td>
+              <td>
+                <div class="font-semibold tracking-tight text-gray-800">{{ group.groupName ?? columnLabels.noGroup }}</div>
+              </td>
+              <td class="text-right text-[15px] font-extrabold text-primary">{{ group.attendanceCount }}</td>
+              <td class="text-right text-[12px] font-semibold text-secondary">{{ groupShare(group) }}%</td>
+              <td>
+                <p-progressbar [value]="groupShare(group)" [showValue]="false" styleClass="h-2" />
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5" class="py-8 text-center text-gray-400">
+                선택한 날짜의 그룹 집계가 없습니다.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    } @else {
+      <div class="flex min-h-44 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-neutral text-[13px] text-tertiary">
+        @if (countsLoading()) {
+          출석 집계를 불러오는 중...
+        } @else {
+          출석 정의와 날짜를 선택해주세요.
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Definitions Table -->
+  <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+    <div class="flex items-center justify-between border-b border-gray-50 px-5 py-4">
+      <div>
+        <div class="text-[13px] font-bold tracking-tight text-primary">출석 정의 관리</div>
+        <div class="mt-1 text-[11px] text-tertiary">체크인 버튼 표시 시간과 활성 여부를 관리합니다.</div>
+      </div>
+    </div>
+    <p-table
+      [value]="definitions()"
+      [loading]="loading()"
+      rowHover
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>제목</th>
+          <th>요일</th>
+          <th>시간</th>
+          <th>상태</th>
+          <th class="w-44">관리</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-def>
+        <tr>
+          <td class="font-medium">{{ def.title }}</td>
+          <td>{{ dayLabel(def.dayOfWeek) }}</td>
+          <td class="text-gray-500">{{ formatTime(def.windowStart) }} – {{ formatTime(def.windowEnd) }}</td>
+          <td>
+            <p-tag
+              [value]="def.isActive ? '활성' : '비활성'"
+              [severity]="def.isActive ? 'success' : 'secondary'"
+            />
+          </td>
+          <td>
+            <div class="flex gap-1">
+              <p-button
+                icon="pi pi-chart-bar"
+                [text]="true"
+                size="small"
+                pTooltip="그룹 집계 보기"
+                (onClick)="viewLogs(def)"
+              />
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                size="small"
+                pTooltip="수정"
+                (onClick)="openEdit(def)"
+              />
+              <p-button
+                icon="pi pi-ban"
+                severity="danger"
+                [text]="true"
+                size="small"
+                pTooltip="비활성화"
+                [disabled]="!def.isActive"
+                (onClick)="confirmDeactivate(def, $event)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="py-8 text-center text-gray-400">
+            출석 정의가 없습니다.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
 </div>
 
 <!-- Edit Dialog -->
@@ -146,13 +347,14 @@
 >
   <div class="flex flex-col gap-4 pt-2">
     <div class="flex flex-col gap-1">
-      <label class="text-sm text-gray-600">제목</label>
-      <input pInputText type="text" [(ngModel)]="editTitle" maxlength="100" />
+      <label for="editAttendanceTitle" class="text-sm text-gray-600">제목</label>
+      <input id="editAttendanceTitle" pInputText type="text" [(ngModel)]="editTitle" maxlength="100" />
     </div>
 
     <div class="flex flex-col gap-1">
-      <label class="text-sm text-gray-600">요일</label>
+      <label for="editAttendanceDay" class="text-sm text-gray-600">요일</label>
       <p-select
+        inputId="editAttendanceDay"
         [options]="dayOptions"
         optionLabel="label"
         optionValue="value"
@@ -163,17 +365,17 @@
 
     <div class="grid grid-cols-2 gap-4">
       <div class="flex flex-col gap-1">
-        <label class="text-sm text-gray-600">시작 시간</label>
-        <input pInputText type="time" [(ngModel)]="editWindowStart" />
+        <label for="editAttendanceStart" class="text-sm text-gray-600">시작 시간</label>
+        <input id="editAttendanceStart" pInputText type="time" [(ngModel)]="editWindowStart" />
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-sm text-gray-600">종료 시간</label>
-        <input pInputText type="time" [(ngModel)]="editWindowEnd" />
+        <label for="editAttendanceEnd" class="text-sm text-gray-600">종료 시간</label>
+        <input id="editAttendanceEnd" pInputText type="time" [(ngModel)]="editWindowEnd" />
       </div>
     </div>
 
     <div class="flex items-center gap-2">
-      <input type="checkbox" id="editIsActive" [(ngModel)]="editIsActive" class="w-4 h-4" />
+      <input type="checkbox" id="editIsActive" [(ngModel)]="editIsActive" class="h-4 w-4" />
       <label for="editIsActive" class="text-sm text-gray-600">활성</label>
     </div>
   </div>

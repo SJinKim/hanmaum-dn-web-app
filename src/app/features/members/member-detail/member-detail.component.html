@@ -1,5 +1,5 @@
 <!-- src/app/features/members/member-detail/member-detail.component.html -->
-<div class="p-6 max-w-3xl">
+<div class="p-6">
 
   <!-- Back + actions -->
   <div class="flex items-center gap-3 mb-6">
@@ -43,9 +43,14 @@
     <div class="flex justify-center py-16 text-tertiary text-[13px]">Loading...</div>
   }
 
-  <!-- Detail card -->
+  <!-- Detail content -->
   @if (!loading() && member()) {
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+
+    <!-- Basic Info | Training | Ministry — three columns on wide screens, stacked when narrow -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+
+    <!-- Basic info box -->
+    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
 
       <!-- Avatar + name + badges -->
       <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-50">
@@ -57,9 +62,6 @@
             {{ member()!.lastName }}{{ member()!.firstName }}
           </div>
           <div class="flex items-center gap-2 mt-1">
-            <span [class]="'status-badge ' + roleBadgeClass(member()!.role)">
-              {{ member()!.role ?? 'MEMBER' }}
-            </span>
             <span [class]="'status-badge ' + statusBadgeClass(member()!.memberStatus)">
               {{ member()!.memberStatus }}
             </span>
@@ -75,20 +77,37 @@
         </div>
 
         <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Email</div>
-          <div class="font-medium text-gray-800">{{ member()!.email ?? '—' }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Phone</div>
-          <div class="font-medium text-gray-800">{{ member()!.phoneNumber ?? '—' }}</div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Date of Birth</div>
+          <div class="font-medium text-gray-800">{{ member()!.birthDate ?? '—' }}</div>
         </div>
         <div>
           <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Gender</div>
           <div class="font-medium text-gray-800">{{ genderLabel(member()!.gender) }}</div>
         </div>
         <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Date of Birth</div>
-          <div class="font-medium text-gray-800">{{ member()!.birthDate ?? '—' }}</div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Email</div>
+          <div class="font-medium text-gray-800">{{ member()!.email ?? '—' }}</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Phone</div>
+          <div class="font-medium text-gray-800">{{ formatPhone(member()!.phoneNumber) }}</div>
+        </div>
+
+        <div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Street</div>
+          <div class="font-medium text-gray-800">{{ member()!.street ?? '—' }}</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Street No.</div>
+          <div class="font-medium text-gray-800">{{ member()!.houseNumber ?? '—' }}</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Zip Code</div>
+          <div class="font-medium text-gray-800">{{ member()!.zipCode ?? '—' }}</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">City</div>
+          <div class="font-medium text-gray-800">{{ member()!.city ?? '—' }}</div>
         </div>
 
         <div class="col-span-2 text-[9px] font-bold text-tertiary uppercase tracking-widest pb-1 border-b border-gray-50 mt-2">
@@ -100,10 +119,6 @@
           <div class="font-medium text-gray-800">{{ baptismLabel(member()!.baptism) }}</div>
         </div>
         <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Church Role</div>
-          <div class="font-medium text-gray-800">{{ member()!.churchRole ?? '—' }}</div>
-        </div>
-        <div>
           <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Group</div>
           <div class="font-medium text-gray-800">{{ member()!.groupName ?? '—' }}</div>
         </div>
@@ -112,23 +127,56 @@
           <div class="font-medium text-gray-800">{{ member()!.registrationDate ?? '—' }}</div>
         </div>
 
-        <div class="col-span-2 text-[9px] font-bold text-tertiary uppercase tracking-widest pb-1 border-b border-gray-50 mt-2">
-          Address
-        </div>
-
-        <div class="col-span-2">
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Address</div>
-          <div class="font-medium text-gray-800">
-            @if (member()!.street || member()!.city) {
-              {{ member()!.street }} {{ member()!.zipCode }} {{ member()!.city }}
-            } @else {
-              —
-            }
-          </div>
-        </div>
-
       </div>
     </div>
+
+    <!-- Training box -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+      <div class="flex items-center justify-between pb-1 border-b border-gray-50 mb-4">
+        <span class="text-[9px] font-bold text-tertiary uppercase tracking-widest">Completed Trainings</span>
+        @if (trainings().length > 0) {
+          <span class="text-[12px] font-bold text-tertiary tracking-wide tabular-nums">월/년</span>
+        }
+      </div>
+      @if (trainings().length === 0) {
+        <div class="text-[13px] text-tertiary py-6 text-center">No trainings recorded.</div>
+      } @else {
+        <div class="flex flex-col gap-2">
+          @for (t of trainings(); track $index) {
+            <div class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-100 bg-gray-50/50">
+              <span class="text-[13px] font-semibold text-gray-800">{{ trainingName(t) }}</span>
+              <span class="text-[13px] text-secondary tabular-nums">{{ trainingDate(t) }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Ministry box -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+      <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest pb-1 border-b border-gray-50 mb-4">
+        Ministry History
+      </div>
+      @if (ministries().length === 0) {
+        <div class="text-[13px] text-tertiary py-6 text-center">No ministries recorded.</div>
+      } @else {
+        <div class="flex flex-col gap-2">
+          @for (m of ministries(); track $index) {
+            <div class="flex flex-col gap-1 px-4 py-3 rounded-lg border border-gray-100 bg-gray-50/50">
+              <div class="flex items-center justify-between">
+                <span class="text-[13px] font-semibold text-gray-800">{{ m.name }}</span>
+                <span class="text-[13px] text-secondary tabular-nums">{{ ministryRange(m) }}</span>
+              </div>
+              @if (m.note) {
+                <span class="text-[12px] text-tertiary">{{ m.note }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    </div><!-- /grid -->
   }
 
   <!-- Not found -->

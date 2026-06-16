@@ -9,7 +9,14 @@ import {
   Baptism,
   CreateMemberRequest,
   UpdateMemberRequest,
+  ChurchGroupSummary,
 } from '../../core/models/member.model';
+import {
+  TrainingCatalogEntry,
+  MemberTrainingItem,
+  MinistryCatalogEntry,
+  MemberMinistryItem,
+} from '../../core/models/member-activity.model';
 
 @Injectable({ providedIn: 'root' })
 export class MemberService {
@@ -46,8 +53,12 @@ export class MemberService {
     return this.api.get<PageResponse<MemberSummary>>('/v1/members', qp);
   }
 
-  approveMember(publicId: string): Observable<Member> {
-    return this.api.patch<Member>(`/v1/members/${publicId}`, { memberStatus: 'ACTIVE' });
+  /** Approves a pending member and assigns their church group in one atomic PATCH. */
+  approveMember(publicId: string, groupPublicId: string): Observable<Member> {
+    return this.api.patch<Member>(`/v1/members/${publicId}`, {
+      memberStatus: 'ACTIVE',
+      groupPublicId,
+    });
   }
 
   getMember(publicId: string): Observable<Member> {
@@ -64,5 +75,30 @@ export class MemberService {
 
   deleteMember(publicId: string): Observable<void> {
     return this.api.delete(`/v1/members/${publicId}`);
+  }
+
+  /** All church groups — populates the "Church Group" select in the member edit form. */
+  getChurchGroups(): Observable<ChurchGroupSummary[]> {
+    return this.api.get<ChurchGroupSummary[]>('/v1/church-groups');
+  }
+
+  /** The admin-managed training catalog used to populate the member edit form. */
+  getTrainingCatalog(): Observable<TrainingCatalogEntry[]> {
+    return this.api.get<TrainingCatalogEntry[]>('/v1/trainings');
+  }
+
+  /** Replaces the member's entire training set; returns the refreshed member detail. */
+  replaceMemberTrainings(publicId: string, trainings: MemberTrainingItem[]): Observable<Member> {
+    return this.api.put<Member>(`/v1/members/${publicId}/trainings`, { trainings });
+  }
+
+  /** Ministry options for the member edit form (active ministries only). */
+  getMinistryCatalog(): Observable<MinistryCatalogEntry[]> {
+    return this.api.get<MinistryCatalogEntry[]>('/v1/ministries', { active: true });
+  }
+
+  /** Replaces the member's entire ministry assignment set; returns refreshed detail. */
+  replaceMemberMinistries(publicId: string, ministries: MemberMinistryItem[]): Observable<Member> {
+    return this.api.put<Member>(`/v1/members/${publicId}/ministries`, { ministries });
   }
 }

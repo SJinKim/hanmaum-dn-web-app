@@ -1,3 +1,5 @@
+import { UserTraining, MinistryHistory, SummaryTraining } from './member-activity.model';
+
 /** Lightweight DTO — used in list view */
 export interface MemberSummary {
   publicId: string;
@@ -6,9 +8,19 @@ export interface MemberSummary {
   email: string | null;
   memberStatus: MemberStatus;
   baptism: Baptism | null;
+  groupPublicId?: string | null;
   groupName: string | null;
+  churchRole?: string | null;
   role?: 'ADMIN' | 'MEMBER';
   updatedAt?: string;
+  /** Latest completed training name (highest sort order), or null. */
+  latestTraining?: string | null;
+  /** All trainings, ordered by progression — rendered as chips in the grid. */
+  trainings?: SummaryTraining[];
+  /** Names of currently-active ministries — rendered as chips in the grid. */
+  activeMinistries?: string[];
+  isNextGroupLeader?: boolean;
+  oneOnOneSignupFilled?: boolean;
 }
 
 /** Full detail DTO — used in detail + edit views */
@@ -23,14 +35,26 @@ export interface Member {
   phoneNumber: string | null;
   email: string | null;
   street: string | null;
+  houseNumber: string | null;
   zipCode: string | null;
   city: string | null;
   registrationDate: string | null;
   memberStatus: MemberStatus;
   role?: 'ADMIN' | 'MEMBER';
   churchRole: string | null;
+  /** publicId of the member's church group — used to pre-select the group on edit. */
+  groupPublicId: string | null;
   groupName: string | null;
   profileImageUrl: string | null;
+  isNextGroupLeader?: boolean;
+  oneOnOneSignupFilled?: boolean;
+  /**
+   * Training history — persisted, sent by `GET /members/{id}`. Edited via
+   * `PUT /members/{id}/trainings`. See member-activity.model.ts.
+   */
+  trainings?: UserTraining[];
+  /** Ministry assignment history (start/end dates) — edited via `PUT /members/{id}/ministries`. */
+  ministries?: MinistryHistory[];
 }
 
 export interface CreateMemberRequest {
@@ -43,10 +67,13 @@ export interface CreateMemberRequest {
   phoneNumber?: string;
   email?: string;
   street?: string;
+  houseNumber?: string;
   zipCode?: string;
   city?: string;
   registrationDate?: string;
   churchRole?: string;
+  /** publicId of the church group to assign. */
+  groupPublicId?: string;
   profileImageUrl?: string;
 }
 
@@ -61,12 +88,24 @@ export interface UpdateMemberRequest {
   phoneNumber?: string;
   email?: string;
   street?: string;
+  houseNumber?: string;
   zipCode?: string;
   city?: string;
   registrationDate?: string;
   memberStatus?: MemberStatus;
   churchRole?: string;
+  /** publicId of the church group to assign. */
+  groupPublicId?: string;
   profileImageUrl?: string;
+  isNextGroupLeader?: boolean;
+  oneOnOneSignupFilled?: boolean;
+}
+
+/** Church group option for selection dropdowns (from GET /v1/church-groups). */
+export interface ChurchGroupSummary {
+  publicId: string;
+  division: string | null;
+  name: string;
 }
 
 export type MemberStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'DELETED';

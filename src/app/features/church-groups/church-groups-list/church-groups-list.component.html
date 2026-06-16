@@ -1,0 +1,102 @@
+<div class="flex flex-col gap-4 p-6">
+  <div class="grid items-center" style="grid-template-columns: 1fr auto 1fr">
+    <h1 class="text-xl font-bold text-gray-900">Church Groups</h1>
+
+    <!-- Legend / filter bar (centered in the row) -->
+    <div role="group" aria-label="카테고리 필터" class="flex items-center gap-1 flex-wrap justify-center">
+      @for (cat of filterCategories; track cat) {
+        <button
+          type="button"
+          (click)="toggleCategory(cat)"
+          [attr.aria-pressed]="activeCategories().has(cat)"
+          class="flex items-center gap-1.5 rounded px-2 py-1 transition-opacity cursor-pointer hover:bg-gray-100 border border-transparent"
+          [class.opacity-40]="isDimmed(cat)"
+          [class.!border-gray-400]="activeCategories().has(cat)">
+          <span
+            class="inline-block w-3 h-3 rounded-sm border border-gray-200 shrink-0"
+            [style.background-color]="categoryConfig[cat].color"></span>
+          <span class="text-xs text-gray-700 whitespace-nowrap">{{ categoryConfig[cat].label }}</span>
+        </button>
+      }
+    </div>
+
+    <div></div>
+  </div>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center h-48 text-gray-400 text-sm">
+      불러오는 중...
+    </div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="cg-table">
+        <thead>
+          <!-- Row 1: divisions -->
+          <tr>
+            <th class="cg-corner"></th>
+            @for (div of matrix().divisions; track $index) {
+              <th class="cg-division cg-div-end" [attr.colspan]="div.groups.length">{{ div.division }}</th>
+            }
+            <th class="cg-newcomers-head" rowspan="2">새가족순</th>
+          </tr>
+          <!-- Row 2: 순 names -->
+          <tr>
+            <th class="cg-idx-label">순</th>
+            @for (div of matrix().divisions; track $index) {
+              @for (group of div.groups; track group.publicId; let groupLast = $last) {
+                <th class="cg-group" [class.cg-div-end]="groupLast">{{ group.name }}</th>
+              }
+            }
+          </tr>
+          <!-- Row 3: 순장 names (incl. the 새가족 ministry 팀장) -->
+          <tr>
+            <th class="cg-idx-label">순장</th>
+            @for (div of matrix().divisions; track $index) {
+              @for (group of div.groups; track group.publicId; let groupLast = $last) {
+                <th class="cg-leader" [class.cg-div-end]="groupLast" [style.background-color]="categoryConfig['DISCIPLESHIP_COMPLETED'].color">{{ group.leader }}</th>
+              }
+            }
+            <th class="cg-leader" [style.background-color]="categoryConfig['DISCIPLESHIP_COMPLETED'].color">{{ newcomersLeader() }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (i of rowIndices(); track i) {
+            <tr>
+              <td class="cg-idx-cell">{{ i + 1 }}</td>
+              @for (div of matrix().divisions; track $index) {
+                @for (group of div.groups; track group.publicId; let groupLast = $last) {
+                  @if (group.members[i]; as cell) {
+                    <td class="cg-cell" [class.cg-div-end]="groupLast"
+                        [style.background-color]="categoryConfig[cell.category].color"
+                        [class.opacity-20]="isDimmed(cell.category)"
+                        [class.cg-candidate]="highlightModeActive() && cell.category === 'DISCIPLESHIP_COMPLETED'"
+                        [class.cg-interactive]="highlightModeActive() && cell.category === 'NEXT_LEADER'"
+                        (click)="isCellClickable(cell.category) && toggleCellHighlight(cell.publicId)">{{ cell.displayName }}</td>
+                  } @else {
+                    <td class="cg-cell cg-empty" [class.cg-div-end]="groupLast"></td>
+                  }
+                }
+              }
+              @if (matrix().newcomers[i]; as cell) {
+                <td class="cg-cell cg-center"
+                    [style.background-color]="categoryConfig[cell.category].color"
+                    [class.opacity-20]="isDimmed(cell.category)"
+                    [class.cg-candidate]="highlightModeActive() && cell.category === 'DISCIPLESHIP_COMPLETED'"
+                    [class.cg-interactive]="highlightModeActive() && cell.category === 'NEXT_LEADER'"
+                    (click)="isCellClickable(cell.category) && toggleCellHighlight(cell.publicId)">{{ cell.displayName }}</td>
+              } @else {
+                <td class="cg-cell cg-empty"></td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (patchError()) {
+  <div class="fixed bottom-4 right-4 bg-red-500 text-white text-sm px-4 py-2 rounded shadow-lg z-50">
+    저장 실패. 다시 시도해주세요.
+  </div>
+}

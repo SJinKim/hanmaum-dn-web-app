@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import {
-  AttendanceLogDto,
+  AttendanceGroupCountsResponse,
   CreateDefinitionRequest,
   DefinitionDto,
   UpdateDefinitionRequest,
@@ -28,15 +28,10 @@ export class AttendanceService {
     return this.api.delete(`/v1/attendance/definitions/${publicId}`);
   }
 
-  getLogs(params: {
-    definitionId?: string;
-    from?: string;
-    to?: string;
-  }): Observable<AttendanceLogDto[]> {
-    const qp: Record<string, string | number | boolean> = {};
-    if (params.definitionId) qp['definitionId'] = params.definitionId;
-    if (params.from) qp['from'] = params.from;
-    if (params.to) qp['to'] = params.to;
-    return this.api.get<AttendanceLogDto[]>('/v1/attendance/logs', qp);
+  getGroupCounts(params: {
+    definitionId: string;
+    date: string;
+  }): Observable<AttendanceGroupCountsResponse> {
+    return this.api.get<AttendanceGroupCountsResponse>('/v1/attendance/group-counts', params);
   }
 }

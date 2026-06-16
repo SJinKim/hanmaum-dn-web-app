@@ -37,7 +37,7 @@ export class HeaderComponent implements OnInit {
     {
       label: this.auth.username() || 'Account',
       items: [
-        { label: 'My Profile', icon: 'pi pi-user', command: () => {} },
+        { label: 'My Profile', icon: 'pi pi-user', disabled: true },
         {
           label: this.isDark() ? 'Light Theme' : 'Dark Theme',
           icon: this.isDark() ? 'pi pi-sun' : 'pi pi-moon',

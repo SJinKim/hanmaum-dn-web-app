@@ -1,38 +1,19 @@
-<!-- src/app/features/members/members-list/members-list.component.html -->
 <div class="p-6">
 
   <!-- Page title -->
   <div class="mb-5">
-    <h1 class="text-[26px] font-extrabold text-primary tracking-tight">Congregation Core</h1>
+    <h1 class="text-[26px] font-extrabold text-primary tracking-tight">Members' List</h1>
     <p class="text-[13px] text-tertiary mt-1">Manage members, roles, and status.</p>
   </div>
 
-  <!-- Filters row -->
+  <!-- Top row: global search + Add Member -->
   <div class="flex items-center gap-3 mb-5">
-    <p-select
-      [options]="statusOptions"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="activeStatus()"
-      (ngModelChange)="onStatusChange($event)"
-      styleClass="h-9 text-[12px]"
-      placeholder="All Status"
-    />
-    <p-select
-      [options]="baptismOptions"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="activeBaptism()"
-      (ngModelChange)="onBaptismChange($event)"
-      styleClass="h-9 text-[12px]"
-      placeholder="All Baptism"
-    />
     <div class="flex-1 flex items-center gap-2 h-9 bg-white border border-gray-200 rounded-lg px-3">
       <i class="pi pi-search text-tertiary text-[12px]"></i>
       <input
         type="text"
         class="flex-1 outline-none text-[12px] bg-transparent placeholder:text-tertiary"
-        placeholder="Search name or email..."
+        placeholder="Search across all columns..."
         aria-label="Search members"
         [ngModel]="searchTerm"
         (ngModelChange)="onSearch($event)"
@@ -47,131 +28,22 @@
     </button>
   </div>
 
-  <!-- Table -->
+  <!-- AG-Grid -->
   <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-    <p-table
-      [value]="members()"
-      [loading]="loading()"
-      [rows]="size"
-      [totalRecords]="totalRecords()"
-      [paginator]="false"
-      [lazy]="true"
-      (onLazyLoad)="onPageChange($event)"
-      rowHover
-      styleClass="p-datatable-sm"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th class="w-64">Name</th>
-          <th class="w-24">Role</th>
-          <th class="w-24">Status</th>
-          <th class="w-28">Baptism</th>
-          <th class="w-32">Last Active</th>
-          <th class="w-28">Approve</th>
-          <th class="w-16">Edit</th>
-        </tr>
-      </ng-template>
-
-      <ng-template pTemplate="body" let-member>
-        <tr
-          class="cursor-pointer border-b border-gray-50"
-          [class.bg-purple-50]="member.memberStatus === 'PENDING'"
-          (click)="goToDetail(member)"
-        >
-          <!-- Name -->
-          <td class="px-4 py-3">
-            <div class="text-[13px] font-semibold text-gray-800 tracking-tight">
-              {{ member.lastName }}{{ member.firstName }}
-            </div>
-            <div class="text-[11px] text-tertiary">{{ member.email ?? '—' }}</div>
-          </td>
-
-          <!-- Role badge -->
-          <td class="px-4 py-3">
-            <span [class]="'status-badge ' + roleBadgeClass(member.role)">
-              {{ member.role ?? 'MEMBER' }}
-            </span>
-          </td>
-
-          <!-- Status badge -->
-          <td class="px-4 py-3">
-            <span [class]="'status-badge ' + statusBadgeClass(member.memberStatus)">
-              {{ member.memberStatus }}
-            </span>
-          </td>
-
-          <!-- Baptism -->
-          <td class="px-4 py-3 text-[12px] text-secondary">
-            {{ baptismLabel(member.baptism) }}
-          </td>
-
-          <!-- Last Active -->
-          <td class="px-4 py-3 text-[12px] text-tertiary">
-            {{ member.updatedAt ? (member.updatedAt | date:'yyyy-MM-dd') : '—' }}
-          </td>
-
-          <!-- Approve -->
-          <td class="px-4 py-3" (click)="$event.stopPropagation()">
-            @if (member.memberStatus === 'PENDING') {
-              <button
-                (click)="confirmApprove(member, $event)"
-                class="flex items-center gap-1 h-7 px-3 bg-primary text-white rounded-md text-[11px] font-bold hover:bg-primary-hover transition-colors tracking-tight"
-              >
-                <i class="pi pi-check text-[9px]"></i>
-                Approve
-              </button>
-            } @else {
-              <span class="text-tertiary text-[12px]">—</span>
-            }
-          </td>
-
-          <!-- Edit -->
-          <td class="px-4 py-3" (click)="$event.stopPropagation()">
-            <button
-              (click)="goToEdit(member, $event)"
-              class="w-8 h-8 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg text-secondary hover:text-primary hover:border-primary transition-colors"
-              aria-label="Edit member"
-            >
-              <i class="pi pi-pencil text-[11px]"></i>
-            </button>
-          </td>
-        </tr>
-      </ng-template>
-
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="7" class="text-center py-10 text-tertiary text-[13px]">
-            No members found.
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-
-    <!-- Custom pagination footer -->
-    <div class="flex items-center justify-between px-5 py-3 border-t border-gray-50 text-[11px] text-tertiary">
-      <span>Showing {{ showingFrom() }}–{{ showingTo() }} of {{ totalRecords() }} members</span>
-      <div class="flex gap-1">
-        <button
-          [disabled]="page === 0"
-          (click)="loadPage(page - 1)"
-          aria-label="Previous page"
-          class="w-7 h-7 flex items-center justify-center rounded-md border border-gray-200 hover:border-primary text-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <i class="pi pi-chevron-left text-[9px]"></i>
-        </button>
-        <button
-          [disabled]="showingTo() >= totalRecords()"
-          (click)="loadPage(page + 1)"
-          aria-label="Next page"
-          class="w-7 h-7 flex items-center justify-center rounded-md border border-gray-200 hover:border-primary text-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <i class="pi pi-chevron-right text-[9px]"></i>
-        </button>
-      </div>
-    </div>
+    <ag-grid-angular
+      style="height: calc(100vh - 240px); min-height: 480px;"
+      [rowData]="members()"
+      [theme]="theme"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [gridOptions]="gridOptions"
+      [quickFilterText]="searchTerm"
+      [animateRows]="true"
+      (gridReady)="onGridReady($event)"
+      (rowClicked)="onRowClicked($event)"
+    />
   </div>
 
 </div>
 
-<p-confirmDialog />
 <p-toast />
