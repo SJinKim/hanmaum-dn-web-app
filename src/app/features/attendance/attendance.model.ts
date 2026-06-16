@@ -16,14 +16,25 @@ export interface DefinitionDto {
   isActive: boolean;
 }
 
-export interface AttendanceLogDto {
-  publicId: string;
+export interface AttendanceCheckInResponse {
   definitionPublicId: string;
   definitionTitle: string;
-  memberPublicId: string;
-  memberName: string;
   attendanceDate: string; // ISO date "YYYY-MM-DD"
-  attended: boolean;
+}
+
+export interface ChurchGroupAttendanceCountResponse {
+  groupPublicId: string | null;
+  groupDivision: string | null;
+  groupName: string | null;
+  attendanceCount: number;
+}
+
+export interface AttendanceGroupCountsResponse {
+  definitionPublicId: string;
+  definitionTitle: string;
+  attendanceDate: string; // ISO date "YYYY-MM-DD"
+  totalCount: number;
+  groups: ChurchGroupAttendanceCountResponse[];
 }
 
 export interface CreateDefinitionRequest {
