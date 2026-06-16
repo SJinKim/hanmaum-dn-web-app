@@ -1,79 +1,93 @@
 <div class="p-6">
   <!-- Header -->
-  <div class="flex items-center gap-4 mb-6">
-    <p-button
-      icon="pi pi-arrow-left"
-      [text]="true"
-      severity="secondary"
-      (onClick)="goBack()"
-    />
-    <h1 class="text-2xl font-bold text-gray-800">{{ definitionTitle() }} — 출석 로그</h1>
-  </div>
-
-  <!-- Date range filter -->
-  <div class="flex items-center gap-3 mb-6">
-    <label for="attendanceDateRange" class="text-sm text-gray-600 whitespace-nowrap">기간 필터:</label>
-    <p-datepicker
-      inputId="attendanceDateRange"
-      [(ngModel)]="dateRange"
-      selectionMode="range"
-      [readonlyInput]="true"
-      placeholder="날짜 범위 선택"
-      dateFormat="yy-mm-dd"
-      (onSelect)="onDateRangeSelect(dateRange!)"
-      styleClass="w-64"
-    />
-    @if (dateRange) {
+  <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div class="flex items-start gap-3">
       <p-button
-        icon="pi pi-times"
+        icon="pi pi-arrow-left"
         [text]="true"
         severity="secondary"
-        size="small"
-        pTooltip="필터 초기화"
-        (onClick)="clearDateRange()"
+        (onClick)="goBack()"
       />
-    }
+      <div>
+        <div class="text-[10px] font-bold uppercase tracking-widest text-tertiary">Attendance Group Counts</div>
+        <h1 class="mt-1 text-[26px] font-extrabold tracking-tight text-primary">
+          {{ groupCounts()?.definitionTitle ?? '출석 집계' }}
+        </h1>
+        <p class="mt-1 text-[13px] text-tertiary">개인 출석 로그 대신 Church Group별 참석 수만 표시합니다.</p>
+      </div>
+    </div>
+
+    <div class="flex items-end gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="attendanceCountsDate" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">Date</label>
+        <p-datepicker
+          inputId="attendanceCountsDate"
+          [(ngModel)]="selectedDate"
+          [readonlyInput]="true"
+          dateFormat="yy-mm-dd"
+          placeholder="날짜 선택"
+          (onSelect)="loadGroupCounts()"
+          styleClass="w-48"
+        />
+      </div>
+      <p-button icon="pi pi-refresh" severity="secondary" [outlined]="true" (onClick)="loadGroupCounts()" />
+    </div>
   </div>
 
-  <!-- Logs Table -->
-  <p-table
-    [value]="logs()"
-    [loading]="loading()"
-    styleClass="p-datatable-sm"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th>회원</th>
-        <th>출석일</th>
-        <th>출석 여부</th>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="body" let-log>
-      <tr>
-        <td class="font-medium">{{ log.memberName }}</td>
-        <td class="text-gray-500">{{ log.attendanceDate }}</td>
-        <td>
-          <span class="pi" [ngClass]="log.attended ? 'pi-check-circle text-green-500' : 'pi-times-circle text-red-400'"></span>
-        </td>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="3" class="text-center py-8 text-gray-400">
-          출석 로그가 없습니다.
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
-
-  <!-- Footer stats -->
-  @if (logs().length > 0) {
-    <div class="mt-4 text-sm text-gray-500">
-      총 {{ logs().length }}건
+  @if (groupCounts(); as counts) {
+    <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">Total Attendance</div>
+        <div class="mt-1 text-[32px] font-extrabold leading-none tracking-tighter text-primary">{{ counts.totalCount }}</div>
+        <div class="mt-2 text-[10px] text-tertiary">{{ counts.attendanceDate }}</div>
+      </div>
+      <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm md:col-span-2">
+        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">Definition</div>
+        <div class="mt-1 text-[18px] font-extrabold tracking-tight text-primary">{{ counts.definitionTitle }}</div>
+        <div class="mt-2 text-[11px] text-tertiary">{{ counts.definitionPublicId }}</div>
+      </div>
     </div>
   }
+
+  <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+    <p-table
+      [value]="sortedGroups()"
+      [loading]="loading()"
+      rowHover
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Church Group</th>
+          <th class="w-28 text-right">출석 수</th>
+          <th class="w-32 text-right">비중</th>
+          <th class="w-56">분포</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-group>
+        <tr>
+          <td>
+            <div class="font-semibold tracking-tight text-gray-800">{{ groupDisplayName(group) }}</div>
+            <div class="text-[11px] text-tertiary">{{ group.groupPublicId ?? 'ungrouped' }}</div>
+          </td>
+          <td class="text-right text-[15px] font-extrabold text-primary">{{ group.attendanceCount }}</td>
+          <td class="text-right text-[12px] font-semibold text-secondary">{{ groupShare(group) }}%</td>
+          <td>
+            <p-progressbar [value]="groupBarValue(group)" [showValue]="false" styleClass="h-2" />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4" class="py-8 text-center text-gray-400">
+            선택한 날짜의 그룹 집계가 없습니다.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
 </div>
 
 <p-toast />

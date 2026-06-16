@@ -1,3 +1,4 @@
+import { WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -5,6 +6,10 @@ import { of, throwError } from 'rxjs';
 import { ChurchGroupsListComponent } from './church-groups-list.component';
 import { ChurchGroupsService } from '../church-groups.service';
 import { MemberSummary } from '../../../core/models/member.model';
+
+/** Access the component's private `members` signal in tests without `any`. */
+const membersSignal = (component: ChurchGroupsListComponent) =>
+  (component as unknown as { members: WritableSignal<MemberSummary[]> }).members;
 
 describe('ChurchGroupsListComponent', () => {
   let component: ChurchGroupsListComponent;
@@ -84,20 +89,20 @@ describe('ChurchGroupsListComponent', () => {
 
     beforeEach(() => {
       service = TestBed.inject(ChurchGroupsService);
-      (component as any).members.set([{ ...baseMember }]);
+      membersSignal(component).set([{ ...baseMember }]);
     });
 
     it('flips isNextGroupLeader to true optimistically', () => {
       spyOn(service, 'patchMemberFlags').and.returnValue(of(undefined));
       component.toggleCellHighlight('pub-1');
-      expect((component as any).members()[0].isNextGroupLeader).toBeTrue();
+      expect(membersSignal(component)()[0].isNextGroupLeader).toBeTrue();
     });
 
     it('flips isNextGroupLeader to false when already true', () => {
-      (component as any).members.set([{ ...baseMember, isNextGroupLeader: true }]);
+      membersSignal(component).set([{ ...baseMember, isNextGroupLeader: true }]);
       spyOn(service, 'patchMemberFlags').and.returnValue(of(undefined));
       component.toggleCellHighlight('pub-1');
-      expect((component as any).members()[0].isNextGroupLeader).toBeFalse();
+      expect(membersSignal(component)()[0].isNextGroupLeader).toBeFalse();
     });
 
     it('calls patchMemberFlags with the new value', () => {
@@ -109,7 +114,7 @@ describe('ChurchGroupsListComponent', () => {
     it('reverts isNextGroupLeader on patchMemberFlags failure', () => {
       spyOn(service, 'patchMemberFlags').and.returnValue(throwError(() => new Error('fail')));
       component.toggleCellHighlight('pub-1');
-      expect((component as any).members()[0].isNextGroupLeader).toBeFalse();
+      expect(membersSignal(component)()[0].isNextGroupLeader).toBeFalse();
     });
 
     it('sets patchError to true on failure', () => {

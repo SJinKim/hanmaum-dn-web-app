@@ -11,6 +11,14 @@ export const ATTENDANCE_ROUTES: Routes = [
       ),
   },
   {
+    path: ':id/group-counts',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./attendance-logs/attendance-logs.component').then(
+        m => m.AttendanceLogsComponent,
+      ),
+  },
+  {
     path: ':id/logs',
     canActivate: [adminGuard],
     loadComponent: () =>

@@ -96,7 +96,11 @@ export class ChurchGroupsListComponent implements OnInit {
   toggleCategory(cat: MemberCategory): void {
     this.activeCategories.update(current => {
       const next = new Set(current);
-      next.has(cat) ? next.delete(cat) : next.add(cat);
+      if (next.has(cat)) {
+        next.delete(cat);
+      } else {
+        next.add(cat);
+      }
       return next;
     });
   }

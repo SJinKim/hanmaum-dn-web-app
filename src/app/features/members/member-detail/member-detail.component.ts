@@ -11,7 +11,6 @@ import { MemberService } from '../member.service';
 import {
   Member,
   MemberStatus,
-  MEMBER_STATUS_LABELS,
   GENDER_LABELS,
   BAPTISM_LABELS,
 } from '../../../core/models/member.model';
