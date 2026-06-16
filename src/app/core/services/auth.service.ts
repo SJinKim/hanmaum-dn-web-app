@@ -1,14 +1,14 @@
 import { Injectable, signal } from '@angular/core';
-import Keycloak from 'keycloak-js';
+import type Keycloak from 'keycloak-js';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly _kc = new Keycloak({
-    url:      environment.keycloak.url,
-    realm:    environment.keycloak.realm,
-    clientId: environment.keycloak.clientId,
-  });
+  // Assigned during init(); keycloak-js is dynamically imported so the (~177kB)
+  // library lands in its own chunk instead of the initial bundle. init() is
+  // awaited in APP_INITIALIZER before any guard/interceptor runs, so _kc is
+  // always set by the time getToken()/isAdmin()/logout() are reachable.
+  private _kc!: Keycloak;
 
   readonly isAuthenticated = signal(false);
   readonly username        = signal<string>('');
@@ -16,6 +16,13 @@ export class AuthService {
 
   /** Call once at app startup. Returns true if authentication succeeded. */
   async init(): Promise<boolean> {
+    const { default: KeycloakCtor } = await import('keycloak-js');
+    this._kc = new KeycloakCtor({
+      url:      environment.keycloak.url,
+      realm:    environment.keycloak.realm,
+      clientId: environment.keycloak.clientId,
+    });
+
     const authenticated = await this._kc.init({
       onLoad:   'login-required',
       pkceMethod: 'S256',
