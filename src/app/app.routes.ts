@@ -31,6 +31,11 @@ export const APP_ROUTES: Routes = [
           import('./features/attendance/attendance.routes').then(m => m.ATTENDANCE_ROUTES),
       },
       {
+        path: 'event-rsvps',
+        loadChildren: () =>
+          import('./features/event-rsvps/event-rsvp.routes').then(m => m.EVENT_RSVP_ROUTES),
+      },
+      {
         path: 'announcements',
         loadChildren: () =>
           import('./features/announcements/announcements.routes').then(m => m.ANNOUNCEMENTS_ROUTES),
