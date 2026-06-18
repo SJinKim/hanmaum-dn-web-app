@@ -33,6 +33,7 @@ export class SidebarComponent {
     { label: 'Members',       icon: 'pi pi-users',        route: '/members'      },
     { label: 'Ministry',      icon: 'pi pi-sitemap',      route: '/ministry'     },
     { label: 'Attendance',    icon: 'pi pi-check-square', route: '/attendance'   },
+    { label: 'Event RSVP',    icon: 'pi pi-calendar-plus', route: '/event-rsvps' },
     { label: 'Announcements', icon: 'pi pi-megaphone',    route: '/announcements'},
     { label: 'Church Groups', icon: 'pi pi-th-large',     route: '/church-groups'},
     { label: 'Analytics',     icon: 'pi pi-chart-bar',    route: '/analytics'    },
