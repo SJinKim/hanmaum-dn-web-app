@@ -7,6 +7,7 @@ describe('eventRsvpStatus', () => {
     windowStart: '2026-07-12T09:00:00+09:00',
     windowEnd: '2026-07-12T12:00:00+09:00',
     isActive: true,
+    announcementPublicId: null,
   };
 
   it('returns INACTIVE before evaluating the time window', () => {

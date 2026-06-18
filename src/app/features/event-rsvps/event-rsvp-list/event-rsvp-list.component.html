@@ -53,12 +53,12 @@
         <h2 class="text-[15px] font-bold tracking-tight text-primary">RSVP 목록</h2>
         <p class="mt-1 text-[11px] text-tertiary">최신 이벤트 순으로 표시됩니다.</p>
       </div>
-      <div class="relative w-full sm:w-72">
-        <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-tertiary"></i>
+      <div class="flex h-9 w-full items-center gap-2 sm:w-72">
+        <i class="pi pi-search text-[12px] text-tertiary"></i>
         <input
           pInputText
           type="search"
-          class="w-full pl-9"
+          class="w-full"
           placeholder="이벤트 제목 검색"
           [ngModel]="searchTerm()"
           (ngModelChange)="searchTerm.set($event)"
@@ -89,8 +89,8 @@
           <td>
             <button type="button" class="text-left" (click)="viewAttendees(rsvp)">
               <span class="block font-bold tracking-tight text-gray-800 hover:text-primary">{{ rsvp.title }}</span>
-              @if (rsvp.announcementId) {
-                <span class="mt-1 block text-[10px] text-tertiary">Announcement · {{ rsvp.announcementId }}</span>
+              @if (rsvp.announcementPublicId) {
+                <span class="mt-1 block text-[10px] text-tertiary">Announcement · {{ rsvp.announcementPublicId }}</span>
               }
             </button>
           </td>

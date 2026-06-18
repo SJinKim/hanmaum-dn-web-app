@@ -4,7 +4,7 @@ export interface EventRsvpDto {
   windowStart: string;
   windowEnd: string;
   isActive: boolean;
-  announcementId?: string | null;
+  announcementPublicId: string | null;
 }
 
 export interface CreateEventRsvpRequest {

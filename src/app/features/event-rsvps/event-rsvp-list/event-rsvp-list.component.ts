@@ -120,7 +120,7 @@ export class EventRsvpListComponent implements OnInit {
     this.formTitle = rsvp.title;
     this.formWindowStart = new Date(rsvp.windowStart);
     this.formWindowEnd = new Date(rsvp.windowEnd);
-    this.formAnnouncementId = rsvp.announcementId ?? '';
+    this.formAnnouncementId = rsvp.announcementPublicId ?? '';
     this.formIsActive = rsvp.isActive;
     this.dialogVisible = true;
   }

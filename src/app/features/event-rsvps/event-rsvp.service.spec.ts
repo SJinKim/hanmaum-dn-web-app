@@ -14,7 +14,7 @@ describe('EventRsvpService', () => {
     windowStart: '2026-07-12T00:00:00.000Z',
     windowEnd: '2026-07-12T03:00:00.000Z',
     isActive: true,
-    announcementId: 'announcement-1',
+    announcementPublicId: 'announcement-1',
   };
 
   beforeEach(() => {
