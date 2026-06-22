@@ -14,6 +14,7 @@ import { MessageService } from 'primeng/api';
 
 import { MinistryService } from '../ministry.service';
 import { Ministry, ActiveMinistryMemberDto } from '../ministry.model';
+import { MinistryAddMemberDialogComponent } from './ministry-add-member-dialog.component';
 
 @Component({
   selector: 'app-ministry-detail',
@@ -26,6 +27,7 @@ import { Ministry, ActiveMinistryMemberDto } from '../ministry.model';
     TableModule,
     ToastModule,
     ProgressSpinnerModule,
+    MinistryAddMemberDialogComponent,
   ],
   providers: [MessageService],
   templateUrl: './ministry-detail.component.html',
@@ -41,6 +43,7 @@ export class MinistryDetailComponent implements OnInit {
   activeMembers  = signal<ActiveMinistryMemberDto[]>([]);
   loading        = signal(true);
   membersLoading = signal(false);
+  addDialogVisible = signal(false);
 
   private publicId = '';
 
@@ -78,6 +81,12 @@ export class MinistryDetailComponent implements OnInit {
   formatStartDate(dateStr: string): string {
     const [year, month] = dateStr.split('-');
     return `${year}년 ${parseInt(month, 10)}월`;
+  }
+
+  openAddMember(): void { this.addDialogVisible.set(true); }
+
+  onMemberAdded(member: ActiveMinistryMemberDto): void {
+    this.activeMembers.update(list => [...list, member]);
   }
 
   goToMember(publicId: string): void { this.router.navigate(['/members', publicId]); }
