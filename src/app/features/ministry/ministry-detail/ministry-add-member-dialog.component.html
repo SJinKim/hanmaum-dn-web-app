@@ -9,8 +9,9 @@
 >
   <form [formGroup]="form" class="flex flex-col gap-4 pt-2">
     <div class="flex flex-col gap-1">
-      <label class="text-sm font-medium text-gray-700">맴버</label>
+      <label for="add-member-select" class="text-sm font-medium text-gray-700">맴버</label>
       <p-select
+        inputId="add-member-select"
         formControlName="memberId"
         [options]="memberOptions()"
         optionLabel="label"
@@ -23,16 +24,16 @@
     </div>
 
     <div class="flex flex-col gap-1">
-      <label class="text-sm font-medium text-gray-700">시작일</label>
+      <label for="add-member-year" class="text-sm font-medium text-gray-700">시작일</label>
       <div class="flex gap-2">
-        <p-select formControlName="startYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-20" />
+        <p-select inputId="add-member-year" formControlName="startYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-20" />
         <p-select formControlName="startMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-20" />
       </div>
     </div>
 
     <div class="flex flex-col gap-1">
-      <label class="text-sm font-medium text-gray-700">비고</label>
-      <input pInputText formControlName="note" maxlength="500" class="w-full" />
+      <label for="add-member-note" class="text-sm font-medium text-gray-700">비고</label>
+      <input id="add-member-note" pInputText formControlName="note" maxlength="500" class="w-full" />
     </div>
   </form>
 

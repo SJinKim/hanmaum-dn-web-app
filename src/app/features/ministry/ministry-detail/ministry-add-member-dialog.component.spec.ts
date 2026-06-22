@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { MinistryAddMemberDialogComponent } from './ministry-add-member-dialog.component';
 import { MinistryService } from '../ministry.service';
-import { MemberNameDto, ActiveMinistryMemberDto } from '../ministry.model';
+import { ActiveMinistryMemberDto } from '../ministry.model';
 
 describe('MinistryAddMemberDialogComponent', () => {
   let service: jasmine.SpyObj<MinistryService>;
