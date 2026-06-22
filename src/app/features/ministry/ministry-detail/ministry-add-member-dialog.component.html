@@ -1,0 +1,45 @@
+<p-dialog
+  header="맴버 추가"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [style]="{ width: '28rem' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="form" class="flex flex-col gap-4 pt-2">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium text-gray-700">맴버</label>
+      <p-select
+        formControlName="memberId"
+        [options]="memberOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        placeholder="맴버 선택"
+        class="w-full"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium text-gray-700">시작일</label>
+      <div class="flex gap-2">
+        <p-select formControlName="startYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-20" />
+        <p-select formControlName="startMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-20" />
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium text-gray-700">비고</label>
+      <input pInputText formControlName="note" maxlength="500" class="w-full" />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="취소" severity="secondary" [text]="true" (onClick)="close()" />
+    <p-button label="추가" icon="pi pi-plus" [loading]="saving()" (onClick)="submit()" />
+  </ng-template>
+</p-dialog>
+
+<p-toast />
