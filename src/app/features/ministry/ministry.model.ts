@@ -58,3 +58,17 @@ export interface UpdateMinistryRequest {
   imageUrl: string;
   isActive: boolean;
 }
+
+/** Lightweight 맴버 entry for the add-member picker (`GET /v1/members/names`). */
+export interface MemberNameDto {
+  publicId: string;
+  fullName: string;
+  discriminator: string | null;
+}
+
+/** Body for `POST /v1/ministries/{publicId}/members`. */
+export interface AddMinistryMemberRequest {
+  memberId: string;
+  startDate?: string | null;  // 'YYYY-MM-DD'; omit/null ⇒ backend uses current month
+  note?: string | null;
+}
