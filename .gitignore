@@ -42,3 +42,12 @@ Thumbs.db
 .env.local
 .env.*.local
 src/environments/environment.local.ts
+
+# Local tooling & docs (not tracked)
+.claude/
+.superpowers/
+AGENTS.md
+CLAUDE.md
+CONTRIBUTING.md
+design-specs/
+tasks/
