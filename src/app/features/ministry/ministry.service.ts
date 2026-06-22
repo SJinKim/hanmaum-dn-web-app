@@ -7,6 +7,8 @@ import {
   ActiveMinistryMemberDto,
   CreateMinistryRequest,
   UpdateMinistryRequest,
+  MemberNameDto,
+  AddMinistryMemberRequest,
 } from './ministry.model';
 
 @Injectable({ providedIn: 'root' })
@@ -37,5 +39,21 @@ export class MinistryService {
 
   getActiveMembers(publicId: string): Observable<ActiveMinistryMemberDto[]> {
     return this.api.get<ActiveMinistryMemberDto[]>(`/v1/ministries/${publicId}/members`);
+  }
+
+  /** Lightweight 맴버 name list for the add-member picker. Admin or ministry-leader. */
+  getMemberNames(): Observable<MemberNameDto[]> {
+    return this.api.get<MemberNameDto[]>('/v1/members/names');
+  }
+
+  /** Adds an existing 맴버 to this ministry. Backend appends + dedupes (409 if already active). */
+  addMember(
+    ministryPublicId: string,
+    body: AddMinistryMemberRequest,
+  ): Observable<ActiveMinistryMemberDto> {
+    return this.api.post<ActiveMinistryMemberDto>(
+      `/v1/ministries/${ministryPublicId}/members`,
+      body,
+    );
   }
 }

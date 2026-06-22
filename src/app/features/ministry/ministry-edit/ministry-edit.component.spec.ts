@@ -113,6 +113,11 @@ describe('MinistryEditComponent', () => {
     });
   });
 
+  it('shows "사역 추가" as the create-mode title', () => {
+    fixture.detectChanges();
+    expect((fixture.nativeElement.textContent as string)).toContain('사역 추가');
+  });
+
   it('rejects schedules whose end time is not later than the start time', () => {
     component.form.title = '찬양팀';
     component.form.subtitle = '예배 찬양';

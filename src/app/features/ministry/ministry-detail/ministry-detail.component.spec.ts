@@ -26,10 +26,11 @@ describe('MinistryDetailComponent', () => {
   beforeEach(() => {
     const ministryService = jasmine.createSpyObj<MinistryService>(
       'MinistryService',
-      ['getMinistry', 'getActiveMembers']
+      ['getMinistry', 'getActiveMembers', 'getMemberNames', 'addMember'],
     );
     ministryService.getMinistry.and.returnValue(of(ministry));
     ministryService.getActiveMembers.and.returnValue(of([]));
+    ministryService.getMemberNames.and.returnValue(of([]));
 
     TestBed.configureTestingModule({
       imports: [MinistryDetailComponent],
@@ -60,5 +61,22 @@ describe('MinistryDetailComponent', () => {
     expect(text).toContain('07:00 – 09:00');
     expect(text).toContain(ministry.contacts[0].role);
     expect(text).toContain(ministry.contacts[0].name);
+  });
+
+  it('uses 맴버 wording for the active-members section', () => {
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('현재 활동 맴버');
+    expect(text).toContain('맴버 추가');
+    expect(text).not.toContain('현재 활동 회원');
+  });
+
+  it('onMemberAdded() appends the returned row to the active members table', () => {
+    const component = fixture.componentInstance;
+    component.onMemberAdded({
+      publicId: 'm9', fullName: '박지성', startDate: '2026-06-01', note: null, gender: 'M',
+    });
+    fixture.detectChanges();
+    expect(component.activeMembers().length).toBe(1);
+    expect((fixture.nativeElement.textContent as string)).toContain('박지성');
   });
 });

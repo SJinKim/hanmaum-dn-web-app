@@ -37,7 +37,6 @@
             @for (div of matrix().divisions; track $index) {
               <th class="cg-division cg-div-end" [attr.colspan]="div.groups.length">{{ div.division }}</th>
             }
-            <th class="cg-newcomers-head" rowspan="2">새가족순</th>
           </tr>
           <!-- Row 2: 순 names -->
           <tr>
@@ -48,7 +47,7 @@
               }
             }
           </tr>
-          <!-- Row 3: 순장 names (incl. the 새가족 ministry 팀장) -->
+          <!-- Row 3: 순장 names -->
           <tr>
             <th class="cg-idx-label">순장</th>
             @for (div of matrix().divisions; track $index) {
@@ -56,7 +55,6 @@
                 <th class="cg-leader" [class.cg-div-end]="groupLast" [style.background-color]="categoryConfig['DISCIPLESHIP_COMPLETED'].color">{{ group.leader }}</th>
               }
             }
-            <th class="cg-leader" [style.background-color]="categoryConfig['DISCIPLESHIP_COMPLETED'].color">{{ newcomersLeader() }}</th>
           </tr>
         </thead>
         <tbody>
@@ -76,16 +74,6 @@
                     <td class="cg-cell cg-empty" [class.cg-div-end]="groupLast"></td>
                   }
                 }
-              }
-              @if (matrix().newcomers[i]; as cell) {
-                <td class="cg-cell cg-center"
-                    [style.background-color]="categoryConfig[cell.category].color"
-                    [class.opacity-20]="isDimmed(cell.category)"
-                    [class.cg-candidate]="highlightModeActive() && cell.category === 'DISCIPLESHIP_COMPLETED'"
-                    [class.cg-interactive]="highlightModeActive() && cell.category === 'NEXT_LEADER'"
-                    (click)="isCellClickable(cell.category) && toggleCellHighlight(cell.publicId)">{{ cell.displayName }}</td>
-              } @else {
-                <td class="cg-cell cg-empty"></td>
               }
             </tr>
           }

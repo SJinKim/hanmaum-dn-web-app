@@ -1,8 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map } from 'rxjs';
 import { MemberService } from '../members/member.service';
-import { MinistryService } from '../ministry/ministry.service';
-import { MinistrySummary } from '../ministry/ministry.model';
 import { MemberSummary, ChurchGroupSummary } from '../../core/models/member.model';
 import { SummaryTraining } from '../../core/models/member-activity.model';
 
@@ -45,8 +43,15 @@ export const FILTER_CATEGORIES: MemberCategory[] = [
 /**
  * Left-to-right order of divisions in the matrix. Divisions not listed here
  * keep their incoming (division-name) order and render after the listed ones.
+ * The 새가족 division is intentionally absent so it always sorts last.
  */
 export const DIVISION_ORDER: readonly string[] = ['NEHEMIA', 'DANIEL'];
+
+/**
+ * Name of the 새가족 group/division. It is an ordinary church_groups row, but
+ * also acts as the catch-all column for any member that somehow has no group.
+ */
+export const NEWCOMERS_GROUP_NAME = '새가족';
 
 export interface MatrixCell {
   publicId: string;
@@ -69,42 +74,23 @@ export interface DivisionGroup {
 
 export interface ChurchGroupMatrix {
   divisions: DivisionGroup[];
-  newcomers: MatrixCell[];
   rowCount: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ChurchGroupsService {
   private readonly memberService = inject(MemberService);
-  private readonly ministryService = inject(MinistryService);
 
   loadDashboardData(): Observable<{
     members: MemberSummary[];
     groups: ChurchGroupSummary[];
-    newcomersLeader: string;
   }> {
     return forkJoin({
       members: this.memberService
         .getMembers({ status: 'ACTIVE', size: 9999 })
         .pipe(map(p => p.content)),
       groups: this.memberService.getChurchGroups(),
-      ministries: this.ministryService.getMinistries(true),
-    }).pipe(
-      map(({ members, groups, ministries }) => ({
-        members,
-        groups,
-        newcomersLeader: this.resolveNewcomersLeader(ministries),
-      })),
-    );
-  }
-
-  /** Leader (팀장) name of the 새가족 ministry — shown atop the 새가족순 column. */
-  resolveNewcomersLeader(ministries: MinistrySummary[]): string {
-    return (
-      ministries
-        .find(m => m.title.includes('새가족'))
-        ?.contacts.find(c => c.role.includes('팀장'))?.name ?? ''
-    );
+    });
   }
 
   computeCategory(member: MemberSummary): MemberCategory {
@@ -128,7 +114,6 @@ export class ChurchGroupsService {
   buildMatrix(
     members: MemberSummary[],
     groups: ChurchGroupSummary[],
-    newcomersLeaderName = '',
   ): ChurchGroupMatrix {
     const toCell = (m: MemberSummary): MatrixCell => ({
       publicId: m.publicId,
@@ -143,11 +128,9 @@ export class ChurchGroupsService {
       return leader ? leader.lastName + leader.firstName : '';
     };
 
+    // Every column comes from the church_groups table — including 새가족.
     const columns = new Map<string, GroupColumn>();
     for (const g of groups) {
-      // Groups without a division (e.g. 새가족) are not real 순 columns — their
-      // members fall into the 새가족순 newcomers column below.
-      if (!g.division) continue;
       columns.set(g.publicId, {
         publicId: g.publicId,
         division: g.division,
@@ -157,16 +140,15 @@ export class ChurchGroupsService {
       });
     }
 
-    const newcomers: MatrixCell[] = [];
+    // 새가족 doubles as the catch-all for any member with no (valid) group.
+    // Members should always have a group, so this is a safety net only.
+    const newcomersColumn = Array.from(columns.values()).find(
+      c => c.name === NEWCOMERS_GROUP_NAME,
+    );
     for (const m of members) {
-      const cell = toCell(m);
-      if (m.groupPublicId && columns.has(m.groupPublicId)) {
-        columns.get(m.groupPublicId)!.members.push(cell);
-      } else if (cell.displayName !== newcomersLeaderName) {
-        // The 새가족 팀장 is shown in the column header (순장 row), so they are
-        // not also listed as a newcomer cell.
-        newcomers.push(cell);
-      }
+      const column =
+        (m.groupPublicId && columns.get(m.groupPublicId)) || newcomersColumn;
+      column?.members.push(toCell(m));
     }
 
     const divisions: DivisionGroup[] = [];
@@ -183,15 +165,16 @@ export class ChurchGroupsService {
     }
 
     const rank = (division: string): number => {
+      if (division === NEWCOMERS_GROUP_NAME) return Number.MAX_SAFE_INTEGER;
       const i = DIVISION_ORDER.indexOf(division);
       return i === -1 ? DIVISION_ORDER.length : i;
     };
     divisions.sort((a, b) => rank(a.division) - rank(b.division));
 
     const columnLengths = Array.from(columns.values()).map(c => c.members.length);
-    const rowCount = Math.max(0, ...columnLengths, newcomers.length);
+    const rowCount = Math.max(0, ...columnLengths);
 
-    return { divisions, newcomers, rowCount };
+    return { divisions, rowCount };
   }
 
   patchMemberFlags(
