@@ -47,13 +47,22 @@ export class MinistryAddMemberDialogComponent implements OnInit {
   readonly monthOptions = MONTH_OPTIONS;
   readonly yearOptions  = YEAR_OPTIONS;
 
-  private readonly now = new Date();
   readonly form = this.fb.group({
     memberId:   [null as string | null, Validators.required],
-    startYear:  [this.now.getFullYear() as number | null, Validators.required],
-    startMonth: [(this.now.getMonth() + 1) as number | null, Validators.required],
+    startYear:  [null as number | null, Validators.required],
+    startMonth: [null as number | null, Validators.required],
     note:       ['' as string | null],
   });
+
+  constructor() {
+    this.form.reset(this.defaultFormValue());
+  }
+
+  /** Pristine form values, with 시작일 defaulted to the current month (computed fresh each call). */
+  private defaultFormValue(): { memberId: null; startYear: number; startMonth: number; note: string } {
+    const now = new Date();
+    return { memberId: null, startYear: now.getFullYear(), startMonth: now.getMonth() + 1, note: '' };
+  }
 
   ngOnInit(): void {
     this.ministryService.getMemberNames()
@@ -103,13 +112,15 @@ export class MinistryAddMemberDialogComponent implements OnInit {
       });
   }
 
-  close(): void {
-    this.form.reset({
-      memberId: null,
-      startYear: this.now.getFullYear(),
-      startMonth: this.now.getMonth() + 1,
-      note: '',
-    });
-    this.visible.set(false);
+  /** Single close path: clears the form and hides the dialog. */
+  close(): void { this.onVisibleChange(false); }
+
+  /**
+   * Mirrors the dialog's open state into the model and resets the form on close,
+   * so dismissing via the header X or backdrop clears it just like the 취소 button.
+   */
+  onVisibleChange(open: boolean): void {
+    this.visible.set(open);
+    if (!open) this.form.reset(this.defaultFormValue());
   }
 }

@@ -1,7 +1,7 @@
 <p-dialog
   header="맴버 추가"
   [visible]="visible()"
-  (visibleChange)="visible.set($event)"
+  (visibleChange)="onVisibleChange($event)"
   [modal]="true"
   [style]="{ width: '28rem' }"
   [draggable]="false"

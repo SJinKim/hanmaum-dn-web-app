@@ -52,6 +52,18 @@ describe('MinistryAddMemberDialogComponent', () => {
     expect(c.visible()).toBeFalse();
   });
 
+  it('onVisibleChange(false) hides the dialog and resets the form (X / backdrop dismiss)', () => {
+    const c = makeComponent().componentInstance;
+    c.form.patchValue({ memberId: 'm1', note: 'draft' });
+
+    c.onVisibleChange(false);
+
+    expect(c.visible()).toBeFalse();
+    expect(c.form.value.memberId).toBeNull();
+    expect(c.form.value.note).toBe('');
+    expect(c.form.value.startMonth).toBe(new Date().getMonth() + 1);
+  });
+
   it('submit() on 409 keeps the dialog open and does not emit', () => {
     service.addMember.and.returnValue(
       throwError(() => new HttpErrorResponse({ status: 409, error: { message: '이 맴버는 이미 활동중입니다.' } })),
