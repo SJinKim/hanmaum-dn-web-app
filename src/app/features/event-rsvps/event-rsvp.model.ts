@@ -19,6 +19,12 @@ export interface UpdateEventRsvpRequest {
   windowStart?: string;
   windowEnd?: string;
   isActive?: boolean;
+  announcementId?: string;
+}
+
+export interface EventAnnouncementOption {
+  id: string;
+  title: string;
 }
 
 export interface EventRsvpAttendee {

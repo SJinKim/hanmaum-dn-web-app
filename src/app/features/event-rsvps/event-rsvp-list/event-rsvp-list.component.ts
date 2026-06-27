@@ -15,7 +15,9 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { interval } from 'rxjs';
+import { SelectModule } from 'primeng/select';
 import {
+  EventAnnouncementOption,
   EventRsvpDto,
   EventRsvpStatus,
   eventRsvpStatus,
@@ -33,6 +35,7 @@ import { EventRsvpService } from '../event-rsvp.service';
     DatePickerModule,
     DialogModule,
     InputTextModule,
+    SelectModule,
     TableModule,
     TagModule,
     ToastModule,
@@ -50,10 +53,19 @@ export class EventRsvpListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly rsvps = signal<EventRsvpDto[]>([]);
+  readonly eventAnnouncements = signal<EventAnnouncementOption[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly searchTerm = signal('');
   readonly now = signal(new Date());
+
+  readonly announcementTitles = computed(() => {
+    const map = new Map<string, string>();
+    for (const announcement of this.eventAnnouncements()) {
+      map.set(announcement.id, announcement.title);
+    }
+    return map;
+  });
 
   dialogVisible = false;
   editTarget: EventRsvpDto | null = null;
@@ -88,7 +100,20 @@ export class EventRsvpListComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.loadAnnouncements();
     interval(60_000).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.now.set(new Date()));
+  }
+
+  private loadAnnouncements(): void {
+    this.service.getEventAnnouncements().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: announcements => this.eventAnnouncements.set(announcements),
+      error: error => this.showError(error, 'EVENT 공지 목록을 불러올 수 없습니다.'),
+    });
+  }
+
+  announcementTitle(publicId: string | null): string | null {
+    if (!publicId) return null;
+    return this.announcementTitles().get(publicId) ?? null;
   }
 
   load(): void {
@@ -145,6 +170,16 @@ export class EventRsvpListComponent implements OnInit {
       return;
     }
 
+    const announcementId = this.formAnnouncementId.trim();
+    if (!announcementId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: '입력 오류',
+        detail: '연결할 EVENT 공지를 선택해주세요.',
+      });
+      return;
+    }
+
     this.saving.set(true);
     const windowStart = this.formWindowStart.toISOString();
     const windowEnd = this.formWindowEnd.toISOString();
@@ -154,14 +189,13 @@ export class EventRsvpListComponent implements OnInit {
           windowStart,
           windowEnd,
           isActive: this.formIsActive,
+          announcementId,
         })
       : this.service.createRsvp({
           title,
           windowStart,
           windowEnd,
-          ...(this.formAnnouncementId.trim()
-            ? { announcementId: this.formAnnouncementId.trim() }
-            : {}),
+          announcementId,
         });
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

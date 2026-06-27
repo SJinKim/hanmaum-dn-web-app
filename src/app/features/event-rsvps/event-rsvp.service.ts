@@ -1,12 +1,19 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import {
   CreateEventRsvpRequest,
+  EventAnnouncementOption,
   EventRsvpAttendeesResponse,
   EventRsvpDto,
   UpdateEventRsvpRequest,
 } from './event-rsvp.model';
+
+interface AdminAnnouncement {
+  id: string;
+  title: string;
+  category: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class EventRsvpService {
@@ -15,6 +22,16 @@ export class EventRsvpService {
 
   getRsvps(): Observable<EventRsvpDto[]> {
     return this.api.get<EventRsvpDto[]>(this.basePath);
+  }
+
+  getEventAnnouncements(): Observable<EventAnnouncementOption[]> {
+    return this.api.get<AdminAnnouncement[]>('/v1/announcements/admin').pipe(
+      map(announcements =>
+        announcements
+          .filter(announcement => announcement.category === 'EVENT')
+          .map(({ id, title }) => ({ id, title })),
+      ),
+    );
   }
 
   createRsvp(request: CreateEventRsvpRequest): Observable<EventRsvpDto> {
