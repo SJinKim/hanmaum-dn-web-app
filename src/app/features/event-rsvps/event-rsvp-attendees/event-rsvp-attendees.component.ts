@@ -3,6 +3,7 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -37,6 +38,7 @@ export class EventRsvpAttendeesComponent implements OnInit {
   readonly result = signal<EventRsvpAttendeesResponse | null>(null);
   readonly loading = signal(false);
   readonly searchTerm = signal('');
+  readonly linkedAnnouncement = signal<{ id: string; title: string } | null>(null);
   readonly eventPublicId = this.route.snapshot.paramMap.get('id') ?? '';
 
   readonly filteredAttendees = computed(() => {
@@ -59,6 +61,29 @@ export class EventRsvpAttendeesComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.resolveLinkedAnnouncement();
+  }
+
+  private resolveLinkedAnnouncement(): void {
+    if (!this.eventPublicId) return;
+    forkJoin({
+      rsvps: this.service.getRsvps(),
+      announcements: this.service.getEventAnnouncements(),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ rsvps, announcements }) => {
+          const rsvp = rsvps.find(item => item.publicId === this.eventPublicId);
+          const announcementId = rsvp?.announcementPublicId;
+          if (!announcementId) {
+            this.linkedAnnouncement.set(null);
+            return;
+          }
+          const title = announcements.find(item => item.id === announcementId)?.title;
+          this.linkedAnnouncement.set({ id: announcementId, title: title ?? '연결 공지' });
+        },
+        error: () => this.linkedAnnouncement.set(null),
+      });
   }
 
   load(): void {
@@ -84,6 +109,12 @@ export class EventRsvpAttendeesComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/event-rsvps']);
+  }
+
+  viewAnnouncement(): void {
+    const announcement = this.linkedAnnouncement();
+    if (!announcement) return;
+    this.router.navigate(['/announcements'], { queryParams: { focus: announcement.id } });
   }
 
   groupLabel(groupDivision: string | null, groupName: string | null): string {

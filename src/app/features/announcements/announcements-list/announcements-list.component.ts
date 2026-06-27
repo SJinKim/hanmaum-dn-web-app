@@ -2,6 +2,7 @@ import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -52,6 +53,7 @@ export class AnnouncementsListComponent implements OnInit {
   private readonly messageSvc = inject(MessageService);
   private readonly confirmSvc = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route      = inject(ActivatedRoute);
 
   announcements = signal<AnnouncementDto[]>([]);
   loading       = signal(false);
@@ -81,6 +83,8 @@ export class AnnouncementsListComponent implements OnInit {
         const current = this.selected();
         if (current) {
           this.selected.set(items.find(i => i.id === current.id) ?? null);
+        } else {
+          this.applyFocusFromQuery(items);
         }
         this.loading.set(false);
       },
@@ -89,6 +93,13 @@ export class AnnouncementsListComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  private applyFocusFromQuery(items: AnnouncementDto[]): void {
+    const focusId = this.route.snapshot.queryParamMap.get('focus');
+    if (!focusId) return;
+    const match = items.find(i => i.id === focusId);
+    if (match) this.selected.set(match);
   }
 
   categoryLabel(category: AnnouncementCategory): string {

@@ -22,10 +22,26 @@
       <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">참여 그룹</div>
       <div class="mt-2 text-[32px] font-extrabold leading-none tracking-tighter text-primary">{{ groupCount() }}</div>
     </div>
-    <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-      <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">Event Public ID</div>
-      <div class="mt-2 truncate text-[12px] font-semibold text-secondary">{{ result()?.eventPublicId ?? eventPublicId }}</div>
-    </div>
+    @if (linkedAnnouncement(); as announcement) {
+      <button
+        type="button"
+        class="group flex w-full flex-col rounded-xl border border-gray-100 bg-white p-4 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
+        (click)="viewAnnouncement()"
+      >
+        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">연결 공지</div>
+        <div class="mt-2 line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-primary">
+          {{ announcement.title }}
+        </div>
+        <span class="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-secondary group-hover:text-primary">
+          공지 보기 <i class="pi pi-arrow-right text-[9px]"></i>
+        </span>
+      </button>
+    } @else {
+      <div class="flex flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">연결 공지</div>
+        <div class="mt-2 text-[13px] font-semibold text-amber-600">공지 미연결</div>
+      </div>
+    }
   </div>
 
   <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
