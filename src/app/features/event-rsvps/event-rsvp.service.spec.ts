@@ -54,12 +54,29 @@ describe('EventRsvpService', () => {
     });
   });
 
-  it('patches an existing event RSVP', done => {
-    const request = { title: '수정된 수련회', isActive: true };
+  it('patches an existing event RSVP including its announcement', done => {
+    const request = { title: '수정된 수련회', isActive: true, announcementId: 'announcement-2' };
     api.patch.and.returnValue(of({ ...rsvp, ...request }));
 
     service.updateRsvp(rsvp.publicId, request).subscribe(() => {
       expect(api.patch).toHaveBeenCalledOnceWith('/v1/events/rsvps/rsvp-1', request);
+      done();
+    });
+  });
+
+  it('lists only EVENT announcements as options', done => {
+    api.get.and.returnValue(of([
+      { id: 'a1', title: '여름 수련회 공지', category: 'EVENT' },
+      { id: 'a2', title: '주보', category: 'NOTICE' },
+      { id: 'a3', title: '청년부 모임', category: 'EVENT' },
+    ]));
+
+    service.getEventAnnouncements().subscribe(result => {
+      expect(result).toEqual([
+        { id: 'a1', title: '여름 수련회 공지' },
+        { id: 'a3', title: '청년부 모임' },
+      ]);
+      expect(api.get).toHaveBeenCalledOnceWith('/v1/announcements/admin');
       done();
     });
   });
