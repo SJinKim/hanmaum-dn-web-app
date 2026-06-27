@@ -26,9 +26,13 @@ import {
   MemberSummary,
   Baptism,
   BAPTISM_LABELS,
+  MemberStatus,
+  MEMBER_STATUS_LABELS,
 } from '../../../core/models/member.model';
 import { MemberNameCellComponent } from './cells/member-name-cell.component';
 import { BadgeCellComponent } from './cells/badge-cell.component';
+import { SetFilterComponent, NULL_TOKEN } from './filters/set-filter.component';
+import { TrainingFilterComponent } from './filters/training-filter.component';
 import { TrainingChipsCellComponent } from './cells/training-chips-cell.component';
 import { MinistryChipsCellComponent } from './cells/ministry-chips-cell.component';
 import {
@@ -76,6 +80,10 @@ export class MembersListComponent implements OnInit {
   loading      = signal(false);
   searchTerm   = '';
 
+  /** Filter option sources — loaded from their backing tables, not the grid rows. */
+  private readonly churchGroupNames = signal<string[]>([]);
+  private readonly ministryTitles   = signal<string[]>([]);
+
   private gridApi?: GridApi<MemberSummary>;
   private pendingStatusFilter = false;
 
@@ -111,7 +119,12 @@ export class MembersListComponent implements OnInit {
       field: 'memberStatus',
       width: 120,
       cellRenderer: BadgeCellComponent,
-      filter: 'agTextColumnFilter',
+      filter: SetFilterComponent,
+      filterParams: {
+        options: () => (['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED'] as MemberStatus[])
+          .map(s => ({ token: s, label: MEMBER_STATUS_LABELS[s] })),
+        optionValues: (d: MemberSummary) => [d?.memberStatus],
+      },
       sortable: true,
     },
     {
@@ -119,7 +132,12 @@ export class MembersListComponent implements OnInit {
       field: 'groupName',
       width: 160,
       valueFormatter: p => (p.value as string | null) ?? '—',
-      filter: 'agTextColumnFilter',
+      filter: SetFilterComponent,
+      filterParams: {
+        // All groups from the church-groups table — not just those present in the rows.
+        options: () => this.churchGroupNames().map(n => ({ token: n, label: n })),
+        optionValues: (d: MemberSummary) => [d?.groupName],
+      },
       sortable: true,
       comparator: (a: string, b: string) => this.koCollator.compare(a ?? '', b ?? ''),
     },
@@ -130,7 +148,7 @@ export class MembersListComponent implements OnInit {
       valueGetter: p => p.data?.trainings ?? [],
       cellRenderer: TrainingChipsCellComponent,
       sortable: false,
-      filter: false,
+      filter: TrainingFilterComponent,
     },
     {
       headerName: 'Ministry',
@@ -140,15 +158,31 @@ export class MembersListComponent implements OnInit {
       valueGetter: p => p.data?.activeMinistries ?? [],
       cellRenderer: MinistryChipsCellComponent,
       sortable: false,
-      filter: false,
+      filter: SetFilterComponent,
+      filterParams: {
+        // All active ministries from the ministries table, plus a "(없음)" bucket.
+        options: () => [
+          ...this.ministryTitles().map(t => ({ token: t, label: t })),
+          { token: NULL_TOKEN, label: '(없음)' },
+        ],
+        optionValues: (d: MemberSummary) => d?.activeMinistries ?? [],
+      },
     },
     {
       headerName: 'Baptism',
       field: 'baptism',
       width: 140,
       valueFormatter: p => this.baptismLabel(p.value as Baptism | null | undefined),
-      filter: 'agTextColumnFilter',
-      filterValueGetter: p => this.baptismLabel(p.data?.baptism),
+      filter: SetFilterComponent,
+      filterParams: {
+        // Fixed enum order: Unbaptized, Infant, General, Confirmation, then (없음) last.
+        options: () => [
+          ...(['UNBAPTIZED', 'INFANT_BAPTIZED', 'GENERAL_BAPTIZED', 'CONFIRMATION'] as Baptism[])
+            .map(b => ({ token: b, label: BAPTISM_LABELS[b] })),
+          { token: NULL_TOKEN, label: '(없음)' },
+        ],
+        optionValues: (d: MemberSummary) => [d?.baptism],
+      },
       sortable: true,
     },
     {
@@ -220,8 +254,17 @@ export class MembersListComponent implements OnInit {
     this.memberService.getChurchGroups()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: groups => { this.actionsContext.churchGroups = groups; },
+        next: groups => {
+          this.actionsContext.churchGroups = groups;
+          this.churchGroupNames.set(groups.map(g => g.name));
+        },
         error: () => { this.actionsContext.churchGroups = []; },
+      });
+    this.memberService.getMinistryCatalog()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ministries => { this.ministryTitles.set(ministries.map(m => m.title)); },
+        error: () => { this.ministryTitles.set([]); },
       });
   }
 
@@ -233,9 +276,7 @@ export class MembersListComponent implements OnInit {
   private applyPendingFilter(): void {
     if (!this.gridApi) return;
     this.gridApi.setColumnFilterModel('memberStatus', {
-      filterType: 'text',
-      type: 'equals',
-      filter: 'PENDING',
+      values: ['PENDING'],
     }).then(() => this.gridApi?.onFilterChanged());
   }
 
