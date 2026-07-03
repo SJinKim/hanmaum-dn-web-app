@@ -1,0 +1,65 @@
+{
+  "common": {
+    "none": "(None)"
+  },
+  "members": {
+    "title": "Members",
+    "search": {
+      "placeholder": "Search all fields...",
+      "aria": "Search members"
+    },
+    "addButton": "Add Member",
+    "columns": {
+      "name": "Name",
+      "status": "Status",
+      "group": "Group",
+      "training": "Training",
+      "ministry": "Ministry",
+      "baptism": "Baptism",
+      "updatedAt": "Last Activity",
+      "approve": "Approve",
+      "edit": "Edit"
+    },
+    "status": {
+      "PENDING": "Pending",
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "DELETED": "Deleted"
+    },
+    "baptism": {
+      "UNBAPTIZED": "Unbaptized",
+      "INFANT_BAPTIZED": "Infant Baptism",
+      "CONFIRMATION": "Confirmation",
+      "GENERAL_BAPTIZED": "Baptized"
+    },
+    "training": {
+      "QTBS": "QTBS",
+      "1on1": "1-on-1",
+      "Discipleship": "Discipleship"
+    },
+    "actions": {
+      "approving": "Approving…",
+      "selectGroup": "Select group",
+      "selectGroupPlaceholder": "Select group…",
+      "cancel": "Cancel",
+      "approve": "Approve",
+      "edit": "Edit member"
+    },
+    "filter": {
+      "searchPlaceholder": "Search…",
+      "searchAria": "Filter options",
+      "selectAll": "Select all",
+      "reset": "Reset",
+      "empty": "No options",
+      "trainingHint": "Click: In progress → Completed → Clear"
+    },
+    "toast": {
+      "error": "Error",
+      "done": "Done",
+      "groupsLoadFailed": "Could not load the group list.",
+      "membersLoadFailed": "Could not load the member list.",
+      "approveFailed": "Approval failed.",
+      "approveSuccess": "Member approved."
+    }
+  }
+}
