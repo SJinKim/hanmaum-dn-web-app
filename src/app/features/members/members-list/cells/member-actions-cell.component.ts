@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ICellRendererAngularComp } from 'ag-grid-angular';
 import { ICellRendererParams } from 'ag-grid-community';
 import { MemberSummary, ChurchGroupSummary } from '../../../../core/models/member.model';
@@ -21,19 +22,20 @@ interface ActionsCellParams extends ICellRendererParams<MemberSummary> {
 @Component({
   selector: 'app-member-actions-cell',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     @if (action === 'approve') {
       @if (member.memberStatus === 'PENDING') {
         @if (saving) {
-          <i class="pi pi-spinner pi-spin text-primary text-[14px]" aria-label="Approving…"></i>
+          <i class="pi pi-spinner pi-spin text-primary text-[14px]" [attr.aria-label]="'members.actions.approving' | translate"></i>
         } @else if (selecting) {
           <select
             (change)="onGroupChosen($event)"
             (click)="$event.stopPropagation()"
             class="h-7 max-w-[88px] bg-white border border-primary rounded-md text-[11px] text-primary font-bold px-1 outline-none"
-            aria-label="Select church group"
+            [attr.aria-label]="'members.actions.selectGroup' | translate"
           >
-            <option value="" selected disabled>순 선택…</option>
+            <option value="" selected disabled>{{ 'members.actions.selectGroupPlaceholder' | translate }}</option>
             @for (group of ctx.churchGroups; track group.publicId) {
               <option [value]="group.publicId">{{ group.name }}</option>
             }
@@ -41,7 +43,7 @@ interface ActionsCellParams extends ICellRendererParams<MemberSummary> {
           <button
             (click)="cancel($event)"
             class="w-6 h-6 ml-1 flex items-center justify-center text-tertiary hover:text-primary transition-colors"
-            aria-label="Cancel"
+            [attr.aria-label]="'members.actions.cancel' | translate"
           >
             <i class="pi pi-times text-[10px]"></i>
           </button>
@@ -51,7 +53,7 @@ interface ActionsCellParams extends ICellRendererParams<MemberSummary> {
             class="flex items-center gap-1 h-7 px-3 bg-primary text-white rounded-md text-[11px] font-bold hover:bg-primary-hover transition-colors tracking-tight"
           >
             <i class="pi pi-check text-[9px]"></i>
-            Approve
+            {{ 'members.actions.approve' | translate }}
           </button>
         }
       } @else {
@@ -61,7 +63,7 @@ interface ActionsCellParams extends ICellRendererParams<MemberSummary> {
       <button
         (click)="edit($event)"
         class="w-8 h-8 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg text-secondary hover:text-primary hover:border-primary transition-colors"
-        aria-label="Edit member"
+        [attr.aria-label]="'members.actions.edit' | translate"
       >
         <i class="pi pi-pencil text-[11px]"></i>
       </button>
