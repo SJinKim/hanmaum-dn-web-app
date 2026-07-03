@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ICellRendererAngularComp } from 'ag-grid-angular';
 import { ICellRendererParams } from 'ag-grid-community';
 import { MemberStatus } from '../../../../core/models/member.model';
@@ -6,8 +7,11 @@ import { MemberStatus } from '../../../../core/models/member.model';
 @Component({
   selector: 'app-badge-cell',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
-    <span [class]="'status-badge ' + cssClass">{{ display }}</span>
+    <span [class]="'status-badge ' + cssClass">
+      @if (statusKey) { {{ statusKey | translate }} }
+    </span>
   `,
   styles: [`
     :host {
@@ -18,7 +22,8 @@ import { MemberStatus } from '../../../../core/models/member.model';
   `],
 })
 export class BadgeCellComponent implements ICellRendererAngularComp {
-  display = '';
+  /** Translation key for the status label, or '' when there is no status. */
+  statusKey = '';
   cssClass = '';
 
   agInit(params: ICellRendererParams): void {
@@ -32,7 +37,7 @@ export class BadgeCellComponent implements ICellRendererAngularComp {
 
   private update(params: ICellRendererParams): void {
     const value = params.value as MemberStatus | undefined;
-    this.display = value ?? '';
+    this.statusKey = value ? `members.status.${value}` : '';
     this.cssClass = this.statusClass(value);
   }
 

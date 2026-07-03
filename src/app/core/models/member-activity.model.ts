@@ -64,6 +64,18 @@ export const TRAINING_TYPE_LABELS: Record<TrainingType, string> = {
 export const TRAINING_TYPE_OPTIONS = Object.entries(TRAINING_TYPE_LABELS)
   .map(([value, label]) => ({ value: value as TrainingType, label }));
 
+/** Catalog/DTO name (e.g. 'QTBS' | '1on1' | 'Discipleship') → Korean display label. */
+export const TRAINING_NAME_LABELS: Record<string, string> = {
+  QTBS:         '큐베세',
+  '1on1':       '1대1',
+  Discipleship: '제자반',
+};
+
+/** Resolves a catalog/DTO name to its Korean label, falling back to the raw name. */
+export function trainingNameLabel(name: string): string {
+  return TRAINING_NAME_LABELS[name] ?? name;
+}
+
 // --- MINISTRY ---
 
 /**

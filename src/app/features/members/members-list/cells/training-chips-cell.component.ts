@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ICellRendererAngularComp } from 'ag-grid-angular';
 import { ICellRendererParams } from 'ag-grid-community';
 import { SummaryTraining } from '../../../../core/models/member-activity.model';
@@ -10,13 +11,14 @@ import { SummaryTraining } from '../../../../core/models/member-activity.model';
 @Component({
   selector: 'app-training-chips-cell',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     @if (trainings.length === 0) {
       <span class="text-tertiary">—</span>
     } @else {
       <div class="chips">
         @for (t of trainings; track $index) {
-          <span [class]="'status-badge ' + chipClass(t)">{{ t.name }}</span>
+          <span [class]="'status-badge ' + chipClass(t)">{{ 'members.training.' + t.name | translate }}</span>
         }
       </div>
     }

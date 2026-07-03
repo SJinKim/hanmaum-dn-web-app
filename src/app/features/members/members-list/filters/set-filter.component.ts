@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { IFilterAngularComp } from 'ag-grid-angular';
 import { IDoesFilterPassParams, IFilterParams } from 'ag-grid-community';
 
@@ -41,15 +42,15 @@ export interface SetFilterParams {
 @Component({
   selector: 'app-set-filter',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   template: `
     <div class="w-56 p-2 text-[12px] text-primary">
       <input
         type="text"
         class="w-full mb-2 h-8 px-2 outline-none border border-gray-200 rounded-md
                text-[12px] placeholder:text-tertiary"
-        placeholder="Search…"
-        aria-label="Filter options"
+        [placeholder]="'members.filter.searchPlaceholder' | translate"
+        [attr.aria-label]="'members.filter.searchAria' | translate"
         [(ngModel)]="searchText"
       />
 
@@ -58,12 +59,12 @@ export interface SetFilterParams {
           type="button"
           class="text-[11px] font-bold text-primary hover:underline"
           (click)="selectAll()"
-        >Select all</button>
+        >{{ 'members.filter.selectAll' | translate }}</button>
         <button
           type="button"
           class="text-[11px] font-bold text-tertiary hover:underline"
           (click)="clear()"
-        >Clear</button>
+        >{{ 'members.filter.reset' | translate }}</button>
       </div>
 
       <div class="max-h-56 overflow-y-auto">
@@ -77,7 +78,7 @@ export interface SetFilterParams {
             <span class="truncate">{{ opt.label }}</span>
           </label>
         } @empty {
-          <div class="px-1 py-2 text-tertiary">No options</div>
+          <div class="px-1 py-2 text-tertiary">{{ 'members.filter.empty' | translate }}</div>
         }
       </div>
     </div>
