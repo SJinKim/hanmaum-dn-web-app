@@ -4,8 +4,10 @@ import { Router } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
 import { Menu } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
+import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { MemberService } from '../../features/members/member.service';
+import { AppLang, DEFAULT_LANG, LANG_STORAGE_KEY } from '../../core/i18n/language';
 
 const THEME_KEY = 'app-theme';
 const DARK_CLASS = 'app-dark';
@@ -21,10 +23,12 @@ export class HeaderComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router     = inject(Router);
   private readonly memberSvc  = inject(MemberService);
+  private readonly translate  = inject(TranslateService);
 
   @ViewChild('userMenu') userMenu!: Menu;
 
   readonly isDark = signal(this.readInitialTheme());
+  readonly lang   = signal<AppLang>(this.readInitialLang());
   readonly pendingCount = this.memberSvc.pendingCount;
   readonly showPendingBanner = computed(() => this.auth.isAdmin() && this.pendingCount() > 0);
 
@@ -45,6 +49,11 @@ export class HeaderComponent implements OnInit {
         },
         { separator: true },
         { label: 'Settings', icon: 'pi pi-cog', command: () => this.router.navigate(['/settings']) },
+        {
+          label: this.lang() === 'ko' ? 'English' : '한국어',
+          icon: 'pi pi-globe',
+          command: () => this.toggleLang(),
+        },
         { label: 'Logout', icon: 'pi pi-sign-out', command: () => this.auth.logout() },
       ],
     },
@@ -52,6 +61,7 @@ export class HeaderComponent implements OnInit {
 
   constructor() {
     this.applyTheme(this.isDark());
+    this.applyLang(this.lang());
   }
 
   ngOnInit(): void {
@@ -85,5 +95,26 @@ export class HeaderComponent implements OnInit {
   private readInitialTheme(): boolean {
     if (!isPlatformBrowser(this.platformId)) return false;
     return localStorage.getItem(THEME_KEY) === 'dark';
+  }
+
+  private toggleLang(): void {
+    const next: AppLang = this.lang() === 'ko' ? 'en' : 'ko';
+    this.lang.set(next);
+    this.translate.use(next);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(LANG_STORAGE_KEY, next);
+    }
+    this.applyLang(next);
+  }
+
+  private applyLang(lang: AppLang): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    document.documentElement.lang = lang;
+  }
+
+  private readInitialLang(): AppLang {
+    if (!isPlatformBrowser(this.platformId)) return DEFAULT_LANG;
+    const stored = localStorage.getItem(LANG_STORAGE_KEY);
+    return stored === 'en' || stored === 'ko' ? stored : DEFAULT_LANG;
   }
 }

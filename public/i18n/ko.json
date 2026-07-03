@@ -1,0 +1,65 @@
+{
+  "common": {
+    "none": "(없음)"
+  },
+  "members": {
+    "title": "청년 리스트",
+    "search": {
+      "placeholder": "전체 항목 검색...",
+      "aria": "청년 검색"
+    },
+    "addButton": "청년 추가",
+    "columns": {
+      "name": "이름",
+      "status": "상태",
+      "group": "순",
+      "training": "양육",
+      "ministry": "사역",
+      "baptism": "세례",
+      "updatedAt": "최근 활동",
+      "approve": "승인",
+      "edit": "수정"
+    },
+    "status": {
+      "PENDING": "대기중",
+      "ACTIVE": "활성",
+      "INACTIVE": "비활성",
+      "DELETED": "삭제됨"
+    },
+    "baptism": {
+      "UNBAPTIZED": "미세례",
+      "INFANT_BAPTIZED": "유아세례",
+      "CONFIRMATION": "입교",
+      "GENERAL_BAPTIZED": "세례"
+    },
+    "training": {
+      "QTBS": "큐베세",
+      "1on1": "1대1",
+      "Discipleship": "제자반"
+    },
+    "actions": {
+      "approving": "승인 중…",
+      "selectGroup": "순 선택",
+      "selectGroupPlaceholder": "순 선택…",
+      "cancel": "취소",
+      "approve": "승인",
+      "edit": "청년 정보 수정"
+    },
+    "filter": {
+      "searchPlaceholder": "검색…",
+      "searchAria": "필터 옵션",
+      "selectAll": "전체 선택",
+      "reset": "초기화",
+      "empty": "옵션 없음",
+      "trainingHint": "클릭: 진행중 → 완료 → 해제"
+    },
+    "toast": {
+      "error": "오류",
+      "done": "완료",
+      "groupsLoadFailed": "순 목록을 불러올 수 없습니다.",
+      "membersLoadFailed": "청년 목록을 불러올 수 없습니다.",
+      "approveFailed": "승인에 실패했습니다.",
+      "approveSuccess": "청년이 승인되었습니다."
+    }
+  }
+}
