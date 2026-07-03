@@ -20,14 +20,13 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 
 import { MemberService } from '../member.service';
 import {
   MemberSummary,
   Baptism,
-  BAPTISM_LABELS,
   MemberStatus,
-  MEMBER_STATUS_LABELS,
 } from '../../../core/models/member.model';
 import { MemberNameCellComponent } from './cells/member-name-cell.component';
 import { BadgeCellComponent } from './cells/badge-cell.component';
@@ -50,6 +49,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
     AgGridAngular,
     ButtonModule,
     ToastModule,
+    TranslatePipe,
   ],
   providers: [MessageService],
   templateUrl: './members-list.component.html',
@@ -60,6 +60,10 @@ export class MembersListComponent implements OnInit {
   private readonly route          = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
   private readonly destroyRef     = inject(DestroyRef);
+  private readonly translate      = inject(TranslateService);
+
+  /** Shorthand for a synchronous translation lookup (used in AG-Grid colDefs + toasts). */
+  private t = (key: string): string => this.translate.instant(key);
 
   theme = themeQuartz.withParams({
     fontFamily: 'Manrope, sans-serif',
@@ -95,14 +99,14 @@ export class MembersListComponent implements OnInit {
     onEdit:    (member, event) => this.goToEdit(member, event),
     onGroupsMissing: () => this.messageService.add({
       severity: 'error',
-      summary: 'Error',
-      detail: '순 목록을 불러올 수 없습니다.',
+      summary: this.t('members.toast.error'),
+      detail: this.t('members.toast.groupsLoadFailed'),
     }),
   };
 
   readonly columnDefs: ColDef<MemberSummary>[] = [
     {
-      headerName: 'Name',
+      headerValueGetter: () => this.t('members.columns.name'),
       colId: 'name',
       width: 220,
       minWidth: 220,
@@ -115,20 +119,20 @@ export class MembersListComponent implements OnInit {
       getQuickFilterText: p => `${p.data?.lastName ?? ''}${p.data?.firstName ?? ''} ${p.data?.email ?? ''}`,
     },
     {
-      headerName: 'Status',
+      headerValueGetter: () => this.t('members.columns.status'),
       field: 'memberStatus',
       width: 120,
       cellRenderer: BadgeCellComponent,
       filter: SetFilterComponent,
       filterParams: {
         options: () => (['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED'] as MemberStatus[])
-          .map(s => ({ token: s, label: MEMBER_STATUS_LABELS[s] })),
+          .map(s => ({ token: s, label: this.t(`members.status.${s}`) })),
         optionValues: (d: MemberSummary) => [d?.memberStatus],
       },
       sortable: true,
     },
     {
-      headerName: 'Church Group',
+      headerValueGetter: () => this.t('members.columns.group'),
       field: 'groupName',
       width: 160,
       valueFormatter: p => (p.value as string | null) ?? '—',
@@ -142,7 +146,7 @@ export class MembersListComponent implements OnInit {
       comparator: (a: string, b: string) => this.koCollator.compare(a ?? '', b ?? ''),
     },
     {
-      headerName: 'Training',
+      headerValueGetter: () => this.t('members.columns.training'),
       colId: 'training',
       width: 220,
       valueGetter: p => p.data?.trainings ?? [],
@@ -151,7 +155,7 @@ export class MembersListComponent implements OnInit {
       filter: TrainingFilterComponent,
     },
     {
-      headerName: 'Ministry',
+      headerValueGetter: () => this.t('members.columns.ministry'),
       colId: 'ministry',
       flex: 1,
       minWidth: 360,
@@ -163,13 +167,13 @@ export class MembersListComponent implements OnInit {
         // All active ministries from the ministries table, plus a "(없음)" bucket.
         options: () => [
           ...this.ministryTitles().map(t => ({ token: t, label: t })),
-          { token: NULL_TOKEN, label: '(없음)' },
+          { token: NULL_TOKEN, label: this.t('common.none') },
         ],
         optionValues: (d: MemberSummary) => d?.activeMinistries ?? [],
       },
     },
     {
-      headerName: 'Baptism',
+      headerValueGetter: () => this.t('members.columns.baptism'),
       field: 'baptism',
       width: 140,
       valueFormatter: p => this.baptismLabel(p.value as Baptism | null | undefined),
@@ -178,15 +182,15 @@ export class MembersListComponent implements OnInit {
         // Fixed enum order: Unbaptized, Infant, General, Confirmation, then (없음) last.
         options: () => [
           ...(['UNBAPTIZED', 'INFANT_BAPTIZED', 'GENERAL_BAPTIZED', 'CONFIRMATION'] as Baptism[])
-            .map(b => ({ token: b, label: BAPTISM_LABELS[b] })),
-          { token: NULL_TOKEN, label: '(없음)' },
+            .map(b => ({ token: b, label: this.t(`members.baptism.${b}`) })),
+          { token: NULL_TOKEN, label: this.t('common.none') },
         ],
         optionValues: (d: MemberSummary) => [d?.baptism],
       },
       sortable: true,
     },
     {
-      headerName: 'Last Active',
+      headerValueGetter: () => this.t('members.columns.updatedAt'),
       field: 'updatedAt',
       width: 140,
       filter: 'agDateColumnFilter',
@@ -205,7 +209,7 @@ export class MembersListComponent implements OnInit {
       },
     },
     {
-      headerName: 'Approve',
+      headerValueGetter: () => this.t('members.columns.approve'),
       colId: 'approve',
       width: 120,
       cellRenderer: MemberActionsCellComponent,
@@ -214,7 +218,7 @@ export class MembersListComponent implements OnInit {
       filter: false,
     },
     {
-      headerName: 'Edit',
+      headerValueGetter: () => this.t('members.columns.edit'),
       colId: 'edit',
       width: 80,
       cellRenderer: MemberActionsCellComponent,
@@ -247,6 +251,15 @@ export class MembersListComponent implements OnInit {
           this.pendingStatusFilter = true;
           this.applyPendingFilter();
         }
+      });
+
+    // Re-render AG-Grid headers + cells when the language changes (headerValueGetter,
+    // valueFormatter and filter option labels all read the active language via `t`).
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.gridApi?.refreshHeader();
+        this.gridApi?.refreshCells({ force: true });
       });
 
     this.loadAll();
@@ -290,7 +303,11 @@ export class MembersListComponent implements OnInit {
           this.loading.set(false);
         },
         error: () => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Could not load members.' });
+          this.messageService.add({
+            severity: 'error',
+            summary: this.t('members.toast.error'),
+            detail: this.t('members.toast.membersLoadFailed'),
+          });
           this.loading.set(false);
         },
       });
@@ -318,15 +335,23 @@ export class MembersListComponent implements OnInit {
     try {
       await firstValueFrom(this.memberService.approveMember(member.publicId, groupPublicId));
     } catch (err) {
-      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Approval failed.' });
+      this.messageService.add({
+        severity: 'error',
+        summary: this.t('members.toast.error'),
+        detail: this.t('members.toast.approveFailed'),
+      });
       throw err;
     }
-    this.messageService.add({ severity: 'success', summary: 'Done', detail: 'Member approved.' });
+    this.messageService.add({
+      severity: 'success',
+      summary: this.t('members.toast.done'),
+      detail: this.t('members.toast.approveSuccess'),
+    });
     this.loadAll();
     this.memberService.refreshPendingCount();
   }
 
   baptismLabel(b?: Baptism | null): string {
-    return b ? BAPTISM_LABELS[b] : '—';
+    return b ? this.t(`members.baptism.${b}`) : '—';
   }
 }

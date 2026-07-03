@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { IFilterAngularComp } from 'ag-grid-angular';
 import { IDoesFilterPassParams, IFilterParams } from 'ag-grid-community';
 import {
@@ -7,12 +8,9 @@ import {
 } from '../../../../core/models/member-activity.model';
 
 /** Fixed training options, in the requested display order. `name` matches the
- * catalog/DTO name on each {@link SummaryTraining} ('QTBS' | '1on1' | 'Discipleship'). */
-const TRAININGS: { name: string; label: string }[] = [
-  { name: 'QTBS', label: '큐베세' },
-  { name: '1on1', label: '1대1' },
-  { name: 'Discipleship', label: '제자반' },
-];
+ * catalog/DTO name on each {@link SummaryTraining} ('QTBS' | '1on1' | 'Discipleship');
+ * the display label is resolved from `members.training.<name>` in the template. */
+const TRAININGS: { name: string }[] = ['QTBS', '1on1', 'Discipleship'].map(name => ({ name }));
 
 /** Filter model persisted by the grid. */
 export interface TrainingFilterModel {
@@ -33,6 +31,7 @@ export interface TrainingFilterModel {
 @Component({
   selector: 'app-training-filter',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <div class="w-44 p-2 text-[12px] text-primary">
       @for (t of trainings; track t.name) {
@@ -48,7 +47,7 @@ export interface TrainingFilterModel {
             @if (stateOf(t.name) === 'IN_PROGRESS') { – }
             @else if (stateOf(t.name) === 'COMPLETED') { ✓ }
           </span>
-          <span>{{ t.label }}</span>
+          <span>{{ 'members.training.' + t.name | translate }}</span>
         </div>
       }
 
@@ -59,11 +58,11 @@ export interface TrainingFilterModel {
         <span class="box" [class.box--none]="noneSelected()">
           @if (noneSelected()) { ✓ }
         </span>
-        <span>(없음)</span>
+        <span>{{ 'common.none' | translate }}</span>
       </div>
 
       <p class="mt-2 px-1 text-[10px] leading-tight text-tertiary">
-        클릭: 진행중 → 완료 → 해제
+        {{ 'members.filter.trainingHint' | translate }}
       </p>
     </div>
   `,
