@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { provideTranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
 
 import { MemberEditComponent } from './member-edit.component';
@@ -19,6 +20,7 @@ describe('MemberEditComponent — ministry editor', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
       ],
     }).compileComponents();
 
@@ -156,6 +158,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: memberServiceStub },
       ],
@@ -185,6 +188,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: memberServiceStub },
       ],
@@ -215,7 +219,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     expect(card.get('endMonth')!.disabled).toBeTrue();
 
     // Click the REAL Ongoing checkbox (PrimeNG renders an <input type=checkbox>).
-    const checkbox = fixture.debugElement.query(By.css('p-checkbox input[type="checkbox"]'));
+    const checkbox = fixture.debugElement.query(By.css('#memberMinistryOngoing-0'));
     expect(checkbox).withContext('ongoing checkbox should be rendered').toBeTruthy();
     checkbox.nativeElement.click();
     fixture.detectChanges();
@@ -234,5 +238,114 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     const items = replaceSpy.calls.mostRecent().args[1] as MemberMinistryItem[];
     expect(items.length).toBe(1);
     expect(items[0].endDate).withContext('endDate must be persisted, not null').toBe('2025-11-01');
+  });
+});
+
+describe('MemberEditComponent — 순장 checkbox', () => {
+  const member = {
+    publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
+    baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
+    city: null, registrationDate: null, memberStatus: 'ACTIVE' as const, churchRole: null,
+    groupPublicId: 'grp-1', groupName: '믿음',
+    profileImageUrl: null, trainings: [], ministries: [],
+    isGroupLeader: false,
+  };
+
+  const groups = [
+    { publicId: 'grp-1', division: 'NEHEMIA', name: '믿음', leaderPublicId: 'other', leaderName: '박민수' },
+    { publicId: 'grp-2', division: 'NEHEMIA', name: '소망' },
+  ];
+
+  function setup(loaded: Partial<typeof member> = {}) {
+    const assignSpy = jasmine.createSpy('assignGroupLeader').and.returnValue(of(groups[0]));
+    const clearSpy = jasmine.createSpy('clearGroupLeader').and.returnValue(of({
+      ...groups[0], leaderPublicId: null, leaderName: null,
+    }));
+    const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of({ ...member, ...loaded }));
+    const stub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([]),
+      getChurchGroups: () => of(groups),
+      getMember: () => of({ ...member, ...loaded }),
+      updateMember: updateSpy,
+      createMember: () => of(member),
+      replaceMemberTrainings: () => of({ ...member, ...loaded }),
+      replaceMemberMinistries: () => of({ ...member, ...loaded }),
+      assignGroupLeader: assignSpy,
+      clearGroupLeader: clearSpy,
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
+        { provide: MemberService, useValue: stub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance, assignSpy, clearSpy, updateSpy };
+  }
+
+  it('shows a replacement hint when checking 순장 on a group that already has another leader', () => {
+    const { component } = setup();
+    expect(component.leaderChangeHintName()).toBeNull();
+
+    component.form.get('isGroupLeader')!.setValue(true);
+    expect(component.leaderChangeHintName()).toBe('박민수');
+  });
+
+  it('does not hint when this member is already the group\'s 순장', () => {
+    const { component } = setup({
+      isGroupLeader: true,
+    });
+    // The loaded groups still list "other" as leader; override to this member.
+    component['churchGroups'].set([{ ...groups[0], leaderPublicId: 'm1', leaderName: '김철수' }]);
+    component.form.get('isGroupLeader')!.setValue(true);
+    component.refreshLeaderHint();
+    expect(component.leaderChangeHintName()).toBeNull();
+  });
+
+  it('calls assignGroupLeader after save when the checkbox is checked', () => {
+    const { component, assignSpy, clearSpy, updateSpy } = setup();
+    component.form.get('isGroupLeader')!.setValue(true);
+    component.save();
+
+    expect(updateSpy).toHaveBeenCalled();
+    const req = updateSpy.calls.mostRecent().args[1] as { isNextGroupLeader?: boolean };
+    expect(req.isNextGroupLeader).toBeFalse();
+    expect(assignSpy).toHaveBeenCalledWith('grp-1', 'm1');
+    expect(clearSpy).not.toHaveBeenCalled();
+  });
+
+  it('calls clearGroupLeader after save when the current 순장 is unchecked', () => {
+    const { component, assignSpy, clearSpy } = setup({ isGroupLeader: true });
+    component.form.get('isGroupLeader')!.setValue(false);
+    component.save();
+
+    expect(clearSpy).toHaveBeenCalledWith('grp-1');
+    expect(assignSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not re-assign when the current 순장 is saved unchanged', () => {
+    const { component, assignSpy, clearSpy } = setup({ isGroupLeader: true });
+    component.save();
+
+    expect(assignSpy).not.toHaveBeenCalled();
+    expect(clearSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not call clearGroupLeader when a 순장 is moved to another group unchecked', () => {
+    const { component, assignSpy, clearSpy } = setup({ isGroupLeader: true });
+    component.form.get('groupPublicId')!.setValue('grp-2');
+    component.form.get('isGroupLeader')!.setValue(false);
+    component.save();
+
+    expect(clearSpy).not.toHaveBeenCalled();
+    expect(assignSpy).not.toHaveBeenCalled();
   });
 });

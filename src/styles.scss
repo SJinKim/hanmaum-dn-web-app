@@ -51,7 +51,7 @@ html, body {
   letter-spacing: 0.02em;
 
   &.badge-active   { background: #dcfce7; color: #15803d; }
-  &.badge-inactive { background: #fef3c7; color: #b45309; }
+  &.badge-inactive { background: #ffedd5; color: #c2410c; }
   &.badge-pending  { background: #ede9fe; color: #6d28d9; }
   &.badge-deleted  { background: #fee2e2; color: #b91c1c; }
   &.badge-admin    { background: #1e293b; color: #ffffff; }
@@ -63,6 +63,9 @@ html, body {
 
   // Ministry chips: blue = currently active.
   &.badge-ministry-active { background: #dbeafe; color: #1d4ed8; }
+
+  // Church group leader (순장).
+  &.badge-group-leader { background: #fef3c7; color: #b45309; }
 }
 
 // Compact selects for the member-edit training/ministry date rows,

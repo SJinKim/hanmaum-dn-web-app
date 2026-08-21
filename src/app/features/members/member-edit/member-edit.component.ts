@@ -11,7 +11,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, of, switchMap } from 'rxjs';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -20,6 +20,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { MemberService } from '../member.service';
 import {
@@ -78,6 +79,7 @@ const mobileValidator: ValidatorFn = (control: AbstractControl): ValidationError
     DatePickerModule,
     CheckboxModule,
     ToastModule,
+    TranslatePipe,
   ],
   providers: [MessageService],
   templateUrl: './member-edit.component.html',
@@ -136,14 +138,21 @@ export class MemberEditComponent implements OnInit {
     registrationDate:[null as Date | null],
     groupPublicId:   [null as string | null],
     memberStatus:    [null as string | null],
+    isGroupLeader:   [{ value: false, disabled: true }],
     trainings:       this.fb.array<FormGroup>([]),
     ministries:      this.fb.array<FormGroup>([]),
   });
+
+  /** Name of the sitting 순장 that this save would replace, or null when no hint is needed. */
+  readonly leaderChangeHintName = signal<string | null>(null);
 
   get trainings(): FormArray<FormGroup> { return this.form.get('trainings') as FormArray<FormGroup>; }
   get ministries(): FormArray<FormGroup> { return this.form.get('ministries') as FormArray<FormGroup>; }
 
   private publicId?: string;
+  private originalIsGroupLeader = false;
+  private originalGroupPublicId: string | null = null;
+  private leaderPersistError: 'assign' | 'clear' | null = null;
 
   /** Country name used in the phone validation message. */
   get phoneCountryName(): string {
@@ -164,15 +173,27 @@ export class MemberEditComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: c => this.ministryCatalog.set(c) });
 
-    // Load church groups (needed to populate the "Church Group" select options).
+    // Load church groups (needed to populate the "Church Group" select options
+    // and to know whether the selected group already has a 순장).
     this.memberService.getChurchGroups()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: g => this.churchGroups.set(g) });
+      .subscribe({ next: g => { this.churchGroups.set(g); this.refreshLeaderHint(); } });
 
     // Re-validate the local number whenever the country changes.
     this.form.get('phoneCountry')!.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.form.get('phoneLocal')!.updateValueAndValidity());
+
+    this.form.get('groupPublicId')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.syncLeaderCheckboxEnabled();
+        this.refreshLeaderHint();
+      });
+
+    this.form.get('isGroupLeader')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.refreshLeaderHint());
 
     if (this.publicId) {
       this.loading.set(true);
@@ -208,7 +229,12 @@ export class MemberEditComponent implements OnInit {
       registrationDate: member.registrationDate ? new Date(member.registrationDate) : null,
       groupPublicId:    member.groupPublicId ?? null,
       memberStatus:     member.memberStatus,
+      isGroupLeader:    !!member.isGroupLeader,
     });
+    this.originalIsGroupLeader = !!member.isGroupLeader;
+    this.originalGroupPublicId = member.groupPublicId ?? null;
+    this.syncLeaderCheckboxEnabled();
+    this.refreshLeaderHint();
 
     this.rebuildActivities(member.trainings ?? []);
     this.rebuildMinistries(member.ministries ?? []);
@@ -220,6 +246,7 @@ export class MemberEditComponent implements OnInit {
       return;
     }
     this.saving.set(true);
+    this.leaderPersistError = null;
     const raw = this.form.getRawValue();
     const phoneNumber = normalizeToE164(raw.phoneCountry as PhoneCountry, raw.phoneLocal ?? '') ?? undefined;
 
@@ -252,6 +279,8 @@ export class MemberEditComponent implements OnInit {
         // leave the existing group untouched, so a cleared select must send "".
         groupPublicId:    raw.groupPublicId ?? '',
         memberStatus:     (raw.memberStatus as MemberStatus) ?? undefined,
+        // Drop 예비순장 when appointing 순장 — they are no longer "next".
+        ...(raw.isGroupLeader ? { isNextGroupLeader: false } : {}),
       };
       member$ = this.memberService.updateMember(this.publicId!, req);
     } else {
@@ -272,16 +301,25 @@ export class MemberEditComponent implements OnInit {
       member$ = this.memberService.createMember(req);
     }
 
+    const wantLeader = !!raw.isGroupLeader;
+    const newGroup = raw.groupPublicId || null;
+
     // Persist the member, then replace its training and ministry sets with what the form holds.
     member$
       .pipe(
         switchMap(member => this.persistTrainings(member, trainingItems)),
         switchMap(member => this.persistMinistries(member, ministryItems)),
+        switchMap(member => this.persistLeadership(member, wantLeader, newGroup)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: saved => {
           this.messageService.add({ severity: 'success', summary: '완료', detail: successDetail });
+          if (this.leaderPersistError === 'assign') {
+            this.messageService.add({ severity: 'error', summary: '오류', detail: '순장 지정에 실패했습니다.' });
+          } else if (this.leaderPersistError === 'clear') {
+            this.messageService.add({ severity: 'error', summary: '오류', detail: '순장 해제에 실패했습니다.' });
+          }
           this.saving.set(false);
           setTimeout(() => this.router.navigate(['/members', saved.publicId]), 800);
         },
@@ -290,6 +328,76 @@ export class MemberEditComponent implements OnInit {
           this.saving.set(false);
         },
       });
+  }
+
+  /**
+   * Appoints or clears 순장 after the member PATCH. The backend requires the member
+   * to already belong to the group, so this must run after `updateMember`.
+   */
+  private persistLeadership(
+    member: Member,
+    checked: boolean,
+    newGroup: string | null,
+  ): Observable<Member> {
+    if (!this.isEdit()) return of(member);
+
+    const alreadyLeadsThisGroup =
+      this.originalIsGroupLeader && newGroup === this.originalGroupPublicId;
+
+    if (checked && newGroup && !alreadyLeadsThisGroup) {
+      return this.memberService.assignGroupLeader(newGroup, member.publicId).pipe(
+        map(updated => {
+          this.churchGroups.update(gs => gs.map(g => g.publicId === updated.publicId ? updated : g));
+          return { ...member, isGroupLeader: true };
+        }),
+        catchError(() => {
+          this.leaderPersistError = 'assign';
+          return of(member);
+        }),
+      );
+    }
+
+    const sameGroup = newGroup === this.originalGroupPublicId;
+    if (!checked && this.originalIsGroupLeader && sameGroup && this.originalGroupPublicId) {
+      return this.memberService.clearGroupLeader(this.originalGroupPublicId).pipe(
+        map(updated => {
+          this.churchGroups.update(gs => gs.map(g => g.publicId === updated.publicId ? updated : g));
+          return { ...member, isGroupLeader: false };
+        }),
+        catchError(() => {
+          this.leaderPersistError = 'clear';
+          return of(member);
+        }),
+      );
+    }
+
+    return of(member);
+  }
+
+  private syncLeaderCheckboxEnabled(): void {
+    const ctrl = this.form.get('isGroupLeader')!;
+    if (this.form.get('groupPublicId')!.value) {
+      ctrl.enable({ emitEvent: false });
+    } else {
+      ctrl.setValue(false, { emitEvent: false });
+      ctrl.disable({ emitEvent: false });
+    }
+  }
+
+  refreshLeaderHint(): void {
+    const checked = !!this.form.get('isGroupLeader')!.value;
+    const groupId = this.form.get('groupPublicId')!.value;
+    if (!checked || !groupId) {
+      this.leaderChangeHintName.set(null);
+      return;
+    }
+    const group = this.churchGroups().find(g => g.publicId === groupId);
+    const existingId = group?.leaderPublicId;
+    if (existingId && existingId !== this.publicId) {
+      this.leaderChangeHintName.set(group?.leaderName || existingId);
+    } else {
+      this.leaderChangeHintName.set(null);
+    }
   }
 
   /**

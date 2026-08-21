@@ -51,7 +51,12 @@
       "selectAll": "전체 선택",
       "reset": "초기화",
       "empty": "옵션 없음",
-      "trainingHint": "클릭: 진행중 → 완료 → 해제"
+      "trainingHint": "클릭: 진행중 → 완료 → 해제",
+      "groupLeader": "순장"
+    },
+    "edit": {
+      "churchGroupLeader": "순장",
+      "leaderChangeHint": "이 변경으로 순장이 {{name}}에서 바뀝니다."
     },
     "toast": {
       "error": "오류",
@@ -59,7 +64,9 @@
       "groupsLoadFailed": "순 목록을 불러올 수 없습니다.",
       "membersLoadFailed": "청년 목록을 불러올 수 없습니다.",
       "approveFailed": "승인에 실패했습니다.",
-      "approveSuccess": "청년이 승인되었습니다."
+      "approveSuccess": "청년이 승인되었습니다.",
+      "leaderAssignFailed": "순장 지정에 실패했습니다.",
+      "leaderClearFailed": "순장 해제에 실패했습니다."
     }
   }
 }

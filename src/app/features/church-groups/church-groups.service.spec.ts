@@ -192,10 +192,31 @@ describe('ChurchGroupsService', () => {
       expect(m.rowCount).toBe(0);
     });
 
-    it('resolves the 순장 leader name for a group', () => {
-      const leader = makeMember({ publicId: 'L', groupPublicId: 'g1', lastName: '서', firstName: '준', churchRole: '순장' });
+    it('resolves the 순장 leader name from the group summary', () => {
+      const led: ChurchGroupSummary = { ...group1, leaderPublicId: 'L', leaderName: '서준' };
+      const m = service.buildMatrix([], [led]);
+      expect(m.divisions[0].groups[0].leader).toBe('서준');
+    });
+
+    it('falls back to the member flagged isGroupLeader when the group has no leaderName', () => {
+      const leader = makeMember({ publicId: 'L', groupPublicId: 'g1', lastName: '서', firstName: '준', isGroupLeader: true });
       const m = service.buildMatrix([leader], [group1]);
       expect(m.divisions[0].groups[0].leader).toBe('서준');
+    });
+
+    it('omits the 순장 from the group body cells', () => {
+      const leader = makeMember({ publicId: 'L', groupPublicId: 'g1', lastName: '서', firstName: '준', isGroupLeader: true });
+      const member = makeMember({ publicId: 'x', groupPublicId: 'g1', lastName: '김', firstName: '철수' });
+      const m = service.buildMatrix([leader, member], [group1]);
+      expect(m.divisions[0].groups[0].members.map(c => c.publicId)).toEqual(['x']);
+      expect(m.rowCount).toBe(1);
+    });
+
+    it('ignores churchRole when resolving the 순장', () => {
+      const member = makeMember({ publicId: 'x', groupPublicId: 'g1', lastName: '이', firstName: '영희', churchRole: '순장' });
+      const m = service.buildMatrix([member], [group1]);
+      expect(m.divisions[0].groups[0].leader).toBe('');
+      expect(m.divisions[0].groups[0].members.length).toBe(1);
     });
 
     it('leader is empty string when no 순장 in the group', () => {
