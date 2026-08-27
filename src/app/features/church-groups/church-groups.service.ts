@@ -121,9 +121,10 @@ export class ChurchGroupsService {
       category: this.computeCategory(m),
     });
 
-    const leaderOf = (groupPublicId: string): string => {
+    const leaderOf = (group: ChurchGroupSummary): string => {
+      if (group.leaderName) return group.leaderName;
       const leader = members.find(
-        m => m.groupPublicId === groupPublicId && m.churchRole === '순장',
+        m => m.groupPublicId === group.publicId && m.isGroupLeader,
       );
       return leader ? leader.lastName + leader.firstName : '';
     };
@@ -135,7 +136,7 @@ export class ChurchGroupsService {
         publicId: g.publicId,
         division: g.division,
         name: g.name,
-        leader: leaderOf(g.publicId),
+        leader: leaderOf(g),
         members: [],
       });
     }
@@ -146,6 +147,7 @@ export class ChurchGroupsService {
       c => c.name === NEWCOMERS_GROUP_NAME,
     );
     for (const m of members) {
+      if (m.isGroupLeader) continue;
       const column =
         (m.groupPublicId && columns.get(m.groupPublicId)) || newcomersColumn;
       column?.members.push(toCell(m));

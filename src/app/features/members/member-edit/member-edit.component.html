@@ -151,6 +151,19 @@
             <div class="flex flex-col gap-1">
               <label for="memberChurchGroup" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Church Group</label>
               <p-select inputId="memberChurchGroup" formControlName="groupPublicId" [options]="groupOptions()" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" class="w-full" />
+              <label
+                for="memberIsGroupLeader"
+                class="flex items-center gap-2 mt-1"
+                [class.cursor-pointer]="!!form.get('groupPublicId')!.value"
+                [class.cursor-not-allowed]="!form.get('groupPublicId')!.value"
+                [class.opacity-40]="!form.get('groupPublicId')!.value"
+              >
+                <p-checkbox inputId="memberIsGroupLeader" formControlName="isGroupLeader" [binary]="true" />
+                <span class="text-[11px] font-semibold text-secondary">{{ 'members.edit.churchGroupLeader' | translate }}</span>
+              </label>
+              @if (leaderChangeHintName(); as name) {
+                <small class="text-amber-600 text-[11px]">{{ 'members.edit.leaderChangeHint' | translate:{ name } }}</small>
+              }
             </div>
           }
 

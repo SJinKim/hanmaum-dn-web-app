@@ -120,7 +120,13 @@
         </div>
         <div>
           <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Group</div>
-          <div class="font-medium text-gray-800">{{ member()!.groupName ?? '—' }}</div>
+          <div class="font-medium text-gray-800 flex items-center gap-1.5">
+            {{ member()!.groupName ?? '—' }}
+            @if (member()!.isGroupLeader) {
+              <i class="pi pi-star-fill text-[12px]" style="color: #b45309" aria-hidden="true"></i>
+              <span class="font-bold" style="color: #b45309">순장</span>
+            }
+          </div>
         </div>
         <div>
           <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Registration Date</div>

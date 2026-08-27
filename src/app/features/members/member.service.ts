@@ -82,6 +82,18 @@ export class MemberService {
     return this.api.get<ChurchGroupSummary[]>('/v1/church-groups');
   }
 
+  /** Makes the member the group's current 순장, closing any sitting tenure. */
+  assignGroupLeader(groupPublicId: string, memberPublicId: string): Observable<ChurchGroupSummary> {
+    return this.api.put<ChurchGroupSummary>(`/v1/church-groups/${groupPublicId}/leader`, {
+      memberPublicId,
+    });
+  }
+
+  /** Ends the group's current 순장 tenure. Idempotent when the group is already vacant. */
+  clearGroupLeader(groupPublicId: string): Observable<ChurchGroupSummary> {
+    return this.api.deleteData<ChurchGroupSummary>(`/v1/church-groups/${groupPublicId}/leader`);
+  }
+
   /** The admin-managed training catalog used to populate the member edit form. */
   getTrainingCatalog(): Observable<TrainingCatalogEntry[]> {
     return this.api.get<TrainingCatalogEntry[]>('/v1/trainings');

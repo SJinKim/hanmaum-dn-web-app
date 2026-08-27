@@ -56,4 +56,11 @@ export class ApiService {
   delete(path: string): Observable<void> {
     return this.http.delete<void>(`${this.base}${path}`);
   }
+
+  /** DELETE that unwraps `ApiResponse<T>` — use when the server returns a body. */
+  deleteData<T>(path: string): Observable<T> {
+    return this.unwrap(
+      this.http.delete<ApiResponse<T>>(`${this.base}${path}`),
+    );
+  }
 }
