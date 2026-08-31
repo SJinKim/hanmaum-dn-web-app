@@ -7,7 +7,10 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
+import { TranslateService } from '@ngx-translate/core';
+
 import { MemberService } from '../member.service';
+import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
 import {
   Member,
   MemberStatus,
@@ -19,6 +22,8 @@ import {
   MinistryHistory,
   monthYearFromCompletedAt,
 } from '../../../core/models/member-activity.model';
+import { trainingLabelForName } from '../../../core/models/member-activity.model';
+import { injectAppLang } from '../../../core/i18n/language';
 import { formatForDisplay } from '../../../core/models/phone.util';
 
 @Component({
@@ -39,6 +44,9 @@ export class MemberDetailComponent implements OnInit {
   private readonly confirmService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly destroyRef     = inject(DestroyRef);
+  private readonly trainingCatalog = inject(TrainingCatalogService);
+  private readonly translate      = inject(TranslateService);
+  private readonly lang           = injectAppLang();
 
   member  = signal<Member | null>(null);
   loading = signal(true);
@@ -49,6 +57,9 @@ export class MemberDetailComponent implements OnInit {
   ministries(): MinistryHistory[] { return this.member()?.ministries ?? []; }
 
   ngOnInit(): void {
+    // Course names are resolved through the catalog, so make sure it is loaded.
+    this.trainingCatalog.load().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+
     const publicId = this.route.snapshot.paramMap.get('publicId')!;
     this.memberService.getMember(publicId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -109,14 +120,17 @@ export class MemberDetailComponent implements OnInit {
 
   // --- Training / ministry display ---
 
-  /** Catalog name as sent by the backend, e.g. "QTBS" / "1on1". */
-  trainingName(t: UserTraining): string { return t.name; }
+  /** Course name from the catalog in the active language; the raw DTO name if unknown. */
+  trainingName(t: UserTraining): string {
+    return trainingLabelForName(this.trainingCatalog.entries(), t.name, this.lang());
+  }
 
-  /** Completed month/year as "MM/YY"; "진행중" while in progress. */
+  /** Completed month/year as "MM/YY"; the status label for every other status. */
   trainingDate(t: UserTraining): string {
-    if (t.status !== 'COMPLETED' || !t.completedAt) return '진행중';
+    const status = this.translate.instant(`members.trainingStatus.${t.status}`) as string;
+    if (t.status !== 'COMPLETED' || !t.completedAt) return status;
     const { month, year } = monthYearFromCompletedAt(t.completedAt);
-    return month && year ? this.mmYy(month, year) : '진행중';
+    return month && year ? this.mmYy(month, year) : status;
   }
 
   private mmYy(month: number, year: number): string {

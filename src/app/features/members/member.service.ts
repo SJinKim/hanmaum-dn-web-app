@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
+import { TrainingCatalogService } from '../../core/services/training-catalog.service';
 import { PageResponse } from '../../core/models/api-response.model';
 import {
   Member,
@@ -20,7 +21,8 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class MemberService {
-  private readonly api = inject(ApiService);
+  private readonly api             = inject(ApiService);
+  private readonly trainingCatalog = inject(TrainingCatalogService);
 
   /** Shared, real-time count of members in PENDING status. */
   readonly pendingCount = signal(0);
@@ -94,9 +96,12 @@ export class MemberService {
     return this.api.deleteData<ChurchGroupSummary>(`/v1/church-groups/${groupPublicId}/leader`);
   }
 
-  /** The admin-managed training catalog used to populate the member edit form. */
+  /**
+   * The admin training catalog, including retired courses. Delegates to
+   * {@link TrainingCatalogService} so the whole app shares one fetch and one cache.
+   */
   getTrainingCatalog(): Observable<TrainingCatalogEntry[]> {
-    return this.api.get<TrainingCatalogEntry[]>('/v1/trainings');
+    return this.trainingCatalog.load();
   }
 
   /** Replaces the member's entire training set; returns the refreshed member detail. */

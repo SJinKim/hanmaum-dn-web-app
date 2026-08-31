@@ -33,6 +33,7 @@ import { BadgeCellComponent } from './cells/badge-cell.component';
 import { SetFilterComponent, NULL_TOKEN } from './filters/set-filter.component';
 import { NameFilterComponent } from './filters/name-filter.component';
 import { TrainingFilterComponent } from './filters/training-filter.component';
+import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
 import { TrainingChipsCellComponent } from './cells/training-chips-cell.component';
 import { MinistryChipsCellComponent } from './cells/ministry-chips-cell.component';
 import {
@@ -62,6 +63,7 @@ export class MembersListComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly destroyRef     = inject(DestroyRef);
   private readonly translate      = inject(TranslateService);
+  private readonly trainingCatalog = inject(TrainingCatalogService);
 
   /** Shorthand for a synchronous translation lookup (used in AG-Grid colDefs + toasts). */
   private t = (key: string): string => this.translate.instant(key);
@@ -279,6 +281,11 @@ export class MembersListComponent implements OnInit {
         next: ministries => { this.ministryTitles.set(ministries.map(m => m.title)); },
         error: () => { this.ministryTitles.set([]); },
       });
+    // Training chips and the training filter label themselves from the catalog, so
+    // re-render the column once it lands.
+    this.trainingCatalog.load()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: () => this.gridApi?.refreshCells({ force: true }) });
   }
 
   onGridReady(event: GridReadyEvent<MemberSummary>): void {
