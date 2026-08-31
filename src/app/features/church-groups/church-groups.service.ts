@@ -1,8 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map } from 'rxjs';
 import { MemberService } from '../members/member.service';
+import { TrainingCatalogService } from '../../core/services/training-catalog.service';
 import { MemberSummary, ChurchGroupSummary } from '../../core/models/member.model';
-import { SummaryTraining } from '../../core/models/member-activity.model';
+import { SummaryTraining, catalogEntryByName } from '../../core/models/member-activity.model';
+
+/** Catalog codes the matrix categories are built on. */
+const QT_BASIC_SEMINAR = 'QT_BASIC_SEMINAR';
+const ONE_ON_ONE = 'ONE_ON_ONE';
+const YOUTH_POWER_DISCIPLESHIP = 'YOUTH_POWER_DISCIPLESHIP';
 
 export type MemberCategory =
   | 'NEXT_LEADER'
@@ -79,7 +85,8 @@ export interface ChurchGroupMatrix {
 
 @Injectable({ providedIn: 'root' })
 export class ChurchGroupsService {
-  private readonly memberService = inject(MemberService);
+  private readonly memberService    = inject(MemberService);
+  private readonly trainingCatalog  = inject(TrainingCatalogService);
 
   loadDashboardData(): Observable<{
     members: MemberSummary[];
@@ -90,23 +97,33 @@ export class ChurchGroupsService {
         .getMembers({ status: 'ACTIVE', size: 9999 })
         .pipe(map(p => p.content)),
       groups: this.memberService.getChurchGroups(),
-    });
+      // Categories are keyed on catalog codes, so the catalog has to be in before
+      // the matrix is built.
+      catalog: this.trainingCatalog.load(),
+    }).pipe(map(({ members, groups }) => ({ members, groups })));
   }
 
+  /**
+   * The member's matrix category. Trainings are matched on the catalog's stable `code`:
+   * the member summary only carries the English course name, and those names overlap
+   * ("One-to-One Discipleship Training" contains "Discipleship"), so a substring match
+   * puts members in the wrong category.
+   */
   computeCategory(member: MemberSummary): MemberCategory {
     if (member.isNextGroupLeader) return 'NEXT_LEADER';
 
+    const catalog = this.trainingCatalog.entries();
     const trainings: SummaryTraining[] = member.trainings ?? [];
-    const has = (name: string, status: string): boolean =>
+    const has = (code: string, status: string): boolean =>
       trainings.some(
-        t => t.name.toLowerCase().includes(name.toLowerCase()) && t.status === status,
+        t => catalogEntryByName(catalog, t.name)?.code === code && t.status === status,
       );
 
-    if (has('discipleship', 'COMPLETED')) return 'DISCIPLESHIP_COMPLETED';
-    if (has('1on1', 'COMPLETED')) return 'ONE_ON_ONE_COMPLETED';
-    if (has('1on1', 'IN_PROGRESS')) return 'ONE_ON_ONE_IN_PROGRESS';
-    if (has('qtbs', 'COMPLETED') && member.oneOnOneSignupFilled) return 'ONE_ON_ONE_WAITING';
-    if (has('qtbs', 'COMPLETED')) return 'QBS_COMPLETED';
+    if (has(YOUTH_POWER_DISCIPLESHIP, 'COMPLETED')) return 'DISCIPLESHIP_COMPLETED';
+    if (has(ONE_ON_ONE, 'COMPLETED')) return 'ONE_ON_ONE_COMPLETED';
+    if (has(ONE_ON_ONE, 'IN_PROGRESS')) return 'ONE_ON_ONE_IN_PROGRESS';
+    if (has(QT_BASIC_SEMINAR, 'COMPLETED') && member.oneOnOneSignupFilled) return 'ONE_ON_ONE_WAITING';
+    if (has(QT_BASIC_SEMINAR, 'COMPLETED')) return 'QBS_COMPLETED';
     if (!member.baptism || member.baptism === 'UNBAPTIZED') return 'UNBAPTIZED';
     return 'DEFAULT';
   }

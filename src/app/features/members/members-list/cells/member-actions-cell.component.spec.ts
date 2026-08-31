@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import {
   MemberActionsCellComponent,
   MemberActionsContext,
@@ -44,7 +45,24 @@ describe('MemberActionsCellComponent (approve)', () => {
       onEdit: jasmine.createSpy('onEdit'),
       onGroupsMissing: jasmine.createSpy('onGroupsMissing'),
     };
-    TestBed.configureTestingModule({ imports: [MemberActionsCellComponent] });
+    TestBed.configureTestingModule({
+      imports: [MemberActionsCellComponent],
+      providers: [provideTranslateService({ fallbackLang: 'en' })],
+    });
+    // No HTTP loader in tests, so seed the strings the template renders — the
+    // assertions below check user-visible labels, not translation keys.
+    TestBed.inject(TranslateService).setTranslation('en', {
+      members: {
+        actions: {
+          approving: 'Approving…',
+          selectGroup: 'Select group',
+          selectGroupPlaceholder: 'Select group…',
+          cancel: 'Cancel',
+          approve: 'Approve',
+          edit: 'Edit member',
+        },
+      },
+    });
     fixture = TestBed.createComponent(MemberActionsCellComponent);
     component = fixture.componentInstance;
   });
@@ -62,7 +80,7 @@ describe('MemberActionsCellComponent (approve)', () => {
     const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
     expect(select).toBeTruthy();
     const labels = Array.from(select.options).map(o => o.textContent?.trim());
-    expect(labels).toEqual(['순 선택…', '1순', '2순']);
+    expect(labels).toEqual(['Select group…', '1순', '2순']);
   });
 
   it('choosing a group calls onApprove with the member and groupPublicId', () => {

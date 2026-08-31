@@ -11,7 +11,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, catchError, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -20,7 +20,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MemberService } from '../member.service';
 import {
@@ -34,17 +34,17 @@ import {
   ChurchGroupSummary,
 } from '../../../core/models/member.model';
 import {
-  TRAINING_TYPE_OPTIONS,
   MONTH_OPTIONS,
   YEAR_OPTIONS,
-  MAX_TRAININGS,
-  TrainingType,
+  TRAINING_STATUSES,
+  TrainingStatus,
   TrainingFormValue,
   TrainingCatalogEntry,
   MemberTrainingItem,
   UserTraining,
   mapUserTrainingToFormValue,
   mapFormValueToItem,
+  trainingOptions,
   MinistryCatalogEntry,
   MemberMinistryItem,
   MinistryFormValue,
@@ -52,6 +52,7 @@ import {
   monthYearToFirstOfMonth,
   firstOfMonthToMonthYear,
 } from '../../../core/models/member-activity.model';
+import { injectAppLang } from '../../../core/i18n/language';
 import {
   PHONE_COUNTRIES,
   PhoneCountry,
@@ -91,13 +92,34 @@ export class MemberEditComponent implements OnInit {
   private readonly fb            = inject(FormBuilder);
   private readonly messageService = inject(MessageService);
   private readonly destroyRef    = inject(DestroyRef);
+  private readonly translate     = inject(TranslateService);
 
   readonly isEdit     = signal(false);
   readonly loading    = signal(false);
   readonly saving     = signal(false);
 
-  /** Training catalog from the backend — maps the form's type enum to a publicId. */
+  /** Training catalog from the backend — resolves a form row's code to a publicId. */
   private readonly trainingCatalog = signal<TrainingCatalogEntry[]>([]);
+
+  /** Active UI language; course labels and status labels follow it. */
+  private readonly lang = injectAppLang();
+
+  /** Selectable courses, in catalog order. A member can hold each course at most once. */
+  readonly trainingCourseOptions = computed(() =>
+    trainingOptions(this.trainingCatalog(), this.lang()));
+
+  /** Cap on training cards: one per selectable course, no arbitrary limit. */
+  readonly maxTrainings = computed(() => this.trainingCourseOptions().length);
+
+  /** The six server-side enrolment statuses, labelled in the active language. */
+  readonly trainingStatusOptions = computed(() => {
+    // `instant` is not reactive; reading the language makes the labels recompute on a switch.
+    this.lang();
+    return TRAINING_STATUSES.map(s => ({
+      value: s,
+      label: this.translate.instant(`members.trainingStatus.${s}`) as string,
+    }));
+  });
 
   /** Ministry catalog from the backend — populates the ministry select options. */
   private readonly ministryCatalog = signal<MinistryCatalogEntry[]>([]);
@@ -116,10 +138,8 @@ export class MemberEditComponent implements OnInit {
   readonly statusOptions       = MEMBER_STATUS_OPTIONS;
   readonly genderOptions       = GENDER_OPTIONS;
   readonly baptismOptions      = BAPTISM_OPTIONS;
-  readonly trainingTypeOptions = TRAINING_TYPE_OPTIONS;
   readonly monthOptions        = MONTH_OPTIONS;
   readonly yearOptions         = YEAR_OPTIONS;
-  readonly maxTrainings        = MAX_TRAININGS;
 
   readonly form = this.fb.group({
     lastName:        ['', Validators.required],
@@ -163,11 +183,6 @@ export class MemberEditComponent implements OnInit {
     this.publicId = this.route.snapshot.paramMap.get('publicId') ?? undefined;
     this.isEdit.set(!!this.publicId);
 
-    // Load the training catalog (needed to map the form's type enum to a publicId).
-    this.memberService.getTrainingCatalog().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: catalog => this.trainingCatalog.set(catalog),
-    });
-
     // Load the ministry catalog (needed to populate ministry select options).
     this.memberService.getMinistryCatalog()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -197,8 +212,15 @@ export class MemberEditComponent implements OnInit {
 
     if (this.publicId) {
       this.loading.set(true);
-      this.memberService.getMember(this.publicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: member => {
+      // Catalog and member must arrive together: the member's trainings are resolved
+      // through the catalog, so patching the form before it lands would silently drop
+      // every training card.
+      forkJoin({
+        catalog: this.memberService.getTrainingCatalog(),
+        member:  this.memberService.getMember(this.publicId),
+      }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: ({ catalog, member }) => {
+          this.trainingCatalog.set(catalog);
           this.patchForm(member);
           this.loading.set(false);
         },
@@ -207,6 +229,11 @@ export class MemberEditComponent implements OnInit {
           this.loading.set(false);
         },
       });
+    } else {
+      // Create form: only the catalog is needed, to populate the course select.
+      this.memberService.getTrainingCatalog()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: catalog => this.trainingCatalog.set(catalog) });
     }
   }
 
@@ -401,59 +428,72 @@ export class MemberEditComponent implements OnInit {
   }
 
   /**
-   * Replaces the member's training set. Skipped when the catalog never loaded — sending
-   * an empty list would otherwise wipe existing trainings.
+   * Replaces the member's training set — a destructive PUT, so it runs only when it
+   * can't lose data:
+   *
+   * - the training form must be dirty. A member saved without touching the trainings
+   *   sends nothing, so an unrelated edit can never wipe the training history.
+   * - the catalog must be loaded. Without it every row fails to resolve to a publicId
+   *   and the request would degrade into "replace with nothing".
    */
   private persistTrainings(member: Member, items: MemberTrainingItem[]): Observable<Member> {
+    if (!this.trainings.dirty) return of(member);
     if (this.trainingCatalog().length === 0) return of(member);
     return this.memberService.replaceMemberTrainings(member.publicId, items);
   }
 
-  // --- Training cards (max 3, each type once) ---
+  // --- Training cards (one per catalog course) ---
 
   addTraining(): void {
-    if (this.trainings.length >= this.maxTrainings) return;
+    if (this.trainings.length >= this.maxTrainings()) return;
     this.trainings.push(this.newTrainingGroup());
+    this.trainings.markAsDirty();
   }
 
   removeTraining(index: number): void {
     this.trainings.removeAt(index);
+    this.trainings.markAsDirty();
   }
 
-  /** Training options for a row, excluding types chosen in other rows (keeps this row's own). */
-  availableTrainingOptions(index: number) {
+  /**
+   * Course options for a row: the active catalog minus the courses picked in other rows.
+   * The row's own course is always kept, so a member holding a retired course can still
+   * see and re-save it.
+   */
+  availableTrainingOptions(index: number): { value: string; label: string }[] {
+    const own = (this.trainings.at(index)?.get('code')!.value as string | null) ?? null;
     const taken = this.trainings.controls
       .filter((_, i) => i !== index)
-      .map(c => c.get('type')!.value as TrainingType | null);
-    return this.trainingTypeOptions.filter(o => !taken.includes(o.value));
+      .map(c => c.get('code')!.value as string | null);
+    return trainingOptions(this.trainingCatalog(), this.lang(), own ? [own] : [])
+      .filter(o => !taken.includes(o.value));
   }
 
-  /** Toggles "In progress": when set, clear + disable the completion month/year. */
-  onTrainingInProgressChange(index: number): void {
+  /** Only a COMPLETED training carries a completion month/year; the rest clear it. */
+  onTrainingStatusChange(index: number): void {
     const group = this.trainings.at(index);
-    const inProgress = group.get('inProgress')!.value;
     const month = group.get('month')!;
     const year  = group.get('year')!;
-    if (inProgress) {
+    if (group.get('status')!.value === 'COMPLETED') {
+      month.enable();
+      year.enable();
+    } else {
       month.reset(null);
       year.reset(null);
       month.disable();
       year.disable();
-    } else {
-      month.enable();
-      year.enable();
     }
   }
 
   private newTrainingGroup(value?: TrainingFormValue): FormGroup {
-    const inProgress = value?.status === 'IN_PROGRESS';
+    const status = value?.status ?? 'COMPLETED';
     const group = this.fb.group({
-      type:       [value?.type ?? null as TrainingType | null, Validators.required],
-      month:      [value?.month ?? null as number | null],
-      year:       [value?.year ?? null as number | null],
-      inProgress: [inProgress],
+      code:   [value?.code ?? null as string | null, Validators.required],
+      month:  [value?.month ?? null as number | null],
+      year:   [value?.year ?? null as number | null],
+      status: [status as TrainingStatus, Validators.required],
     });
-    if (inProgress) {
+    if (status !== 'COMPLETED') {
       group.get('month')!.disable();
       group.get('year')!.disable();
     }
@@ -464,30 +504,34 @@ export class MemberEditComponent implements OnInit {
 
   /**
    * Maps the training form rows to backend request items, dropping incomplete cards
-   * (no type, or a completed card missing month/year) and any type absent from the catalog.
+   * (no course, or a completed card missing month/year) and any course absent from the catalog.
    */
   private collectTrainingItems(): MemberTrainingItem[] {
     return this.trainings.controls
       .map(c => c.getRawValue())
-      .filter(v => v.type && (v.inProgress || (v.month && v.year)))
+      .filter(v => v.code && (v.status !== 'COMPLETED' || (v.month && v.year)))
       .map(v => ({
-        type:   v.type as TrainingType,
-        month:  v.inProgress ? null : v.month,
-        year:   v.inProgress ? null : v.year,
-        status: v.inProgress ? 'IN_PROGRESS' : 'COMPLETED',
+        code:   v.code as string,
+        month:  v.status === 'COMPLETED' ? v.month : null,
+        year:   v.status === 'COMPLETED' ? v.year : null,
+        status: v.status as TrainingStatus,
       } as TrainingFormValue))
       .map(v => mapFormValueToItem(v, this.trainingCatalog()))
       .filter((i): i is MemberTrainingItem => i !== null);
   }
 
-  /** Repopulates the training form array from the member's persisted trainings. */
+  /**
+   * Repopulates the training form array from the member's persisted trainings, and
+   * resets it to pristine — loading a member is not an edit, and only an edit may
+   * trigger the destructive replace in {@link persistTrainings}.
+   */
   private rebuildActivities(trainings: UserTraining[] = []): void {
     this.trainings.clear();
     trainings
-      .slice(0, this.maxTrainings)
-      .map(mapUserTrainingToFormValue)
+      .map(t => mapUserTrainingToFormValue(t, this.trainingCatalog()))
       .filter((v): v is TrainingFormValue => v !== null)
       .forEach(v => this.trainings.push(this.newTrainingGroup(v)));
+    this.trainings.markAsPristine();
   }
 
   // --- Ministry cards ---

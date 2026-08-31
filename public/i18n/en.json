@@ -32,10 +32,13 @@
       "CONFIRMATION": "Confirmation",
       "GENERAL_BAPTIZED": "Baptized"
     },
-    "training": {
-      "QTBS": "QTBS",
-      "1on1": "1-on-1",
-      "Discipleship": "Discipleship"
+    "trainingStatus": {
+      "APPLIED": "Applied",
+      "ENROLLED": "Enrolled",
+      "IN_PROGRESS": "In progress",
+      "COMPLETED": "Completed",
+      "DROPPED": "Dropped",
+      "UNKNOWN": "Unknown"
     },
     "actions": {
       "approving": "Approving…",
@@ -51,7 +54,7 @@
       "selectAll": "Select all",
       "reset": "Reset",
       "empty": "No options",
-      "trainingHint": "Click: In progress → Completed → Clear",
+      "trainingHint": "Click: In progress → Completed → Dropped → Clear",
       "groupLeader": "Groupleader"
     },
     "edit": {

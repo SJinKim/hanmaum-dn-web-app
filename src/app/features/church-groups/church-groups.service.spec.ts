@@ -1,8 +1,29 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideTranslateService } from '@ngx-translate/core';
 import { ChurchGroupsService } from './church-groups.service';
 import { MemberSummary, ChurchGroupSummary } from '../../core/models/member.model';
+import { TrainingCatalogEntry } from '../../core/models/member-activity.model';
+import { TrainingCatalogService } from '../../core/services/training-catalog.service';
+
+function entry(code: string, name: string, sortOrder: number): TrainingCatalogEntry {
+  return {
+    publicId: `p-${code}`, code, name, nameKo: `${code}-ko`,
+    category: null, sortOrder, hasCohorts: false, isActive: true, prerequisiteCode: null,
+  };
+}
+
+/** The post-migration catalog: English long names, stable codes. */
+const CATALOG: TrainingCatalogEntry[] = [
+  entry('QT_BASIC_SEMINAR', 'Quiet Time Basic Seminar', 1),
+  entry('ONE_ON_ONE', 'One-to-One Discipleship Training', 2),
+  entry('YOUTH_POWER_DISCIPLESHIP', 'Youth Power Discipleship Class', 3),
+];
+
+const QTBS = 'Quiet Time Basic Seminar';
+const ONE_ON_ONE = 'One-to-One Discipleship Training';
+const DISCIPLESHIP = 'Youth Power Discipleship Class';
 
 function makeMember(overrides: Partial<MemberSummary> = {}): MemberSummary {
   return {
@@ -22,8 +43,13 @@ describe('ChurchGroupsService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideTranslateService({ fallbackLang: 'en' }),
+      ],
     });
+    TestBed.inject(TrainingCatalogService).entries.set(CATALOG);
     service = TestBed.inject(ChurchGroupsService);
   });
 
@@ -35,19 +61,19 @@ describe('ChurchGroupsService', () => {
     it('NEXT_LEADER overrides any training status', () => {
       const m = makeMember({
         isNextGroupLeader: true,
-        trainings: [{ name: '1on1', status: 'IN_PROGRESS' }],
+        trainings: [{ name: ONE_ON_ONE, status: 'IN_PROGRESS' }],
       });
       expect(service.computeCategory(m)).toBe('NEXT_LEADER');
     });
 
     it('returns ONE_ON_ONE_IN_PROGRESS when 1on1 is IN_PROGRESS', () => {
-      const m = makeMember({ trainings: [{ name: '1on1', status: 'IN_PROGRESS' }] });
+      const m = makeMember({ trainings: [{ name: ONE_ON_ONE, status: 'IN_PROGRESS' }] });
       expect(service.computeCategory(m)).toBe('ONE_ON_ONE_IN_PROGRESS');
     });
 
     it('returns ONE_ON_ONE_WAITING when QTBS COMPLETED and signup filled', () => {
       const m = makeMember({
-        trainings: [{ name: 'QTBS', status: 'COMPLETED' }],
+        trainings: [{ name: QTBS, status: 'COMPLETED' }],
         oneOnOneSignupFilled: true,
       });
       expect(service.computeCategory(m)).toBe('ONE_ON_ONE_WAITING');
@@ -55,39 +81,46 @@ describe('ChurchGroupsService', () => {
 
     it('returns QBS_COMPLETED when QTBS COMPLETED but signup NOT filled', () => {
       const m = makeMember({
-        trainings: [{ name: 'QTBS', status: 'COMPLETED' }],
+        trainings: [{ name: QTBS, status: 'COMPLETED' }],
         oneOnOneSignupFilled: false,
       });
       expect(service.computeCategory(m)).toBe('QBS_COMPLETED');
     });
 
     it('returns DISCIPLESHIP_COMPLETED when Discipleship COMPLETED', () => {
-      const m = makeMember({ trainings: [{ name: 'Discipleship', status: 'COMPLETED' }] });
+      const m = makeMember({ trainings: [{ name: DISCIPLESHIP, status: 'COMPLETED' }] });
       expect(service.computeCategory(m)).toBe('DISCIPLESHIP_COMPLETED');
+    });
+
+    it('a completed 일대일 is not mistaken for 제자반 despite the shared "Discipleship" name', () => {
+      // "One-to-One Discipleship Training" contains "Discipleship", so a substring
+      // match would wrongly report 제자반수료 here.
+      const m = makeMember({ trainings: [{ name: ONE_ON_ONE, status: 'COMPLETED' }] });
+      expect(service.computeCategory(m)).toBe('ONE_ON_ONE_COMPLETED');
     });
 
     it('DISCIPLESHIP_COMPLETED beats QBS_COMPLETED even though QTBS is also completed', () => {
       const m = makeMember({
         trainings: [
-          { name: 'QTBS', status: 'COMPLETED' },
-          { name: '1on1', status: 'COMPLETED' },
-          { name: 'Discipleship', status: 'COMPLETED' },
+          { name: QTBS, status: 'COMPLETED' },
+          { name: ONE_ON_ONE, status: 'COMPLETED' },
+          { name: DISCIPLESHIP, status: 'COMPLETED' },
         ],
       });
       expect(service.computeCategory(m)).toBe('DISCIPLESHIP_COMPLETED');
     });
 
     it('returns ONE_ON_ONE_COMPLETED when 1on1 is COMPLETED', () => {
-      const m = makeMember({ trainings: [{ name: '1on1', status: 'COMPLETED' }] });
+      const m = makeMember({ trainings: [{ name: ONE_ON_ONE, status: 'COMPLETED' }] });
       expect(service.computeCategory(m)).toBe('ONE_ON_ONE_COMPLETED');
     });
 
     it('returns ONE_ON_ONE_COMPLETED when Discipleship is IN_PROGRESS (1on1 already done)', () => {
       const m = makeMember({
         trainings: [
-          { name: 'QTBS', status: 'COMPLETED' },
-          { name: '1on1', status: 'COMPLETED' },
-          { name: 'Discipleship', status: 'IN_PROGRESS' },
+          { name: QTBS, status: 'COMPLETED' },
+          { name: ONE_ON_ONE, status: 'COMPLETED' },
+          { name: DISCIPLESHIP, status: 'IN_PROGRESS' },
         ],
       });
       expect(service.computeCategory(m)).toBe('ONE_ON_ONE_COMPLETED');
@@ -106,7 +139,7 @@ describe('ChurchGroupsService', () => {
     });
 
     it('QTBS IN_PROGRESS does not trigger QBS_COMPLETED', () => {
-      const m = makeMember({ trainings: [{ name: 'QTBS', status: 'IN_PROGRESS' }] });
+      const m = makeMember({ trainings: [{ name: QTBS, status: 'IN_PROGRESS' }] });
       expect(service.computeCategory(m)).not.toBe('QBS_COMPLETED');
     });
   });

@@ -32,10 +32,13 @@
       "CONFIRMATION": "입교",
       "GENERAL_BAPTIZED": "세례"
     },
-    "training": {
-      "QTBS": "큐베세",
-      "1on1": "1대1",
-      "Discipleship": "제자반"
+    "trainingStatus": {
+      "APPLIED": "신청",
+      "ENROLLED": "등록",
+      "IN_PROGRESS": "진행중",
+      "COMPLETED": "수료",
+      "DROPPED": "중단",
+      "UNKNOWN": "미확인"
     },
     "actions": {
       "approving": "승인 중…",
@@ -51,7 +54,7 @@
       "selectAll": "전체 선택",
       "reset": "초기화",
       "empty": "옵션 없음",
-      "trainingHint": "클릭: 진행중 → 완료 → 해제",
+      "trainingHint": "클릭: 진행중 → 수료 → 중단 → 해제",
       "groupLeader": "순장"
     },
     "edit": {

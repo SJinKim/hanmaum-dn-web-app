@@ -1,44 +1,86 @@
 import {
   TrainingCatalogEntry,
   UserTraining,
-  trainingTypeForName,
-  trainingPublicIdForType,
+  catalogEntryByCode,
+  catalogEntryByName,
   completedAtFromMonthYear,
-  monthYearFromCompletedAt,
-  mapUserTrainingToFormValue,
   mapFormValueToItem,
+  mapUserTrainingToFormValue,
+  monthYearFromCompletedAt,
+  trainingLabelForName,
+  trainingOptions,
+  trainingStatusGroup,
 } from './member-activity.model';
 
+function entry(over: Partial<TrainingCatalogEntry> & { code: string; name: string }): TrainingCatalogEntry {
+  return {
+    publicId: `p-${over.code}`,
+    nameKo: `${over.code}-ko`,
+    category: null,
+    sortOrder: 1,
+    hasCohorts: false,
+    isActive: true,
+    prerequisiteCode: null,
+    ...over,
+  };
+}
+
 const CATALOG: TrainingCatalogEntry[] = [
-  { publicId: 'p-qtbs', name: 'QTBS', sortOrder: 1 },
-  { publicId: 'p-1on1', name: '1on1', sortOrder: 2 },
-  { publicId: 'p-disc', name: 'Discipleship', sortOrder: 3 },
+  entry({ code: 'QT_BASIC_SEMINAR', name: 'Quiet Time Basic Seminar', nameKo: '큐티베이직세미나', sortOrder: 1 }),
+  entry({ code: 'ONE_ON_ONE', name: 'One-to-One Discipleship Training', nameKo: '일대일제자양육', sortOrder: 2 }),
+  entry({ code: 'YOUTH_POWER_DISCIPLESHIP', name: 'Youth Power Discipleship Class', nameKo: '청년 파워제자반', sortOrder: 3 }),
+  entry({ code: 'KAIROS', name: 'Kairos', nameKo: '카이로스', sortOrder: 9, isActive: false }),
 ];
 
+describe('member-activity.model — training status', () => {
+  it('groups the running statuses as ACTIVE', () => {
+    expect(trainingStatusGroup('APPLIED')).toBe('ACTIVE');
+    expect(trainingStatusGroup('ENROLLED')).toBe('ACTIVE');
+    expect(trainingStatusGroup('IN_PROGRESS')).toBe('ACTIVE');
+  });
+
+  it('groups COMPLETED on its own and the terminal statuses as INACTIVE', () => {
+    expect(trainingStatusGroup('COMPLETED')).toBe('COMPLETED');
+    expect(trainingStatusGroup('DROPPED')).toBe('INACTIVE');
+    expect(trainingStatusGroup('UNKNOWN')).toBe('INACTIVE');
+  });
+});
+
+describe('member-activity.model — catalog lookups', () => {
+  it('finds an entry by code and by the DTO name', () => {
+    expect(catalogEntryByCode(CATALOG, 'ONE_ON_ONE')?.publicId).toBe('p-ONE_ON_ONE');
+    expect(catalogEntryByName(CATALOG, 'One-to-One Discipleship Training')?.code).toBe('ONE_ON_ONE');
+  });
+
+  it('returns undefined for an unknown or empty key', () => {
+    expect(catalogEntryByCode(CATALOG, 'NOPE')).toBeUndefined();
+    expect(catalogEntryByName(CATALOG, null)).toBeUndefined();
+  });
+
+  it('labels a training in the active language', () => {
+    expect(trainingLabelForName(CATALOG, 'Quiet Time Basic Seminar', 'ko')).toBe('큐티베이직세미나');
+    expect(trainingLabelForName(CATALOG, 'Quiet Time Basic Seminar', 'en')).toBe('Quiet Time Basic Seminar');
+  });
+
+  it('falls back to the raw name when the catalog does not know it', () => {
+    expect(trainingLabelForName(CATALOG, 'Brand New Course', 'ko')).toBe('Brand New Course');
+    expect(trainingLabelForName([], 'Quiet Time Basic Seminar', 'ko')).toBe('Quiet Time Basic Seminar');
+  });
+
+  it('offers only active courses, in catalog order', () => {
+    expect(trainingOptions(CATALOG, 'en').map(o => o.value)).toEqual([
+      'QT_BASIC_SEMINAR',
+      'ONE_ON_ONE',
+      'YOUTH_POWER_DISCIPLESHIP',
+    ]);
+  });
+
+  it('keeps a retired course that the member still holds', () => {
+    expect(trainingOptions(CATALOG, 'en', ['KAIROS']).map(o => o.value)).toContain('KAIROS');
+  });
+});
+
 describe('member-activity.model — training mapping', () => {
-  describe('trainingTypeForName', () => {
-    it('resolves catalog names back to the form enum', () => {
-      expect(trainingTypeForName('QTBS')).toBe('QTBS');
-      expect(trainingTypeForName('1on1')).toBe('ONE_ON_ONE');
-      expect(trainingTypeForName('Discipleship')).toBe('DISCIPLESHIP');
-    });
-
-    it('returns null for an unknown name', () => {
-      expect(trainingTypeForName('Unknown')).toBeNull();
-    });
-  });
-
-  describe('trainingPublicIdForType', () => {
-    it('finds the catalog publicId for a form type', () => {
-      expect(trainingPublicIdForType('ONE_ON_ONE', CATALOG)).toBe('p-1on1');
-      expect(trainingPublicIdForType('QTBS', CATALOG)).toBe('p-qtbs');
-    });
-
-    it('returns null when the type is absent from the catalog', () => {
-      expect(trainingPublicIdForType('DISCIPLESHIP', [])).toBeNull();
-    });
-  });
-
   describe('completedAtFromMonthYear', () => {
     it('pins to the first of the month as an ISO date', () => {
       expect(completedAtFromMonthYear(3, 2022)).toBe('2022-03-01');
@@ -65,67 +107,64 @@ describe('member-activity.model — training mapping', () => {
   describe('mapUserTrainingToFormValue', () => {
     it('maps a completed backend training to a form value', () => {
       const ut: UserTraining = {
-        trainingPublicId: 'p-1on1',
-        name: '1on1',
+        trainingPublicId: 'p-ONE_ON_ONE',
+        name: 'One-to-One Discipleship Training',
         status: 'COMPLETED',
-        completedAt: '2022-03-01',
+        completedAt: '2023-05-01',
       };
-      expect(mapUserTrainingToFormValue(ut)).toEqual({
-        type: 'ONE_ON_ONE',
-        month: 3,
-        year: 2022,
+      expect(mapUserTrainingToFormValue(ut, CATALOG)).toEqual({
+        code: 'ONE_ON_ONE',
+        month: 5,
+        year: 2023,
         status: 'COMPLETED',
       });
     });
 
-    it('maps an in-progress training (no completed date) to a form value', () => {
+    it('keeps every non-completed status instead of collapsing it', () => {
       const ut: UserTraining = {
-        trainingPublicId: 'p-qtbs',
-        name: 'QTBS',
-        status: 'IN_PROGRESS',
+        trainingPublicId: 'p-QT_BASIC_SEMINAR',
+        name: 'Quiet Time Basic Seminar',
+        status: 'APPLIED',
         completedAt: null,
       };
-      expect(mapUserTrainingToFormValue(ut)).toEqual({
-        type: 'QTBS',
+      expect(mapUserTrainingToFormValue(ut, CATALOG)).toEqual({
+        code: 'QT_BASIC_SEMINAR',
         month: null,
         year: null,
-        status: 'IN_PROGRESS',
+        status: 'APPLIED',
       });
     });
 
-    it('returns null when the training name is not in the catalog enum', () => {
+    it('returns null when the catalog does not know the course', () => {
       const ut: UserTraining = {
         trainingPublicId: 'p-x',
-        name: 'Mystery',
+        name: 'Brand New Course',
         status: 'COMPLETED',
-        completedAt: '2022-03-01',
+        completedAt: '2023-05-01',
       };
-      expect(mapUserTrainingToFormValue(ut)).toBeNull();
+      expect(mapUserTrainingToFormValue(ut, CATALOG)).toBeNull();
     });
   });
 
   describe('mapFormValueToItem', () => {
-    it('maps a completed form value to a PUT item', () => {
+    it('resolves the course code to its catalog publicId', () => {
       expect(
-        mapFormValueToItem({ type: 'QTBS', month: 5, year: 2023, status: 'COMPLETED' }, CATALOG),
-      ).toEqual({ trainingPublicId: 'p-qtbs', status: 'COMPLETED', completedAt: '2023-05-01' });
+        mapFormValueToItem({ code: 'QT_BASIC_SEMINAR', month: 5, year: 2023, status: 'COMPLETED' }, CATALOG),
+      ).toEqual({ trainingPublicId: 'p-QT_BASIC_SEMINAR', status: 'COMPLETED', completedAt: '2023-05-01' });
     });
 
-    it('drops the completed date for an in-progress item', () => {
+    it('drops the completion date for a course that is not completed', () => {
       expect(
-        mapFormValueToItem({ type: 'DISCIPLESHIP', month: 5, year: 2023, status: 'IN_PROGRESS' }, CATALOG),
-      ).toEqual({ trainingPublicId: 'p-disc', status: 'IN_PROGRESS', completedAt: null });
+        mapFormValueToItem({ code: 'ONE_ON_ONE', month: 5, year: 2023, status: 'ENROLLED' }, CATALOG),
+      ).toEqual({ trainingPublicId: 'p-ONE_ON_ONE', status: 'ENROLLED', completedAt: null });
     });
 
-    it('returns null when type is missing', () => {
+    it('returns null without a code, or when the catalog is empty', () => {
       expect(
-        mapFormValueToItem({ type: null, month: 5, year: 2023, status: 'COMPLETED' }, CATALOG),
+        mapFormValueToItem({ code: null, month: 5, year: 2023, status: 'COMPLETED' }, CATALOG),
       ).toBeNull();
-    });
-
-    it('returns null when the type has no catalog entry', () => {
       expect(
-        mapFormValueToItem({ type: 'QTBS', month: 5, year: 2023, status: 'COMPLETED' }, []),
+        mapFormValueToItem({ code: 'QT_BASIC_SEMINAR', month: 5, year: 2023, status: 'COMPLETED' }, []),
       ).toBeNull();
     });
   });

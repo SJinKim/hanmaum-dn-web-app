@@ -57,9 +57,11 @@ html, body {
   &.badge-admin    { background: #1e293b; color: #ffffff; }
   &.badge-member   { background: #e2e8f0; color: #475569; }
 
-  // Training chips: grey = completed, orange = in progress.
+  // Training chips by status group: orange = still running (applied/enrolled/in
+  // progress), grey = completed, red = dropped or unknown.
   &.badge-training-completed { background: #f3f4f6; color: #4b5563; }
   &.badge-training-progress  { background: #ffedd5; color: #c2410c; }
+  &.badge-training-inactive  { background: #fee2e2; color: #b91c1c; }
 
   // Ministry chips: blue = currently active.
   &.badge-ministry-active { background: #dbeafe; color: #1d4ed8; }
