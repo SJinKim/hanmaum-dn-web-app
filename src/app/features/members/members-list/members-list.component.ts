@@ -31,7 +31,9 @@ import {
 import { MemberNameCellComponent } from './cells/member-name-cell.component';
 import { BadgeCellComponent } from './cells/badge-cell.component';
 import { SetFilterComponent, NULL_TOKEN } from './filters/set-filter.component';
+import { NameFilterComponent } from './filters/name-filter.component';
 import { TrainingFilterComponent } from './filters/training-filter.component';
+import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
 import { TrainingChipsCellComponent } from './cells/training-chips-cell.component';
 import { MinistryChipsCellComponent } from './cells/ministry-chips-cell.component';
 import {
@@ -61,6 +63,7 @@ export class MembersListComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly destroyRef     = inject(DestroyRef);
   private readonly translate      = inject(TranslateService);
+  private readonly trainingCatalog = inject(TrainingCatalogService);
 
   /** Shorthand for a synchronous translation lookup (used in AG-Grid colDefs + toasts). */
   private t = (key: string): string => this.translate.instant(key);
@@ -108,11 +111,11 @@ export class MembersListComponent implements OnInit {
     {
       headerValueGetter: () => this.t('members.columns.name'),
       colId: 'name',
-      width: 220,
-      minWidth: 220,
+      width: 200,
+      minWidth: 200,
       valueGetter: p => `${p.data?.lastName ?? ''}${p.data?.firstName ?? ''}`,
       cellRenderer: MemberNameCellComponent,
-      filter: 'agTextColumnFilter',
+      filter: NameFilterComponent,
       sortable: true,
       comparator: (a: string, b: string) => this.koCollator.compare(a, b),
       sort: 'asc',
@@ -134,7 +137,7 @@ export class MembersListComponent implements OnInit {
     {
       headerValueGetter: () => this.t('members.columns.group'),
       field: 'groupName',
-      width: 160,
+      width: 150,
       valueFormatter: p => (p.value as string | null) ?? '—',
       filter: SetFilterComponent,
       filterParams: {
@@ -148,7 +151,7 @@ export class MembersListComponent implements OnInit {
     {
       headerValueGetter: () => this.t('members.columns.training'),
       colId: 'training',
-      width: 220,
+      width: 200,
       valueGetter: p => p.data?.trainings ?? [],
       cellRenderer: TrainingChipsCellComponent,
       sortable: false,
@@ -157,8 +160,7 @@ export class MembersListComponent implements OnInit {
     {
       headerValueGetter: () => this.t('members.columns.ministry'),
       colId: 'ministry',
-      flex: 1,
-      minWidth: 360,
+      minWidth: 240,
       valueGetter: p => p.data?.activeMinistries ?? [],
       cellRenderer: MinistryChipsCellComponent,
       sortable: false,
@@ -175,7 +177,7 @@ export class MembersListComponent implements OnInit {
     {
       headerValueGetter: () => this.t('members.columns.baptism'),
       field: 'baptism',
-      width: 140,
+      width: 120,
       valueFormatter: p => this.baptismLabel(p.value as Baptism | null | undefined),
       filter: SetFilterComponent,
       filterParams: {
@@ -279,6 +281,11 @@ export class MembersListComponent implements OnInit {
         next: ministries => { this.ministryTitles.set(ministries.map(m => m.title)); },
         error: () => { this.ministryTitles.set([]); },
       });
+    // Training chips and the training filter label themselves from the catalog, so
+    // re-render the column once it lands.
+    this.trainingCatalog.load()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: () => this.gridApi?.refreshCells({ force: true }) });
   }
 
   onGridReady(event: GridReadyEvent<MemberSummary>): void {

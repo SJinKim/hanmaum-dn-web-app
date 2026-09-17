@@ -1,11 +1,16 @@
 /**
  * Member training & ministry activity models.
  *
- * Training is persisted via the backend training catalog (`GET /trainings`) and the
- * per-member set (`GET /members/{id}` → `trainings`, `PUT /members/{id}/trainings`).
- * The catalog references trainings by `publicId`; the form models them as the
- * `TrainingType` enum below. The mapping helpers at the bottom of this file bridge
- * the two shapes.
+ * Training is persisted via the backend training catalog
+ * (`GET /trainings/catalog?activeOnly=false`) and the per-member set
+ * (`GET /members/{id}` → `trainings`, `PUT /members/{id}/trainings`).
+ * The catalog is the single source of truth for which courses exist, what they are
+ * called and how they are ordered — the dashboard keeps no hardcoded course list.
+ *
+ * Courses are identified by the catalog's stable `code`; the member DTOs
+ * ({@link UserTraining}, {@link SummaryTraining}) only carry the English `name`, so
+ * every display or edit path joins back onto the catalog by name. Once the server
+ * ships `code` in those DTOs, {@link catalogEntryByName} is the only place to change.
  *
  * Ministry assignments are admin-managed on the member form: `GET /members/{id}` →
  * `ministries` returns {@link MinistryHistory} (start/end-date assignments), edited via
@@ -14,24 +19,73 @@
  * request item is {@link MemberMinistryItem}.
  */
 
+import { AppLang } from '../i18n/language';
+
 // --- TRAINING ---
 
-export type TrainingType = 'QTBS' | 'ONE_ON_ONE' | 'DISCIPLESHIP';
-export type TrainingStatus = 'IN_PROGRESS' | 'COMPLETED';
+/** Enrolment lifecycle, mirroring the server's `TrainingStatus` enum. */
+export type TrainingStatus =
+  | 'APPLIED'
+  | 'ENROLLED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'DROPPED'
+  | 'UNKNOWN';
 
-/** Catalog entry from `GET /trainings`. */
+/** All statuses in lifecycle order — drives the edit form's status select. */
+export const TRAINING_STATUSES: readonly TrainingStatus[] = [
+  'APPLIED',
+  'ENROLLED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'DROPPED',
+  'UNKNOWN',
+] as const;
+
+/**
+ * Coarse bucket behind the chip colors and the grid filter: six statuses are too many
+ * to check off one by one, and only these three distinctions are acted on in the UI.
+ */
+export type TrainingStatusGroup = 'ACTIVE' | 'COMPLETED' | 'INACTIVE';
+
+const TRAINING_STATUS_GROUPS: Record<TrainingStatus, TrainingStatusGroup> = {
+  APPLIED:     'ACTIVE',
+  ENROLLED:    'ACTIVE',
+  IN_PROGRESS: 'ACTIVE',
+  COMPLETED:   'COMPLETED',
+  DROPPED:     'INACTIVE',
+  UNKNOWN:     'INACTIVE',
+};
+
+/** Bucket for a status; unknown values from a newer server fall back to INACTIVE. */
+export function trainingStatusGroup(status: TrainingStatus): TrainingStatusGroup {
+  return TRAINING_STATUS_GROUPS[status] ?? 'INACTIVE';
+}
+
+/** Catalog entry from `GET /trainings/catalog?activeOnly=false` (ADMIN-only). */
 export interface TrainingCatalogEntry {
   publicId: string;
+  /** Stable identifier, e.g. 'QT_BASIC_SEMINAR'. Never shown to the user. */
+  code: string;
+  /** English long name — the value the member DTOs send as `name`. */
   name: string;
+  /** Korean name shown while the UI language is Korean. */
+  nameKo: string;
+  category: string | null;
   sortOrder: number;
+  hasCohorts: boolean;
+  /** Retired courses stay in the catalog so historic member rows still resolve. */
+  isActive: boolean;
+  prerequisiteCode: string | null;
 }
 
 /** A member's training as returned by the backend (`GET /members/{id}` → `trainings`). */
 export interface UserTraining {
   trainingPublicId: string;
-  name: string;            // catalog name, e.g. 'QTBS' | '1on1' | 'Discipleship'
+  /** Catalog `name` (English long name), e.g. 'Quiet Time Basic Seminar'. */
+  name: string;
   status: TrainingStatus;
-  completedAt: string | null;   // ISO date 'YYYY-MM-DD', null while in progress
+  completedAt: string | null;   // ISO date 'YYYY-MM-DD', null unless completed
 }
 
 /** A single item in the `PUT /members/{id}/trainings` request body. */
@@ -43,37 +97,75 @@ export interface MemberTrainingItem {
 
 /** A member's training as shown on the grid chip (`GET /members` → summary). */
 export interface SummaryTraining {
-  name: string;            // catalog name, e.g. 'QTBS' | '1on1' | 'Discipleship'
+  /** Catalog `name` (English long name), e.g. 'One-to-One Discipleship Training'. */
+  name: string;
   status: TrainingStatus;
 }
 
-/** The training form's per-card value (type + completion month/year + status). */
+/** The training form's per-card value (catalog code + completion month/year + status). */
 export interface TrainingFormValue {
-  type: TrainingType | null;
+  code: string | null;
   month: number | null;
   year: number | null;
   status: TrainingStatus;
 }
 
-export const TRAINING_TYPE_LABELS: Record<TrainingType, string> = {
-  QTBS:         'QTBS',
-  ONE_ON_ONE:   '1on1',
-  DISCIPLESHIP: 'Discipleship',
-};
+// --- CATALOG LOOKUPS ---
 
-export const TRAINING_TYPE_OPTIONS = Object.entries(TRAINING_TYPE_LABELS)
-  .map(([value, label]) => ({ value: value as TrainingType, label }));
+/** Catalog entry for a stable `code`, or undefined. */
+export function catalogEntryByCode(
+  catalog: TrainingCatalogEntry[],
+  code: string | null,
+): TrainingCatalogEntry | undefined {
+  if (!code) return undefined;
+  return catalog.find(e => e.code === code);
+}
 
-/** Catalog/DTO name (e.g. 'QTBS' | '1on1' | 'Discipleship') → Korean display label. */
-export const TRAINING_NAME_LABELS: Record<string, string> = {
-  QTBS:         '큐베세',
-  '1on1':       '1대1',
-  Discipleship: '제자반',
-};
+/**
+ * Catalog entry for the English `name` carried by the member DTOs, or undefined.
+ * The only place the dashboard joins on a name instead of a code — see the file header.
+ */
+export function catalogEntryByName(
+  catalog: TrainingCatalogEntry[],
+  name: string | null,
+): TrainingCatalogEntry | undefined {
+  if (!name) return undefined;
+  return catalog.find(e => e.name === name);
+}
 
-/** Resolves a catalog/DTO name to its Korean label, falling back to the raw name. */
-export function trainingNameLabel(name: string): string {
-  return TRAINING_NAME_LABELS[name] ?? name;
+/** Display name of a catalog entry in the active UI language. */
+export function trainingLabel(entry: TrainingCatalogEntry, lang: AppLang): string {
+  return lang === 'ko' ? (entry.nameKo || entry.name) : entry.name;
+}
+
+/**
+ * Display label for a member training, resolved through the catalog.
+ * Falls back to the raw DTO name so a course missing from the catalog still reads
+ * as something rather than as a blank or a translation key.
+ */
+export function trainingLabelForName(
+  catalog: TrainingCatalogEntry[],
+  name: string,
+  lang: AppLang,
+): string {
+  const entry = catalogEntryByName(catalog, name);
+  return entry ? trainingLabel(entry, lang) : name;
+}
+
+/**
+ * Selectable courses in catalog order: active ones, plus any code in `keepCodes` —
+ * a member holding a retired course must still see it in their own select.
+ */
+export function trainingOptions(
+  catalog: TrainingCatalogEntry[],
+  lang: AppLang,
+  keepCodes: readonly string[] = [],
+): { value: string; label: string }[] {
+  return catalog
+    .filter(e => e.isActive || keepCodes.includes(e.code))
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(e => ({ value: e.code, label: trainingLabel(e, lang) }));
 }
 
 // --- MINISTRY ---
@@ -129,28 +221,7 @@ export const YEAR_OPTIONS = Array.from({ length: 36 }, (_, i) => ({
   label: String(i).padStart(2, '0'),
 }));
 
-export const MAX_TRAININGS = 3;
-
 // --- TRAINING SHAPE MAPPING (form <-> backend) ---
-
-/** Reverse of TRAINING_TYPE_LABELS: catalog name → form enum. */
-const TRAINING_NAME_TO_TYPE: Record<string, TrainingType> = Object.fromEntries(
-  Object.entries(TRAINING_TYPE_LABELS).map(([type, name]) => [name, type as TrainingType]),
-);
-
-/** Resolves a catalog/DTO name (e.g. '1on1') to the form enum ('ONE_ON_ONE'), or null. */
-export function trainingTypeForName(name: string): TrainingType | null {
-  return TRAINING_NAME_TO_TYPE[name] ?? null;
-}
-
-/** Looks up a training's catalog publicId by matching the form type's label, or null. */
-export function trainingPublicIdForType(
-  type: TrainingType,
-  catalog: TrainingCatalogEntry[],
-): string | null {
-  const name = TRAINING_TYPE_LABELS[type];
-  return catalog.find(c => c.name === name)?.publicId ?? null;
-}
 
 /** Builds the completion date pinned to the first of the month, or null if incomplete. */
 export function completedAtFromMonthYear(month: number | null, year: number | null): string | null {
@@ -165,12 +236,15 @@ export function monthYearFromCompletedAt(iso: string | null): { month: number | 
   return { month: month ?? null, year: year ?? null };
 }
 
-/** Maps a backend training to the edit-form value, or null if its name is unknown. */
-export function mapUserTrainingToFormValue(ut: UserTraining): TrainingFormValue | null {
-  const type = trainingTypeForName(ut.name);
-  if (!type) return null;
+/** Maps a backend training to the edit-form value, or null when the catalog lacks it. */
+export function mapUserTrainingToFormValue(
+  ut: UserTraining,
+  catalog: TrainingCatalogEntry[],
+): TrainingFormValue | null {
+  const entry = catalogEntryByName(catalog, ut.name);
+  if (!entry) return null;
   const { month, year } = monthYearFromCompletedAt(ut.completedAt);
-  return { type, month, year, status: ut.status };
+  return { code: entry.code, month, year, status: ut.status };
 }
 
 /** Maps an edit-form value + catalog to a PUT item, or null if it can't be resolved. */
@@ -178,12 +252,11 @@ export function mapFormValueToItem(
   value: TrainingFormValue,
   catalog: TrainingCatalogEntry[],
 ): MemberTrainingItem | null {
-  if (!value.type) return null;
-  const trainingPublicId = trainingPublicIdForType(value.type, catalog);
-  if (!trainingPublicId) return null;
+  const entry = catalogEntryByCode(catalog, value.code);
+  if (!entry) return null;
   const completedAt =
     value.status === 'COMPLETED' ? completedAtFromMonthYear(value.month, value.year) : null;
-  return { trainingPublicId, status: value.status, completedAt };
+  return { trainingPublicId: entry.publicId, status: value.status, completedAt };
 }
 
 /** first-of-month ISO → {month, year}; reuses the training helper. */

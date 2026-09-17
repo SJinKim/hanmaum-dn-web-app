@@ -21,6 +21,10 @@ export interface MemberSummary {
   activeMinistries?: string[];
   isNextGroupLeader?: boolean;
   oneOnOneSignupFilled?: boolean;
+  /** True while the member currently leads their church group. Unrelated to isNextGroupLeader. */
+  isGroupLeader?: boolean;
+  /** Day the member took over as group leader. Null/absent when isGroupLeader is false. */
+  groupLeaderSince?: string | null;
 }
 
 /** Full detail DTO — used in detail + edit views */
@@ -48,6 +52,10 @@ export interface Member {
   profileImageUrl: string | null;
   isNextGroupLeader?: boolean;
   oneOnOneSignupFilled?: boolean;
+  /** True while the member currently leads their church group. Unrelated to isNextGroupLeader. */
+  isGroupLeader?: boolean;
+  /** Day the member took over as group leader. Null/absent when isGroupLeader is false. */
+  groupLeaderSince?: string | null;
   /**
    * Training history — persisted, sent by `GET /members/{id}`. Edited via
    * `PUT /members/{id}/trainings`. See member-activity.model.ts.
@@ -106,6 +114,12 @@ export interface ChurchGroupSummary {
   publicId: string;
   division: string | null;
   name: string;
+  /** publicId of the group's current 순장, or null/absent while the group has none. */
+  leaderPublicId?: string | null;
+  /** Display name of the current 순장, or null/absent while the group has none. */
+  leaderName?: string | null;
+  /** Day the current 순장 took over. Null/absent exactly when leaderPublicId is absent. */
+  leaderSince?: string | null;
 }
 
 export type MemberStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'DELETED';

@@ -8,8 +8,13 @@ import { MemberSummary } from '../../../../core/models/member.model';
   standalone: true,
   template: `
     <div class="leading-tight py-1">
-      <div class="text-[13px] font-semibold text-gray-800 tracking-tight">
-        {{ member.lastName }}{{ member.firstName }}
+      <div class="flex items-center gap-1.5">
+        <span class="text-[13px] font-semibold text-gray-800 tracking-tight">
+          {{ member.lastName }}{{ member.firstName }}
+        </span>
+        @if (member.isGroupLeader) {
+          <span class="status-badge badge-group-leader">순장</span>
+        }
       </div>
       <div class="text-[11px] text-tertiary">{{ member.email ?? '—' }}</div>
     </div>

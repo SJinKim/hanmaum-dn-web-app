@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideTranslateService } from '@ngx-translate/core';
 import { IDoesFilterPassParams, IFilterParams } from 'ag-grid-community';
 import {
   SetFilterComponent,
@@ -14,7 +15,7 @@ interface Row {
 
 function makeParams(
   config: SetFilterParams,
-  filterChangedCallback = (): void => {},
+  filterChangedCallback = (): void => undefined,
 ): IFilterParams & SetFilterParams {
   return {
     filterChangedCallback,
@@ -24,7 +25,10 @@ function makeParams(
 }
 
 function createComponent(): SetFilterComponent {
-  TestBed.configureTestingModule({ imports: [SetFilterComponent] });
+  TestBed.configureTestingModule({
+    imports: [SetFilterComponent],
+    providers: [provideTranslateService({ fallbackLang: 'en' })],
+  });
   return TestBed.createComponent(SetFilterComponent).componentInstance;
 }
 
