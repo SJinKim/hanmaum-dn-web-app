@@ -41,6 +41,13 @@ export const APP_ROUTES: Routes = [
           import('./features/announcements/announcements.routes').then(m => m.ANNOUNCEMENTS_ROUTES),
       },
       {
+        // Reference screen for the Figma token layer — see design-specs/DESIGN.md.
+        path: 'design-tokens',
+        loadComponent: () =>
+          import('./core/ui/token-sandbox/token-sandbox.component')
+            .then(m => m.TokenSandboxComponent),
+      },
+      {
         path: 'church-groups',
         loadChildren: () =>
           import('./features/church-groups/church-groups.routes')
