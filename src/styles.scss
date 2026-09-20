@@ -1,3 +1,13 @@
+// =============================================================================
+//  Token layer — generated from Figma "DN-Web" (KSEMYc00jcgvyQ6qWt1cm4)
+//  Source of truth: design-specs/DESIGN.md + the Figma variable collections
+//    Primitives (112, mode "Value")  ->  §1
+//    Theme      (64, Light + Dark)   ->  §2
+//    Density    (30, Desktop/Tablet/Phone) -> §3
+//  Do NOT hand-write colour, spacing or type values anywhere else. Features use
+//  the semantic tokens from §2/§3 only — never a primitive, never a hex.
+// =============================================================================
+
 // Google Fonts — Manrope
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
@@ -9,39 +19,359 @@
 // PrimeNG
 @import "primeicons/primeicons.css";
 
-// AG-Grid (Community) — uses the v33 Theming API, no legacy CSS imports
-.ag-row.row-pending {
-  background-color: #faf5ff; // bg-purple-50
+// -----------------------------------------------------------------------------
+//  §1 Primitives — raw palette. Never referenced from a component.
+// -----------------------------------------------------------------------------
+:root {
+  --brand-900: #1c2340;
+  --brand-700: #233060;
+  --brand-600: #2b3a67;
+  --brand-550: #3a5ab4;
+  --brand-500: #4668c4;
+  --brand-400: #5878d4;
+  --brand-300: #5c6b89;
+  --brand-250: #9fb3ea;
+  --brand-200: #8e9aaf;
+  --brand-100: #dde2ec;
+  --brand-50:  #f1f3f8;
+
+  --neutral-0:   #ffffff;
+  --neutral-50:  #f8f9fa;
+  --neutral-100: #f1f3f5;
+  --neutral-150: #edeff2;
+  --neutral-200: #e5e8eb;
+  --neutral-300: #cfd4da;
+  --neutral-500: #646f80;
+  --neutral-600: #495057;
+  --neutral-700: #343a40;
+  --neutral-900: #1a1d21;
+
+  --ink-900: #12151c;
+  --ink-800: #1a1f2b;
+  --ink-700: #232a38;
+  --ink-675: #2a3140;
+  --ink-650: #262d3b;
+  --ink-600: #363e4f;
+  --ink-500: #4a5468;
+  --ink-400: #5b6579;
+  --ink-300: #8792a6;
+  --ink-200: #c7ceda;
+  --ink-100: #eef1f6;
+
+  --focus-light: #4c6fd8;
+  --focus-dark:  #7e9bee;
+
+  --green-50: #dcfce7;  --green-400: #4ade80;  --green-700: #15803d;  --green-950: #16301f;
+  --amber-50: #fef3c7;  --amber-400: #fbbf24;  --amber-700: #b45309;  --amber-950: #33270f;
+  --violet-50: #ede9fe; --violet-300: #c4b5fd; --violet-700: #6d28d9; --violet-950: #251f3d;
+  --red-50: #fee2e2;    --red-300: #fca5a5;    --red-700: #b91c1c;    --red-950: #351a1c;
+  --blue-50: #dbeafe;   --blue-300: #93c5fd;   --blue-700: #1d4ed8;   --blue-950: #17253f;
+  --orange-50: #ffedd5; --orange-300: #fdba74; --orange-700: #c2410c; --orange-950: #35240f;
+  --pink-50: #fce7f3;   --pink-300: #f9a8d4;   --pink-700: #be185d;   --pink-950: #3a1a2b;
+  --teal-50: #ccfbf1;   --teal-300: #5eead4;   --teal-700: #0f766e;   --teal-950: #0f2f2c;
+  --sky-50: #e0f2fe;    --sky-300: #7dd3fc;    --sky-700: #0369a1;    --sky-950: #0f2a3a;
+
+  --slate-100: #e2e8f0; --slate-600: #475569;  --slate-800: #1e293b;  --slate-950: #0f172a;
+  --gray-100: #f3f4f6;  --gray-400: #adb5bd;   --gray-600: #4b5563;   --gray-850: #262b33;
+
+  --alpha-ink-06:  #1018280f;
+  --alpha-ink-08:  #10182814;
+  --alpha-ink-12:  #1018281f;
+  --alpha-black-40: #00000066;
+  --alpha-black-50: #00000080;
+  --alpha-black-60: #00000099;
 }
 
-// Design tokens
+// -----------------------------------------------------------------------------
+//  §2 Theme — semantic tokens. Light is the default, Dark is opt-in via
+//  [data-theme="dark"] on <html>. Every token exists in both modes.
+//  Both modes are also selectable on any subtree, so a section can force a mode
+//  (the token sandbox renders Light and Dark side by side that way).
+//  Auto-detection via prefers-color-scheme is deliberately NOT wired up yet: it
+//  would flip screens that are still on the §6 bridge. #60 turns it on last.
+// -----------------------------------------------------------------------------
+:root,
+[data-theme="light"] {
+  // Background
+  --color-bg-base:    var(--neutral-50);
+  --color-bg-surface: var(--neutral-0);
+  --color-bg-subtle:  var(--neutral-100);
+
+  // Border
+  --color-border-subtle:  var(--neutral-150);
+  --color-border-default: var(--neutral-200);
+  --color-border-strong:  var(--neutral-300);
+
+  // Text
+  --color-text-strong:   var(--brand-600);
+  --color-text-default:  var(--neutral-700);
+  --color-text-muted:    var(--neutral-500);
+  --color-text-disabled: var(--brand-200);
+  --color-text-inverse:  var(--neutral-0);
+
+  // Action
+  --color-action-primary:        var(--brand-600);
+  --color-action-primary-hover:  var(--brand-700);
+  --color-action-primary-active: var(--brand-900);
+  --color-action-on-primary:     var(--neutral-0);
+  --color-action-primary-text:   var(--brand-600);
+
+  --color-focus: var(--focus-light);
+
+  // Chart
+  --color-chart-series-1: var(--brand-600);
+  --color-chart-series-2: var(--brand-200);
+
+  // Shadow (colour only — the elevations themselves are in §4)
+  --color-shadow-sm: var(--alpha-ink-06);
+  --color-shadow-md: var(--alpha-ink-08);
+  --color-shadow-lg: var(--alpha-ink-12);
+
+  --color-scrim: var(--alpha-black-50);
+
+  // Badge
+  --color-badge-active-bg:   var(--green-50);   --color-badge-active-fg:   var(--green-700);
+  --color-badge-inactive-bg: var(--amber-50);   --color-badge-inactive-fg: var(--amber-700);
+  --color-badge-pending-bg:  var(--violet-50);  --color-badge-pending-fg:  var(--violet-700);
+  --color-badge-deleted-bg:  var(--red-50);     --color-badge-deleted-fg:  var(--red-700);
+  --color-badge-admin-bg:    var(--slate-800);  --color-badge-admin-fg:    var(--neutral-0);
+  --color-badge-member-bg:   var(--slate-100);  --color-badge-member-fg:   var(--slate-600);
+  --color-badge-training-completed-bg: var(--gray-100);   --color-badge-training-completed-fg: var(--gray-600);
+  --color-badge-training-progress-bg:  var(--orange-50);  --color-badge-training-progress-fg:  var(--orange-700);
+  --color-badge-ministry-active-bg:    var(--blue-50);    --color-badge-ministry-active-fg:     var(--blue-700);
+  --color-badge-neutral-bg:  var(--neutral-100); --color-badge-neutral-fg: var(--neutral-500);
+
+  // Badge, web-only extension: 순장 has no Figma token yet. Amber, i.e. the same
+  // pair as badge/inactive — replace with a real token once Figma defines one.
+  --color-badge-group-leader-bg: var(--amber-50);
+  --color-badge-group-leader-fg: var(--amber-700);
+
+  // Category — the -dot values are mode-invariant, see below.
+  --color-category-next-leader-bg:  var(--pink-50);   --color-category-next-leader-fg:  var(--pink-700);
+  --color-category-discipleship-bg: var(--violet-50); --color-category-discipleship-fg: var(--violet-700);
+  --color-category-one-on-one-completed-bg: var(--teal-50);  --color-category-one-on-one-completed-fg: var(--teal-700);
+  --color-category-one-on-one-progress-bg:  var(--green-50); --color-category-one-on-one-progress-fg:  var(--green-700);
+  --color-category-one-on-one-waiting-bg:   var(--amber-50); --color-category-one-on-one-waiting-fg:   var(--amber-700);
+  --color-category-qbs-bg:         var(--sky-50);     --color-category-qbs-fg:         var(--sky-700);
+  --color-category-unbaptized-bg:  var(--orange-50);  --color-category-unbaptized-fg:  var(--orange-700);
+}
+
+// The category dot is the one colour that must stay recognisable across a theme
+// switch, so it is declared once for every mode instead of twice per theme.
+:root,
+[data-theme] {
+  --color-category-next-leader-dot:  var(--pink-300);
+  --color-category-discipleship-dot: var(--violet-300);
+  --color-category-one-on-one-completed-dot: var(--teal-300);
+  --color-category-one-on-one-progress-dot:  var(--green-400);
+  --color-category-one-on-one-waiting-dot:   var(--amber-400);
+  --color-category-qbs-dot:        var(--sky-300);
+  --color-category-unbaptized-dot: var(--orange-300);
+}
+
+[data-theme="dark"] {
+  --color-bg-base:    var(--ink-900);
+  --color-bg-surface: var(--ink-800);
+  --color-bg-subtle:  var(--ink-700);
+
+  --color-border-subtle:  var(--ink-650);
+  --color-border-default: var(--ink-600);
+  --color-border-strong:  var(--ink-500);
+
+  --color-text-strong:   var(--ink-100);
+  --color-text-default:  var(--ink-200);
+  --color-text-muted:    var(--ink-300);
+  --color-text-disabled: var(--ink-400);
+  --color-text-inverse:  var(--ink-900);
+
+  --color-action-primary:        var(--brand-500);
+  --color-action-primary-hover:  var(--brand-400);
+  --color-action-primary-active: var(--brand-550);
+  --color-action-on-primary:     var(--neutral-0);
+  --color-action-primary-text:   var(--brand-250);
+
+  --color-focus: var(--focus-dark);
+
+  --color-chart-series-1: var(--brand-500);
+  --color-chart-series-2: var(--ink-300);
+
+  --color-shadow-sm: var(--alpha-black-40);
+  --color-shadow-md: var(--alpha-black-50);
+  --color-shadow-lg: var(--alpha-black-60);
+
+  --color-scrim: var(--alpha-black-60);
+
+  --color-badge-active-bg:   var(--green-950);  --color-badge-active-fg:   var(--green-400);
+  --color-badge-inactive-bg: var(--amber-950);  --color-badge-inactive-fg: var(--amber-400);
+  --color-badge-pending-bg:  var(--violet-950); --color-badge-pending-fg:  var(--violet-300);
+  --color-badge-deleted-bg:  var(--red-950);    --color-badge-deleted-fg:  var(--red-300);
+  --color-badge-admin-bg:    var(--slate-100);  --color-badge-admin-fg:    var(--slate-950);
+  --color-badge-member-bg:   var(--ink-675);    --color-badge-member-fg:   var(--ink-200);
+  --color-badge-training-completed-bg: var(--gray-850);   --color-badge-training-completed-fg: var(--gray-400);
+  --color-badge-training-progress-bg:  var(--orange-950); --color-badge-training-progress-fg:  var(--orange-300);
+  --color-badge-ministry-active-bg:    var(--blue-950);   --color-badge-ministry-active-fg:    var(--blue-300);
+  --color-badge-neutral-bg:  var(--ink-700);    --color-badge-neutral-fg:  var(--ink-300);
+
+  --color-badge-group-leader-bg: var(--amber-950);
+  --color-badge-group-leader-fg: var(--amber-400);
+
+  --color-category-next-leader-bg:  var(--pink-950);   --color-category-next-leader-fg:  var(--pink-300);
+  --color-category-discipleship-bg: var(--violet-950); --color-category-discipleship-fg: var(--violet-300);
+  --color-category-one-on-one-completed-bg: var(--teal-950);  --color-category-one-on-one-completed-fg: var(--teal-300);
+  --color-category-one-on-one-progress-bg:  var(--green-950); --color-category-one-on-one-progress-fg:  var(--green-400);
+  --color-category-one-on-one-waiting-bg:   var(--amber-950); --color-category-one-on-one-waiting-fg:   var(--amber-400);
+  --color-category-qbs-bg:         var(--sky-950);     --color-category-qbs-fg:         var(--sky-300);
+  --color-category-unbaptized-bg:  var(--orange-950);  --color-category-unbaptized-fg:  var(--orange-300);
+}
+
+// -----------------------------------------------------------------------------
+//  §3 Density — Desktop is the default; Tablet and Phone override by viewport.
+//  Figma breakpoints: Desktop 1440 / Tablet 834 / Phone 390.
+// -----------------------------------------------------------------------------
 :root {
-  --color-primary: #2B3A67;
-  --color-primary-hover: #233060;
-  --color-secondary: #5C6B89;
-  --color-tertiary: #8E9AAF;
-  --color-neutral: #F8F9FA;
-  --color-surface-dark: #1C2340;
-  --color-surface-card: #FFFFFF;
-  --sidebar-width-expanded: 256px;
-  --sidebar-width-collapsed: 72px;
+  // Mode-invariant: spacing scale
+  --space-2: 2px;   --space-4: 4px;   --space-6: 6px;   --space-8: 8px;
+  --space-10: 10px; --space-12: 12px; --space-16: 16px; --space-20: 20px;
+  --space-24: 24px; --space-32: 32px; --space-40: 40px; --space-48: 48px;
+  --space-64: 64px;
+
+  // Mode-invariant: radii
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+
+  // Desktop
+  --size-sidebar: 256px;
+  --size-topbar: 52px;
+  --space-page: 24px;
+  --space-card: 24px;
+  --space-gutter: 24px;
+  --size-control-md: 36px;
+  --size-control-sm: 32px;
+  --size-icon-button: 32px;
+  --size-icon-button-sm: 28px;
+  --size-table-row: 44px;
+  --font-display: 28px;
+  --font-h1: 26px;
+  --font-h2: 20px;
+}
+
+// Tablet (834 <= vw < 1440) — the sidebar collapses to an icon rail.
+@media (max-width: 1439px) {
+  :root {
+    --size-sidebar: 72px;
+    --size-topbar: 56px;
+    --space-page: 20px;
+    --space-card: 20px;
+    --space-gutter: 20px;
+    --size-control-md: 40px;
+    --size-control-sm: 36px;
+    --size-icon-button: 40px;
+    --size-icon-button-sm: 32px;
+    --size-table-row: 48px;
+    --font-display: 26px;
+    --font-h1: 24px;
+    --font-h2: 20px;
+  }
+}
+
+// Phone (vw < 834) — the sidebar becomes an off-canvas drawer, hence 280px.
+@media (max-width: 833px) {
+  :root {
+    --size-sidebar: 280px;
+    --size-topbar: 56px;
+    --space-page: 16px;
+    --space-card: 16px;
+    --space-gutter: 16px;
+    --size-control-md: 44px;
+    --size-control-sm: 44px;
+    --size-icon-button: 44px;
+    --size-icon-button-sm: 44px;
+    --size-table-row: 44px;
+    --font-display: 24px;
+    --font-h1: 20px;
+    --font-h2: 18px;
+  }
+}
+
+// -----------------------------------------------------------------------------
+//  §4 Elevation — Figma effect styles Elevation/sm|md|lg
+//  Declared on every mode root: var() in a custom property is substituted where
+//  the property is declared, so a dark subtree must redeclare it to pick up the
+//  dark shadow colour.
+// -----------------------------------------------------------------------------
+:root,
+[data-theme] {
+  --shadow-sm: 0 1px 2px 0 var(--color-shadow-sm);
+  --shadow-md: 0 4px 12px 0 var(--color-shadow-md);
+  --shadow-lg: 0 12px 32px 0 var(--color-shadow-lg);
+}
+
+// -----------------------------------------------------------------------------
+//  §5 Type — the 8 Manrope text styles. line-height is fixed in px exactly as
+//  in Figma; only font-size follows Density (display/h1/h2).
+// -----------------------------------------------------------------------------
+:root {
   --font-family: 'Manrope', sans-serif;
   --letter-spacing-tight: -0.02em;
 }
 
+.type-display  { font-weight: 800; font-size: var(--font-display); line-height: 32px; letter-spacing: -0.03em; }
+.type-h1       { font-weight: 800; font-size: var(--font-h1);      line-height: 32px; letter-spacing: -0.02em; }
+.type-h2       { font-weight: 700; font-size: var(--font-h2);      line-height: 28px; letter-spacing: -0.02em; }
+.type-h3       { font-weight: 700; font-size: 15px;                line-height: 20px; letter-spacing: -0.02em; }
+.type-body     { font-weight: 500; font-size: 13px;                line-height: 18px; letter-spacing: -0.01em; }
+.type-body-sm  { font-weight: 500; font-size: 12px;                line-height: 16px; letter-spacing: -0.01em; }
+.type-caption  { font-weight: 600; font-size: 11px;                line-height: 14px; letter-spacing: 0; }
+.type-overline { font-weight: 700; font-size: 10px;                line-height: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+// -----------------------------------------------------------------------------
+//  §6 Deprecated bridge — the pre-Figma ("Stitch") token names, re-pointed at
+//  the tokens above so light mode stays pixel-identical while the screens are
+//  migrated. Each screen issue (#52–#60) drops its usages; delete this block
+//  once nothing references it. Do not add to it.
+// -----------------------------------------------------------------------------
+:root,
+[data-theme] {
+  --color-primary:       var(--color-action-primary);        // brand/600
+  --color-primary-hover: var(--color-action-primary-hover);  // brand/700
+  --color-secondary:     var(--brand-300);
+  --color-tertiary:      var(--brand-200);
+  --color-neutral:       var(--color-bg-base);               // neutral/50
+  --color-surface-dark:  var(--brand-900);
+  --color-surface-card:  var(--color-bg-surface);            // neutral/0
+  --sidebar-width-expanded:  256px;                          // -> --size-sidebar
+  --sidebar-width-collapsed: 72px;                           // -> --size-sidebar (tablet)
+}
+
+// -----------------------------------------------------------------------------
+//  §7 Base
+// -----------------------------------------------------------------------------
 html, body {
   height: 100%;
   margin: 0;
   font-family: var(--font-family);
   letter-spacing: var(--letter-spacing-tight);
-  background: var(--color-neutral);
+  background: var(--color-bg-base);
+  color: var(--color-text-default);
+}
+
+// -----------------------------------------------------------------------------
+//  §8 Legacy component styles — colours tokenised, structure untouched.
+//  #49/#50 replace these with the Figma component layer.
+// -----------------------------------------------------------------------------
+
+// AG-Grid (Community) — uses the v33 Theming API, no legacy CSS imports
+.ag-row.row-pending {
+  background-color: var(--color-badge-pending-bg);
 }
 
 // Status badge utility classes (fit-content, tight padding)
 .status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 5px;
+  padding: var(--space-2) 5px;
   border-radius: 4px;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -50,31 +380,32 @@ html, body {
   line-height: 1.3;
   letter-spacing: 0.02em;
 
-  &.badge-active   { background: #dcfce7; color: #15803d; }
-  &.badge-inactive { background: #ffedd5; color: #c2410c; }
-  &.badge-pending  { background: #ede9fe; color: #6d28d9; }
-  &.badge-deleted  { background: #fee2e2; color: #b91c1c; }
-  &.badge-admin    { background: #1e293b; color: #ffffff; }
-  &.badge-member   { background: #e2e8f0; color: #475569; }
+  &.badge-active   { background: var(--color-badge-active-bg);   color: var(--color-badge-active-fg); }
+  &.badge-inactive { background: var(--color-badge-inactive-bg); color: var(--color-badge-inactive-fg); }
+  &.badge-pending  { background: var(--color-badge-pending-bg);  color: var(--color-badge-pending-fg); }
+  &.badge-deleted  { background: var(--color-badge-deleted-bg);  color: var(--color-badge-deleted-fg); }
+  &.badge-admin    { background: var(--color-badge-admin-bg);    color: var(--color-badge-admin-fg); }
+  &.badge-member   { background: var(--color-badge-member-bg);   color: var(--color-badge-member-fg); }
 
   // Training chips by status group: orange = still running (applied/enrolled/in
   // progress), grey = completed, red = dropped or unknown.
-  &.badge-training-completed { background: #f3f4f6; color: #4b5563; }
-  &.badge-training-progress  { background: #ffedd5; color: #c2410c; }
-  &.badge-training-inactive  { background: #fee2e2; color: #b91c1c; }
+  &.badge-training-completed { background: var(--color-badge-training-completed-bg); color: var(--color-badge-training-completed-fg); }
+  &.badge-training-progress  { background: var(--color-badge-training-progress-bg);  color: var(--color-badge-training-progress-fg); }
+  // No own Figma token — "dropped/unknown" is the same red as badge/deleted.
+  &.badge-training-inactive  { background: var(--color-badge-deleted-bg);            color: var(--color-badge-deleted-fg); }
 
   // Ministry chips: blue = currently active.
-  &.badge-ministry-active { background: #dbeafe; color: #1d4ed8; }
+  &.badge-ministry-active { background: var(--color-badge-ministry-active-bg); color: var(--color-badge-ministry-active-fg); }
 
   // Church group leader (순장).
-  &.badge-group-leader { background: #fef3c7; color: #b45309; }
+  &.badge-group-leader { background: var(--color-badge-group-leader-bg); color: var(--color-badge-group-leader-fg); }
 }
 
 // Compact selects for the member-edit training/ministry date rows,
 // so the month/year pairs fit on a single line inside the narrow boxes.
 .date-select-compact {
   .p-select-label {
-    padding: 0.25rem 0.4rem;
+    padding: var(--space-4) 0.4rem;
     font-size: 0.75rem;
   }
   .p-select-dropdown {
@@ -84,8 +415,8 @@ html, body {
 
 // PrimeNG table header
 .p-datatable .p-datatable-thead > tr > th {
-  background: var(--color-neutral);
-  color: var(--color-tertiary);
+  background: var(--color-bg-base);
+  color: var(--color-text-disabled);
   font-weight: 700;
   font-size: 0.6875rem;
   text-transform: uppercase;
@@ -95,9 +426,9 @@ html, body {
 // Sidebar active nav item
 // Note: .nav-item must have position: relative for the ::before bar to work
 .nav-item.active-nav-item {
-  color: var(--color-primary);
+  color: var(--color-action-primary);
   font-weight: 700;
-  background: rgba(43, 58, 103, 0.05); // primary color at 5% opacity
+  background: var(--color-bg-subtle);
 
   &::before {
     content: '';
@@ -106,11 +437,11 @@ html, body {
     top: 0;
     bottom: 0;
     width: 3px;
-    background: var(--color-primary);
-    border-radius: 2px 0 0 2px;
+    background: var(--color-action-primary);
+    border-radius: var(--space-2) 0 0 var(--space-2);
   }
 
   i {
-    color: var(--color-primary);
+    color: var(--color-action-primary);
   }
 }
