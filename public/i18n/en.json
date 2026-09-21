@@ -2,6 +2,52 @@
   "common": {
     "none": "(None)"
   },
+  "nav": {
+    "groups": {
+      "people": "People",
+      "activity": "Activity",
+      "admin": "Admin"
+    },
+    "items": {
+      "home": "Home",
+      "members": "Members",
+      "newcomers": "Newcomers",
+      "churchGroups": "Groups",
+      "attendance": "Attendance",
+      "eventRsvps": "Events",
+      "ministry": "Ministry",
+      "announcements": "Announcements",
+      "archive": "Archive",
+      "analytics": "Analytics"
+    }
+  },
+  "shell": {
+    "nav": {
+      "aria": "Main navigation",
+      "open": "Open navigation"
+    },
+    "sidebar": {
+      "expand": "Expand sidebar",
+      "collapse": "Collapse sidebar"
+    },
+    "pending": {
+      "label": "{{count}} pending",
+      "aria": "{{count}} members awaiting approval — show pending only"
+    },
+    "theme": {
+      "dark": "Dark theme",
+      "light": "Light theme"
+    },
+    "lang": {
+      "aria": "Switch language"
+    },
+    "menu": {
+      "aria": "Account menu",
+      "profile": "My Profile",
+      "settings": "Settings",
+      "logout": "Logout"
+    }
+  },
   "members": {
     "title": "Members",
     "search": {

@@ -1,13 +1,17 @@
-<div class="h-screen flex flex-col overflow-hidden">
+<div class="flex h-screen overflow-hidden bg-surface-base">
+  @if (showSidebar()) {
+    <app-sidebar [mode]="sidebarMode()" (modeToggle)="toggleSidebar()" />
+  }
 
-  <app-header />
+  <div class="flex min-w-px flex-1 flex-col overflow-hidden">
+    <app-header (drawerToggle)="openDrawer()" />
 
-  <div class="flex flex-1 overflow-hidden">
-    <app-sidebar />
-
-    <main class="flex-1 overflow-auto bg-neutral">
+    <main class="flex-1 overflow-auto p-page">
       <router-outlet />
     </main>
   </div>
 
+  @if (showDrawer()) {
+    <app-drawer (dismiss)="closeDrawer()" />
+  }
 </div>
