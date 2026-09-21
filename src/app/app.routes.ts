@@ -55,6 +55,13 @@ export const APP_ROUTES: Routes = [
             .then(m => m.TokenSandboxComponent),
       },
       {
+        // Reference screen for the Figma data-display layer — see design-specs/DESIGN.md.
+        path: 'design-data',
+        loadComponent: () =>
+          import('./core/ui/data-sandbox/data-sandbox.component')
+            .then(m => m.DataSandboxComponent),
+      },
+      {
         path: 'church-groups',
         loadChildren: () =>
           import('./features/church-groups/church-groups.routes')

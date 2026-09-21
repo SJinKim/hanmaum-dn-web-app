@@ -413,16 +413,6 @@ html, body {
   }
 }
 
-// PrimeNG table header
-.p-datatable .p-datatable-thead > tr > th {
-  background: var(--color-bg-base);
-  color: var(--color-text-disabled);
-  font-weight: 700;
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 // Sidebar active nav item
 // Note: .nav-item must have position: relative for the ::before bar to work
 .nav-item.active-nav-item {

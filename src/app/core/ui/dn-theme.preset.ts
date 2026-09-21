@@ -448,5 +448,55 @@ input.p-inputtext-sm { height: var(--size-control-sm); }
     tooltip: {
       root: { borderRadius: 'var(--radius-sm)', padding: 'var(--space-4) var(--space-8)', maxWidth: '240px' },
     },
+
+    // Figma: Data / Table — HeaderCell (113:69), Cell (114:85), Row (114:215).
+    // The row height itself is not a PrimeNG token, so `app-data-table` sets it
+    // from `--size-table-row`; everything Density does not drive lives here.
+    datatable: {
+      header: {
+        background: 'var(--color-bg-base)',
+        borderColor: 'var(--color-border-default)',
+        color: 'var(--color-text-default)',
+        padding: 'var(--space-12) var(--space-16)',
+      },
+      headerCell: {
+        background: 'var(--color-bg-base)',
+        hoverBackground: 'var(--color-bg-subtle)',
+        selectedBackground: 'var(--color-bg-subtle)',
+        borderColor: 'var(--color-border-default)',
+        color: 'var(--color-text-muted)',
+        hoverColor: 'var(--color-text-default)',
+        selectedColor: 'var(--color-text-strong)',
+        gap: 'var(--space-8)',
+        padding: 'var(--space-8) var(--space-16)',
+        focusRing: { ...focusRing, offset: '-2px' },
+      },
+      // Overline: the header is a label, never a heading.
+      columnTitle: { fontWeight: '700' },
+      row: {
+        background: 'var(--color-bg-surface)',
+        // Hover and Selected are the same fill in Figma; Selected adds a left bar.
+        hoverBackground: 'var(--color-bg-subtle)',
+        selectedBackground: 'var(--color-bg-subtle)',
+        color: 'var(--color-text-default)',
+        hoverColor: 'var(--color-text-default)',
+        selectedColor: 'var(--color-text-strong)',
+        focusRing: { ...focusRing, offset: '-2px' },
+      },
+      bodyCell: {
+        borderColor: 'var(--color-border-subtle)',
+        padding: 'var(--space-12) var(--space-16)',
+      },
+      sortIcon: {
+        color: 'var(--color-text-muted)',
+        hoverColor: 'var(--color-text-default)',
+        size: '16px',
+      },
+      loadingIcon: { size: '24px' },
+      css: `
+.p-datatable-column-header-content { font-size: 10px; line-height: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+.p-datatable-tbody > tr { height: var(--size-table-row); }
+`,
+    },
   },
 });
