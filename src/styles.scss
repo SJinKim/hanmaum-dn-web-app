@@ -341,8 +341,6 @@
   --color-neutral:       var(--color-bg-base);               // neutral/50
   --color-surface-dark:  var(--brand-900);
   --color-surface-card:  var(--color-bg-surface);            // neutral/0
-  --sidebar-width-expanded:  256px;                          // -> --size-sidebar
-  --sidebar-width-collapsed: 72px;                           // -> --size-sidebar (tablet)
 }
 
 // -----------------------------------------------------------------------------
@@ -410,28 +408,5 @@ html, body {
   }
   .p-select-dropdown {
     width: 1.25rem;
-  }
-}
-
-// Sidebar active nav item
-// Note: .nav-item must have position: relative for the ::before bar to work
-.nav-item.active-nav-item {
-  color: var(--color-action-primary);
-  font-weight: 700;
-  background: var(--color-bg-subtle);
-
-  &::before {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--color-action-primary);
-    border-radius: var(--space-2) 0 0 var(--space-2);
-  }
-
-  i {
-    color: var(--color-action-primary);
   }
 }

@@ -2,6 +2,52 @@
   "common": {
     "none": "(없음)"
   },
+  "nav": {
+    "groups": {
+      "people": "사람 · People",
+      "activity": "활동 · Activity",
+      "admin": "관리 · Admin"
+    },
+    "items": {
+      "home": "홈",
+      "members": "청년",
+      "newcomers": "새가족",
+      "churchGroups": "순",
+      "attendance": "출석",
+      "eventRsvps": "이벤트",
+      "ministry": "사역",
+      "announcements": "공지사항",
+      "archive": "기록",
+      "analytics": "통계"
+    }
+  },
+  "shell": {
+    "nav": {
+      "aria": "주요 메뉴",
+      "open": "메뉴 열기"
+    },
+    "sidebar": {
+      "expand": "사이드바 펼치기",
+      "collapse": "사이드바 접기"
+    },
+    "pending": {
+      "label": "승인 대기 {{count}}",
+      "aria": "승인 대기 중인 청년 {{count}}명 — 대기 목록 보기"
+    },
+    "theme": {
+      "dark": "다크 모드",
+      "light": "라이트 모드"
+    },
+    "lang": {
+      "aria": "언어 전환"
+    },
+    "menu": {
+      "aria": "계정 메뉴",
+      "profile": "내 정보",
+      "settings": "설정",
+      "logout": "로그아웃"
+    }
+  },
   "members": {
     "title": "청년 리스트",
     "search": {
