@@ -1,4 +1,5 @@
 import { computed, inject, Injectable } from '@angular/core';
+import { HomeBlockId, HomeBlockScope, HOME_BLOCKS } from '../navigation/home-blocks';
 import { NavGroup, NavItem, NavRole, NAV_GROUPS } from '../navigation/nav-config';
 import { AuthService } from './auth.service';
 
@@ -44,5 +45,45 @@ export class RoleService {
 
   private isVisible(item: NavItem): boolean {
     return !item.pending && this.can(item.role);
+  }
+
+  /**
+   * The Home blocks this user may see, as ids — the Home template asks this and
+   * renders nothing for a block that is missing from the set.
+   */
+  readonly homeBlocks = computed<ReadonlySet<HomeBlockId>>(
+    () =>
+      new Set(
+        HOME_BLOCKS.filter(block => !block.pending && this.canAny(block.roles)).map(
+          block => block.id,
+        ),
+      ),
+  );
+
+  /** DESIGN.md §9: false means the block is absent, never disabled. */
+  showsHomeBlock(id: HomeBlockId): boolean {
+    return this.homeBlocks().has(id);
+  }
+
+  /**
+   * Whether a block shows the whole church or only the caller's 순. Everything is
+   * `all` today: the `own-group` roles are Keycloak *groups* (#47), not realm
+   * roles, so nothing can resolve to a 순 yet.
+   */
+  homeBlockScope(id: HomeBlockId): HomeBlockScope {
+    const block = HOME_BLOCKS.find(candidate => candidate.id === id);
+    const ownGroupRoles = block?.ownGroupRoles ?? [];
+    const matchesOwnGroupRole = ownGroupRoles.some(role =>
+      this.auth.roles().some(granted => granted.toLowerCase() === role),
+    );
+    return matchesOwnGroupRole ? 'own-group' : 'all';
+  }
+
+  /** Any-of, because a matrix row is often 관리자 *and* 목사님. */
+  private canAny(roles: readonly NavRole[] | undefined): boolean {
+    if (!roles || roles.length === 0) {
+      return true;
+    }
+    return roles.some(role => this.can(role));
   }
 }

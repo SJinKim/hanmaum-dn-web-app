@@ -1,127 +1,238 @@
-<!-- src/app/features/home/home.component.html -->
-<div class="p-6">
+<!--
+  Figma: Home / Desktop 188:169 · Tablet 228:171 · Phone 237:1901.
+  The two-column rows collapse below the `tablet` breakpoint (834px), which is
+  the same threshold styles.scss §3 uses to re-point the density tokens.
+-->
+<div class="flex flex-col gap-gutter p-page">
+  <app-page-header [heading]="'home.title' | translate" [subtitle]="todayLabel" />
 
-  <!-- Page title -->
-  <div class="mb-6">
-    <h1 class="text-[26px] font-extrabold text-primary tracking-tight">Liturgical Dashboard</h1>
-    <p class="text-[13px] text-tertiary mt-1">System-wide overview for the fiscal quarter.</p>
-  </div>
-
-  <!-- Stat cards -->
-  <div class="grid grid-cols-4 gap-4 mb-6">
-    @for (card of statCards(); track card.label) {
-      <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-        <div class="flex items-start justify-between mb-3">
-          <div class="w-9 h-9 rounded-lg bg-neutral flex items-center justify-center">
-            <i [class]="card.icon + ' text-secondary text-[14px]'"></i>
+  @if (showsAttention()) {
+    <section class="flex flex-col gap-[var(--space-12)]">
+      <app-section-header [heading]="'home.attention.heading' | translate" />
+      <div class="flex flex-col gap-gutter tablet:flex-row">
+        @if (showsBlock('pendingApprovals')) {
+          <div
+            class="bg-surface border-line-subtle shadow-elevation-sm flex flex-1 items-center gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+            <app-icon-tile icon="pi pi-user-plus" />
+            <span class="flex min-w-px flex-1 flex-col">
+              <span class="type-caption text-ink-muted">{{ 'home.attention.pendingApprovals' | translate }}</span>
+              @if (loading()) {
+                <app-skeleton variant="line" width="64px" />
+              } @else {
+                <span class="type-h2 text-ink-strong">{{ snapshot()?.pendingApprovals ?? 0 }}</span>
+              }
+            </span>
+            <p-button
+              size="small"
+              [label]="'home.attention.approve' | translate"
+              (onClick)="goToPendingMembers()" />
           </div>
-          <span [class]="'status-badge ' + card.badgeClass">{{ card.badge }}</span>
-        </div>
-        <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest mb-1">{{ card.label }}</div>
-        <div class="text-[28px] font-extrabold text-primary tracking-tighter leading-none">{{ card.value }}</div>
-        <div class="text-[10px] text-tertiary mt-2">{{ card.subtext }}</div>
+        }
+
+        @if (showsBlock('awaitingRsvps')) {
+          <div
+            class="bg-surface border-line-subtle shadow-elevation-sm flex flex-1 items-center gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+            <app-icon-tile icon="pi pi-calendar-clock" />
+            <span class="flex min-w-px flex-1 flex-col">
+              <span class="type-caption text-ink-muted">{{ 'home.attention.awaitingRsvps' | translate }}</span>
+              @if (loading()) {
+                <app-skeleton variant="line" width="64px" />
+              } @else {
+                <span class="type-h2 text-ink-strong">{{ snapshot()?.awaitingRsvps ?? 0 }}</span>
+              }
+            </span>
+            <p-button
+              size="small"
+              severity="secondary"
+              [outlined]="true"
+              [label]="'home.attention.confirm' | translate"
+              (onClick)="goToRsvps()" />
+          </div>
+        }
       </div>
+    </section>
+  }
+
+  <div class="flex flex-col gap-gutter tablet:flex-row">
+    @if (showsBlock('groupAttendance')) {
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex min-w-px flex-1 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+        <app-section-header [heading]="'home.attendance.heading' | translate" />
+        <app-segmented-control
+          [options]="rangeOptions()"
+          [value]="range()"
+          (valueChange)="onRangeChange($event)"
+          [ariaLabel]="'home.attendance.heading' | translate" />
+
+        @if (attendanceLoading()) {
+          <app-skeleton variant="card" />
+        } @else if (attendanceRows().length === 0) {
+          <app-empty-state variant="no-data" [heading]="'home.attendance.empty' | translate" />
+        } @else {
+          <table class="w-full border-collapse">
+            <caption class="sr-only">{{ 'home.attendance.heading' | translate }}</caption>
+            <thead>
+              <tr class="border-line-subtle border-b">
+                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
+                  {{ 'home.attendance.group' | translate }}
+                </th>
+                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-right">
+                  {{ 'home.attendance.attended' | translate }}
+                </th>
+                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-right">
+                  {{ 'home.attendance.total' | translate }}
+                </th>
+                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
+                  {{ 'home.attendance.ratio' | translate }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of attendanceRows(); track row.groupPublicId ?? row.groupName) {
+                <tr class="border-line-subtle border-b">
+                  <td class="type-body text-ink-strong h-[var(--size-table-row)] px-[var(--space-8)]">{{ row.groupName }}</td>
+                  <td class="type-body text-ink tabular-nums h-[var(--size-table-row)] px-[var(--space-8)] text-right">{{ row.attended }}</td>
+                  <td class="type-body text-ink-muted tabular-nums h-[var(--size-table-row)] px-[var(--space-8)] text-right">{{ row.total }}</td>
+                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
+                    <div class="w-[96px]">
+                      <app-progress-bar
+                        size="small"
+                        [value]="row.ratio"
+                        [label]="row.ratio + '%'"
+                        [ariaLabel]="row.groupName" />
+                    </div>
+                  </td>
+                </tr>
+              }
+              @if (attendanceTotal(); as total) {
+                <tr>
+                  <td class="type-body text-ink-strong h-[var(--size-table-row)] px-[var(--space-8)] font-semibold">{{ total.groupName }}</td>
+                  <td class="type-body text-ink-strong tabular-nums h-[var(--size-table-row)] px-[var(--space-8)] text-right font-semibold">{{ total.attended }}</td>
+                  <td class="type-body text-ink-strong tabular-nums h-[var(--size-table-row)] px-[var(--space-8)] text-right font-semibold">{{ total.total }}</td>
+                  <td class="type-body text-ink-strong h-[var(--size-table-row)] px-[var(--space-8)] font-semibold">{{ total.ratio }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    }
+
+    @if (showsBlock('overview')) {
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex w-full shrink-0 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card tablet:w-[363px]">
+        <app-section-header [heading]="'home.overview.heading' | translate" />
+        @if (loading()) {
+          <app-skeleton variant="card" />
+        } @else {
+          <dl class="flex flex-col gap-[var(--space-8)]">
+            <app-definition-row
+              layout="inline"
+              [term]="'home.overview.totalMembers' | translate"
+              [value]="(snapshot()?.overview?.totalMembers ?? 0).toString()" />
+            <app-definition-row
+              layout="inline"
+              [term]="'home.overview.activeMembers' | translate"
+              [value]="(snapshot()?.overview?.activeMembers ?? 0).toString()" />
+            <app-definition-row
+              layout="inline"
+              [term]="'home.overview.ministries' | translate"
+              [value]="(snapshot()?.overview?.ministries ?? 0).toString()" />
+          </dl>
+        }
+      </section>
     }
   </div>
 
-  <!-- Charts row -->
-  <div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="flex flex-col gap-gutter tablet:flex-row">
+    @if (showsBlock('recentActivity')) {
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex min-w-px flex-1 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+        <app-section-header
+          [heading]="'home.recent.heading' | translate"
+          [actionLabel]="'home.recent.viewAll' | translate"
+          (action)="goToMembers()" />
 
-    <!-- Growth chart -->
-    <div class="col-span-2 bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-      <div class="text-[13px] font-bold text-primary tracking-tight mb-4">Growth Analytics</div>
-      <div style="height: 200px">
-        <p-chart type="line" [data]="chartData" [options]="chartOptions" height="200" />
-      </div>
-    </div>
-
-    <!-- Demographics -->
-    <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-      <div class="text-[13px] font-bold text-primary tracking-tight mb-4">Demographics</div>
-
-      <div class="mb-3">
-        <div class="flex justify-between text-[11px] font-medium mb-1">
-          <span class="text-secondary">Women</span>
-          <span class="font-bold text-primary">52%</span>
-        </div>
-        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div class="h-full bg-primary rounded-full" style="width: 52%"></div>
-        </div>
-      </div>
-
-      <div class="mb-5">
-        <div class="flex justify-between text-[11px] font-medium mb-1">
-          <span class="text-secondary">Men</span>
-          <span class="font-bold text-tertiary">48%</span>
-        </div>
-        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div class="h-full bg-tertiary rounded-full" style="width: 48%"></div>
-        </div>
-      </div>
-
-      <button
-        (click)="goToMembers()"
-        class="text-[11px] font-bold text-primary hover:text-primary-hover transition-colors tracking-tight"
-      >
-        Detailed Demographics Report →
-      </button>
-    </div>
-
-  </div>
-
-  <!-- Recent activity table -->
-  <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-      <div class="text-[13px] font-bold text-primary tracking-tight">Recent Activity</div>
-      <button
-        (click)="goToMembers()"
-        class="text-[11px] font-bold text-primary hover:underline tracking-tight"
-      >
-        View all →
-      </button>
-    </div>
-
-    <table class="w-full text-[11px]">
-      <thead>
-        <tr class="border-b border-gray-50">
-          <th class="text-left px-5 py-3 text-[9px] font-bold text-tertiary uppercase tracking-widest">Name</th>
-          <th class="text-left px-5 py-3 text-[9px] font-bold text-tertiary uppercase tracking-widest">Role</th>
-          <th class="text-left px-5 py-3 text-[9px] font-bold text-tertiary uppercase tracking-widest">Status</th>
-          <th class="text-left px-5 py-3 text-[9px] font-bold text-tertiary uppercase tracking-widest">Last Updated</th>
-        </tr>
-      </thead>
-      <tbody>
         @if (loading()) {
-          <tr><td colspan="4" class="px-5 py-8 text-center text-tertiary">Loading...</td></tr>
+          <app-skeleton variant="card" />
+        } @else if ((snapshot()?.recentActivity ?? []).length === 0) {
+          <app-empty-state variant="no-data" [heading]="'home.recent.empty' | translate" />
+        } @else if (isPhone()) {
+          <div class="flex flex-col gap-[var(--space-8)]">
+            @for (record of recentRecords(); track record.id) {
+              <app-list-card [record]="record" (selected)="goToMember($event.id)" />
+            }
+          </div>
         } @else {
-          @for (member of recentMembers(); track member.publicId) {
-            <tr
-              class="border-b border-gray-50 hover:bg-neutral cursor-pointer transition-colors"
-              (click)="goToMember(member.publicId)"
-            >
-              <td class="px-5 py-3 font-semibold text-gray-800 tracking-tight">
-                {{ member.lastName }}{{ member.firstName }}
-              </td>
-              <td class="px-5 py-3">
-                <span [class]="'status-badge ' + (member.role === 'ADMIN' ? 'badge-admin' : 'badge-member')">
-                  {{ member.role ?? 'MEMBER' }}
-                </span>
-              </td>
-              <td class="px-5 py-3">
-                <span [class]="'status-badge ' + statusBadgeClass(member.memberStatus)">
-                  {{ member.memberStatus }}
-                </span>
-              </td>
-              <td class="px-5 py-3 text-tertiary">
-                {{ member.updatedAt ? (member.updatedAt | date:'yyyy-MM-dd') : '—' }}
-              </td>
-            </tr>
-          } @empty {
-            <tr><td colspan="4" class="px-5 py-8 text-center text-tertiary">No recent activity.</td></tr>
-          }
+          <table class="w-full border-collapse">
+            <caption class="sr-only">{{ 'home.recent.heading' | translate }}</caption>
+            <thead>
+              <tr class="border-line-subtle border-b">
+                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
+                  {{ 'home.recent.name' | translate }}
+                </th>
+                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
+                  {{ 'home.recent.role' | translate }}
+                </th>
+                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
+                  {{ 'home.recent.status' | translate }}
+                </th>
+                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
+                  {{ 'home.recent.updated' | translate }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (member of snapshot()?.recentActivity ?? []; track member.publicId) {
+                <tr
+                  class="border-line-subtle hover:bg-surface-subtle border-b cursor-pointer"
+                  (click)="goToMember(member.publicId)">
+                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
+                    <span class="flex items-center gap-[var(--space-8)]">
+                      <app-avatar [name]="memberName(member)" [size]="32" decorative />
+                      <span class="type-body text-ink-strong truncate">{{ memberName(member) }}</span>
+                    </span>
+                  </td>
+                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
+                    <app-badge
+                      [variant]="roleVariant(member)"
+                      [label]="roleLabelKey(member) | translate" />
+                  </td>
+                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
+                    <app-badge
+                      [variant]="statusVariant(member)"
+                      [label]="'members.status.' + member.memberStatus | translate" />
+                  </td>
+                  <td class="type-body text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)]">
+                    {{ shortDate(member.updatedAt) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         }
-      </tbody>
-    </table>
-  </div>
+      </section>
+    }
 
+    @if (showsBlock('upcomingEvents')) {
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex w-full shrink-0 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card tablet:w-[363px]">
+        <app-section-header [heading]="'home.events.heading' | translate" />
+        @if (loading()) {
+          <app-skeleton variant="card" />
+        } @else if ((snapshot()?.upcomingEvents ?? []).length === 0) {
+          <app-empty-state variant="no-data" [heading]="'home.events.empty' | translate" />
+        } @else {
+          <ul class="flex list-none flex-col gap-[var(--space-8)] p-0">
+            @for (event of snapshot()?.upcomingEvents ?? []; track event.publicId) {
+              <li class="flex min-h-[var(--size-table-row)] items-center gap-[var(--space-8)]">
+                <span class="type-body text-ink-strong min-w-px flex-1 truncate">{{ event.title }}</span>
+                <app-badge variant="neutral" [label]="'D-' + event.daysUntil" />
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  </div>
 </div>
