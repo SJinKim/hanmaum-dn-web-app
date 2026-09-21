@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Route } from '@angular/router';
 import { APP_ROUTES } from '../../app.routes';
+import { HOME_BLOCKS } from '../navigation/home-blocks';
 import { NAV_GROUPS } from '../navigation/nav-config';
 import { AuthService } from './auth.service';
 import { RoleService } from './role.service';
@@ -67,6 +68,58 @@ describe('RoleService', () => {
       const labels = withRoles(['ADMIN']).navGroups().map(group => group.labelKey);
       expect(labels).toEqual(NAV_GROUPS.map(group => group.labelKey));
       expect(withRoles(['ADMIN']).navGroups().every(group => group.items.length > 0)).toBeTrue();
+    });
+  });
+
+  describe('homeBlocks', () => {
+    it('gives an admin every block the matrix grants 관리자', () => {
+      const blocks = withRoles(['ADMIN']).homeBlocks();
+      expect(blocks.has('pendingApprovals')).toBeTrue();
+      expect(blocks.has('awaitingRsvps')).toBeTrue();
+      expect(blocks.has('groupAttendance')).toBeTrue();
+      expect(blocks.has('overview')).toBeTrue();
+      expect(blocks.has('recentActivity')).toBeTrue();
+      expect(blocks.has('upcomingEvents')).toBeTrue();
+    });
+
+    it('hides 승인 대기 from a user who is neither 관리자 nor 목사님', () => {
+      expect(withRoles(['USER']).showsHomeBlock('pendingApprovals')).toBeFalse();
+    });
+
+    it('still shows the three ungated blocks to a plain user', () => {
+      const roles = withRoles(['USER']);
+      expect(roles.showsHomeBlock('awaitingRsvps')).toBeTrue();
+      expect(roles.showsHomeBlock('upcomingEvents')).toBeTrue();
+      expect(roles.showsHomeBlock('groupAttendance')).toBeTrue();
+    });
+
+    it('drops blocks no endpoint backs yet, for every role', () => {
+      ['ADMIN', 'PASTOR', 'USER'].forEach(role => {
+        const roles = withRoles([role]);
+        expect(roles.showsHomeBlock('longAbsent')).toBeFalse();
+        expect(roles.showsHomeBlock('statistics')).toBeFalse();
+      });
+    });
+
+    it('covers every registry entry — no block decides its own visibility', () => {
+      const roles = withRoles(['ADMIN']);
+      HOME_BLOCKS.forEach(block =>
+        expect(roles.showsHomeBlock(block.id)).toBe(!block.pending),
+      );
+    });
+  });
+
+  describe('homeBlockScope', () => {
+    it('scopes an admin to the whole church', () => {
+      expect(withRoles(['ADMIN']).homeBlockScope('groupAttendance')).toBe('all');
+    });
+
+    it('scopes a 순장 to their own 순', () => {
+      expect(withRoles(['LEADER']).homeBlockScope('overview')).toBe('own-group');
+    });
+
+    it('leaves an ungated block unscoped', () => {
+      expect(withRoles(['LEADER']).homeBlockScope('upcomingEvents')).toBe('all');
     });
   });
 });

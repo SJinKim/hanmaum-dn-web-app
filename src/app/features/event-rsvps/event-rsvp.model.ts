@@ -7,6 +7,22 @@ export interface EventRsvpDto {
   announcementPublicId: string | null;
 }
 
+/**
+ * `GET /api/v1/events/rsvps/active` — `ActiveEventRsvpDto` in
+ * `../hanmaum-dn-ops/api/openapi.yaml`. `myStatus` is the caller's own answer, so
+ * `null` is "응답 대기" (has not replied yet).
+ */
+export interface ActiveEventRsvpDto {
+  publicId: string;
+  title: string;
+  windowStart: string;
+  windowEnd: string;
+  announcementId: string | null;
+  myStatus: 'GOING' | 'NOT_GOING' | 'MAYBE' | null;
+  respondedAt: string | null;
+  nextReminderAt: string | null;
+}
+
 export interface CreateEventRsvpRequest {
   title: string;
   windowStart: string;

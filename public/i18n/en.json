@@ -48,6 +48,51 @@
       "logout": "Logout"
     }
   },
+  "home": {
+    "title": "Home",
+    "attention": {
+      "heading": "Needs your attention",
+      "pendingApprovals": "Pending approvals",
+      "approve": "Approve",
+      "awaitingRsvps": "Awaiting response",
+      "confirm": "Review"
+    },
+    "attendance": {
+      "heading": "Attendance by group",
+      "group": "Group",
+      "attended": "Attended",
+      "total": "Total",
+      "ratio": "Rate",
+      "totalRow": "Total",
+      "empty": "No attendance recorded",
+      "range": {
+        "last-sunday": "Last Sunday",
+        "last-4-weeks": "Last 4 weeks",
+        "last-3-months": "Last 3 months"
+      }
+    },
+    "overview": {
+      "heading": "Overview",
+      "totalMembers": "All members",
+      "activeMembers": "Active members",
+      "ministries": "Ministries"
+    },
+    "recent": {
+      "heading": "Recent activity",
+      "viewAll": "View all",
+      "name": "Name",
+      "role": "Role",
+      "status": "Status",
+      "updated": "Last updated",
+      "empty": "No recent activity",
+      "roleAdmin": "Admin",
+      "roleMember": "Member"
+    },
+    "events": {
+      "heading": "Upcoming events",
+      "empty": "No upcoming events"
+    }
+  },
   "members": {
     "title": "Members",
     "search": {
