@@ -3,7 +3,7 @@
   `app-list-card` (Home precedent) — the Tablet/Phone node IDs in #53 point at
   the wrong screen, see the issue comment.
 -->
-<div class="flex h-full flex-col gap-gutter">
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
   <app-page-header
     [eyebrow]="'members.eyebrow' | translate"
     [heading]="'members.title' | translate"
@@ -59,7 +59,16 @@
   <section
     class="bg-surface border-line-subtle shadow-elevation-sm flex min-h-px flex-1 flex-col gap-[var(--space-12)] overflow-hidden rounded-[var(--radius-lg)] border p-card"
     [attr.aria-busy]="loading()">
-    <div class="flex min-h-px flex-1 flex-col overflow-auto">
+    <!--
+      `relative`: the screen-reader labels inside (`<caption class="sr-only">`,
+      the MemberPill's `sr-only` span) are `position: absolute`. Without a
+      positioned ancestor their containing block is the initial one, so this
+      scroller cannot clip them — the last row's 1px label then sat below the
+      fold and made the *document* scroll past the shell. Measured on the page:
+      `documentElement.scrollHeight` 1265 vs. `clientHeight` 969, with the last
+      `.sr-only` ending at exactly 1265.
+    -->
+    <div class="relative flex min-h-px flex-1 flex-col overflow-auto">
       @if (loading()) {
         <app-skeleton variant="card" />
       } @else if (failed()) {

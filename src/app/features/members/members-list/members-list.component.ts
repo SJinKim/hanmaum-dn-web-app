@@ -82,6 +82,11 @@ const SEARCH_DEBOUNCE_MS = 300;
     SkeletonComponent,
   ],
   providers: [MessageService],
+  // The host is what `<router-outlet>` inserts into `<main>`; without a height
+  // of its own it is an auto-sized inline box and the `h-full` inside resolves
+  // to nothing. The list has to fill the main area so the table can scroll in
+  // the card instead of the page scrolling as a whole.
+  host: { class: 'flex h-full flex-col' },
   templateUrl: './members-list.component.html',
 })
 export class MembersListComponent implements OnInit {
