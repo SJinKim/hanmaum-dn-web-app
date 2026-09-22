@@ -51,7 +51,7 @@ const STAGE_LABELS: Record<MemberPillStage, string> = {
     StatCardComponent,
   ],
   template: `
-    <div class="p-page">
+    <div>
       <header class="mb-gutter">
         <h1 class="type-h1 text-ink-strong">Data Display</h1>
         <p class="type-body text-ink-muted mt-1">

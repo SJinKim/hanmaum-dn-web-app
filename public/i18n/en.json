@@ -95,6 +95,10 @@
   },
   "members": {
     "title": "Members",
+    "eyebrow": "Member management",
+    "subtitle": "{{total}} members registered",
+    "caption": "Member list",
+    "unassigned": "Unassigned",
     "search": {
       "placeholder": "Search all fields...",
       "aria": "Search members"
@@ -139,15 +143,6 @@
       "approve": "Approve",
       "edit": "Edit member"
     },
-    "filter": {
-      "searchPlaceholder": "Search…",
-      "searchAria": "Filter options",
-      "selectAll": "Select all",
-      "reset": "Reset",
-      "empty": "No options",
-      "trainingHint": "Click: In progress → Completed → Dropped → Clear",
-      "groupLeader": "Groupleader"
-    },
     "edit": {
       "churchGroupLeader": "Church Group Leader",
       "leaderChangeHint": "This change will replace {{name}} as church group leader."
@@ -161,6 +156,40 @@
       "approveSuccess": "Member approved.",
       "leaderAssignFailed": "Could not assign the church group leader.",
       "leaderClearFailed": "Could not clear the church group leader."
+    },
+    "stage": {
+      "next-leader": "Next Leader",
+      "discipleship": "Discipleship Done",
+      "one-on-one-completed": "One-to-One Done",
+      "one-on-one-progress": "One-to-One Ongoing",
+      "one-on-one-waiting": "One-to-One Waiting",
+      "qbs": "QBS Done",
+      "unbaptized": "Unbaptized / Check",
+      "none": "None"
+    },
+    "pagination": {
+      "range": "{{from}}–{{to}} of {{total}}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "filters": {
+      "status": "Status",
+      "baptism": "Baptism",
+      "baptismAll": "All baptisms"
+    },
+    "empty": {
+      "heading": "No members yet",
+      "description": "Add the first member to get started."
+    },
+    "noResults": {
+      "heading": "No results",
+      "description": "Try a different search term or filter.",
+      "action": "Reset filters"
+    },
+    "error": {
+      "heading": "Could not load the list",
+      "description": "Please try again in a moment.",
+      "retry": "Retry"
     }
   }
 }

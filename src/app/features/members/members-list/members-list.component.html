@@ -1,48 +1,250 @@
-<div class="p-6">
+<!--
+  Figma: 청년 / Desktop 201:4937. Below 834px the table becomes a list of
+  `app-list-card` (Home precedent) — the Tablet/Phone node IDs in #53 point at
+  the wrong screen, see the issue comment.
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'members.eyebrow' | translate"
+    [heading]="'members.title' | translate"
+    [subtitle]="'members.subtitle' | translate: { total: total() }">
+    <p-button
+      appActions
+      size="small"
+      icon="pi pi-plus"
+      [label]="'members.addButton' | translate"
+      (onClick)="goToCreate()" />
+  </app-page-header>
 
-  <!-- Page title -->
-  <div class="mb-5">
-    <h1 class="text-[26px] font-extrabold text-primary tracking-tight">{{ 'members.title' | translate }}</h1>
-  </div>
+  <app-toolbar hasFilters>
+    <app-search-field
+      appSearch
+      [value]="searchText()"
+      (valueChange)="onSearchChange($event)"
+      (cleared)="onSearchCleared()"
+      [label]="'members.search.aria' | translate"
+      [placeholder]="'members.search.placeholder' | translate" />
 
-  <!-- Top row: global search + Add Member -->
-  <div class="flex items-center gap-3 mb-5">
-    <div class="flex-1 flex items-center gap-2 h-9 bg-white border border-gray-200 rounded-lg px-3">
-      <i class="pi pi-search text-tertiary text-[12px]"></i>
-      <input
-        type="text"
-        class="flex-1 outline-none text-[12px] bg-transparent placeholder:text-tertiary"
-        [placeholder]="'members.search.placeholder' | translate"
-        [attr.aria-label]="'members.search.aria' | translate"
-        [ngModel]="searchTerm"
-        (ngModelChange)="onSearch($event)"
-      />
+    <!--
+      Only 상태 and 세례 filter here: 순/양육/사역 need server-side parameters
+      the members endpoint does not accept yet (hanmaum-dn-server#196). The old
+      list only appeared to filter by them because it loaded every member at
+      once and filtered in the client.
+    -->
+    @for (value of statusFilters; track value) {
+      <app-filter-chip
+        appFilters
+        [label]="'members.status.' + value | translate"
+        [selected]="status() === value"
+        [count]="value === 'PENDING' ? pendingCount() : undefined"
+        (toggled)="toggleStatus(value, $event)" />
+    }
+    <p-select
+      appFilters
+      size="small"
+      optionLabel="label"
+      optionValue="value"
+      [options]="baptismOptions()"
+      [ngModel]="baptism()"
+      (ngModelChange)="onBaptismChange($event)"
+      [ariaLabel]="'members.filters.baptism' | translate" />
+  </app-toolbar>
+
+  <!--
+    The card takes the height the header and the toolbar leave over and the
+    rows scroll inside it, so the page itself never scrolls. Otherwise the
+    paginator sits below the fold and you have to scroll past the last row to
+    reach it.
+  -->
+  <section
+    class="bg-surface border-line-subtle shadow-elevation-sm flex min-h-px flex-1 flex-col gap-[var(--space-12)] overflow-hidden rounded-[var(--radius-lg)] border p-card"
+    [attr.aria-busy]="loading()">
+    <!--
+      `relative`: the screen-reader labels inside (`<caption class="sr-only">`,
+      the MemberPill's `sr-only` span) are `position: absolute`. Without a
+      positioned ancestor their containing block is the initial one, so this
+      scroller cannot clip them — the last row's 1px label then sat below the
+      fold and made the *document* scroll past the shell. Measured on the page:
+      `documentElement.scrollHeight` 1265 vs. `clientHeight` 969, with the last
+      `.sr-only` ending at exactly 1265.
+    -->
+    <div class="relative flex min-h-px flex-1 flex-col overflow-auto">
+      @if (loading()) {
+        <app-skeleton variant="card" />
+      } @else if (failed()) {
+        <app-empty-state
+          variant="error"
+          [heading]="'members.error.heading' | translate"
+          [description]="'members.error.description' | translate"
+          [actionLabel]="'members.error.retry' | translate"
+          actionIcon="pi pi-refresh"
+          (action)="retry()" />
+      } @else if (members().length === 0 && filtered()) {
+        <app-empty-state
+          variant="no-results"
+          [heading]="'members.noResults.heading' | translate"
+          [description]="'members.noResults.description' | translate"
+          [actionLabel]="'members.noResults.action' | translate"
+          (action)="resetFilters()" />
+      } @else if (members().length === 0) {
+        <app-empty-state
+          variant="no-data"
+          [heading]="'members.empty.heading' | translate"
+          [description]="'members.empty.description' | translate"
+          [actionLabel]="'members.addButton' | translate"
+          actionIcon="pi pi-plus"
+          (action)="goToCreate()" />
+      } @else if (isPhone()) {
+        <div class="flex flex-col gap-[var(--space-8)]">
+          @for (record of records(); track record.id) {
+            <app-list-card [record]="record" (selected)="goToDetail($event.id)" />
+          }
+        </div>
+      } @else {
+        <!--
+          No sort indicators: the server sorts by `lastName ASC` and ignores
+          `sort` (hanmaum-dn-server#196). A header that looks clickable and does
+          nothing is worse than a plain one — they come back with that issue.
+        -->
+        <table class="w-full border-collapse">
+          <caption class="sr-only">{{ 'members.caption' | translate }}</caption>
+          <thead>
+            <tr>
+              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
+                {{ 'members.columns.name' | translate }}
+              </th>
+              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
+                {{ 'members.columns.status' | translate }}
+              </th>
+              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
+                {{ 'members.columns.group' | translate }}
+              </th>
+              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
+                {{ 'members.columns.training' | translate }}
+              </th>
+              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
+                {{ 'members.columns.ministry' | translate }}
+              </th>
+              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
+                {{ 'members.columns.baptism' | translate }}
+              </th>
+              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
+                {{ 'members.columns.updatedAt' | translate }}
+              </th>
+              @if (showsApprove()) {
+                <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] w-[140px] border-b px-[var(--space-8)] text-left">
+                  {{ 'members.columns.approve' | translate }}
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (member of members(); track member.publicId) {
+              <tr
+                class="border-line-subtle hover:bg-surface-subtle border-b cursor-pointer"
+                (click)="goToDetail(member.publicId)">
+                <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
+                  <span class="flex items-center gap-[var(--space-8)]">
+                    <app-avatar [name]="memberName(member)" [size]="32" decorative />
+                    <span class="type-body text-ink-strong truncate">{{ memberName(member) }}</span>
+                  </span>
+                </td>
+                <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
+                  <app-badge
+                    [variant]="statusVariant(member)"
+                    [label]="'members.status.' + member.memberStatus | translate" />
+                </td>
+                <td class="type-body text-ink h-[var(--size-table-row)] px-[var(--space-8)]">
+                  {{ member.groupName ?? ('members.unassigned' | translate) }}
+                </td>
+                <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
+                  <!-- The column *is* the stage, so the stage name carries both label and title. -->
+                  <app-member-pill
+                    [stage]="stageOf(member)"
+                    [label]="stageLabel(member)"
+                    [stageLabel]="stageLabel(member)" />
+                </td>
+                <td class="type-body text-ink h-[var(--size-table-row)] px-[var(--space-8)]">
+                  {{ ministryLabel(member) }}
+                </td>
+                <td class="type-body text-ink h-[var(--size-table-row)] px-[var(--space-8)]">
+                  {{ baptismLabel(member.baptism) }}
+                </td>
+                <td class="type-body text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)]">
+                  {{ shortDate(member.updatedAt) }}
+                </td>
+                @if (showsApprove()) {
+                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]" (click)="$event.stopPropagation()">
+                    @if (member.memberStatus === 'PENDING') {
+                      @if (approvingId() === member.publicId) {
+                        <i
+                          class="pi pi-spinner pi-spin text-ink-muted"
+                          [attr.aria-label]="'members.actions.approving' | translate"></i>
+                      } @else if (selectingId() === member.publicId) {
+                        <span class="flex items-center gap-[var(--space-4)]">
+                          <p-select
+                            size="small"
+                            optionLabel="label"
+                            optionValue="value"
+                            [options]="groupOptions()"
+                            [placeholder]="'members.actions.selectGroupPlaceholder' | translate"
+                            [ariaLabel]="'members.actions.selectGroup' | translate"
+                            (onChange)="chooseGroup(member, $event.value)" />
+                          <p-button
+                            size="small"
+                            severity="secondary"
+                            icon="pi pi-times"
+                            [text]="true"
+                            [ariaLabel]="'members.actions.cancel' | translate"
+                            (onClick)="cancelApprove($event)" />
+                        </span>
+                      } @else {
+                        <p-button
+                          size="small"
+                          icon="pi pi-check"
+                          [label]="'members.actions.approve' | translate"
+                          (onClick)="startApprove(member, $event)" />
+                      }
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
     </div>
-    <button
-      (click)="goToCreate()"
-      class="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[12px] font-bold hover:bg-primary-hover transition-colors tracking-tight whitespace-nowrap"
-    >
-      <i class="pi pi-plus text-[11px]"></i>
-      {{ 'members.addButton' | translate }}
-    </button>
-  </div>
 
-  <!-- AG-Grid -->
-  <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-    <ag-grid-angular
-      style="height: calc(100vh - 240px); min-height: 480px;"
-      [rowData]="members()"
-      [theme]="theme"
-      [columnDefs]="columnDefs"
-      [defaultColDef]="defaultColDef"
-      [gridOptions]="gridOptions"
-      [quickFilterText]="searchTerm"
-      [animateRows]="true"
-      (gridReady)="onGridReady($event)"
-      (rowClicked)="onRowClicked($event)"
-    />
-  </div>
-
+    <!--
+      Neither DESIGN.md nor 201:4937 specifies a paginator; this one is
+      feature-local and built from tokens. `p-paginator` would need `::ng-deep`
+      to be themed, which DESIGN.md §7.2 forbids.
+    -->
+    @if (!loading() && !failed() && hasPages()) {
+      <div class="flex items-center justify-end gap-[var(--space-8)]">
+        <span class="type-caption text-ink-muted tabular-nums">
+          {{ 'members.pagination.range' | translate: rangeParams() }}
+        </span>
+        <p-button
+          size="small"
+          severity="secondary"
+          icon="pi pi-chevron-left"
+          [text]="true"
+          [disabled]="page() === 0"
+          [label]="'members.pagination.prev' | translate"
+          (onClick)="prevPage()" />
+        <p-button
+          size="small"
+          severity="secondary"
+          icon="pi pi-chevron-right"
+          iconPos="right"
+          [text]="true"
+          [disabled]="page() >= lastPage()"
+          [label]="'members.pagination.next' | translate"
+          (onClick)="nextPage()" />
+      </div>
+    }
+  </section>
 </div>
 
 <p-toast />

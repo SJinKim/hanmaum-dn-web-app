@@ -95,6 +95,10 @@
   },
   "members": {
     "title": "청년 리스트",
+    "eyebrow": "청년 관리",
+    "subtitle": "등록된 청년 {{total}}명",
+    "caption": "청년 목록",
+    "unassigned": "미배정",
     "search": {
       "placeholder": "전체 항목 검색...",
       "aria": "청년 검색"
@@ -139,15 +143,6 @@
       "approve": "승인",
       "edit": "청년 정보 수정"
     },
-    "filter": {
-      "searchPlaceholder": "검색…",
-      "searchAria": "필터 옵션",
-      "selectAll": "전체 선택",
-      "reset": "초기화",
-      "empty": "옵션 없음",
-      "trainingHint": "클릭: 진행중 → 수료 → 중단 → 해제",
-      "groupLeader": "순장"
-    },
     "edit": {
       "churchGroupLeader": "순장",
       "leaderChangeHint": "이 변경으로 순장이 {{name}}에서 바뀝니다."
@@ -161,6 +156,40 @@
       "approveSuccess": "청년이 승인되었습니다.",
       "leaderAssignFailed": "순장 지정에 실패했습니다.",
       "leaderClearFailed": "순장 해제에 실패했습니다."
+    },
+    "stage": {
+      "next-leader": "예비순장",
+      "discipleship": "제자반수료",
+      "one-on-one-completed": "일대일수료",
+      "one-on-one-progress": "일대일진행",
+      "one-on-one-waiting": "일대일대기",
+      "qbs": "큐베세수료",
+      "unbaptized": "세례X / 확인대상",
+      "none": "없음"
+    },
+    "pagination": {
+      "range": "{{from}}–{{to}} / {{total}}",
+      "prev": "이전",
+      "next": "다음"
+    },
+    "filters": {
+      "status": "상태",
+      "baptism": "세례",
+      "baptismAll": "세례 전체"
+    },
+    "empty": {
+      "heading": "등록된 청년이 없습니다",
+      "description": "첫 청년을 추가해 보세요."
+    },
+    "noResults": {
+      "heading": "검색 결과가 없습니다",
+      "description": "검색어나 필터를 바꿔 보세요.",
+      "action": "필터 초기화"
+    },
+    "error": {
+      "heading": "목록을 불러올 수 없습니다",
+      "description": "잠시 후 다시 시도해 주세요.",
+      "retry": "다시 시도"
     }
   }
 }

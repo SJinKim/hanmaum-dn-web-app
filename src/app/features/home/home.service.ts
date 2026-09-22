@@ -53,7 +53,9 @@ export class HomeService {
       ministries: this.ministries.getMinistries(true),
       activeRsvps: this.rsvps.getActiveRsvps(),
       events: this.rsvps.getRsvps(),
-      recent: this.members.getMembers({ size: RECENT_ACTIVITY_POOL, sort: 'updatedAt,desc' }),
+      // No `sort` — the server ignores it (hanmaum-dn-server#196); `sortByUpdatedAt`
+      // below does the ordering over the pool this fetches.
+      recent: this.members.getMembers({ size: RECENT_ACTIVITY_POOL }),
     }).pipe(
       map(({ pending, total, active, ministries, activeRsvps, events, recent }) => ({
         pendingApprovals: pending.totalElements,

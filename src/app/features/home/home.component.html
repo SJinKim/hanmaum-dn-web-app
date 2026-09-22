@@ -3,7 +3,7 @@
   The two-column rows collapse below the `tablet` breakpoint (834px), which is
   the same threshold styles.scss §3 uses to re-point the density tokens.
 -->
-<div class="flex flex-col gap-gutter p-page">
+<div class="flex flex-col gap-gutter">
   <app-page-header [heading]="'home.title' | translate" [subtitle]="todayLabel" />
 
   @if (showsAttention()) {

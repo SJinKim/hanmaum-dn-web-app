@@ -25,7 +25,7 @@ export type MemberPillState = 'default' | 'dimmed' | 'candidate';
   standalone: true,
   template: `
     <span
-      class="type-body-sm inline-flex w-fit items-center gap-[var(--space-6)] whitespace-nowrap rounded-[var(--radius-full)] border px-[var(--space-10)] py-[var(--space-4)]"
+      class="type-body-sm relative inline-flex w-fit items-center gap-[var(--space-6)] whitespace-nowrap rounded-[var(--radius-full)] border px-[var(--space-10)] py-[var(--space-4)]"
       [style.background]="tokens().background"
       [style.color]="tokens().color"
       [style.border-style]="state() === 'candidate' ? 'dashed' : 'solid'"
