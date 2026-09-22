@@ -17,7 +17,7 @@ interface TokenGroup {
   selector: 'app-token-sandbox',
   standalone: true,
   template: `
-    <div class="p-page">
+    <div>
       <header class="mb-gutter flex items-end justify-between gap-gutter">
         <div>
           <h1 class="type-h1 text-ink-strong">Design Tokens</h1>

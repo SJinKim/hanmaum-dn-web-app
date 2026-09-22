@@ -49,7 +49,7 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
   ],
   providers: [MessageService],
   template: `
-    <div class="p-page">
+    <div>
       <app-page-header
         eyebrow="Issue #49"
         heading="UI Kit"
