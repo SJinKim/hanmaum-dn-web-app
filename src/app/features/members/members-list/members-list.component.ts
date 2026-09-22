@@ -1,364 +1,335 @@
-import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
-
-import { AgGridAngular } from 'ag-grid-angular';
-import {
-  ColDef,
-  GridApi,
-  GridOptions,
-  GridReadyEvent,
-  RowClassParams,
-  RowClickedEvent,
-  ModuleRegistry,
-  AllCommunityModule,
-  themeQuartz,
-} from 'ag-grid-community';
-
-import { ButtonModule } from 'primeng/button';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
-import { TranslateService, TranslatePipe } from '@ngx-translate/core';
-
-import { MemberService } from '../member.service';
+import { Subject, debounceTime, firstValueFrom, take } from 'rxjs';
+import { memberPillStage, memberPillStageKey } from '../../../core/models/member-stage';
 import {
-  MemberSummary,
   Baptism,
+  ChurchGroupSummary,
   MemberStatus,
+  MemberSummary,
 } from '../../../core/models/member.model';
-import { MemberNameCellComponent } from './cells/member-name-cell.component';
-import { BadgeCellComponent } from './cells/badge-cell.component';
-import { SetFilterComponent, NULL_TOKEN } from './filters/set-filter.component';
-import { NameFilterComponent } from './filters/name-filter.component';
-import { TrainingFilterComponent } from './filters/training-filter.component';
 import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
-import { TrainingChipsCellComponent } from './cells/training-chips-cell.component';
-import { MinistryChipsCellComponent } from './cells/ministry-chips-cell.component';
-import {
-  MemberActionsCellComponent,
-  MemberActionsContext,
-} from './cells/member-actions-cell.component';
+import { AvatarComponent } from '../../../core/ui/avatar/avatar.component';
+import { BadgeComponent } from '../../../core/ui/badge/badge.component';
+import { BreakpointService } from '../../../core/ui/breakpoint.service';
+import { DataRecord } from '../../../core/ui/data-record.model';
+import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
+import { FilterChipComponent } from '../../../core/ui/filter-chip/filter-chip.component';
+import { ListCardComponent } from '../../../core/ui/list-card/list-card.component';
+import { MemberPillComponent } from '../../../core/ui/member-pill/member-pill.component';
+import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
+import { SearchFieldComponent } from '../../../core/ui/search-field/search-field.component';
+import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
+import { ToolbarComponent } from '../../../core/ui/toolbar/toolbar.component';
+import { BadgeVariant, MemberPillStage, resolveBadgeVariant } from '../../../core/ui/variant-tokens';
+import { MemberService } from '../member.service';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+/** 상태 chips, in the Figma order — not the enum's declaration order. */
+const STATUS_FILTERS: readonly MemberStatus[] = ['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED'];
 
+/** 세례 select options, in the catechetical order the church uses. */
+const BAPTISM_FILTERS: readonly Baptism[] = [
+  'UNBAPTIZED',
+  'INFANT_BAPTIZED',
+  'GENERAL_BAPTIZED',
+  'CONFIRMATION',
+];
+
+/** Milliseconds a keystroke waits before it becomes a request. */
+const SEARCH_DEBOUNCE_MS = 300;
+
+/**
+ * Figma: 청년 / Desktop 201:4937. The Tablet and Phone node IDs quoted in #53
+ * point at the 통계 screen (noted on the issue), so both follow the Home
+ * precedent instead: below 834px the table becomes a list of `app-list-card`,
+ * never a horizontally scrolling table.
+ *
+ * The table is hand-built rather than `app-data-table`, for the same reason
+ * Home's two tables are (`home.component.ts:43-46`): `DataRecord` carries one
+ * badge and one subtitle, and this table needs three text columns plus a
+ * MemberPill. Widening `DataRecord` is a UI-kit follow-up, not a Members change.
+ *
+ * Filter, page and result live in {@link MemberService}, per #53 — the Home
+ * deep-link `/members?status=PENDING` and the approve flow write the same state.
+ * Every list request is a real `Page<T>` request; nothing is filtered or sorted
+ * in the client.
+ */
 @Component({
   selector: 'app-members-list',
   standalone: true,
   imports: [
     FormsModule,
-    AgGridAngular,
-    ButtonModule,
-    ToastModule,
     TranslatePipe,
+    ButtonModule,
+    SelectModule,
+    ToastModule,
+    PageHeaderComponent,
+    ToolbarComponent,
+    SearchFieldComponent,
+    FilterChipComponent,
+    AvatarComponent,
+    BadgeComponent,
+    MemberPillComponent,
+    ListCardComponent,
+    EmptyStateComponent,
+    SkeletonComponent,
   ],
   providers: [MessageService],
   templateUrl: './members-list.component.html',
 })
 export class MembersListComponent implements OnInit {
-  private readonly memberService  = inject(MemberService);
-  private readonly router         = inject(Router);
-  private readonly route          = inject(ActivatedRoute);
-  private readonly messageService = inject(MessageService);
-  private readonly destroyRef     = inject(DestroyRef);
-  private readonly translate      = inject(TranslateService);
+  private readonly memberService = inject(MemberService);
   private readonly trainingCatalog = inject(TrainingCatalogService);
+  private readonly breakpoints = inject(BreakpointService);
+  private readonly translate = inject(TranslateService);
+  private readonly messageService = inject(MessageService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
-  /** Shorthand for a synchronous translation lookup (used in AG-Grid colDefs + toasts). */
-  private t = (key: string): string => this.translate.instant(key);
+  // List state — read from the service, never duplicated here.
+  readonly members = this.memberService.members;
+  readonly total = this.memberService.total;
+  readonly loading = this.memberService.listLoading;
+  readonly failed = this.memberService.listFailed;
+  readonly page = this.memberService.page;
+  readonly size = this.memberService.size;
+  readonly status = this.memberService.status;
+  readonly baptism = this.memberService.baptism;
+  readonly pendingCount = this.memberService.pendingCount;
 
-  theme = themeQuartz.withParams({
-    fontFamily: 'Manrope, sans-serif',
-    fontSize: 12,
-    headerFontWeight: 700,
-    headerBackgroundColor: '#ffffff',
-    headerTextColor: '#1f2937',
-    backgroundColor: '#ffffff',
-    foregroundColor: '#1f2937',
-    rowHoverColor: '#f9fafb',
-    borderColor: '#f3f4f6',
-    cellHorizontalPadding: 16,
-    wrapperBorderRadius: 0,
-    wrapperBorder: false,
+  readonly isPhone = this.breakpoints.isPhone;
+
+  readonly statusFilters = STATUS_FILTERS;
+
+  /** Church groups for the approve select; empty until the request lands. */
+  private readonly churchGroups = signal<readonly ChurchGroupSummary[]>([]);
+  readonly groupOptions = computed(() =>
+    this.churchGroups().map(group => ({ label: group.name, value: group.publicId })),
+  );
+
+  /** `publicId` of the row whose group select is open, and of the row saving. */
+  readonly selectingId = signal<string | null>(null);
+  readonly approvingId = signal<string | null>(null);
+
+  /** Search text mirrors the service so a reset clears the field too. */
+  readonly searchText = signal(this.memberService.search());
+  private readonly searchInput$ = new Subject<string>();
+
+  /** Re-resolves on language change — `currentLang()` is the dependency. */
+  readonly baptismOptions = computed(() => {
+    this.translate.currentLang();
+    return [
+      { label: this.translate.instant('members.filters.baptismAll'), value: null },
+      ...BAPTISM_FILTERS.map(value => ({
+        label: this.translate.instant(`members.baptism.${value}`),
+        value: value as Baptism | null,
+      })),
+    ];
   });
-  members      = signal<MemberSummary[]>([]);
-  pendingCount = this.memberService.pendingCount;
-  loading      = signal(false);
-  searchTerm   = '';
 
-  /** Filter option sources — loaded from their backing tables, not the grid rows. */
-  private readonly churchGroupNames = signal<string[]>([]);
-  private readonly ministryTitles   = signal<string[]>([]);
+  /** True when the empty result is the work of a filter rather than an empty table. */
+  readonly filtered = computed(
+    () => !!this.memberService.search() || !!this.status() || !!this.baptism(),
+  );
 
-  private gridApi?: GridApi<MemberSummary>;
-  private pendingStatusFilter = false;
-
-  private readonly koCollator = new Intl.Collator('ko', { sensitivity: 'base' });
-
-  private readonly actionsContext: MemberActionsContext = {
-    churchGroups: [],
-    onApprove: (member, groupPublicId) => this.approveMember(member, groupPublicId),
-    onEdit:    (member, event) => this.goToEdit(member, event),
-    onGroupsMissing: () => this.messageService.add({
-      severity: 'error',
-      summary: this.t('members.toast.error'),
-      detail: this.t('members.toast.groupsLoadFailed'),
-    }),
-  };
-
-  readonly columnDefs: ColDef<MemberSummary>[] = [
-    {
-      headerValueGetter: () => this.t('members.columns.name'),
-      colId: 'name',
-      width: 200,
-      minWidth: 200,
-      valueGetter: p => `${p.data?.lastName ?? ''}${p.data?.firstName ?? ''}`,
-      cellRenderer: MemberNameCellComponent,
-      filter: NameFilterComponent,
-      sortable: true,
-      comparator: (a: string, b: string) => this.koCollator.compare(a, b),
-      sort: 'asc',
-      getQuickFilterText: p => `${p.data?.lastName ?? ''}${p.data?.firstName ?? ''} ${p.data?.email ?? ''}`,
-    },
-    {
-      headerValueGetter: () => this.t('members.columns.status'),
-      field: 'memberStatus',
-      width: 120,
-      cellRenderer: BadgeCellComponent,
-      filter: SetFilterComponent,
-      filterParams: {
-        options: () => (['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED'] as MemberStatus[])
-          .map(s => ({ token: s, label: this.t(`members.status.${s}`) })),
-        optionValues: (d: MemberSummary) => [d?.memberStatus],
+  /** Phone/Tablet: the same page rendered as `app-list-card`s (Home precedent). */
+  readonly records = computed<readonly DataRecord[]>(() =>
+    this.members().map(member => ({
+      id: member.publicId,
+      title: this.memberName(member),
+      subtitle: member.groupName ?? this.translate.instant('members.unassigned'),
+      badge: {
+        variant: this.statusVariant(member),
+        label: this.translate.instant(`members.status.${member.memberStatus}`),
       },
-      sortable: true,
-    },
-    {
-      headerValueGetter: () => this.t('members.columns.group'),
-      field: 'groupName',
-      width: 150,
-      valueFormatter: p => (p.value as string | null) ?? '—',
-      filter: SetFilterComponent,
-      filterParams: {
-        // All groups from the church-groups table — not just those present in the rows.
-        options: () => this.churchGroupNames().map(n => ({ token: n, label: n })),
-        optionValues: (d: MemberSummary) => [d?.groupName],
-      },
-      sortable: true,
-      comparator: (a: string, b: string) => this.koCollator.compare(a ?? '', b ?? ''),
-    },
-    {
-      headerValueGetter: () => this.t('members.columns.training'),
-      colId: 'training',
-      width: 200,
-      valueGetter: p => p.data?.trainings ?? [],
-      cellRenderer: TrainingChipsCellComponent,
-      sortable: false,
-      filter: TrainingFilterComponent,
-    },
-    {
-      headerValueGetter: () => this.t('members.columns.ministry'),
-      colId: 'ministry',
-      minWidth: 240,
-      valueGetter: p => p.data?.activeMinistries ?? [],
-      cellRenderer: MinistryChipsCellComponent,
-      sortable: false,
-      filter: SetFilterComponent,
-      filterParams: {
-        // All active ministries from the ministries table, plus a "(없음)" bucket.
-        options: () => [
-          ...this.ministryTitles().map(t => ({ token: t, label: t })),
-          { token: NULL_TOKEN, label: this.t('common.none') },
-        ],
-        optionValues: (d: MemberSummary) => d?.activeMinistries ?? [],
-      },
-    },
-    {
-      headerValueGetter: () => this.t('members.columns.baptism'),
-      field: 'baptism',
-      width: 120,
-      valueFormatter: p => this.baptismLabel(p.value as Baptism | null | undefined),
-      filter: SetFilterComponent,
-      filterParams: {
-        // Fixed enum order: Unbaptized, Infant, General, Confirmation, then (없음) last.
-        options: () => [
-          ...(['UNBAPTIZED', 'INFANT_BAPTIZED', 'GENERAL_BAPTIZED', 'CONFIRMATION'] as Baptism[])
-            .map(b => ({ token: b, label: this.t(`members.baptism.${b}`) })),
-          { token: NULL_TOKEN, label: this.t('common.none') },
-        ],
-        optionValues: (d: MemberSummary) => [d?.baptism],
-      },
-      sortable: true,
-    },
-    {
-      headerValueGetter: () => this.t('members.columns.updatedAt'),
-      field: 'updatedAt',
-      width: 140,
-      filter: 'agDateColumnFilter',
-      sortable: true,
-      valueFormatter: p => (p.value ? new Date(p.value).toISOString().slice(0, 10) : '—'),
-      filterParams: {
-        comparator: (filterDate: Date, cellValue: string | undefined) => {
-          if (!cellValue) return -1;
-          const cell = new Date(cellValue);
-          const cellDay = new Date(cell.getFullYear(), cell.getMonth(), cell.getDate()).getTime();
-          const filterDay = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate()).getTime();
-          if (cellDay < filterDay) return -1;
-          if (cellDay > filterDay) return 1;
-          return 0;
-        },
-      },
-    },
-    {
-      headerValueGetter: () => this.t('members.columns.approve'),
-      colId: 'approve',
-      width: 120,
-      cellRenderer: MemberActionsCellComponent,
-      cellRendererParams: { action: 'approve' },
-      sortable: false,
-      filter: false,
-    },
-    {
-      headerValueGetter: () => this.t('members.columns.edit'),
-      colId: 'edit',
-      width: 80,
-      cellRenderer: MemberActionsCellComponent,
-      cellRendererParams: { action: 'edit' },
-      sortable: false,
-      filter: false,
-    },
-  ];
+      meta: this.shortDate(member.updatedAt),
+    })),
+  );
 
-  readonly defaultColDef: ColDef = {
-    resizable: true,
-  };
+  /** 1-based row window for `members.pagination.range`. */
+  readonly rangeParams = computed(() => {
+    const total = this.total();
+    const first = total === 0 ? 0 : this.page() * this.size() + 1;
+    return { from: first, to: Math.min((this.page() + 1) * this.size(), total), total };
+  });
 
-  readonly gridOptions: GridOptions<MemberSummary> = {
-    rowHeight: 56,
-    headerHeight: 40,
-    pagination: true,
-    paginationPageSize: 20,
-    paginationPageSizeSelector: [20, 50, 100],
-    context: this.actionsContext,
-    getRowClass: (params: RowClassParams<MemberSummary>) =>
-      params.data?.memberStatus === 'PENDING' ? 'row-pending' : '',
-  };
+  /**
+   * The 승인 column exists only while the page actually holds a PENDING row —
+   * an always-present empty column would be a Figma deviation for nothing.
+   */
+  readonly showsApprove = computed(() => this.members().some(m => m.memberStatus === 'PENDING'));
+
+  readonly hasPages = computed(() => this.total() > this.size());
+  readonly lastPage = computed(() => Math.max(0, Math.ceil(this.total() / this.size()) - 1));
 
   ngOnInit(): void {
+    this.searchInput$
+      .pipe(debounceTime(SEARCH_DEBOUNCE_MS), takeUntilDestroyed(this.destroyRef))
+      .subscribe(term => this.memberService.setSearch(term));
+
+    // Deep link from Home (`home.component.ts:176`): `/members?status=PENDING`.
+    // Reading it once is enough — nothing navigates back to this route with a
+    // different query while the screen is up.
     this.route.queryParamMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
         if (params.get('status') === 'PENDING') {
-          this.pendingStatusFilter = true;
-          this.applyPendingFilter();
+          this.memberService.setStatus('PENDING');
+        } else {
+          this.memberService.loadMembers();
         }
       });
 
-    // Re-render AG-Grid headers + cells when the language changes (headerValueGetter,
-    // valueFormatter and filter option labels all read the active language via `t`).
-    this.translate.onLangChange
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.gridApi?.refreshHeader();
-        this.gridApi?.refreshCells({ force: true });
-      });
-
-    this.loadAll();
     this.memberService.refreshPendingCount();
-    this.memberService.getChurchGroups()
+
+    // The approve select needs every group, not just those the page happens to show.
+    this.memberService
+      .getChurchGroups()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: groups => {
-          this.actionsContext.churchGroups = groups;
-          this.churchGroupNames.set(groups.map(g => g.name));
-        },
-        error: () => { this.actionsContext.churchGroups = []; },
+        next: groups => this.churchGroups.set(groups),
+        error: () => this.churchGroups.set([]),
       });
-    this.memberService.getMinistryCatalog()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ministries => { this.ministryTitles.set(ministries.map(m => m.title)); },
-        error: () => { this.ministryTitles.set([]); },
-      });
-    // Training chips and the training filter label themselves from the catalog, so
-    // re-render the column once it lands.
-    this.trainingCatalog.load()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: () => this.gridApi?.refreshCells({ force: true }) });
+
+    // The 양육 column resolves its stage against the catalog; loading it refreshes
+    // the computed cells on its own.
+    this.trainingCatalog.load().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
-  onGridReady(event: GridReadyEvent<MemberSummary>): void {
-    this.gridApi = event.api;
-    if (this.pendingStatusFilter) this.applyPendingFilter();
+  onSearchChange(term: string): void {
+    this.searchText.set(term);
+    this.searchInput$.next(term);
   }
 
-  private applyPendingFilter(): void {
-    if (!this.gridApi) return;
-    this.gridApi.setColumnFilterModel('memberStatus', {
-      values: ['PENDING'],
-    }).then(() => this.gridApi?.onFilterChanged());
+  onSearchCleared(): void {
+    this.searchText.set('');
+    this.memberService.setSearch('');
   }
 
-  private loadAll(): void {
-    this.loading.set(true);
-    this.memberService.getMembers({ page: 0, size: 1000 })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: res => {
-          this.members.set(res.content);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.messageService.add({
-            severity: 'error',
-            summary: this.t('members.toast.error'),
-            detail: this.t('members.toast.membersLoadFailed'),
-          });
-          this.loading.set(false);
-        },
-      });
+  toggleStatus(value: MemberStatus, selected: boolean): void {
+    this.memberService.setStatus(selected ? value : null);
   }
 
-  onSearch(term: string): void { this.searchTerm = term; }
-
-  onRowClicked(event: RowClickedEvent<MemberSummary>): void {
-    if (event.data) this.goToDetail(event.data);
+  onBaptismChange(value: Baptism | null): void {
+    this.memberService.setBaptism(value);
   }
 
-  goToDetail(member: MemberSummary): void {
-    this.router.navigate(['/members', member.publicId]);
+  resetFilters(): void {
+    this.searchText.set('');
+    this.memberService.resetFilters();
   }
 
-  goToEdit(member: MemberSummary, event: Event): void {
+  retry(): void {
+    this.memberService.loadMembers();
+  }
+
+  prevPage(): void {
+    this.memberService.setPage(this.page() - 1);
+  }
+
+  nextPage(): void {
+    if (this.page() >= this.lastPage()) return;
+    this.memberService.setPage(this.page() + 1);
+  }
+
+  // ── Approve (8. Spalte) ───────────────────────────────────────────────────
+  // Figma 201:4937 has no approve column; until #54 ships the detail screen
+  // there is no other path from 대기중 to 활동중, so the column stays and is
+  // rendered only for PENDING rows. It is removable without replacement once
+  // #54 lands.
+
+  startApprove(member: MemberSummary, event: Event): void {
     event.stopPropagation();
-    this.router.navigate(['/members', member.publicId, 'edit']);
-  }
-
-  goToCreate(): void { this.router.navigate(['/members', 'new']); }
-
-  /** Rejects on failure so the approve cell can stop its spinner. */
-  private async approveMember(member: MemberSummary, groupPublicId: string): Promise<void> {
-    try {
-      await firstValueFrom(this.memberService.approveMember(member.publicId, groupPublicId));
-    } catch (err) {
+    if (this.churchGroups().length === 0) {
       this.messageService.add({
         severity: 'error',
-        summary: this.t('members.toast.error'),
-        detail: this.t('members.toast.approveFailed'),
+        summary: this.translate.instant('members.toast.error'),
+        detail: this.translate.instant('members.toast.groupsLoadFailed'),
       });
-      throw err;
+      return;
+    }
+    this.selectingId.set(member.publicId);
+  }
+
+  cancelApprove(event: Event): void {
+    event.stopPropagation();
+    this.selectingId.set(null);
+  }
+
+  async chooseGroup(member: MemberSummary, groupPublicId: string | null): Promise<void> {
+    if (!groupPublicId) return;
+    this.selectingId.set(null);
+    this.approvingId.set(member.publicId);
+    try {
+      await firstValueFrom(this.memberService.approveMember(member.publicId, groupPublicId));
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: this.translate.instant('members.toast.error'),
+        detail: this.translate.instant('members.toast.approveFailed'),
+      });
+      this.approvingId.set(null);
+      return;
     }
     this.messageService.add({
       severity: 'success',
-      summary: this.t('members.toast.done'),
-      detail: this.t('members.toast.approveSuccess'),
+      summary: this.translate.instant('members.toast.done'),
+      detail: this.translate.instant('members.toast.approveSuccess'),
     });
-    this.loadAll();
+    this.approvingId.set(null);
+    this.memberService.loadMembers();
     this.memberService.refreshPendingCount();
   }
 
-  baptismLabel(b?: Baptism | null): string {
-    return b ? this.t(`members.baptism.${b}`) : '—';
+  // ── Cell helpers ──────────────────────────────────────────────────────────
+
+  memberName(member: MemberSummary): string {
+    return `${member.lastName}${member.firstName}`;
+  }
+
+  statusVariant(member: MemberSummary): BadgeVariant {
+    return resolveBadgeVariant(member.memberStatus.toLowerCase());
+  }
+
+  stageOf(member: MemberSummary): MemberPillStage {
+    return memberPillStage(member, this.trainingCatalog.entries());
+  }
+
+  /**
+   * MemberPill's `label` is the member's name in the 순 matrix; here the column
+   * *is* the stage, so the stage name carries both the label and the title.
+   */
+  stageLabel(member: MemberSummary): string {
+    return this.translate.instant(memberPillStageKey(this.stageOf(member)));
+  }
+
+  ministryLabel(member: MemberSummary): string {
+    const ministries = member.activeMinistries ?? [];
+    return ministries.length > 0 ? ministries.join(', ') : '—';
+  }
+
+  baptismLabel(value: Baptism | null | undefined): string {
+    return value ? this.translate.instant(`members.baptism.${value}`) : '—';
+  }
+
+  /** `2026-09-18T…` → `2026.09.18`; the app registers no ko locale data. */
+  shortDate(iso: string | null | undefined): string {
+    return iso ? iso.slice(0, 10).replace(/-/g, '.') : '—';
+  }
+
+  goToDetail(publicId: string): void {
+    void this.router.navigate(['/members', publicId]);
+  }
+
+  goToCreate(): void {
+    void this.router.navigate(['/members', 'new']);
   }
 }

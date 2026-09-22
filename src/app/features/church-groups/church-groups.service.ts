@@ -3,12 +3,8 @@ import { Observable, forkJoin, map } from 'rxjs';
 import { MemberService } from '../members/member.service';
 import { TrainingCatalogService } from '../../core/services/training-catalog.service';
 import { MemberSummary, ChurchGroupSummary } from '../../core/models/member.model';
-import { SummaryTraining, catalogEntryByName } from '../../core/models/member-activity.model';
-
-/** Catalog codes the matrix categories are built on. */
-const QT_BASIC_SEMINAR = 'QT_BASIC_SEMINAR';
-const ONE_ON_ONE = 'ONE_ON_ONE';
-const YOUTH_POWER_DISCIPLESHIP = 'YOUTH_POWER_DISCIPLESHIP';
+import { memberPillStage } from '../../core/models/member-stage';
+import { MemberPillStage } from '../../core/ui/variant-tokens';
 
 export type MemberCategory =
   | 'NEXT_LEADER'
@@ -45,6 +41,18 @@ export const FILTER_CATEGORIES: MemberCategory[] = [
   'QBS_COMPLETED',
   'UNBAPTIZED',
 ];
+
+/** The matrix names the same eight buckets the MemberPill Stage axis does. */
+const CATEGORY_BY_STAGE: Record<MemberPillStage, MemberCategory> = {
+  'next-leader':          'NEXT_LEADER',
+  'discipleship':         'DISCIPLESHIP_COMPLETED',
+  'one-on-one-completed': 'ONE_ON_ONE_COMPLETED',
+  'one-on-one-progress':  'ONE_ON_ONE_IN_PROGRESS',
+  'one-on-one-waiting':   'ONE_ON_ONE_WAITING',
+  'qbs':                  'QBS_COMPLETED',
+  'unbaptized':           'UNBAPTIZED',
+  'none':                 'DEFAULT',
+};
 
 /**
  * Left-to-right order of divisions in the matrix. Divisions not listed here
@@ -104,28 +112,12 @@ export class ChurchGroupsService {
   }
 
   /**
-   * The member's matrix category. Trainings are matched on the catalog's stable `code`:
-   * the member summary only carries the English course name, and those names overlap
-   * ("One-to-One Discipleship Training" contains "Discipleship"), so a substring match
-   * puts members in the wrong category.
+   * The member's matrix category. The rule itself lives in
+   * `core/models/member-stage.ts` — the 청년 list renders the same eight buckets
+   * as MemberPills (#53), and one business rule may only exist once.
    */
   computeCategory(member: MemberSummary): MemberCategory {
-    if (member.isNextGroupLeader) return 'NEXT_LEADER';
-
-    const catalog = this.trainingCatalog.entries();
-    const trainings: SummaryTraining[] = member.trainings ?? [];
-    const has = (code: string, status: string): boolean =>
-      trainings.some(
-        t => catalogEntryByName(catalog, t.name)?.code === code && t.status === status,
-      );
-
-    if (has(YOUTH_POWER_DISCIPLESHIP, 'COMPLETED')) return 'DISCIPLESHIP_COMPLETED';
-    if (has(ONE_ON_ONE, 'COMPLETED')) return 'ONE_ON_ONE_COMPLETED';
-    if (has(ONE_ON_ONE, 'IN_PROGRESS')) return 'ONE_ON_ONE_IN_PROGRESS';
-    if (has(QT_BASIC_SEMINAR, 'COMPLETED') && member.oneOnOneSignupFilled) return 'ONE_ON_ONE_WAITING';
-    if (has(QT_BASIC_SEMINAR, 'COMPLETED')) return 'QBS_COMPLETED';
-    if (!member.baptism || member.baptism === 'UNBAPTIZED') return 'UNBAPTIZED';
-    return 'DEFAULT';
+    return CATEGORY_BY_STAGE[memberPillStage(member, this.trainingCatalog.entries())];
   }
 
   buildMatrix(
