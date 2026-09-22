@@ -1,345 +1,466 @@
-<!-- src/app/features/members/member-edit/member-edit.component.html -->
-<div class="p-6">
+<!--
+  Figma: 청년 수정 553:24581 / 청년 추가 554:26580 — the #70 frames, which supersede
+  the 202:5292 / 284:19350 nodes quoted in #73. Both routes share this component.
+
+  Deviation from the issue text: 554:26580 shows the tab band in 추가 mode too, so it
+  renders in both modes instead of being hidden when `isEdit()` is false.
+  교회 / 양육 / 사역 keep their previous markup — #74 and #75 own their redesign.
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  <app-page-header
+    hasBack
+    [breadcrumb]="breadcrumb()"
+    [eyebrow]="'members.eyebrow' | translate"
+    [heading]="pageHeading()"
+    [subtitle]="pageSubtitle()"
+    (back)="goBack()" />
 
   @if (loading()) {
-    <div class="flex justify-center py-16 text-tertiary text-[13px]">Loading...</div>
-  }
+    <app-skeleton variant="card" />
+  } @else {
+    <form
+      id="member-edit-form"
+      [formGroup]="form"
+      (ngSubmit)="save()"
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card">
+      <h2 class="type-h3 text-ink-strong">{{ 'members.edit.cardTitle' | translate }}</h2>
 
-  @if (!loading()) {
+      <p-tabs scrollable [(value)]="activeTab">
+        <p-tablist>
+          <p-tab [value]="0">{{ 'members.edit.tabs.basic' | translate }}</p-tab>
+          <p-tab [value]="1">{{ 'members.edit.tabs.church' | translate }}</p-tab>
+          <p-tab [value]="2">{{ 'members.edit.tabs.training' | translate }}</p-tab>
+          <p-tab [value]="3">{{ 'members.edit.tabs.ministry' | translate }}</p-tab>
+        </p-tablist>
 
-    <!-- Header -->
-    <div class="flex items-center gap-3 mb-6">
-      <button
-        type="button"
-        (click)="goBack()"
-        aria-label="Go back"
-        class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-secondary hover:text-primary hover:border-primary transition-colors"
-      >
-        <i class="pi pi-arrow-left text-[12px]"></i>
-      </button>
-      <h1 class="text-[22px] font-extrabold text-primary tracking-tight">
-        {{ isEdit() ? 'Edit Member' : 'Add Member' }}
-      </h1>
+        <p-tabpanels>
+          <!-- 기본 정보 -->
+          <p-tabpanel [value]="0">
+            <div class="flex flex-col gap-gutter tablet:flex-row">
+              <!-- left column -->
+              <div class="flex flex-1 flex-col gap-[var(--space-16)]">
+                <div class="flex gap-[var(--space-12)]">
+                  <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+                    <label for="memberLastName" class="type-caption text-ink-muted">
+                      {{ 'members.edit.fields.lastName' | translate }}
+                      <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                    </label>
+                    <input
+                      id="memberLastName"
+                      pInputText
+                      formControlName="lastName"
+                      [placeholder]="'members.edit.placeholders.lastName' | translate"
+                      class="w-full"
+                      [class.ng-invalid]="form.get('lastName')!.invalid && form.get('lastName')!.touched" />
+                    @if (form.get('lastName')!.invalid && form.get('lastName')!.touched) {
+                      <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                        {{ 'members.edit.errors.required' | translate }}
+                      </small>
+                    }
+                  </div>
 
-      <!-- Actions -->
-      <div class="ml-auto flex items-center gap-3">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="h-9 px-5 rounded-lg border border-gray-200 text-secondary text-[12px] font-semibold hover:border-gray-300 transition-colors tracking-tight"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          form="member-edit-form"
-          [disabled]="saving()"
-          class="flex items-center gap-2 h-9 px-5 bg-primary text-white rounded-lg text-[12px] font-bold hover:bg-primary-hover transition-colors disabled:opacity-50 tracking-tight"
-        >
-          <i [class]="saving() ? 'pi pi-spin pi-spinner text-[11px]' : 'pi pi-check text-[11px]'"></i>
-          {{ isEdit() ? 'Save Changes' : 'Add Member' }}
-        </button>
-      </div>
-    </div>
+                  <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+                    <label for="memberFirstName" class="type-caption text-ink-muted">
+                      {{ 'members.edit.fields.firstName' | translate }}
+                      <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                    </label>
+                    <input
+                      id="memberFirstName"
+                      pInputText
+                      formControlName="firstName"
+                      [placeholder]="'members.edit.placeholders.firstName' | translate"
+                      class="w-full"
+                      [class.ng-invalid]="form.get('firstName')!.invalid && form.get('firstName')!.touched" />
+                    @if (form.get('firstName')!.invalid && form.get('firstName')!.touched) {
+                      <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                        {{ 'members.edit.errors.required' | translate }}
+                      </small>
+                    }
+                  </div>
+                </div>
 
-    <form id="member-edit-form" [formGroup]="form" (ngSubmit)="save()" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                @if (isEdit()) {
+                  <!--
+                    구분 is in no field list of #73 but exists today: it separates
+                    two members of the same name (e.g. "1남"). Kept edit-only so
+                    nothing regresses.
+                  -->
+                  <div class="flex flex-col gap-[var(--space-4)]">
+                    <label for="memberDiscriminator" class="type-caption text-ink-muted">
+                      {{ 'members.edit.fields.discriminator' | translate }}
+                    </label>
+                    <input
+                      id="memberDiscriminator"
+                      pInputText
+                      formControlName="discriminator"
+                      [placeholder]="'members.edit.placeholders.discriminator' | translate"
+                      class="w-full" />
+                  </div>
+                }
 
-      <!-- Basic Info box -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                <div class="flex flex-col gap-[var(--space-4)]">
+                  <label for="memberBirthDate" class="type-caption text-ink-muted">
+                    {{ 'members.edit.fields.birthDate' | translate }}
+                  </label>
+                  <p-datepicker
+                    inputId="memberBirthDate"
+                    formControlName="birthDate"
+                    dateFormat="yy-mm-dd"
+                    placeholder="YYYY-MM-DD"
+                    [showIcon]="true"
+                    styleClass="w-full" />
+                </div>
 
-        <!-- Basic Info -->
-        <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest pb-1 border-b border-gray-50 mb-4">Basic Info</div>
+                <div class="flex flex-col gap-[var(--space-4)]">
+                  <label for="memberGender" class="type-caption text-ink-muted">
+                    {{ 'members.edit.fields.gender' | translate }}
+                  </label>
+                  <p-select
+                    inputId="memberGender"
+                    formControlName="gender"
+                    [options]="genderOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    [placeholder]="'members.edit.placeholders.select' | translate"
+                    styleClass="w-full" />
+                </div>
 
-        <div class="grid grid-cols-2 gap-4 mb-6">
-          <div class="flex flex-col gap-1">
-            <label for="memberLastName" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Last Name <span class="text-red-500">*</span></label>
-            <input
-              id="memberLastName"
-              pInputText
-              formControlName="lastName"
-              placeholder="Last name"
-              class="w-full text-[13px]"
-              [class.ng-invalid]="form.get('lastName')!.invalid && form.get('lastName')!.touched"
-            />
-            @if (form.get('lastName')!.invalid && form.get('lastName')!.touched) {
-              <small class="text-red-500 text-[11px]">Required.</small>
-            }
-          </div>
+                <!--
+                  직업 is designed but has no backend field yet
+                  (hanmaum-dn-server#197): the control stays disabled and is never
+                  sent, so the gap is visible instead of silently dropped.
+                -->
+                <div class="flex flex-col gap-[var(--space-4)]">
+                  <label for="memberOccupation" class="type-caption text-ink-muted">
+                    {{ 'members.edit.fields.occupation' | translate }}
+                  </label>
+                  <input
+                    id="memberOccupation"
+                    pInputText
+                    formControlName="occupation"
+                    [placeholder]="'members.edit.placeholders.occupation' | translate"
+                    class="w-full" />
+                  <small class="type-caption text-ink-disabled">
+                    {{ 'members.edit.hints.occupation' | translate }}
+                  </small>
+                </div>
 
-          <div class="flex flex-col gap-1">
-            <label for="memberFirstName" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">First Name <span class="text-red-500">*</span></label>
-            <input
-              id="memberFirstName"
-              pInputText
-              formControlName="firstName"
-              placeholder="First name"
-              class="w-full text-[13px]"
-              [class.ng-invalid]="form.get('firstName')!.invalid && form.get('firstName')!.touched"
-            />
-            @if (form.get('firstName')!.invalid && form.get('firstName')!.touched) {
-              <small class="text-red-500 text-[11px]">Required.</small>
-            }
-          </div>
+                <div class="flex flex-col gap-[var(--space-4)]">
+                  <label for="memberPhoneLocal" class="type-caption text-ink-muted">
+                    {{ 'members.edit.fields.phone' | translate }}
+                  </label>
+                  <div class="flex items-start gap-[var(--space-8)]">
+                    <p-select
+                      formControlName="phoneCountry"
+                      [options]="phoneCountryOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      [ariaLabel]="'members.edit.fields.phoneCountry' | translate"
+                      styleClass="w-full"
+                      class="min-w-0 flex-[3]" />
+                    <div class="flex min-w-0 flex-[7] flex-col gap-[var(--space-4)]">
+                      <input
+                        id="memberPhoneLocal"
+                        pInputText
+                        formControlName="phoneLocal"
+                        [placeholder]="form.get('phoneCountry')!.value === 'KR' ? '10 1234 5678' : '151 2345678'"
+                        class="w-full"
+                        [class.ng-invalid]="form.get('phoneLocal')!.invalid && form.get('phoneLocal')!.touched" />
+                      @if (form.get('phoneLocal')!.invalid && form.get('phoneLocal')!.touched) {
+                        <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                          {{ 'members.edit.errors.phone' | translate }}
+                        </small>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-          @if (isEdit()) {
-            <div class="flex flex-col gap-1">
-              <label for="memberDiscriminator" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Discriminator</label>
-              <input id="memberDiscriminator" pInputText formControlName="discriminator" placeholder="e.g. 1남" class="w-full text-[13px]" />
+              <!-- right column -->
+              <div class="flex flex-1 flex-col gap-[var(--space-16)]">
+                <div class="flex flex-col gap-[var(--space-4)]">
+                  <label for="memberEmail" class="type-caption text-ink-muted">
+                    {{ 'members.edit.fields.email' | translate }}
+                  </label>
+                  <input
+                    id="memberEmail"
+                    pInputText
+                    type="email"
+                    formControlName="email"
+                    placeholder="example@domain.com"
+                    class="w-full"
+                    [class.ng-invalid]="form.get('email')!.invalid && form.get('email')!.touched" />
+                  @if (form.get('email')!.invalid && form.get('email')!.touched) {
+                    <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                      {{ 'members.edit.errors.email' | translate }}
+                    </small>
+                  }
+                </div>
+
+                <div class="flex gap-[var(--space-12)]">
+                  <div class="flex min-w-0 flex-[7] flex-col gap-[var(--space-4)]">
+                    <label for="memberStreet" class="type-caption text-ink-muted">
+                      {{ 'members.edit.fields.street' | translate }}
+                    </label>
+                    <input
+                      id="memberStreet"
+                      pInputText
+                      formControlName="street"
+                      [placeholder]="'members.edit.placeholders.street' | translate"
+                      class="w-full" />
+                  </div>
+                  <div class="flex min-w-0 flex-[3] flex-col gap-[var(--space-4)]">
+                    <label for="memberHouseNumber" class="type-caption text-ink-muted">
+                      {{ 'members.edit.fields.houseNumber' | translate }}
+                    </label>
+                    <input
+                      id="memberHouseNumber"
+                      pInputText
+                      formControlName="houseNumber"
+                      [placeholder]="'members.edit.placeholders.houseNumber' | translate"
+                      class="w-full" />
+                  </div>
+                </div>
+
+                <div class="flex gap-[var(--space-12)]">
+                  <div class="flex min-w-0 flex-[3] flex-col gap-[var(--space-4)]">
+                    <label for="memberZipCode" class="type-caption text-ink-muted">
+                      {{ 'members.edit.fields.zipCode' | translate }}
+                    </label>
+                    <input
+                      id="memberZipCode"
+                      pInputText
+                      formControlName="zipCode"
+                      placeholder="00000"
+                      class="w-full" />
+                  </div>
+                  <div class="flex min-w-0 flex-[7] flex-col gap-[var(--space-4)]">
+                    <label for="memberCity" class="type-caption text-ink-muted">
+                      {{ 'members.edit.fields.city' | translate }}
+                    </label>
+                    <input
+                      id="memberCity"
+                      pInputText
+                      formControlName="city"
+                      [placeholder]="'members.edit.placeholders.city' | translate"
+                      class="w-full" />
+                  </div>
+                </div>
+
+                <!-- 등록일: Figma shows 연도 + 월; the API takes a date, so the day is the 1st. -->
+                <div class="flex gap-[var(--space-12)]">
+                  <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+                    <label for="memberRegistrationYear" class="type-caption text-ink-muted">
+                      {{ 'members.edit.fields.registrationYear' | translate }}
+                    </label>
+                    <p-select
+                      inputId="memberRegistrationYear"
+                      formControlName="registrationYear"
+                      [options]="registrationYearOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                      [placeholder]="'members.edit.placeholders.select' | translate"
+                      styleClass="w-full" />
+                  </div>
+                  <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+                    <label for="memberRegistrationMonth" class="type-caption text-ink-muted">
+                      {{ 'members.edit.fields.registrationMonth' | translate }}
+                    </label>
+                    <p-select
+                      inputId="memberRegistrationMonth"
+                      formControlName="registrationMonth"
+                      [options]="registrationMonthOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                      [placeholder]="'members.edit.placeholders.select' | translate"
+                      styleClass="w-full" />
+                  </div>
+                </div>
+              </div>
             </div>
-          }
+          </p-tabpanel>
 
-          <div class="flex flex-col gap-1">
-            <label for="memberGender" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Gender</label>
-            <p-select inputId="memberGender" formControlName="gender" [options]="genderOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
-          </div>
+          <!-- 교회 — unchanged markup, redesigned by #74 -->
+          <p-tabpanel [value]="1">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <label for="memberBaptism" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Baptism</label>
+                <p-select inputId="memberBaptism" formControlName="baptism" [options]="baptismOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+              </div>
 
-          <div class="flex flex-col gap-1">
-            <label for="memberBirthDate" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Date of Birth</label>
-            <p-datepicker inputId="memberBirthDate" formControlName="birthDate" dateFormat="yy-mm-dd" placeholder="YYYY-MM-DD" [showIcon]="true" class="w-full" />
-          </div>
+              @if (isEdit()) {
+                <div class="flex flex-col gap-1">
+                  <label for="memberChurchGroup" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Church Group</label>
+                  <p-select inputId="memberChurchGroup" formControlName="groupPublicId" [options]="groupOptions()" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" class="w-full" />
+                  <label
+                    for="memberIsGroupLeader"
+                    class="flex items-center gap-2 mt-1"
+                    [class.cursor-pointer]="!!form.get('groupPublicId')!.value"
+                    [class.cursor-not-allowed]="!form.get('groupPublicId')!.value"
+                    [class.opacity-40]="!form.get('groupPublicId')!.value"
+                  >
+                    <p-checkbox inputId="memberIsGroupLeader" formControlName="isGroupLeader" [binary]="true" />
+                    <span class="text-[11px] font-semibold text-secondary">{{ 'members.edit.churchGroupLeader' | translate }}</span>
+                  </label>
+                  @if (leaderChangeHintName(); as name) {
+                    <small class="text-amber-600 text-[11px]">{{ 'members.edit.leaderChangeHint' | translate:{ name } }}</small>
+                  }
+                </div>
 
-          <div class="flex flex-col gap-1 col-span-2">
-            <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Phone</span>
-            <div class="flex items-center gap-2">
-              <p-select
-                formControlName="phoneCountry"
-                [options]="phoneCountryOptions"
-                optionLabel="label"
-                optionValue="value"
-                class="flex-[3]"
-              />
-              <input
-                pInputText
-                formControlName="phoneLocal"
-                [placeholder]="form.get('phoneCountry')!.value === 'KR' ? '10 1234 5678' : '151 2345678'"
-                class="flex-[7] min-w-0 text-[13px]"
-                [class.ng-invalid]="form.get('phoneLocal')!.invalid && form.get('phoneLocal')!.touched"
-              />
-            </div>
-            @if (form.get('phoneLocal')!.invalid && form.get('phoneLocal')!.touched) {
-              <small class="text-red-500 text-[11px]">Enter a valid {{ phoneCountryName }} mobile number.</small>
-            }
-          </div>
-
-          <div class="flex flex-col gap-1 col-span-2">
-            <label for="memberEmail" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Email</label>
-            <input
-              id="memberEmail"
-              pInputText
-              formControlName="email"
-              type="email"
-              placeholder="example@domain.com"
-              class="w-full text-[13px]"
-              [class.ng-invalid]="form.get('email')!.invalid && form.get('email')!.touched"
-            />
-            @if (form.get('email')!.invalid && form.get('email')!.touched) {
-              <small class="text-red-500 text-[11px]">Invalid email format.</small>
-            }
-          </div>
-        </div>
-
-        <!-- Church Info -->
-        <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest mb-4">Church Info</div>
-
-        <div class="grid grid-cols-2 gap-4 mb-6">
-          <div class="flex flex-col gap-1">
-            <label for="memberBaptism" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Baptism</label>
-            <p-select inputId="memberBaptism" formControlName="baptism" [options]="baptismOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
-          </div>
-
-          @if (isEdit()) {
-            <div class="flex flex-col gap-1">
-              <label for="memberChurchGroup" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Church Group</label>
-              <p-select inputId="memberChurchGroup" formControlName="groupPublicId" [options]="groupOptions()" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" class="w-full" />
-              <label
-                for="memberIsGroupLeader"
-                class="flex items-center gap-2 mt-1"
-                [class.cursor-pointer]="!!form.get('groupPublicId')!.value"
-                [class.cursor-not-allowed]="!form.get('groupPublicId')!.value"
-                [class.opacity-40]="!form.get('groupPublicId')!.value"
-              >
-                <p-checkbox inputId="memberIsGroupLeader" formControlName="isGroupLeader" [binary]="true" />
-                <span class="text-[11px] font-semibold text-secondary">{{ 'members.edit.churchGroupLeader' | translate }}</span>
-              </label>
-              @if (leaderChangeHintName(); as name) {
-                <small class="text-amber-600 text-[11px]">{{ 'members.edit.leaderChangeHint' | translate:{ name } }}</small>
+                <div class="flex flex-col gap-1">
+                  <label for="memberStatus" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Status</label>
+                  <p-select inputId="memberStatus" formControlName="memberStatus" [options]="statusOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+                </div>
               }
             </div>
-          }
+          </p-tabpanel>
 
-          <div class="flex flex-col gap-1">
-            <label for="memberRegistrationDate" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Registration Date</label>
-            <p-datepicker inputId="memberRegistrationDate" formControlName="registrationDate" dateFormat="yy-mm-dd" placeholder="YYYY-MM-DD" [showIcon]="true" class="w-full" />
-          </div>
-
-          @if (isEdit()) {
-            <div class="flex flex-col gap-1">
-              <label for="memberStatus" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Status</label>
-              <p-select inputId="memberStatus" formControlName="memberStatus" [options]="statusOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+          <!-- 양육 — unchanged markup, redesigned by #75 -->
+          <p-tabpanel [value]="2">
+            <div class="flex items-center justify-between pb-1 border-b border-gray-50 mb-4">
+              <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest">Completed Trainings</div>
+              <span class="text-[11px] text-tertiary">{{ trainings.length }} / {{ maxTrainings() }}</span>
             </div>
-          }
-        </div>
 
-        <!-- Address -->
-        <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest mb-4">Address</div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div class="flex flex-col gap-1">
-            <label for="memberStreet" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Street</label>
-            <input id="memberStreet" pInputText formControlName="street" placeholder="Street name" class="w-full text-[13px]" />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label for="memberHouseNumber" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Street No.</label>
-            <input id="memberHouseNumber" pInputText formControlName="houseNumber" placeholder="Nr." class="w-full text-[13px]" />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label for="memberZipCode" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Zip Code</label>
-            <input id="memberZipCode" pInputText formControlName="zipCode" placeholder="00000" class="w-full text-[13px]" />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label for="memberCity" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">City</label>
-            <input id="memberCity" pInputText formControlName="city" placeholder="City" class="w-full text-[13px]" />
-          </div>
-        </div>
-
-      </div><!-- /Basic Info box -->
-
-      <!-- Training box -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-
-        <!-- Training -->
-        <div class="flex items-center justify-between pb-1 border-b border-gray-50 mb-4">
-          <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest">Completed Trainings</div>
-          <span class="text-[11px] text-tertiary">{{ trainings.length }} / {{ maxTrainings() }}</span>
-        </div>
-
-        @if (trainings.length === 0) {
-          <div class="text-[13px] text-tertiary py-6 text-center border border-dashed border-gray-200 rounded-lg mb-4">
-            No trainings added yet.
-          </div>
-        }
-
-        <div class="flex flex-col gap-3 mb-4" formArrayName="trainings">
-          @for (group of trainings.controls; track $index; let i = $index) {
-            <div [formGroupName]="i" class="date-select-compact flex flex-col gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
-              <div class="flex items-end gap-2">
-                <div class="flex flex-col gap-1 flex-1">
-                  <label [for]="'memberTrainingCode-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Training</label>
-                  <p-select [inputId]="'memberTrainingCode-' + i" formControlName="code" [options]="availableTrainingOptions(i)" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
-                </div>
-                <button
-                  type="button"
-                  (click)="removeTraining(i)"
-                  aria-label="Remove training"
-                  class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-tertiary hover:text-red-500 hover:border-red-300 transition-colors"
-                >
-                  <i class="pi pi-trash text-[12px]"></i>
-                </button>
+            @if (trainings.length === 0) {
+              <div class="text-[13px] text-tertiary py-6 text-center border border-dashed border-gray-200 rounded-lg mb-4">
+                No trainings added yet.
               </div>
+            }
 
-              <div class="flex items-end gap-2">
-                @if (group.get('status')!.value === 'COMPLETED') {
-                  <div class="flex flex-col gap-1">
-                    <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Completed in</span>
-                    <div class="flex items-center gap-1">
-                      <p-select formControlName="month" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
-                      <p-select formControlName="year" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
+            <div class="flex flex-col gap-3 mb-4" formArrayName="trainings">
+              @for (group of trainings.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="date-select-compact flex flex-col gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
+                  <div class="flex items-end gap-2">
+                    <div class="flex flex-col gap-1 flex-1">
+                      <label [for]="'memberTrainingCode-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Training</label>
+                      <p-select [inputId]="'memberTrainingCode-' + i" formControlName="code" [options]="availableTrainingOptions(i)" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+                    </div>
+                    <button
+                      type="button"
+                      (click)="removeTraining(i)"
+                      aria-label="Remove training"
+                      class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-tertiary hover:text-red-500 hover:border-red-300 transition-colors"
+                    >
+                      <i class="pi pi-trash text-[12px]"></i>
+                    </button>
+                  </div>
+
+                  <div class="flex items-end gap-2">
+                    @if (group.get('status')!.value === 'COMPLETED') {
+                      <div class="flex flex-col gap-1">
+                        <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Completed in</span>
+                        <div class="flex items-center gap-1">
+                          <p-select formControlName="month" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
+                          <p-select formControlName="year" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
+                        </div>
+                      </div>
+                    }
+
+                    <div class="flex flex-col gap-1 ml-auto">
+                      <label [for]="'memberTrainingStatus-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Status</label>
+                      <p-select [inputId]="'memberTrainingStatus-' + i" formControlName="status" [options]="trainingStatusOptions()" optionLabel="label" optionValue="value" (onChange)="onTrainingStatusChange(i)" class="w-36" />
                     </div>
                   </div>
-                }
-
-                <div class="flex flex-col gap-1 ml-auto">
-                  <label [for]="'memberTrainingStatus-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Status</label>
-                  <p-select [inputId]="'memberTrainingStatus-' + i" formControlName="status" [options]="trainingStatusOptions()" optionLabel="label" optionValue="value" (onChange)="onTrainingStatusChange(i)" class="w-36" />
                 </div>
-              </div>
+              }
             </div>
-          }
-        </div>
 
-        <button
+            <button
+              type="button"
+              (click)="addTraining()"
+              [disabled]="trainings.length >= maxTrainings()"
+              class="flex items-center gap-2 h-9 px-4 rounded-lg border border-dashed border-gray-300 text-secondary text-[12px] font-semibold hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed tracking-tight mb-2"
+            >
+              <i class="pi pi-plus text-[11px]"></i>
+              Add Training
+            </button>
+          </p-tabpanel>
+
+          <!-- 사역 — unchanged markup, redesigned by #75 -->
+          <p-tabpanel [value]="3">
+            <div class="flex items-center justify-between pb-1 border-b border-gray-50 mb-4">
+              <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest">Ministries</div>
+              <span class="text-[11px] text-tertiary">{{ ministries.length }}</span>
+            </div>
+
+            @if (ministries.length === 0) {
+              <div class="text-[13px] text-tertiary py-6 text-center border border-dashed border-gray-200 rounded-lg mb-4">
+                No ministries added yet.
+              </div>
+            }
+
+            <div class="flex flex-col gap-3 mb-4" formArrayName="ministries">
+              @for (group of ministries.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="date-select-compact flex flex-col gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
+                  <div class="flex items-end gap-2">
+                    <div class="flex flex-col gap-1 flex-1">
+                      <label [for]="'memberMinistry-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Ministry</label>
+                      <p-select [inputId]="'memberMinistry-' + i" formControlName="ministryPublicId" [options]="ministryOptions()" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+                    </div>
+                    <button type="button" (click)="removeMinistry(i)" aria-label="Remove ministry"
+                      class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-tertiary hover:text-red-500 hover:border-red-300 transition-colors">
+                      <i class="pi pi-trash text-[12px]"></i>
+                    </button>
+                  </div>
+
+                  <div class="flex items-end gap-3 flex-wrap">
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">From</span>
+                      <div class="flex items-center gap-1">
+                        <p-select formControlName="startMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
+                        <p-select formControlName="startYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
+                      </div>
+                    </div>
+
+                    @if (!group.get('ongoing')!.value) {
+                      <div class="flex flex-col gap-1">
+                        <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">To</span>
+                        <div class="flex items-center gap-1">
+                          <p-select formControlName="endMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
+                          <p-select formControlName="endYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
+                        </div>
+                      </div>
+                    }
+
+                    <label [for]="'memberMinistryOngoing-' + i" class="flex items-center gap-1 pb-1.5 ml-auto cursor-pointer">
+                      <p-checkbox [inputId]="'memberMinistryOngoing-' + i" formControlName="ongoing" [binary]="true" (onChange)="onMinistryOngoingChange(i)" />
+                      <span class="text-[11px] font-semibold text-secondary">Ongoing</span>
+                    </label>
+                  </div>
+
+                  <div class="flex flex-col gap-1">
+                    <label [for]="'memberMinistryNote-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Note</label>
+                    <input [id]="'memberMinistryNote-' + i" pInputText formControlName="note" maxlength="500" placeholder="Optional" class="w-full text-[13px]" />
+                  </div>
+                </div>
+              }
+            </div>
+
+            <button type="button" (click)="addMinistry()"
+              class="flex items-center gap-2 h-9 px-4 rounded-lg border border-dashed border-gray-300 text-secondary text-[12px] font-semibold hover:border-primary hover:text-primary transition-colors tracking-tight mb-2">
+              <i class="pi pi-plus text-[11px]"></i>
+              Add Ministry
+            </button>
+          </p-tabpanel>
+        </p-tabpanels>
+      </p-tabs>
+
+      <footer class="border-line-subtle flex items-center justify-end gap-[var(--space-8)] border-t pt-[var(--space-16)]">
+        <p-button
           type="button"
-          (click)="addTraining()"
-          [disabled]="trainings.length >= maxTrainings()"
-          class="flex items-center gap-2 h-9 px-4 rounded-lg border border-dashed border-gray-300 text-secondary text-[12px] font-semibold hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed tracking-tight mb-2"
-        >
-          <i class="pi pi-plus text-[11px]"></i>
-          Add Training
-        </button>
-
-      </div><!-- /Training box -->
-
-      <!-- Ministry box -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <div class="flex items-center justify-between pb-1 border-b border-gray-50 mb-4">
-          <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest">Ministries</div>
-          <span class="text-[11px] text-tertiary">{{ ministries.length }}</span>
-        </div>
-
-        @if (ministries.length === 0) {
-          <div class="text-[13px] text-tertiary py-6 text-center border border-dashed border-gray-200 rounded-lg mb-4">
-            No ministries added yet.
-          </div>
-        }
-
-        <div class="flex flex-col gap-3 mb-4" formArrayName="ministries">
-          @for (group of ministries.controls; track $index; let i = $index) {
-            <div [formGroupName]="i" class="date-select-compact flex flex-col gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
-              <div class="flex items-end gap-2">
-                <div class="flex flex-col gap-1 flex-1">
-                  <label [for]="'memberMinistry-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Ministry</label>
-                  <p-select [inputId]="'memberMinistry-' + i" formControlName="ministryPublicId" [options]="ministryOptions()" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
-                </div>
-                <button type="button" (click)="removeMinistry(i)" aria-label="Remove ministry"
-                  class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-tertiary hover:text-red-500 hover:border-red-300 transition-colors">
-                  <i class="pi pi-trash text-[12px]"></i>
-                </button>
-              </div>
-
-              <div class="flex items-end gap-3 flex-wrap">
-                <div class="flex flex-col gap-1">
-                  <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">From</span>
-                  <div class="flex items-center gap-1">
-                    <p-select formControlName="startMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
-                    <p-select formControlName="startYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
-                  </div>
-                </div>
-
-                @if (!group.get('ongoing')!.value) {
-                  <div class="flex flex-col gap-1">
-                    <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">To</span>
-                    <div class="flex items-center gap-1">
-                      <p-select formControlName="endMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
-                      <p-select formControlName="endYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
-                    </div>
-                  </div>
-                }
-
-                <label [for]="'memberMinistryOngoing-' + i" class="flex items-center gap-1 pb-1.5 ml-auto cursor-pointer">
-                  <p-checkbox [inputId]="'memberMinistryOngoing-' + i" formControlName="ongoing" [binary]="true" (onChange)="onMinistryOngoingChange(i)" />
-                  <span class="text-[11px] font-semibold text-secondary">Ongoing</span>
-                </label>
-              </div>
-
-              <div class="flex flex-col gap-1">
-                <label [for]="'memberMinistryNote-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Note</label>
-                <input [id]="'memberMinistryNote-' + i" pInputText formControlName="note" maxlength="500" placeholder="Optional" class="w-full text-[13px]" />
-              </div>
-            </div>
-          }
-        </div>
-
-        <button type="button" (click)="addMinistry()"
-          class="flex items-center gap-2 h-9 px-4 rounded-lg border border-dashed border-gray-300 text-secondary text-[12px] font-semibold hover:border-primary hover:text-primary transition-colors tracking-tight mb-2">
-          <i class="pi pi-plus text-[11px]"></i>
-          Add Ministry
-        </button>
-      </div><!-- /Ministry box -->
-
+          severity="secondary"
+          [text]="true"
+          [label]="'members.actions.cancel' | translate"
+          (onClick)="goBack()" />
+        <p-button
+          type="submit"
+          icon="pi pi-check"
+          [loading]="saving()"
+          [label]="'members.edit.submit' | translate" />
+      </footer>
     </form>
-
   }
-
 </div>
 
 <p-toast />

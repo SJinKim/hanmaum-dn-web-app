@@ -145,7 +145,56 @@
     },
     "edit": {
       "churchGroupLeader": "순장",
-      "leaderChangeHint": "이 변경으로 순장이 {{name}}에서 바뀝니다."
+      "leaderChangeHint": "이 변경으로 순장이 {{name}}에서 바뀝니다.",
+      "cardTitle": "청년 정보",
+      "createHeading": "청년 추가",
+      "editHeading": "청년 정보 수정",
+      "createSubtitle": "새 청년의 기본 정보를 입력하세요.",
+      "editSubtitle": "청년의 정보를 수정합니다.",
+      "submit": "저장",
+      "yearOption": "{{value}}년",
+      "monthOption": "{{value}}월",
+      "tabs": {
+        "basic": "기본 정보",
+        "church": "교회",
+        "training": "양육",
+        "ministry": "사역"
+      },
+      "fields": {
+        "lastName": "성",
+        "firstName": "이름",
+        "discriminator": "구분",
+        "birthDate": "생년월일",
+        "gender": "성별",
+        "occupation": "직업",
+        "phone": "전화번호",
+        "phoneCountry": "국가 번호",
+        "email": "이메일",
+        "street": "도로명",
+        "houseNumber": "번지",
+        "zipCode": "우편번호",
+        "city": "도시",
+        "registrationYear": "등록 연도",
+        "registrationMonth": "등록 월"
+      },
+      "placeholders": {
+        "select": "선택",
+        "lastName": "김",
+        "firstName": "승진",
+        "discriminator": "1남",
+        "occupation": "직업 입력",
+        "street": "도로명 입력",
+        "houseNumber": "12a",
+        "city": "도시 입력"
+      },
+      "errors": {
+        "required": "필수 입력 항목입니다.",
+        "email": "이메일 형식이 올바르지 않습니다.",
+        "phone": "휴대폰 번호 형식이 올바르지 않습니다."
+      },
+      "hints": {
+        "occupation": "직업은 백엔드에 아직 저장되지 않습니다 (hanmaum-dn-server#197)."
+      }
     },
     "toast": {
       "error": "오류",

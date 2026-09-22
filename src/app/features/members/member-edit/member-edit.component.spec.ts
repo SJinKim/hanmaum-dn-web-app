@@ -172,6 +172,47 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     return fixture;
   }
 
+  it('round-trips 등록일 through the 연도/월 selects and back to a first-of-month date', () => {
+    const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of(memberWithOngoing));
+    const registered = { ...memberWithOngoing, registrationDate: '2019-04-01' };
+    const memberServiceStub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([{ publicId: 'min1', name: '찬양팀' }]),
+      getChurchGroups: () => of([]),
+      getMember: () => of(registered),
+      updateMember: updateSpy,
+      createMember: () => of(registered),
+      replaceMemberTrainings: () => of(registered),
+      replaceMemberMinistries: () => of(registered),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
+        { provide: MemberService, useValue: memberServiceStub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    // Reverse-fill: the stored date becomes the two selects.
+    expect(component.form.get('registrationYear')!.value).toBe(2019);
+    expect(component.form.get('registrationMonth')!.value).toBe(4);
+
+    // The user picks another month; the day stays pinned to the 1st.
+    component.form.get('registrationMonth')!.setValue(11);
+    component.save();
+
+    const req = updateSpy.calls.mostRecent().args[1] as { registrationDate?: string };
+    expect(req.registrationDate).toBe('2019-11-01');
+  });
+
   it('sends groupPublicId="" when a loaded group is cleared, so the backend removes it', () => {
     const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of(memberWithOngoing));
     const memberWithGroup = { ...memberWithOngoing, groupPublicId: 'grp-1', groupName: '믿음' };
@@ -221,6 +262,12 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     const card = component.ministries.at(0);
     expect(card.get('ongoing')!.value).toBeTrue();
     expect(card.get('endMonth')!.disabled).toBeTrue();
+
+    // 사역 sits in its own tab now. `p-tabpanel` is not lazy, so the checkbox is in
+    // the DOM either way — activating the tab keeps the test honest about what the
+    // user actually sees when they click it.
+    component.activeTab.set(3);
+    fixture.detectChanges();
 
     // Click the REAL Ongoing checkbox (PrimeNG renders an <input type=checkbox>).
     const checkbox = fixture.debugElement.query(By.css('#memberMinistryOngoing-0'));

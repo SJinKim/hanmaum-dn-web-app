@@ -145,7 +145,56 @@
     },
     "edit": {
       "churchGroupLeader": "Church Group Leader",
-      "leaderChangeHint": "This change will replace {{name}} as church group leader."
+      "leaderChangeHint": "This change will replace {{name}} as church group leader.",
+      "cardTitle": "Member details",
+      "createHeading": "Add member",
+      "editHeading": "Edit member",
+      "createSubtitle": "Enter the basic details of the new member.",
+      "editSubtitle": "Update this member's details.",
+      "submit": "Save",
+      "yearOption": "{{value}}",
+      "monthOption": "{{value}}",
+      "tabs": {
+        "basic": "Basic",
+        "church": "Church",
+        "training": "Training",
+        "ministry": "Ministry"
+      },
+      "fields": {
+        "lastName": "Last name",
+        "firstName": "First name",
+        "discriminator": "Discriminator",
+        "birthDate": "Date of birth",
+        "gender": "Gender",
+        "occupation": "Occupation",
+        "phone": "Phone number",
+        "phoneCountry": "Country code",
+        "email": "Email",
+        "street": "Street",
+        "houseNumber": "No.",
+        "zipCode": "ZIP code",
+        "city": "City",
+        "registrationYear": "Registration year",
+        "registrationMonth": "Registration month"
+      },
+      "placeholders": {
+        "select": "Select",
+        "lastName": "Kim",
+        "firstName": "Seungjin",
+        "discriminator": "e.g. 1남",
+        "occupation": "Occupation",
+        "street": "Street name",
+        "houseNumber": "12a",
+        "city": "City"
+      },
+      "errors": {
+        "required": "This field is required.",
+        "email": "Invalid email format.",
+        "phone": "Not a valid mobile number."
+      },
+      "hints": {
+        "occupation": "Occupation is not stored by the backend yet (hanmaum-dn-server#197)."
+      }
     },
     "toast": {
       "error": "Error",

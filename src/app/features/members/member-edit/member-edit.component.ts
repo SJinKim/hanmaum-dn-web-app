@@ -18,10 +18,13 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { CheckboxModule } from 'primeng/checkbox';
+import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
+import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 import { MemberService } from '../member.service';
 import {
   MEMBER_STATUS_OPTIONS,
@@ -79,8 +82,11 @@ const mobileValidator: ValidatorFn = (control: AbstractControl): ValidationError
     SelectModule,
     DatePickerModule,
     CheckboxModule,
+    TabsModule,
     ToastModule,
     TranslatePipe,
+    PageHeaderComponent,
+    SkeletonComponent,
   ],
   providers: [MessageService],
   templateUrl: './member-edit.component.html',
@@ -97,6 +103,15 @@ export class MemberEditComponent implements OnInit {
   readonly isEdit     = signal(false);
   readonly loading    = signal(false);
   readonly saving     = signal(false);
+
+  /**
+   * Selected tab of the 청년 정보 card. `p-tabs` binds `value` as a `model()`,
+   * so the signal is written directly by the tab strip.
+   */
+  readonly activeTab = signal(0);
+
+  /** The member being edited — feeds the page header; null while creating. */
+  private readonly loaded = signal<Member | null>(null);
 
   /** Training catalog from the backend — resolves a form row's code to a publicId. */
   private readonly trainingCatalog = signal<TrainingCatalogEntry[]>([]);
@@ -134,6 +149,51 @@ export class MemberEditComponent implements OnInit {
       label: g.division ? `${g.name} (${g.division})` : g.name,
     })));
 
+  /** Header texts differ between 추가 and 수정; `instant` needs the language read to recompute. */
+  readonly pageHeading = computed(() => {
+    this.lang();
+    const member = this.loaded();
+    if (!this.isEdit()) return this.translate.instant('members.edit.createHeading') as string;
+    return member ? `${member.lastName}${member.firstName}` : this.translate.instant('members.edit.editHeading') as string;
+  });
+
+  readonly pageSubtitle = computed(() => {
+    this.lang();
+    return this.translate.instant(
+      this.isEdit() ? 'members.edit.editSubtitle' : 'members.edit.createSubtitle') as string;
+  });
+
+  readonly breadcrumb = computed(() => {
+    this.lang();
+    return [
+      this.translate.instant('members.title') as string,
+      this.translate.instant(this.isEdit() ? 'members.actions.edit' : 'members.addButton') as string,
+    ];
+  });
+
+  /**
+   * 등록일 is two selects in Figma (등록 연도 / 등록 월) while the API wants a full
+   * date, so the day is pinned to the 1st. `YEAR_OPTIONS` cannot be reused: its
+   * labels are two-digit ("25"), and this field spells the year out.
+   */
+  readonly registrationYearOptions = computed(() => {
+    this.lang();
+    const current = new Date().getFullYear();
+    const years: { value: number; label: string }[] = [];
+    for (let y = current; y >= 2000; y--) {
+      years.push({ value: y, label: this.translate.instant('members.edit.yearOption', { value: y }) as string });
+    }
+    return years;
+  });
+
+  readonly registrationMonthOptions = computed(() => {
+    this.lang();
+    return Array.from({ length: 12 }, (_, i) => ({
+      value: i + 1,
+      label: this.translate.instant('members.edit.monthOption', { value: i + 1 }) as string,
+    }));
+  });
+
   readonly phoneCountryOptions = PHONE_COUNTRIES;
   readonly statusOptions       = MEMBER_STATUS_OPTIONS;
   readonly genderOptions       = GENDER_OPTIONS;
@@ -155,7 +215,12 @@ export class MemberEditComponent implements OnInit {
     houseNumber:     [''],
     zipCode:         [''],
     city:            [''],
-    registrationDate:[null as Date | null],
+    // Sent as `registrationDate` = `YYYY-MM-01`; see `registrationYearOptions`.
+    registrationYear: [null as number | null],
+    registrationMonth:[null as number | null],
+    // 직업 is designed but has no backend field yet (hanmaum-dn-server#197), so
+    // the control renders disabled and is excluded from every request payload.
+    occupation:      [{ value: '', disabled: true }],
     groupPublicId:   [null as string | null],
     memberStatus:    [null as string | null],
     isGroupLeader:   [{ value: false, disabled: true }],
@@ -239,6 +304,8 @@ export class MemberEditComponent implements OnInit {
 
   private patchForm(member: Member): void {
     const { country: phoneCountry, local: phoneLocal } = parseE164(member.phoneNumber);
+    const registration = firstOfMonthToMonthYear(member.registrationDate ?? null);
+    this.loaded.set(member);
     this.form.patchValue({
       lastName:         member.lastName,
       firstName:        member.firstName,
@@ -253,7 +320,8 @@ export class MemberEditComponent implements OnInit {
       houseNumber:      member.houseNumber ?? '',
       zipCode:          member.zipCode ?? '',
       city:             member.city ?? '',
-      registrationDate: member.registrationDate ? new Date(member.registrationDate) : null,
+      registrationYear: registration.year,
+      registrationMonth: registration.month,
       groupPublicId:    member.groupPublicId ?? null,
       memberStatus:     member.memberStatus,
       isGroupLeader:    !!member.isGroupLeader,
@@ -279,7 +347,13 @@ export class MemberEditComponent implements OnInit {
 
     const trainingItems  = this.collectTrainingItems();
     const ministryItems  = this.collectMinistryItems();
-    const toIso = (d: Date | null | undefined) => d ? d.toISOString().split('T')[0] : undefined;
+    // Local date parts, not `toISOString()`: that converts to UTC, which in CET
+    // turns a picked 1998-03-02 into 1998-03-01.
+    const toIso = (d: Date | null | undefined) =>
+      d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : undefined;
+    // Figma splits 등록일 into 연도 + 월; the API wants a date, so the day is the 1st.
+    const registrationDate =
+      monthYearToFirstOfMonth(raw.registrationMonth, raw.registrationYear) ?? undefined;
 
     const isEdit = this.isEdit() && !!this.publicId;
     const successDetail = isEdit ? '저장되었습니다.' : '등록되었습니다.';
@@ -300,7 +374,7 @@ export class MemberEditComponent implements OnInit {
         houseNumber:      raw.houseNumber || undefined,
         zipCode:          raw.zipCode || undefined,
         city:             raw.city || undefined,
-        registrationDate: toIso(raw.registrationDate),
+        registrationDate,
         // Always send the group: a chosen publicId assigns it, a blank string
         // clears it (backend treats "" as "remove the group"). Omitting it would
         // leave the existing group untouched, so a cleared select must send "".
@@ -323,7 +397,7 @@ export class MemberEditComponent implements OnInit {
         houseNumber:      raw.houseNumber || undefined,
         zipCode:          raw.zipCode || undefined,
         city:             raw.city || undefined,
-        registrationDate: toIso(raw.registrationDate),
+        registrationDate,
       };
       member$ = this.memberService.createMember(req);
     }
@@ -348,7 +422,7 @@ export class MemberEditComponent implements OnInit {
             this.messageService.add({ severity: 'error', summary: '오류', detail: '순장 해제에 실패했습니다.' });
           }
           this.saving.set(false);
-          setTimeout(() => this.router.navigate(['/members', saved.publicId]), 800);
+          this.router.navigate(['/members', saved.publicId]);
         },
         error: () => {
           this.messageService.add({ severity: 'error', summary: '오류', detail: errorDetail });
