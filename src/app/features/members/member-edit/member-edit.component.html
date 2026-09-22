@@ -315,133 +315,239 @@
             </div>
           </p-tabpanel>
 
-          <!-- 양육 — unchanged markup, redesigned by #75 -->
+          <!--
+            양육 und 사역 sind gleich gebaut (Figma 555:26766 / 556:27121,
+            DESIGN.md §9.1): eine Liste gleichartiger Zeilen, darunter der
+            Hinzufügen-Button, statt der Liste ein Leerzustand. Labels stehen nur
+            in der ersten Zeile — die Spalten bleiben bündig, weil alle Felder
+            FILL sind; die Folgezeilen tragen ihr Label über `ariaLabel`.
+            Der Papierkorb entfernt die Zeile nur lokal: gespeichert wird die
+            ganze Liste beim 저장, als ersetzendes PUT.
+          -->
           <p-tabpanel [value]="2">
-            <div class="flex items-center justify-between pb-1 border-b border-gray-50 mb-4">
-              <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest">Completed Trainings</div>
-              <span class="text-[11px] text-tertiary">{{ trainings.length }} / {{ maxTrainings() }}</span>
-            </div>
-
             @if (trainings.length === 0) {
-              <div class="text-[13px] text-tertiary py-6 text-center border border-dashed border-gray-200 rounded-lg mb-4">
-                No trainings added yet.
-              </div>
-            }
+              <app-empty-state
+                variant="no-data"
+                [heading]="'members.edit.training.emptyHeading' | translate"
+                [description]="'members.edit.training.emptyDescription' | translate"
+                [actionLabel]="'members.edit.training.add' | translate"
+                actionIcon="pi pi-plus"
+                (action)="addTraining()" />
+            } @else {
+              <div class="flex flex-col gap-gutter">
+                <div class="flex flex-col gap-[var(--space-12)]" formArrayName="trainings">
+                  @for (group of trainings.controls; track $index; let i = $index) {
+                    <div [formGroupName]="i" class="flex w-full items-end gap-[var(--space-12)]">
+                      <div class="flex min-w-px flex-[1_0_0] flex-col gap-[var(--space-4)]">
+                        @if ($first) {
+                          <label [for]="'memberTrainingCode-' + i" class="type-caption text-ink-muted">
+                            {{ 'members.edit.training.course' | translate }}
+                          </label>
+                        }
+                        <p-select
+                          [inputId]="'memberTrainingCode-' + i"
+                          formControlName="code"
+                          [options]="availableTrainingOptions(i)"
+                          optionLabel="label"
+                          optionValue="value"
+                          [placeholder]="'members.edit.placeholders.select' | translate"
+                          [ariaLabel]="'members.edit.training.course' | translate"
+                          styleClass="w-full" />
+                      </div>
 
-            <div class="flex flex-col gap-3 mb-4" formArrayName="trainings">
-              @for (group of trainings.controls; track $index; let i = $index) {
-                <div [formGroupName]="i" class="date-select-compact flex flex-col gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
-                  <div class="flex items-end gap-2">
-                    <div class="flex flex-col gap-1 flex-1">
-                      <label [for]="'memberTrainingCode-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Training</label>
-                      <p-select [inputId]="'memberTrainingCode-' + i" formControlName="code" [options]="availableTrainingOptions(i)" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
-                    </div>
-                    <button
-                      type="button"
-                      (click)="removeTraining(i)"
-                      aria-label="Remove training"
-                      class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-tertiary hover:text-red-500 hover:border-red-300 transition-colors"
-                    >
-                      <i class="pi pi-trash text-[12px]"></i>
-                    </button>
-                  </div>
+                      <div class="flex min-w-px flex-[1_0_0] flex-col gap-[var(--space-4)]">
+                        @if ($first) {
+                          <label [for]="'memberTrainingStatus-' + i" class="type-caption text-ink-muted">
+                            {{ 'members.edit.training.status' | translate }}
+                          </label>
+                        }
+                        <p-select
+                          [inputId]="'memberTrainingStatus-' + i"
+                          formControlName="status"
+                          [options]="trainingStatusOptions()"
+                          optionLabel="label"
+                          optionValue="value"
+                          [ariaLabel]="'members.edit.training.status' | translate"
+                          (onChange)="onTrainingStatusChange(i)"
+                          styleClass="w-full" />
+                      </div>
 
-                  <div class="flex items-end gap-2">
-                    @if (group.get('status')!.value === 'COMPLETED') {
-                      <div class="flex flex-col gap-1">
-                        <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Completed in</span>
-                        <div class="flex items-center gap-1">
-                          <p-select formControlName="month" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
-                          <p-select formControlName="year" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
+                      <!--
+                        Die API kennt nur Monat + Jahr (Tag auf den 1. gepinnt),
+                        deshalb steht in der 수료일-Spalte ein Select-Paar statt
+                        eines Datumsfeldes. Solange der Status nicht 수료 ist,
+                        sind beide Controls disabled und damit leer.
+                      -->
+                      <div class="flex min-w-px flex-[1_0_0] flex-col gap-[var(--space-4)]">
+                        @if ($first) {
+                          <label [for]="'memberTrainingYear-' + i" class="type-caption text-ink-muted">
+                            {{ 'members.edit.training.completedAt' | translate }}
+                          </label>
+                        }
+                        <div class="flex items-center gap-[var(--space-4)]">
+                          <p-select
+                            [inputId]="'memberTrainingYear-' + i"
+                            formControlName="year"
+                            [options]="activityYearOptions()"
+                            optionLabel="label"
+                            optionValue="value"
+                            [placeholder]="'members.edit.placeholders.select' | translate"
+                            [ariaLabel]="'members.edit.training.completedYearAria' | translate"
+                            styleClass="min-w-px flex-1" />
+                          <p-select
+                            formControlName="month"
+                            [options]="activityMonthOptions()"
+                            optionLabel="label"
+                            optionValue="value"
+                            [placeholder]="'members.edit.placeholders.select' | translate"
+                            [ariaLabel]="'members.edit.training.completedMonthAria' | translate"
+                            styleClass="min-w-px flex-1" />
                         </div>
                       </div>
-                    }
 
-                    <div class="flex flex-col gap-1 ml-auto">
-                      <label [for]="'memberTrainingStatus-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Status</label>
-                      <p-select [inputId]="'memberTrainingStatus-' + i" formControlName="status" [options]="trainingStatusOptions()" optionLabel="label" optionValue="value" (onChange)="onTrainingStatusChange(i)" class="w-36" />
+                      <button
+                        type="button"
+                        class="text-ink-muted hover:bg-surface-subtle flex size-[28px] shrink-0 items-center justify-center rounded-[var(--radius-md)] focus-visible:[outline:2px_solid_var(--color-focus)]"
+                        [pTooltip]="'members.edit.training.remove' | translate"
+                        [attr.aria-label]="'members.edit.training.remove' | translate"
+                        (click)="removeTraining(i)">
+                        <i class="pi pi-trash text-[16px]" aria-hidden="true"></i>
+                      </button>
                     </div>
-                  </div>
+                  }
                 </div>
-              }
-            </div>
 
-            <button
-              type="button"
-              (click)="addTraining()"
-              [disabled]="trainings.length >= maxTrainings()"
-              class="flex items-center gap-2 h-9 px-4 rounded-lg border border-dashed border-gray-300 text-secondary text-[12px] font-semibold hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed tracking-tight mb-2"
-            >
-              <i class="pi pi-plus text-[11px]"></i>
-              Add Training
-            </button>
+                <div class="flex">
+                  <p-button
+                    type="button"
+                    size="small"
+                    severity="secondary"
+                    [outlined]="true"
+                    icon="pi pi-plus"
+                    [label]="'members.edit.training.add' | translate"
+                    [disabled]="trainings.length >= maxTrainings()"
+                    (onClick)="addTraining()" />
+                </div>
+              </div>
+            }
           </p-tabpanel>
 
-          <!-- 사역 — unchanged markup, redesigned by #75 -->
           <p-tabpanel [value]="3">
-            <div class="flex items-center justify-between pb-1 border-b border-gray-50 mb-4">
-              <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest">Ministries</div>
-              <span class="text-[11px] text-tertiary">{{ ministries.length }}</span>
-            </div>
-
             @if (ministries.length === 0) {
-              <div class="text-[13px] text-tertiary py-6 text-center border border-dashed border-gray-200 rounded-lg mb-4">
-                No ministries added yet.
-              </div>
-            }
-
-            <div class="flex flex-col gap-3 mb-4" formArrayName="ministries">
-              @for (group of ministries.controls; track $index; let i = $index) {
-                <div [formGroupName]="i" class="date-select-compact flex flex-col gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
-                  <div class="flex items-end gap-2">
-                    <div class="flex flex-col gap-1 flex-1">
-                      <label [for]="'memberMinistry-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Ministry</label>
-                      <p-select [inputId]="'memberMinistry-' + i" formControlName="ministryPublicId" [options]="ministryOptions()" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
-                    </div>
-                    <button type="button" (click)="removeMinistry(i)" aria-label="Remove ministry"
-                      class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-tertiary hover:text-red-500 hover:border-red-300 transition-colors">
-                      <i class="pi pi-trash text-[12px]"></i>
-                    </button>
-                  </div>
-
-                  <div class="flex items-end gap-3 flex-wrap">
-                    <div class="flex flex-col gap-1">
-                      <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">From</span>
-                      <div class="flex items-center gap-1">
-                        <p-select formControlName="startMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
-                        <p-select formControlName="startYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
+              <app-empty-state
+                variant="no-data"
+                [heading]="'members.edit.ministry.emptyHeading' | translate"
+                [description]="'members.edit.ministry.emptyDescription' | translate"
+                [actionLabel]="'members.edit.ministry.add' | translate"
+                actionIcon="pi pi-plus"
+                (action)="addMinistry()" />
+            } @else {
+              <div class="flex flex-col gap-gutter">
+                <div class="flex flex-col gap-[var(--space-12)]" formArrayName="ministries">
+                  @for (group of ministries.controls; track $index; let i = $index) {
+                    <div [formGroupName]="i" class="flex w-full items-end gap-[var(--space-12)]">
+                      <div class="flex min-w-px flex-[1_0_0] flex-col gap-[var(--space-4)]">
+                        @if ($first) {
+                          <label [for]="'memberMinistry-' + i" class="type-caption text-ink-muted">
+                            {{ 'members.edit.ministry.name' | translate }}
+                          </label>
+                        }
+                        <p-select
+                          [inputId]="'memberMinistry-' + i"
+                          formControlName="ministryPublicId"
+                          [options]="ministryOptions()"
+                          optionLabel="label"
+                          optionValue="value"
+                          [placeholder]="'members.edit.placeholders.select' | translate"
+                          [ariaLabel]="'members.edit.ministry.name' | translate"
+                          styleClass="w-full" />
                       </div>
-                    </div>
 
-                    @if (!group.get('ongoing')!.value) {
-                      <div class="flex flex-col gap-1">
-                        <span class="text-[10px] font-semibold text-secondary uppercase tracking-widest">To</span>
-                        <div class="flex items-center gap-1">
-                          <p-select formControlName="endMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-11" />
-                          <p-select formControlName="endYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-11" />
+                      <div class="flex min-w-px flex-[1_0_0] flex-col gap-[var(--space-4)]">
+                        @if ($first) {
+                          <label [for]="'memberMinistryStartYear-' + i" class="type-caption text-ink-muted">
+                            {{ 'members.edit.ministry.startDate' | translate }}
+                          </label>
+                        }
+                        <div class="flex items-center gap-[var(--space-4)]">
+                          <p-select
+                            [inputId]="'memberMinistryStartYear-' + i"
+                            formControlName="startYear"
+                            [options]="activityYearOptions()"
+                            optionLabel="label"
+                            optionValue="value"
+                            [placeholder]="'members.edit.placeholders.select' | translate"
+                            [ariaLabel]="'members.edit.ministry.startYearAria' | translate"
+                            styleClass="min-w-px flex-1" />
+                          <p-select
+                            formControlName="startMonth"
+                            [options]="activityMonthOptions()"
+                            optionLabel="label"
+                            optionValue="value"
+                            [placeholder]="'members.edit.placeholders.select' | translate"
+                            [ariaLabel]="'members.edit.ministry.startMonthAria' | translate"
+                            styleClass="min-w-px flex-1" />
                         </div>
                       </div>
-                    }
 
-                    <label [for]="'memberMinistryOngoing-' + i" class="flex items-center gap-1 pb-1.5 ml-auto cursor-pointer">
-                      <p-checkbox [inputId]="'memberMinistryOngoing-' + i" formControlName="ongoing" [binary]="true" (onChange)="onMinistryOngoingChange(i)" />
-                      <span class="text-[11px] font-semibold text-secondary">Ongoing</span>
-                    </label>
-                  </div>
+                      <!-- Leeres 종료일 = laufend; deshalb gibt es keine „ongoing"-Checkbox mehr. -->
+                      <div class="flex min-w-px flex-[1_0_0] flex-col gap-[var(--space-4)]">
+                        @if ($first) {
+                          <label [for]="'memberMinistryEndYear-' + i" class="type-caption text-ink-muted">
+                            {{ 'members.edit.ministry.endDate' | translate }}
+                          </label>
+                        }
+                        <div class="flex items-center gap-[var(--space-4)]">
+                          <p-select
+                            [inputId]="'memberMinistryEndYear-' + i"
+                            formControlName="endYear"
+                            [options]="activityYearOptions()"
+                            optionLabel="label"
+                            optionValue="value"
+                            [showClear]="true"
+                            [placeholder]="'members.edit.placeholders.select' | translate"
+                            [ariaLabel]="'members.edit.ministry.endYearAria' | translate"
+                            (onChange)="onMinistryEndChange(i)"
+                            (onClear)="onMinistryEndChange(i)"
+                            styleClass="min-w-px flex-1" />
+                          <p-select
+                            formControlName="endMonth"
+                            [options]="activityMonthOptions()"
+                            optionLabel="label"
+                            optionValue="value"
+                            [showClear]="true"
+                            [placeholder]="'members.edit.placeholders.select' | translate"
+                            [ariaLabel]="'members.edit.ministry.endMonthAria' | translate"
+                            (onChange)="onMinistryEndChange(i)"
+                            (onClear)="onMinistryEndChange(i)"
+                            styleClass="min-w-px flex-1" />
+                        </div>
+                      </div>
 
-                  <div class="flex flex-col gap-1">
-                    <label [for]="'memberMinistryNote-' + i" class="text-[10px] font-semibold text-secondary uppercase tracking-widest">Note</label>
-                    <input [id]="'memberMinistryNote-' + i" pInputText formControlName="note" maxlength="500" placeholder="Optional" class="w-full text-[13px]" />
-                  </div>
+                      <button
+                        type="button"
+                        class="text-ink-muted hover:bg-surface-subtle flex size-[28px] shrink-0 items-center justify-center rounded-[var(--radius-md)] focus-visible:[outline:2px_solid_var(--color-focus)]"
+                        [pTooltip]="'members.edit.ministry.remove' | translate"
+                        [attr.aria-label]="'members.edit.ministry.remove' | translate"
+                        (click)="removeMinistry(i)">
+                        <i class="pi pi-trash text-[16px]" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  }
                 </div>
-              }
-            </div>
 
-            <button type="button" (click)="addMinistry()"
-              class="flex items-center gap-2 h-9 px-4 rounded-lg border border-dashed border-gray-300 text-secondary text-[12px] font-semibold hover:border-primary hover:text-primary transition-colors tracking-tight mb-2">
-              <i class="pi pi-plus text-[11px]"></i>
-              Add Ministry
-            </button>
+                <div class="flex">
+                  <p-button
+                    type="button"
+                    size="small"
+                    severity="secondary"
+                    [outlined]="true"
+                    icon="pi pi-plus"
+                    [label]="'members.edit.ministry.add' | translate"
+                    (onClick)="addMinistry()" />
+                </div>
+              </div>
+            }
           </p-tabpanel>
         </p-tabpanels>
       </p-tabs>

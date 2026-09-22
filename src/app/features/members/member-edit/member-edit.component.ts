@@ -20,11 +20,13 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
+import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
 import { MemberService } from '../member.service';
 import {
   MEMBER_STATUS_OPTIONS,
@@ -84,9 +86,11 @@ const mobileValidator: ValidatorFn = (control: AbstractControl): ValidationError
     CheckboxModule,
     TabsModule,
     ToastModule,
+    TooltipModule,
     TranslatePipe,
     PageHeaderComponent,
     SkeletonComponent,
+    EmptyStateComponent,
   ],
   providers: [MessageService],
   templateUrl: './member-edit.component.html',
@@ -193,6 +197,24 @@ export class MemberEditComponent implements OnInit {
       label: this.translate.instant('members.edit.monthOption', { value: i + 1 }) as string,
     }));
   });
+
+  /**
+   * Year list for 수료일 · 시작일 · 종료일. `YEAR_OPTIONS` cannot be reused — its labels
+   * are two-digit ("25") and these columns spell the year out, like 등록 연도 does.
+   * Unlike 등록 연도 it reaches one year ahead: an assignment may end in the future.
+   */
+  readonly activityYearOptions = computed(() => {
+    this.lang();
+    const current = new Date().getFullYear();
+    const years: { value: number; label: string }[] = [];
+    for (let y = current + 1; y >= 2000; y--) {
+      years.push({ value: y, label: this.translate.instant('members.edit.yearOption', { value: y }) as string });
+    }
+    return years;
+  });
+
+  /** Same twelve entries as 등록 월 — kept under its own name so the template reads right. */
+  readonly activityMonthOptions = this.registrationMonthOptions;
 
   readonly phoneCountryOptions = PHONE_COUNTRIES;
   readonly statusOptions       = MEMBER_STATUS_OPTIONS;
@@ -613,12 +635,17 @@ export class MemberEditComponent implements OnInit {
   addMinistry(): void { this.ministries.push(this.newMinistryGroup()); }
   removeMinistry(index: number): void { this.ministries.removeAt(index); }
 
-  onMinistryOngoingChange(index: number): void {
+  /**
+   * The row has no "laufend" checkbox (Figma 556:27121, DESIGN.md §9.1): an empty
+   * 종료일 *is* the ongoing state. `ongoing` stays in the form because
+   * {@link collectMinistryItems} and the server DTO are built around it — it is
+   * derived here instead of being toggled by hand. A half-filled end date (only a
+   * month or only a year) counts as ongoing, so the row is still persisted.
+   */
+  onMinistryEndChange(index: number): void {
     const g = this.ministries.at(index);
-    const ongoing = g.get('ongoing')!.value;
-    const em = g.get('endMonth')!, ey = g.get('endYear')!;
-    if (ongoing) { em.reset(null); ey.reset(null); em.disable(); ey.disable(); }
-    else { em.enable(); ey.enable(); }
+    const month = g.get('endMonth')!.value, year = g.get('endYear')!.value;
+    g.get('ongoing')!.setValue(!(month && year));
   }
 
   private newMinistryGroup(value?: MinistryFormValue): FormGroup {
@@ -632,7 +659,6 @@ export class MemberEditComponent implements OnInit {
       ongoing:    [ongoing],
       note:       [value?.note       ?? null as string | null],
     });
-    if (ongoing) { group.get('endMonth')!.disable(); group.get('endYear')!.disable(); }
     return group;
   }
 

@@ -43,19 +43,19 @@ describe('MemberEditComponent — ministry editor', () => {
     expect(component.ministries.length).toBe(0);
   });
 
-  it('toggling ongoing to false + onMinistryOngoingChange() enables endMonth', () => {
+  it('derives ongoing=false from a filled 종료일 (#75: no checkbox any more)', () => {
     component.addMinistry();
     const group = component.ministries.at(0);
 
-    // Initially ongoing=true, endMonth is disabled
-    expect(group.get('endMonth')!.disabled).toBeTrue();
-
-    // Simulate the user unchecking "Ongoing"
-    group.get('ongoing')!.setValue(false);
-    component.onMinistryOngoingChange(0);
-
+    // The end date is always editable — there is nothing left to unlock first.
     expect(group.get('endMonth')!.enabled).toBeTrue();
     expect(group.get('endYear')!.enabled).toBeTrue();
+    expect(group.get('ongoing')!.value).toBeTrue();
+
+    group.patchValue({ endYear: 2025, endMonth: 11 });
+    component.onMinistryEndChange(0);
+
+    expect(group.get('ongoing')!.value).toBeFalse();
   });
 
   it('collectMinistryItems() maps an ongoing card to the correct PUT item', () => {
@@ -78,30 +78,25 @@ describe('MemberEditComponent — ministry editor', () => {
     }]);
   });
 
-  it('re-toggling ongoing back to true clears and disables the end date', () => {
+  it('clearing the 종료일 makes the assignment ongoing again', () => {
     component.addMinistry();
     const group = component.ministries.at(0);
 
-    // User unchecks Ongoing, enters an end date...
-    group.get('ongoing')!.setValue(false);
-    component.onMinistryOngoingChange(0);
     group.patchValue({ endMonth: 11, endYear: 2025 });
+    component.onMinistryEndChange(0);
+    expect(group.get('ongoing')!.value).toBeFalse();
 
-    // ...then re-checks Ongoing — the end date must be wiped and disabled again.
-    group.get('ongoing')!.setValue(true);
-    component.onMinistryOngoingChange(0);
+    // Clearing one half is enough — a half-filled end date is not a date.
+    group.get('endMonth')!.setValue(null);
+    component.onMinistryEndChange(0);
 
-    expect(group.get('endMonth')!.value).toBeNull();
-    expect(group.get('endYear')!.value).toBeNull();
-    expect(group.get('endMonth')!.disabled).toBeTrue();
+    expect(group.get('ongoing')!.value).toBeTrue();
   });
 
-  it('collectMinistryItems() maps a finished card to a real endDate, and drops one missing its end date', () => {
-    // Finished card with an end date → endDate populated.
+  it('collectMinistryItems() maps a finished row to a real endDate and keeps a half-filled one as ongoing', () => {
+    // Row with an end date → endDate populated.
     component.addMinistry();
     const finished = component.ministries.at(0);
-    finished.get('ongoing')!.setValue(false);
-    component.onMinistryOngoingChange(0);
     finished.patchValue({
       ministryPublicId: 'abc',
       startMonth: 3,
@@ -109,22 +104,21 @@ describe('MemberEditComponent — ministry editor', () => {
       endMonth: 5,
       endYear: 2025,
     });
+    component.onMinistryEndChange(0);
 
-    // Second finished card missing its end date → dropped by the filter.
+    // Row with only half an end date → still laufend, so it is persisted with endDate null
+    // instead of being dropped. Without the checkbox an empty 종료일 has a meaning.
     component.addMinistry();
-    const incomplete = component.ministries.at(1);
-    incomplete.get('ongoing')!.setValue(false);
-    component.onMinistryOngoingChange(1);
-    incomplete.patchValue({ ministryPublicId: 'def', startMonth: 1, startYear: 2023 });
+    const halfFilled = component.ministries.at(1);
+    halfFilled.patchValue({ ministryPublicId: 'def', startMonth: 1, startYear: 2023, endYear: 2025 });
+    component.onMinistryEndChange(1);
 
     const items: MemberMinistryItem[] = component['collectMinistryItems']();
 
-    expect(items).toEqual([{
-      ministryPublicId: 'abc',
-      startDate: '2024-03-01',
-      endDate: '2025-05-01',
-      note: null,
-    }]);
+    expect(items).toEqual([
+      { ministryPublicId: 'abc', startDate: '2024-03-01', endDate: '2025-05-01', note: null },
+      { ministryPublicId: 'def', startDate: '2023-01-01', endDate: null, note: null },
+    ]);
   });
 });
 
@@ -254,35 +248,32 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     expect(req.groupPublicId).withContext('cleared group must send "" to clear, not undefined').toBe('');
   });
 
-  it('persists endDate when a loaded ongoing ministry is unchecked and given To dates', () => {
+  it('persists endDate when a loaded ongoing ministry is given a 종료일', () => {
     const fixture = setup();
     const component = fixture.componentInstance;
 
     expect(component.ministries.length).toBe(1);
     const card = component.ministries.at(0);
     expect(card.get('ongoing')!.value).toBeTrue();
-    expect(card.get('endMonth')!.disabled).toBeTrue();
+    // #75 dropped the „laufend"-Häkchen: the end date is editable from the start.
+    expect(card.get('endMonth')!.enabled).toBeTrue();
 
-    // 사역 sits in its own tab now. `p-tabpanel` is not lazy, so the checkbox is in
-    // the DOM either way — activating the tab keeps the test honest about what the
-    // user actually sees when they click it.
+    // 사역 sits in its own tab now. `p-tabpanel` is not lazy, so the row is in the
+    // DOM either way — activating the tab keeps the test honest about what the user
+    // actually sees when they click it.
     component.activeTab.set(3);
     fixture.detectChanges();
 
-    // Click the REAL Ongoing checkbox (PrimeNG renders an <input type=checkbox>).
-    const checkbox = fixture.debugElement.query(By.css('#memberMinistryOngoing-0'));
-    expect(checkbox).withContext('ongoing checkbox should be rendered').toBeTruthy();
-    checkbox.nativeElement.click();
-    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('#memberMinistryOngoing-0')))
+      .withContext('the ongoing checkbox must be gone').toBeNull();
+    expect(fixture.debugElement.query(By.css('#memberMinistryEndYear-0')))
+      .withContext('the 종료일 row should render a year select').toBeTruthy();
 
-    // The toggle must flip the control AND enable the end-date fields.
-    expect(card.get('ongoing')!.value).withContext('checkbox should set ongoing=false').toBeFalse();
-    expect(card.get('endMonth')!.enabled).withContext('endMonth must be enabled after un-toggling').toBeTrue();
-    expect(card.get('endYear')!.enabled).toBeTrue();
-
-    // User selects To month/year, then saves.
-    card.get('endMonth')!.setValue(11);
+    // User picks 종료일, which derives ongoing=false, then saves.
     card.get('endYear')!.setValue(2025);
+    card.get('endMonth')!.setValue(11);
+    component.onMinistryEndChange(0);
+    expect(card.get('ongoing')!.value).toBeFalse();
     component.save();
 
     expect(replaceSpy).toHaveBeenCalled();
@@ -563,5 +554,135 @@ describe('MemberEditComponent — training catalog', () => {
 
     expect(component.trainings.at(0).get('code')!.value).toBe('KAIROS');
     expect(component.availableTrainingOptions(0).map(o => o.value)).toContain('KAIROS');
+  });
+});
+
+// #75: die 양육- und 사역-Reiter sind Zeilenlisten mit Hinzufügen/Entfernen und einem
+// Leerzustand statt der Liste. Getestet wird am gerenderten DOM, weil genau dort die
+// Regressionen sitzen (Labels nur in Zeile 1, Papierkorb an der richtigen Zeile).
+describe('MemberEditComponent — 양육 / 사역 Zeilen', () => {
+  const CATALOG: TrainingCatalogEntry[] = [
+    { publicId: 'p-qtbs', code: 'QT_BASIC_SEMINAR', name: 'Quiet Time Basic Seminar',
+      nameKo: '큐티베이직세미나', category: 'CORE', sortOrder: 1, hasCohorts: true,
+      isActive: true, prerequisiteCode: null },
+    { publicId: 'p-1on1', code: 'ONE_ON_ONE', name: 'One-to-One Discipleship Training',
+      nameKo: '일대일제자양육', category: 'CORE', sortOrder: 2, hasCohorts: true,
+      isActive: true, prerequisiteCode: null },
+  ];
+
+  const member = {
+    publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
+    baptism: null, birthDate: null, phoneNumber: null, email: null, street: null,
+    houseNumber: null, zipCode: null, city: null, registrationDate: null,
+    memberStatus: 'ACTIVE' as const, churchRole: null, groupPublicId: null, groupName: null,
+    profileImageUrl: null, trainings: [], ministries: [],
+  };
+
+  function setup() {
+    const stub = {
+      getTrainingCatalog: () => of(CATALOG),
+      getMinistryCatalog: () => of([{ publicId: 'min1', name: '찬양팀' }]),
+      getChurchGroups: () => of([]),
+      getMember: () => of(member),
+      updateMember: () => of(member),
+      createMember: () => of(member),
+      replaceMemberTrainings: () => of(member),
+      replaceMemberMinistries: () => of(member),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
+        { provide: MemberService, useValue: stub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance };
+  }
+
+  it('양육: shows the empty state until the first row exists', () => {
+    const { fixture, component } = setup();
+    component.activeTab.set(2);
+    fixture.detectChanges();
+
+    // `p-tabpanel` is not lazy, so 양육 and 사역 both render their empty state —
+    // count them rather than asserting on a single one.
+    const emptyStates = () => fixture.debugElement.queryAll(By.css('app-empty-state')).length;
+
+    expect(component.trainings.length).toBe(0);
+    expect(emptyStates()).withContext('both empty tabs render EmptyState/NoData').toBe(2);
+    expect(fixture.debugElement.query(By.css('#memberTrainingCode-0'))).toBeNull();
+
+    component.addTraining();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#memberTrainingCode-0')))
+      .withContext('the added row must render its 양육-Select').toBeTruthy();
+    expect(emptyStates()).withContext('only 사역 is still empty').toBe(1);
+  });
+
+  it('양육: labels are rendered for the first row only', () => {
+    const { fixture, component } = setup();
+    component.activeTab.set(2);
+    component.addTraining();
+    component.addTraining();
+    fixture.detectChanges();
+
+    expect(component.trainings.length).toBe(2);
+    expect(fixture.debugElement.query(By.css('label[for="memberTrainingCode-0"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('label[for="memberTrainingCode-1"]')))
+      .withContext('DESIGN.md §9.1: Labels nur in der ersten Zeile').toBeNull();
+    // The second row is still announced — its label lives on the select's aria-label.
+    expect(fixture.debugElement.query(By.css('#memberTrainingCode-1'))).toBeTruthy();
+  });
+
+  it('양육: the row trash button removes exactly its own row', () => {
+    const { fixture, component } = setup();
+    component.activeTab.set(2);
+    component.addTraining();
+    component.trainings.at(0).get('code')!.setValue('QT_BASIC_SEMINAR');
+    component.addTraining();
+    component.trainings.at(1).get('code')!.setValue('ONE_ON_ONE');
+    fixture.detectChanges();
+
+    const trash = fixture.debugElement
+      .queryAll(By.css('button[aria-label="members.edit.training.remove"]'));
+    expect(trash.length).withContext('one trash button per row').toBe(2);
+
+    trash[0].nativeElement.click();
+    fixture.detectChanges();
+
+    expect(component.trainings.length).toBe(1);
+    expect(component.trainings.at(0).get('code')!.value).toBe('ONE_ON_ONE');
+  });
+
+  it('사역: add and remove work the same way', () => {
+    const { fixture, component } = setup();
+    component.activeTab.set(3);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#memberMinistry-0'))).toBeNull();
+
+    component.addMinistry();
+    component.addMinistry();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#memberMinistry-1'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('label[for="memberMinistry-1"]'))).toBeNull();
+
+    const trash = fixture.debugElement
+      .queryAll(By.css('button[aria-label="members.edit.ministry.remove"]'));
+    expect(trash.length).toBe(2);
+
+    trash[1].nativeElement.click();
+    fixture.detectChanges();
+
+    expect(component.ministries.length).toBe(1);
   });
 });
