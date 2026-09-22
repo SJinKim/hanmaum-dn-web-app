@@ -8,7 +8,11 @@ import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { Subject, debounceTime, firstValueFrom, take } from 'rxjs';
-import { memberPillStage, memberPillStageKey } from '../../../core/models/member-stage';
+import { injectAppLang } from '../../../core/i18n/language';
+import {
+  catalogEntryByName,
+  trainingLabelForName,
+} from '../../../core/models/member-activity.model';
 import {
   Baptism,
   ChurchGroupSummary,
@@ -44,6 +48,24 @@ const BAPTISM_FILTERS: readonly Baptism[] = [
 
 /** Milliseconds a keystroke waits before it becomes a request. */
 const SEARCH_DEBOUNCE_MS = 300;
+
+/**
+ * MemberPill colour per catalog code, so a 양육 tag keeps the colour the stage
+ * of the same name already has (`core/models/member-stage.ts`). Courses outside
+ * these three have no colour of their own and render neutral — a new token per
+ * catalog entry would have to come from Figma, not from here.
+ */
+const STAGE_BY_TRAINING_CODE: Readonly<Record<string, MemberPillStage>> = {
+  QT_BASIC_SEMINAR: 'qbs',
+  ONE_ON_ONE: 'one-on-one-completed',
+  YOUTH_POWER_DISCIPLESHIP: 'discipleship',
+};
+
+/** One 양육 tag: the course name plus the pill colour it is drawn in. */
+interface TrainingTag {
+  readonly label: string;
+  readonly stage: MemberPillStage;
+}
 
 /**
  * Figma: 청년 / Desktop 201:4937. The Tablet and Phone node IDs quoted in #53
@@ -94,6 +116,7 @@ export class MembersListComponent implements OnInit {
   private readonly trainingCatalog = inject(TrainingCatalogService);
   private readonly breakpoints = inject(BreakpointService);
   private readonly translate = inject(TranslateService);
+  private readonly lang = injectAppLang();
   private readonly messageService = inject(MessageService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -204,8 +227,8 @@ export class MembersListComponent implements OnInit {
         error: () => this.churchGroups.set([]),
       });
 
-    // The 양육 column resolves its stage against the catalog; loading it refreshes
-    // the computed cells on its own.
+    // The 양육 tags resolve their names against the catalog; loading it refreshes
+    // the cells on its own.
     this.trainingCatalog.load().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
@@ -304,16 +327,40 @@ export class MembersListComponent implements OnInit {
     return resolveBadgeVariant(member.memberStatus.toLowerCase());
   }
 
-  stageOf(member: MemberSummary): MemberPillStage {
-    return memberPillStage(member, this.trainingCatalog.entries());
-  }
-
   /**
-   * MemberPill's `label` is the member's name in the 순 matrix; here the column
-   * *is* the stage, so the stage name carries both the label and the title.
+   * The member's completed courses as tags, in catalog order; a single 없음 tag
+   * when there are none. The column used to show `memberPillStage()`, which
+   * reduces every training to the highest one reached — a member who finished
+   * 큐베세 *and* 제자반 only read as 제자반 (#82). The stage rule itself stays
+   * where it is: the 순 matrix and its legend are built on it.
    */
-  stageLabel(member: MemberSummary): string {
-    return this.translate.instant(memberPillStageKey(this.stageOf(member)));
+  trainingTags(member: MemberSummary): readonly TrainingTag[] {
+    const catalog = this.trainingCatalog.entries();
+    const lang = this.lang();
+
+    const tags = (member.trainings ?? [])
+      .filter(training => training.status === 'COMPLETED')
+      .map(training => ({
+        entry: catalogEntryByName(catalog, training.name),
+        label: trainingLabelForName(catalog, training.name, lang),
+      }))
+      // A course missing from the catalog has no sort order — it goes last
+      // rather than jumping ahead of the courses that do have one. Comparing
+      // the ranks instead of subtracting them keeps two such courses at
+      // `0` rather than `Infinity - Infinity`, which is NaN.
+      .sort((a, b) => {
+        const rankA = a.entry?.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        const rankB = b.entry?.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        return rankA === rankB ? 0 : rankA - rankB;
+      })
+      .map(({ entry, label }) => ({
+        label,
+        stage: (entry && STAGE_BY_TRAINING_CODE[entry.code]) ?? 'none',
+      }));
+
+    return tags.length > 0
+      ? tags
+      : [{ label: this.translate.instant('members.stage.none'), stage: 'none' as MemberPillStage }];
   }
 
   ministryLabel(member: MemberSummary): string {

@@ -158,11 +158,18 @@
                   {{ member.groupName ?? ('members.unassigned' | translate) }}
                 </td>
                 <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
-                  <!-- The column *is* the stage, so the stage name carries both label and title. -->
-                  <app-member-pill
-                    [stage]="stageOf(member)"
-                    [label]="stageLabel(member)"
-                    [stageLabel]="stageLabel(member)" />
+                  <!--
+                    One tag per completed course (#82). The column *is* the
+                    course, so the course name carries both label and title.
+                  -->
+                  <span class="flex flex-wrap items-center gap-[var(--space-4)]">
+                    @for (tag of trainingTags(member); track tag.label) {
+                      <app-member-pill
+                        [stage]="tag.stage"
+                        [label]="tag.label"
+                        [stageLabel]="tag.label" />
+                    }
+                  </span>
                 </td>
                 <td class="type-body text-ink h-[var(--size-table-row)] px-[var(--space-8)]">
                   {{ ministryLabel(member) }}
