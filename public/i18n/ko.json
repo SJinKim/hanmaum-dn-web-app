@@ -160,6 +160,30 @@
         "training": "양육",
         "ministry": "사역"
       },
+      "training": {
+        "course": "양육 과정",
+        "status": "상태",
+        "completedAt": "수료일",
+        "completedYearAria": "수료 연도",
+        "completedMonthAria": "수료 월",
+        "add": "양육 추가",
+        "remove": "양육 삭제",
+        "emptyHeading": "등록된 양육이 없습니다",
+        "emptyDescription": "아래 버튼으로 첫 양육 과정을 추가하세요"
+      },
+      "ministry": {
+        "name": "사역",
+        "startDate": "시작일",
+        "endDate": "종료일",
+        "startYearAria": "시작 연도",
+        "startMonthAria": "시작 월",
+        "endYearAria": "종료 연도",
+        "endMonthAria": "종료 월",
+        "add": "사역 추가",
+        "remove": "사역 삭제",
+        "emptyHeading": "등록된 사역이 없습니다",
+        "emptyDescription": "아래 버튼으로 첫 사역을 추가하세요"
+      },
       "fields": {
         "lastName": "성",
         "firstName": "이름",

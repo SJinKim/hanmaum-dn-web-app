@@ -160,6 +160,30 @@
         "training": "Training",
         "ministry": "Ministry"
       },
+      "training": {
+        "course": "Training course",
+        "status": "Status",
+        "completedAt": "Completed on",
+        "completedYearAria": "Completion year",
+        "completedMonthAria": "Completion month",
+        "add": "Add training",
+        "remove": "Remove training",
+        "emptyHeading": "No trainings yet",
+        "emptyDescription": "Use the button below to add the first training course."
+      },
+      "ministry": {
+        "name": "Ministry",
+        "startDate": "Start date",
+        "endDate": "End date",
+        "startYearAria": "Start year",
+        "startMonthAria": "Start month",
+        "endYearAria": "End year",
+        "endMonthAria": "End month",
+        "add": "Add ministry",
+        "remove": "Remove ministry",
+        "emptyHeading": "No ministries yet",
+        "emptyDescription": "Use the button below to add the first ministry."
+      },
       "fields": {
         "lastName": "Last name",
         "firstName": "First name",
