@@ -244,6 +244,7 @@
     },
     "filters": {
       "status": "Status",
+      "statusAll": "All statuses",
       "baptism": "Baptism",
       "baptismAll": "All baptisms"
     },

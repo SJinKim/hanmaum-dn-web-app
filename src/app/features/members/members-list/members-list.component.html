@@ -31,14 +31,15 @@
       list only appeared to filter by them because it loaded every member at
       once and filtered in the client.
     -->
-    @for (value of statusFilters; track value) {
-      <app-filter-chip
-        appFilters
-        [label]="'members.status.' + value | translate"
-        [selected]="status() === value"
-        [count]="value === 'PENDING' ? pendingCount() : undefined"
-        (toggled)="toggleStatus(value, $event)" />
-    }
+    <p-select
+      appFilters
+      size="small"
+      optionLabel="label"
+      optionValue="value"
+      [options]="statusOptions()"
+      [ngModel]="status()"
+      (ngModelChange)="onStatusChange($event)"
+      [ariaLabel]="'members.filters.status' | translate" />
     <p-select
       appFilters
       size="small"
