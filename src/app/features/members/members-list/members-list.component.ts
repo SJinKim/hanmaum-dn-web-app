@@ -10,7 +10,9 @@ import { ToastModule } from 'primeng/toast';
 import { Subject, debounceTime, firstValueFrom, take } from 'rxjs';
 import { injectAppLang } from '../../../core/i18n/language';
 import {
+  MinistryCatalogEntry,
   catalogEntryByName,
+  trainingLabel,
   trainingLabelForName,
 } from '../../../core/models/member-activity.model';
 import {
@@ -32,7 +34,7 @@ import { SearchFieldComponent } from '../../../core/ui/search-field/search-field
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 import { ToolbarComponent } from '../../../core/ui/toolbar/toolbar.component';
 import { BadgeVariant, MemberPillStage, resolveBadgeVariant } from '../../../core/ui/variant-tokens';
-import { MemberService } from '../member.service';
+import { MemberService, UNASSIGNED_GROUP } from '../member.service';
 
 /** 상태 select options, in the Figma order — not the enum's declaration order. */
 const STATUS_FILTERS: readonly MemberStatus[] = ['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED'];
@@ -129,6 +131,9 @@ export class MembersListComponent implements OnInit {
   readonly size = this.memberService.size;
   readonly status = this.memberService.status;
   readonly baptism = this.memberService.baptism;
+  readonly group = this.memberService.group;
+  readonly training = this.memberService.training;
+  readonly ministry = this.memberService.ministry;
   readonly pendingCount = this.memberService.pendingCount;
 
   readonly isPhone = this.breakpoints.isPhone;
@@ -179,9 +184,55 @@ export class MembersListComponent implements OnInit {
     ];
   });
 
+  /** Active ministries for the 사역 filter; empty until the request lands. */
+  private readonly ministryCatalog = signal<readonly MinistryCatalogEntry[]>([]);
+
+  /**
+   * 순 filter: every group, not just those on the current page, plus 미배정 —
+   * which the server takes as `unassigned=true` rather than as a group id.
+   */
+  readonly groupFilterOptions = computed(() => {
+    this.translate.currentLang();
+    return [
+      { label: this.translate.instant('members.filters.groupAll'), value: null as string | null },
+      { label: this.translate.instant('members.unassigned'), value: UNASSIGNED_GROUP as string | null },
+      ...this.groupOptions(),
+    ];
+  });
+
+  /**
+   * 양육 filter, in catalog order. Retired courses stay in: a member who
+   * completed one still carries it, and the filter must be able to find them.
+   * The value is the stable `code`, never the display name.
+   */
+  readonly trainingFilterOptions = computed(() => {
+    this.translate.currentLang();
+    const lang = this.lang();
+    return [
+      { label: this.translate.instant('members.filters.trainingAll'), value: null as string | null },
+      ...[...this.trainingCatalog.entries()]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(entry => ({ label: trainingLabel(entry, lang), value: entry.code as string | null })),
+    ];
+  });
+
+  readonly ministryFilterOptions = computed(() => {
+    this.translate.currentLang();
+    return [
+      { label: this.translate.instant('members.filters.ministryAll'), value: null as string | null },
+      ...this.ministryCatalog().map(m => ({ label: m.title, value: m.publicId as string | null })),
+    ];
+  });
+
   /** True when the empty result is the work of a filter rather than an empty table. */
   readonly filtered = computed(
-    () => !!this.memberService.search() || !!this.status() || !!this.baptism(),
+    () =>
+      !!this.memberService.search() ||
+      !!this.status() ||
+      !!this.baptism() ||
+      !!this.group() ||
+      !!this.training() ||
+      !!this.ministry(),
   );
 
   /** Phone/Tablet: the same page rendered as `app-list-card`s (Home precedent). */
@@ -234,7 +285,8 @@ export class MembersListComponent implements OnInit {
 
     this.memberService.refreshPendingCount();
 
-    // The approve select needs every group, not just those the page happens to show.
+    // The approve select and the 순 filter need every group, not just those the
+    // page happens to show.
     this.memberService
       .getChurchGroups()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -243,9 +295,17 @@ export class MembersListComponent implements OnInit {
         error: () => this.churchGroups.set([]),
       });
 
-    // The 양육 tags resolve their names against the catalog; loading it refreshes
-    // the cells on its own.
+    // The 양육 tags and the 양육 filter resolve against the catalog; loading it
+    // refreshes both on its own.
     this.trainingCatalog.load().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+
+    this.memberService
+      .getMinistryCatalog()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ministries => this.ministryCatalog.set(ministries),
+        error: () => this.ministryCatalog.set([]),
+      });
   }
 
   onSearchChange(term: string): void {
@@ -264,6 +324,18 @@ export class MembersListComponent implements OnInit {
 
   onBaptismChange(value: Baptism | null): void {
     this.memberService.setBaptism(value);
+  }
+
+  onGroupChange(value: string | null): void {
+    this.memberService.setGroup(value);
+  }
+
+  onTrainingChange(value: string | null): void {
+    this.memberService.setTraining(value);
+  }
+
+  onMinistryChange(value: string | null): void {
+    this.memberService.setMinistry(value);
   }
 
   resetFilters(): void {

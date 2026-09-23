@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { MemberSummary } from '../../core/models/member.model';
-import { MemberService } from './member.service';
+import { MemberService, UNASSIGNED_GROUP } from './member.service';
 
 function summary(publicId: string): MemberSummary {
   return {
@@ -102,6 +102,56 @@ describe('MemberService — 청년 list state (#53)', () => {
     expect(service.baptism()).toBeNull();
     expect(url).not.toContain('search=');
     expect(url).not.toContain('status=');
+  });
+
+  // #79: 순/양육/사역 are server-side parameters (hanmaum-dn-server#196).
+  it('sends a chosen group as groupPublicId and returns to page 0', () => {
+    service.setPage(2);
+    flushList();
+
+    service.setGroup('g-1');
+    const url = flushList();
+
+    expect(service.page()).toBe(0);
+    expect(url).toContain('groupPublicId=g-1');
+    expect(url).not.toContain('unassigned=');
+  });
+
+  it('sends 미배정 as unassigned=true and never together with groupPublicId', () => {
+    service.setGroup(UNASSIGNED_GROUP);
+    const url = flushList();
+
+    expect(url).toContain('unassigned=true');
+    expect(url).not.toContain('groupPublicId=');
+  });
+
+  it('sends the training code and the ministry publicId', () => {
+    service.setTraining('ONE_ON_ONE');
+    flushList();
+    service.setMinistry('min-1');
+    const url = flushList();
+
+    expect(url).toContain('trainingCode=ONE_ON_ONE');
+    expect(url).toContain('ministryPublicId=min-1');
+  });
+
+  it('clears 순, 양육 and 사역 on reset', () => {
+    service.setGroup('g-1');
+    flushList();
+    service.setTraining('ONE_ON_ONE');
+    flushList();
+    service.setMinistry('min-1');
+    flushList();
+
+    service.resetFilters();
+    const url = flushList();
+
+    expect(service.group()).toBeNull();
+    expect(service.training()).toBeNull();
+    expect(service.ministry()).toBeNull();
+    expect(url).not.toContain('groupPublicId=');
+    expect(url).not.toContain('trainingCode=');
+    expect(url).not.toContain('ministryPublicId=');
   });
 
   it('empties the list and flags the failure when the request errors', () => {

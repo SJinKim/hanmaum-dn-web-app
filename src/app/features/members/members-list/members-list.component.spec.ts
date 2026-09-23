@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, provideRouter, convertToParamMap } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
@@ -10,7 +10,7 @@ import { MembersListComponent } from './members-list.component';
 import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
 import { TrainingCatalogEntry } from '../../../core/models/member-activity.model';
 import { MemberSummary } from '../../../core/models/member.model';
-import { MemberService } from '../member.service';
+import { MemberService, UNASSIGNED_GROUP } from '../member.service';
 
 /** Three coded courses in catalog order plus one the stage rule knows nothing about. */
 function catalogEntry(
@@ -203,5 +203,120 @@ describe('MembersListComponent — 상태 select', () => {
       .queryAll(By.css('p-select'))
       .find(select => select.componentInstance.ariaLabel === 'Status')!;
     expect(statusSelect.nativeElement.textContent).toContain('Pending (0)');
+  });
+});
+
+// #79: one select per column except 이름 — 순, 양육 and 사역 join 상태 and 세례.
+describe('MembersListComponent — 순/양육/사역 selects', () => {
+  function setup() {
+    TestBed.configureTestingModule({
+      imports: [MembersListComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+      ],
+    });
+
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', {
+      members: {
+        unassigned: 'Unassigned',
+        filters: { groupAll: 'All groups', trainingAll: 'All trainings', ministryAll: 'All ministries' },
+      },
+    }, true);
+    translate.use('en');
+
+    const fixture = TestBed.createComponent(MembersListComponent);
+    return {
+      fixture,
+      component: fixture.componentInstance,
+      service: TestBed.inject(MemberService),
+      http: TestBed.inject(HttpTestingController),
+    };
+  }
+
+  function ok<T>(data: T) {
+    return { success: true, message: null, data };
+  }
+
+  it('offers 전체, then 미배정, then every group', () => {
+    const { fixture, component, http } = setup();
+    fixture.detectChanges();
+    http
+      .expectOne(r => r.url.endsWith('/v1/church-groups'))
+      .flush(ok([{ publicId: 'g-1', name: '1순' }, { publicId: 'g-2', name: '2순' }]));
+
+    expect(component.groupFilterOptions()).toEqual([
+      { label: 'All groups', value: null },
+      { label: 'Unassigned', value: UNASSIGNED_GROUP },
+      { label: '1순', value: 'g-1' },
+      { label: '2순', value: 'g-2' },
+    ]);
+  });
+
+  it('offers every course in catalog order, retired ones included, by code', () => {
+    const { component } = setup();
+    const retired = { ...catalogEntry('OLD_COURSE', 'Old Course', '옛 과정', 0), isActive: false };
+    TestBed.inject(TrainingCatalogService).entries.set([CATALOG[1], retired, CATALOG[0]]);
+
+    expect(component.trainingFilterOptions()).toEqual([
+      { label: 'All trainings', value: null },
+      { label: 'Old Course', value: 'OLD_COURSE' },
+      { label: 'QT Basic Seminar', value: 'QT_BASIC_SEMINAR' },
+      { label: 'One-to-One Discipleship Training', value: 'ONE_ON_ONE' },
+    ]);
+  });
+
+  it('offers the active ministries from the catalog', () => {
+    const { fixture, component, http } = setup();
+    fixture.detectChanges();
+    const req = http.expectOne(r => r.url.endsWith('/v1/ministries'));
+    expect(req.request.params.get('active')).toBe('true');
+    req.flush(ok([{ publicId: 'min-1', title: '찬양팀' }]));
+
+    expect(component.ministryFilterOptions()).toEqual([
+      { label: 'All ministries', value: null },
+      { label: '찬양팀', value: 'min-1' },
+    ]);
+  });
+
+  it('writes each choice to the service', () => {
+    const { component, service } = setup();
+    const setGroup = spyOn(service, 'setGroup');
+    const setTraining = spyOn(service, 'setTraining');
+    const setMinistry = spyOn(service, 'setMinistry');
+
+    component.onGroupChange(UNASSIGNED_GROUP);
+    component.onTrainingChange('ONE_ON_ONE');
+    component.onMinistryChange(null);
+
+    expect(setGroup).toHaveBeenCalledWith(UNASSIGNED_GROUP);
+    expect(setTraining).toHaveBeenCalledWith('ONE_ON_ONE');
+    expect(setMinistry).toHaveBeenCalledWith(null);
+  });
+
+  it('counts 순, 양육 and 사역 as filters for the 결과 없음 state', () => {
+    const { component, service } = setup();
+    expect(component.filtered()).toBeFalse();
+
+    for (const pick of [
+      () => service.group.set(UNASSIGNED_GROUP),
+      () => service.training.set('ONE_ON_ONE'),
+      () => service.ministry.set('min-1'),
+    ]) {
+      service.group.set(null);
+      service.training.set(null);
+      service.ministry.set(null);
+      pick();
+      expect(component.filtered()).toBeTrue();
+    }
+  });
+
+  it('renders five filter selects', () => {
+    const { fixture } = setup();
+    fixture.detectChanges();
+    expect(fixture.debugElement.queryAll(By.css('p-select[appFilters]')).length).toBe(5);
   });
 });

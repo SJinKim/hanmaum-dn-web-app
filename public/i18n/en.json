@@ -245,6 +245,12 @@
     "filters": {
       "status": "Status",
       "statusAll": "All statuses",
+      "group": "Group",
+      "groupAll": "All groups",
+      "training": "Training",
+      "trainingAll": "All trainings",
+      "ministry": "Ministry",
+      "ministryAll": "All ministries",
       "baptism": "Baptism",
       "baptismAll": "All baptisms"
     },
