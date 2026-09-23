@@ -34,7 +34,7 @@ import { SearchFieldComponent } from '../../../core/ui/search-field/search-field
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 import { ToolbarComponent } from '../../../core/ui/toolbar/toolbar.component';
 import { BadgeVariant, MemberPillStage, resolveBadgeVariant } from '../../../core/ui/variant-tokens';
-import { MemberService, UNASSIGNED_GROUP } from '../member.service';
+import { MemberService, MemberSortProperty, UNASSIGNED_GROUP } from '../member.service';
 
 /** 상태 select options, in the Figma order — not the enum's declaration order. */
 const STATUS_FILTERS: readonly MemberStatus[] = ['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED'];
@@ -134,6 +134,7 @@ export class MembersListComponent implements OnInit {
   readonly group = this.memberService.group;
   readonly training = this.memberService.training;
   readonly ministry = this.memberService.ministry;
+  readonly sort = this.memberService.sort;
   readonly pendingCount = this.memberService.pendingCount;
 
   readonly isPhone = this.breakpoints.isPhone;
@@ -336,6 +337,26 @@ export class MembersListComponent implements OnInit {
 
   onMinistryChange(value: string | null): void {
     this.memberService.setMinistry(value);
+  }
+
+  // ── Sortierung (#68) ─────────────────────────────────────────────────────
+  // Only 이름, 상태, 순 and 세례 sort; the other headers stay plain text.
+
+  onSort(property: MemberSortProperty): void {
+    this.memberService.toggleSort(property);
+  }
+
+  /** `aria-sort` of a sortable header — the active one says its direction. */
+  ariaSort(property: MemberSortProperty): 'ascending' | 'descending' | 'none' {
+    const sort = this.sort();
+    if (sort?.property !== property) return 'none';
+    return sort.direction === 'asc' ? 'ascending' : 'descending';
+  }
+
+  sortIcon(property: MemberSortProperty): string {
+    const sort = this.sort();
+    if (sort?.property !== property) return 'pi pi-sort-alt';
+    return sort.direction === 'asc' ? 'pi pi-sort-amount-up-alt' : 'pi pi-sort-amount-down';
   }
 
   resetFilters(): void {

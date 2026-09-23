@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -11,6 +12,7 @@ import { TrainingCatalogService } from '../../../core/services/training-catalog.
 import { TrainingCatalogEntry } from '../../../core/models/member-activity.model';
 import { MemberSummary } from '../../../core/models/member.model';
 import { MemberService, UNASSIGNED_GROUP } from '../member.service';
+import { BreakpointService } from '../../../core/ui/breakpoint.service';
 
 /** Three coded courses in catalog order plus one the stage rule knows nothing about. */
 function catalogEntry(
@@ -318,5 +320,75 @@ describe('MembersListComponent — 순/양육/사역 selects', () => {
     const { fixture } = setup();
     fixture.detectChanges();
     expect(fixture.debugElement.queryAll(By.css('p-select[appFilters]')).length).toBe(5);
+  });
+});
+
+// #68: 이름, 상태, 순 and 세례 are sort buttons; 양육, 사역 and 최근 활동 stay plain.
+describe('MembersListComponent — sortable headers', () => {
+  function setup() {
+    TestBed.configureTestingModule({
+      imports: [MembersListComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        // ChromeHeadless opens at 800px, below the 834px table breakpoint.
+        { provide: BreakpointService, useValue: { isPhone: signal(false) } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(MembersListComponent);
+    const service = TestBed.inject(MemberService);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    // The table renders only once the first page is in.
+    http.match(r => r.url.endsWith('/v1/members')).forEach(req =>
+      req.flush({
+        success: true,
+        message: null,
+        data: { content: [member(undefined)], totalElements: 1, totalPages: 1, number: 0, size: 20 },
+      }),
+    );
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance, service };
+  }
+
+  function headers(fixture: ReturnType<typeof setup>['fixture']) {
+    return fixture.debugElement.queryAll(By.css('thead th'));
+  }
+
+  it('puts a sort button on exactly the 이름, 상태, 순 and 세례 headers', () => {
+    const { fixture } = setup();
+    const sortable = headers(fixture).map(th => th.query(By.css('button')) !== null);
+
+    // 이름, 상태, 순, 양육, 사역, 세례, 최근 활동
+    expect(sortable.slice(0, 7)).toEqual([true, true, true, false, false, true, false]);
+  });
+
+  it('sends the column property to the service on click', () => {
+    const { fixture, service } = setup();
+    const toggleSort = spyOn(service, 'toggleSort');
+
+    headers(fixture)[5].query(By.css('button')).nativeElement.click();
+
+    expect(toggleSort).toHaveBeenCalledWith('baptism');
+  });
+
+  it('marks only the sorted header with aria-sort and a direction icon', () => {
+    const { fixture, service } = setup();
+    service.sort.set({ property: 'groupName', direction: 'desc' });
+    fixture.detectChanges();
+
+    const ths = headers(fixture);
+    expect(ths[2].attributes['aria-sort']).toBe('descending');
+    expect(ths[2].query(By.css('i')).nativeElement.className).toContain('pi-sort-amount-down');
+    expect(ths[0].attributes['aria-sort']).toBe('none');
+    expect(ths[0].query(By.css('i')).nativeElement.className).toContain('pi-sort-alt');
+    expect(ths[3].attributes['aria-sort']).toBeUndefined();
+
+    service.sort.set({ property: 'groupName', direction: 'asc' });
+    fixture.detectChanges();
+    expect(ths[2].attributes['aria-sort']).toBe('ascending');
   });
 });

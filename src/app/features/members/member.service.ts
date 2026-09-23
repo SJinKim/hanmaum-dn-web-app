@@ -26,6 +26,18 @@ import {
  */
 export const UNASSIGNED_GROUP = '__UNASSIGNED__';
 
+/**
+ * The columns `GET /members` can sort by. The server answers any other property
+ * with 400, and 양육, 사역 and 최근 활동 are deliberately not sortable (#68).
+ */
+export type MemberSortProperty = 'lastName' | 'memberStatus' | 'groupName' | 'baptism';
+
+/** One column in one direction — sent as `sort=<property>,<direction>`. */
+export interface MemberSort {
+  readonly property: MemberSortProperty;
+  readonly direction: 'asc' | 'desc';
+}
+
 @Injectable({ providedIn: 'root' })
 export class MemberService {
   private readonly api             = inject(ApiService);
@@ -47,6 +59,8 @@ export class MemberService {
   /** Catalog `code` of the course, never its display name. */
   readonly training = signal<string | null>(null);
   readonly ministry = signal<string | null>(null);
+  /** Null sends no `sort`; the server then orders by name. */
+  readonly sort     = signal<MemberSort | null>(null);
   readonly page    = signal(0);
   readonly size    = signal(20);
 
@@ -74,6 +88,7 @@ export class MemberService {
             group:    this.group(),
             training: this.training(),
             ministry: this.ministry(),
+            sort:     this.sort(),
             page:    this.page(),
             size:    this.size(),
           }).pipe(catchError(() => of(null))),
@@ -136,6 +151,19 @@ export class MemberService {
     this.loadMembers();
   }
 
+  /**
+   * A header click: a new column starts ascending, the current one flips
+   * direction. There is no "off" state — the name fallback is only the default.
+   * Like a filter change it returns to page 0; the filters stay.
+   */
+  toggleSort(property: MemberSortProperty): void {
+    const current = this.sort();
+    const direction = current?.property === property && current.direction === 'asc' ? 'desc' : 'asc';
+    this.sort.set({ property, direction });
+    this.page.set(0);
+    this.loadMembers();
+  }
+
   setPage(value: number): void {
     if (value < 0) return;
     this.page.set(value);
@@ -162,9 +190,8 @@ export class MemberService {
 
   /**
    * Every filter is a real query parameter of `MemberController.listMembers`
-   * (hanmaum-dn-server#196); nothing is filtered in the client. `sort` exists
-   * on the server but is not sent — the list keeps its `lastName ASC` default.
-   * There is no parameter for 최근 활동 (`updatedAt`) yet, so that column has
+   * (hanmaum-dn-server#196); nothing is filtered or sorted in the client.
+   * `sort` goes out only once a header was clicked (#68). There is no parameter for 최근 활동 (`updatedAt`) yet, so that column has
    * no filter.
    */
   getMembers(params: {
@@ -174,6 +201,7 @@ export class MemberService {
     group?: string | null;
     training?: string | null;
     ministry?: string | null;
+    sort?: MemberSort | null;
     page?: number;
     size?: number;
   }): Observable<PageResponse<MemberSummary>> {
@@ -190,6 +218,7 @@ export class MemberService {
     else if (params.group)                 qp['groupPublicId']  = params.group;
     if (params.training)                   qp['trainingCode']     = params.training;
     if (params.ministry)                   qp['ministryPublicId'] = params.ministry;
+    if (params.sort)                       qp['sort'] = `${params.sort.property},${params.sort.direction}`;
     return this.api.get<PageResponse<MemberSummary>>('/v1/members', qp);
   }
 

@@ -54,13 +54,66 @@ describe('MemberService — 청년 list state (#53)', () => {
     expect(service.listFailed()).toBeFalse();
   });
 
-  it('never sends role or sort — the server ignores both (hanmaum-dn-server#196)', () => {
+  it('never sends role, and no sort until a header was clicked', () => {
     service.setSearch('김');
     const url = flushList();
 
     expect(url).toContain('search=');
     expect(url).not.toContain('role=');
     expect(url).not.toContain('sort=');
+  });
+
+  // #68: 이름, 상태, 순 and 세례 sort on the server.
+  it('sorts a new column ascending, then flips it on the next click', () => {
+    service.toggleSort('groupName');
+    expect(flushList()).toContain('sort=groupName,asc');
+
+    service.toggleSort('groupName');
+    expect(flushList()).toContain('sort=groupName,desc');
+
+    service.toggleSort('groupName');
+    expect(flushList()).toContain('sort=groupName,asc');
+  });
+
+  it('starts a different column ascending again', () => {
+    service.toggleSort('baptism');
+    flushList();
+    service.toggleSort('baptism');
+    flushList();
+
+    service.toggleSort('memberStatus');
+    const url = flushList();
+
+    expect(url).toContain('sort=memberStatus,asc');
+    expect(url).not.toContain('baptism');
+  });
+
+  it('returns to page 0 on a sort change but keeps the filters', () => {
+    service.setStatus('ACTIVE');
+    flushList();
+    service.setPage(2);
+    flushList();
+
+    service.toggleSort('lastName');
+    const url = flushList();
+
+    expect(service.page()).toBe(0);
+    expect(url).toContain('page=0');
+    expect(url).toContain('status=ACTIVE');
+  });
+
+  it('keeps the sort across page changes, filter changes and a filter reset', () => {
+    service.toggleSort('lastName');
+    flushList();
+    service.toggleSort('lastName');
+    flushList();
+
+    service.setPage(1);
+    expect(flushList()).toContain('sort=lastName,desc');
+    service.setBaptism('GENERAL_BAPTIZED');
+    expect(flushList()).toContain('sort=lastName,desc');
+    service.resetFilters();
+    expect(flushList()).toContain('sort=lastName,desc');
   });
 
   it('resets to page 0 when a filter changes', () => {
