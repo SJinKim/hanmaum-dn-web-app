@@ -20,6 +20,12 @@ import {
   MemberMinistryItem,
 } from '../../core/models/member-activity.model';
 
+/**
+ * 순 filter value for "no group". `GET /members` takes it as `unassigned=true`, a
+ * separate flag rather than a group id — the select needs one value for both.
+ */
+export const UNASSIGNED_GROUP = '__UNASSIGNED__';
+
 @Injectable({ providedIn: 'root' })
 export class MemberService {
   private readonly api             = inject(ApiService);
@@ -36,6 +42,11 @@ export class MemberService {
   readonly search  = signal('');
   readonly status  = signal<MemberStatus | null>(null);
   readonly baptism = signal<Baptism | null>(null);
+  /** A group `publicId`, {@link UNASSIGNED_GROUP}, or null for every group. */
+  readonly group    = signal<string | null>(null);
+  /** Catalog `code` of the course, never its display name. */
+  readonly training = signal<string | null>(null);
+  readonly ministry = signal<string | null>(null);
   readonly page    = signal(0);
   readonly size    = signal(20);
 
@@ -60,6 +71,9 @@ export class MemberService {
             search:  this.search(),
             status:  this.status(),
             baptism: this.baptism(),
+            group:    this.group(),
+            training: this.training(),
+            ministry: this.ministry(),
             page:    this.page(),
             size:    this.size(),
           }).pipe(catchError(() => of(null))),
@@ -104,6 +118,24 @@ export class MemberService {
     this.loadMembers();
   }
 
+  setGroup(value: string | null): void {
+    this.group.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setTraining(value: string | null): void {
+    this.training.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setMinistry(value: string | null): void {
+    this.ministry.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
   setPage(value: number): void {
     if (value < 0) return;
     this.page.set(value);
@@ -114,6 +146,9 @@ export class MemberService {
     this.search.set('');
     this.status.set(null);
     this.baptism.set(null);
+    this.group.set(null);
+    this.training.set(null);
+    this.ministry.set(null);
     this.page.set(0);
     this.loadMembers();
   }
@@ -126,16 +161,19 @@ export class MemberService {
   }
 
   /**
-   * `MemberController.listMembers` knows exactly these five parameters. `role`
-   * and `sort` were sent before and silently ignored — the list only appeared to
-   * filter and sort by them because it loaded everything at once and did the
-   * work in the client. Filtering by 순/양육/사역 and any sort beyond
-   * `lastName ASC` need server support: hanmaum-dn-server#196.
+   * Every filter is a real query parameter of `MemberController.listMembers`
+   * (hanmaum-dn-server#196); nothing is filtered in the client. `sort` exists
+   * on the server but is not sent — the list keeps its `lastName ASC` default.
+   * There is no parameter for 최근 활동 (`updatedAt`) yet, so that column has
+   * no filter.
    */
   getMembers(params: {
     search?: string;
     status?: MemberStatus | null;
     baptism?: Baptism | null;
+    group?: string | null;
+    training?: string | null;
+    ministry?: string | null;
     page?: number;
     size?: number;
   }): Observable<PageResponse<MemberSummary>> {
@@ -146,6 +184,12 @@ export class MemberService {
     if (params.search?.trim()) qp['search']  = params.search.trim();
     if (params.status)         qp['status']  = params.status;
     if (params.baptism)        qp['baptism'] = params.baptism;
+    // The server rejects `groupPublicId` together with `unassigned=true` (400),
+    // so exactly one of the two goes out.
+    if (params.group === UNASSIGNED_GROUP) qp['unassigned']     = true;
+    else if (params.group)                 qp['groupPublicId']  = params.group;
+    if (params.training)                   qp['trainingCode']     = params.training;
+    if (params.ministry)                   qp['ministryPublicId'] = params.ministry;
     return this.api.get<PageResponse<MemberSummary>>('/v1/members', qp);
   }
 

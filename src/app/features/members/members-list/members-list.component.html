@@ -26,10 +26,10 @@
       [placeholder]="'members.search.placeholder' | translate" />
 
     <!--
-      Only 상태 and 세례 filter here: 순/양육/사역 need server-side parameters
-      the members endpoint does not accept yet (hanmaum-dn-server#196). The old
-      list only appeared to filter by them because it loaded every member at
-      once and filtered in the client.
+      One select per column, in column order; 이름 is the search field. Every
+      one is a server-side query parameter (hanmaum-dn-server#196) — nothing is
+      filtered in the client. 최근 활동 has none: the endpoint takes no
+      `updatedAt` range yet. The filter row wraps rather than scrolls.
     -->
     <p-select
       appFilters
@@ -40,6 +40,33 @@
       [ngModel]="status()"
       (ngModelChange)="onStatusChange($event)"
       [ariaLabel]="'members.filters.status' | translate" />
+    <p-select
+      appFilters
+      size="small"
+      optionLabel="label"
+      optionValue="value"
+      [options]="groupFilterOptions()"
+      [ngModel]="group()"
+      (ngModelChange)="onGroupChange($event)"
+      [ariaLabel]="'members.filters.group' | translate" />
+    <p-select
+      appFilters
+      size="small"
+      optionLabel="label"
+      optionValue="value"
+      [options]="trainingFilterOptions()"
+      [ngModel]="training()"
+      (ngModelChange)="onTrainingChange($event)"
+      [ariaLabel]="'members.filters.training' | translate" />
+    <p-select
+      appFilters
+      size="small"
+      optionLabel="label"
+      optionValue="value"
+      [options]="ministryFilterOptions()"
+      [ngModel]="ministry()"
+      (ngModelChange)="onMinistryChange($event)"
+      [ariaLabel]="'members.filters.ministry' | translate" />
     <p-select
       appFilters
       size="small"

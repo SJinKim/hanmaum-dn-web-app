@@ -245,6 +245,12 @@
     "filters": {
       "status": "상태",
       "statusAll": "상태 전체",
+      "group": "순",
+      "groupAll": "순 전체",
+      "training": "양육",
+      "trainingAll": "양육 전체",
+      "ministry": "사역",
+      "ministryAll": "사역 전체",
       "baptism": "세례",
       "baptismAll": "세례 전체"
     },
