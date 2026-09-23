@@ -1,6 +1,12 @@
 {
   "common": {
-    "none": "(None)"
+    "none": "(None)",
+    "unsavedChanges": {
+      "header": "Unsaved changes",
+      "message": "You have unsaved changes. Leaving this page will discard them.",
+      "leave": "Leave",
+      "stay": "Cancel"
+    }
   },
   "nav": {
     "groups": {

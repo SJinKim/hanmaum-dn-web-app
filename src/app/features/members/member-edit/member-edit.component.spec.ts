@@ -1,13 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
+import { provideRouter, ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { provideTranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { ConfirmationService } from 'primeng/api';
+import { of, throwError } from 'rxjs';
 
 import { MemberEditComponent } from './member-edit.component';
 import { MemberService } from '../member.service';
+import { UNSAVED_CHANGES_DIALOG_KEY } from '../../../core/guards/unsaved-changes.guard';
 import {
   MemberMinistryItem,
   MemberTrainingItem,
@@ -25,6 +27,7 @@ describe('MemberEditComponent — ministry editor', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
       ],
     }).compileComponents();
 
@@ -125,6 +128,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: memberServiceStub },
       ],
@@ -155,6 +159,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: memberServiceStub },
       ],
@@ -195,6 +200,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: memberServiceStub },
       ],
@@ -289,6 +295,7 @@ describe('MemberEditComponent — 순장 checkbox', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: stub },
       ],
@@ -409,6 +416,7 @@ describe('MemberEditComponent — training catalog', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: stub },
       ],
@@ -509,6 +517,7 @@ describe('MemberEditComponent — training catalog', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: stub },
       ],
@@ -562,6 +571,7 @@ describe('MemberEditComponent — 양육 / 사역 Zeilen', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: stub },
       ],
@@ -649,5 +659,108 @@ describe('MemberEditComponent — 양육 / 사역 Zeilen', () => {
     fixture.detectChanges();
 
     expect(component.ministries.length).toBe(1);
+  });
+});
+
+// #76: the unsaved-changes guard asks only after a real user edit, never after
+// the form was pre-filled on load, and never once 저장 has gone through.
+describe('MemberEditComponent — unsaved changes', () => {
+  const member = {
+    publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: 'MALE',
+    baptism: null, birthDate: '1995-04-12', phoneNumber: '+4917647384957', email: 'a@b.de',
+    street: null, houseNumber: null, zipCode: null, city: 'Düsseldorf',
+    registrationDate: '2023-09-01', memberStatus: 'ACTIVE', churchRole: null,
+    groupPublicId: 'grp-1', groupName: '믿음', isGroupLeader: true,
+    profileImageUrl: null, trainings: [],
+    ministries: [{ ministryPublicId: 'min1', name: '찬양팀', startDate: '2024-03-01', endDate: null, note: null }],
+  };
+
+  function setup(publicId: string | null) {
+    const stub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([{ publicId: 'min1', title: '찬양팀' }]),
+      getChurchGroups: () => of([{ publicId: 'grp-1', division: 'NEHEMIA', name: '믿음', leaderPublicId: 'm1' }]),
+      getMember: () => of(member),
+      updateMember: () => of(member),
+      createMember: () => of(member),
+      replaceMemberTrainings: () => of(member),
+      replaceMemberMinistries: () => of(member),
+      assignGroupLeader: () => of({}),
+      clearGroupLeader: () => of({}),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(publicId ? { publicId } : {}) } } },
+        { provide: MemberService, useValue: stub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance };
+  }
+
+  it('reports no changes after loading and rendering every tab', () => {
+    const { fixture, component } = setup('m1');
+    // Each tab renders its own controls; none may mark the form dirty on write.
+    for (const tab of [0, 1, 2, 3]) {
+      component.activeTab.set(tab);
+      fixture.detectChanges();
+    }
+    expect(component.form.get('lastName')!.value).toBe('김');
+    expect(component.hasUnsavedChanges()).toBeFalse();
+  });
+
+  it('hosts the dialog the guard opens', () => {
+    const { fixture } = setup('m1');
+    const dialog = fixture.debugElement.query(By.css('p-confirmdialog'));
+    expect(dialog.componentInstance.key).toBe(UNSAVED_CHANGES_DIALOG_KEY);
+  });
+
+  it('reports no changes on an untouched create form', () => {
+    const { component } = setup(null);
+    expect(component.hasUnsavedChanges()).toBeFalse();
+  });
+
+  it('reports changes once the user edits a field', () => {
+    const { fixture, component } = setup('m1');
+    const input: HTMLInputElement = fixture.debugElement.query(By.css('input[formControlName="city"]')).nativeElement;
+    input.value = 'Köln';
+    input.dispatchEvent(new Event('input'));
+    expect(component.hasUnsavedChanges()).toBeTrue();
+  });
+
+  it('reports changes after removing a 사역 row', () => {
+    const { component } = setup('m1');
+    component.removeMinistry(0);
+    expect(component.hasUnsavedChanges()).toBeTrue();
+  });
+
+  it('reports no changes after a successful 저장', () => {
+    const { component } = setup('m1');
+    const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    component.form.get('city')!.markAsDirty();
+    component.form.get('city')!.setValue('Köln');
+
+    component.save();
+
+    expect(navigate).toHaveBeenCalledWith(['/members', 'm1']);
+    expect(component.hasUnsavedChanges()).toBeFalse();
+  });
+
+  it('keeps the changes when 저장 fails', () => {
+    const { component } = setup('m1');
+    spyOn(TestBed.inject(MemberService), 'updateMember').and.returnValue(throwError(() => new Error('500')));
+    component.form.get('city')!.markAsDirty();
+
+    component.save();
+
+    expect(component.hasUnsavedChanges()).toBeTrue();
   });
 });

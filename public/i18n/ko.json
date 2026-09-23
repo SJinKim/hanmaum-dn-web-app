@@ -1,6 +1,12 @@
 {
   "common": {
-    "none": "(없음)"
+    "none": "(없음)",
+    "unsavedChanges": {
+      "header": "변경사항 저장 안 됨",
+      "message": "저장하지 않은 변경사항이 있습니다. 이 페이지를 나가면 변경사항이 사라집니다.",
+      "leave": "나가기",
+      "stay": "취소"
+    }
   },
   "nav": {
     "groups": {

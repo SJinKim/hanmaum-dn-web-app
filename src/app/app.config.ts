@@ -11,6 +11,7 @@ import {
 } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
+import { ConfirmationService } from 'primeng/api';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 
@@ -54,6 +55,8 @@ export const appConfig: ApplicationConfig = {
       loader: provideTranslateHttpLoader({ prefix: '/i18n/', suffix: '.json' }),
     }),
     AuthService,
+    // Root instance for route guards (see unsavedChangesGuard).
+    ConfirmationService,
     {
       provide: APP_INITIALIZER,
       useFactory: initializeKeycloak,

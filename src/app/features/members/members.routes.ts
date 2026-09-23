@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from '../../core/guards/auth.guard';
+import { unsavedChangesGuard } from '../../core/guards/unsaved-changes.guard';
 
 export const MEMBERS_ROUTES: Routes = [
   {
@@ -13,6 +14,7 @@ export const MEMBERS_ROUTES: Routes = [
     canActivate: [adminGuard],
     loadComponent: () =>
       import('./member-edit/member-edit.component').then(m => m.MemberEditComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: ':publicId',
@@ -25,5 +27,6 @@ export const MEMBERS_ROUTES: Routes = [
     canActivate: [adminGuard],
     loadComponent: () =>
       import('./member-edit/member-edit.component').then(m => m.MemberEditComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
 ];
