@@ -238,6 +238,7 @@
     },
     "filters": {
       "status": "상태",
+      "statusAll": "상태 전체",
       "baptism": "세례",
       "baptismAll": "세례 전체"
     },

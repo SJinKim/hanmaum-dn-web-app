@@ -25,7 +25,6 @@ import { BadgeComponent } from '../../../core/ui/badge/badge.component';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { DataRecord } from '../../../core/ui/data-record.model';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
-import { FilterChipComponent } from '../../../core/ui/filter-chip/filter-chip.component';
 import { ListCardComponent } from '../../../core/ui/list-card/list-card.component';
 import { MemberPillComponent } from '../../../core/ui/member-pill/member-pill.component';
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
@@ -35,7 +34,7 @@ import { ToolbarComponent } from '../../../core/ui/toolbar/toolbar.component';
 import { BadgeVariant, MemberPillStage, resolveBadgeVariant } from '../../../core/ui/variant-tokens';
 import { MemberService } from '../member.service';
 
-/** 상태 chips, in the Figma order — not the enum's declaration order. */
+/** 상태 select options, in the Figma order — not the enum's declaration order. */
 const STATUS_FILTERS: readonly MemberStatus[] = ['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED'];
 
 /** 세례 select options, in the catechetical order the church uses. */
@@ -95,7 +94,6 @@ interface TrainingTag {
     PageHeaderComponent,
     ToolbarComponent,
     SearchFieldComponent,
-    FilterChipComponent,
     AvatarComponent,
     BadgeComponent,
     MemberPillComponent,
@@ -135,8 +133,6 @@ export class MembersListComponent implements OnInit {
 
   readonly isPhone = this.breakpoints.isPhone;
 
-  readonly statusFilters = STATUS_FILTERS;
-
   /** Church groups for the approve select; empty until the request lands. */
   private readonly churchGroups = signal<readonly ChurchGroupSummary[]>([]);
   readonly groupOptions = computed(() =>
@@ -150,6 +146,26 @@ export class MembersListComponent implements OnInit {
   /** Search text mirrors the service so a reset clears the field too. */
   readonly searchText = signal(this.memberService.search());
   private readonly searchInput$ = new Subject<string>();
+
+  /**
+   * Re-resolves on language change — `currentLang()` is the dependency — and on
+   * `pendingCount()`, which 대기중 carries in its label the way the chip carried
+   * it as a count pill.
+   */
+  readonly statusOptions = computed(() => {
+    this.translate.currentLang();
+    const pending = this.pendingCount();
+    return [
+      { label: this.translate.instant('members.filters.statusAll'), value: null },
+      ...STATUS_FILTERS.map(value => {
+        const label = this.translate.instant(`members.status.${value}`);
+        return {
+          label: value === 'PENDING' ? `${label} (${pending})` : label,
+          value: value as MemberStatus | null,
+        };
+      }),
+    ];
+  });
 
   /** Re-resolves on language change — `currentLang()` is the dependency. */
   readonly baptismOptions = computed(() => {
@@ -242,8 +258,8 @@ export class MembersListComponent implements OnInit {
     this.memberService.setSearch('');
   }
 
-  toggleStatus(value: MemberStatus, selected: boolean): void {
-    this.memberService.setStatus(selected ? value : null);
+  onStatusChange(value: MemberStatus | null): void {
+    this.memberService.setStatus(value);
   }
 
   onBaptismChange(value: Baptism | null): void {
