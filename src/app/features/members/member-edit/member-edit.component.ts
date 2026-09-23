@@ -20,6 +20,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -63,6 +64,7 @@ import {
   normalizeToE164,
   parseE164,
 } from '../../../core/models/phone.util';
+import { HasUnsavedChanges, UNSAVED_CHANGES_DIALOG_KEY } from '../../../core/guards/unsaved-changes.guard';
 
 /** Validates the mobile number against the country chosen in the sibling control. Empty = valid (phone is optional). */
 const mobileValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
@@ -84,6 +86,7 @@ const mobileValidator: ValidatorFn = (control: AbstractControl): ValidationError
     CheckboxModule,
     TabsModule,
     ToastModule,
+    ConfirmDialogModule,
     TooltipModule,
     TranslatePipe,
     PageHeaderComponent,
@@ -93,7 +96,7 @@ const mobileValidator: ValidatorFn = (control: AbstractControl): ValidationError
   providers: [MessageService],
   templateUrl: './member-edit.component.html',
 })
-export class MemberEditComponent implements OnInit {
+export class MemberEditComponent implements OnInit, HasUnsavedChanges {
   private readonly memberService = inject(MemberService);
   private readonly route         = inject(ActivatedRoute);
   private readonly router        = inject(Router);
@@ -101,6 +104,9 @@ export class MemberEditComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly destroyRef    = inject(DestroyRef);
   private readonly translate     = inject(TranslateService);
+
+  /** Key of the dialog the unsaved-changes guard opens; rendered at the end of the template. */
+  readonly unsavedChangesDialogKey = UNSAVED_CHANGES_DIALOG_KEY;
 
   readonly isEdit     = signal(false);
   readonly loading    = signal(false);
@@ -213,6 +219,14 @@ export class MemberEditComponent implements OnInit {
   private originalIsGroupLeader = false;
   private originalGroupPublicId: string | null = null;
   private leaderPersistError: 'assign' | 'clear' | null = null;
+
+  /**
+   * Only user edits count: `patchValue` while loading never marks the form dirty,
+   * and a successful save resets it to pristine before navigating away.
+   */
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty;
+  }
 
   /** Country name used in the phone validation message. */
   get phoneCountryName(): string {
@@ -391,6 +405,8 @@ export class MemberEditComponent implements OnInit {
             this.messageService.add({ severity: 'error', summary: '오류', detail: '순장 해제에 실패했습니다.' });
           }
           this.saving.set(false);
+          // Everything is persisted — leaving now must not trigger the unsaved-changes guard.
+          this.form.markAsPristine();
           this.router.navigate(['/members', saved.publicId]);
         },
         error: () => {
@@ -570,8 +586,15 @@ export class MemberEditComponent implements OnInit {
 
   // --- Ministry cards ---
 
-  addMinistry(): void { this.ministries.push(this.newMinistryGroup()); }
-  removeMinistry(index: number): void { this.ministries.removeAt(index); }
+  addMinistry(): void {
+    this.ministries.push(this.newMinistryGroup());
+    this.ministries.markAsDirty();
+  }
+
+  removeMinistry(index: number): void {
+    this.ministries.removeAt(index);
+    this.ministries.markAsDirty();
+  }
 
   /**
    * The row has no "laufend" checkbox (Figma 556:27121, DESIGN.md §9.1): an empty
