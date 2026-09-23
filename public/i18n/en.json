@@ -152,8 +152,6 @@
       "createSubtitle": "Enter the basic details of the new member.",
       "editSubtitle": "Update this member's details.",
       "submit": "Save",
-      "yearOption": "{{value}}",
-      "monthOption": "{{value}}",
       "tabs": {
         "basic": "Basic",
         "church": "Church",
@@ -164,8 +162,6 @@
         "course": "Training course",
         "status": "Status",
         "completedAt": "Completed on",
-        "completedYearAria": "Completion year",
-        "completedMonthAria": "Completion month",
         "add": "Add training",
         "remove": "Remove training",
         "emptyHeading": "No trainings yet",
@@ -175,10 +171,6 @@
         "name": "Ministry",
         "startDate": "Start date",
         "endDate": "End date",
-        "startYearAria": "Start year",
-        "startMonthAria": "Start month",
-        "endYearAria": "End year",
-        "endMonthAria": "End month",
         "add": "Add ministry",
         "remove": "Remove ministry",
         "emptyHeading": "No ministries yet",
@@ -198,8 +190,7 @@
         "houseNumber": "No.",
         "zipCode": "ZIP code",
         "city": "City",
-        "registrationYear": "Registration year",
-        "registrationMonth": "Registration month"
+        "registrationDate": "Registration date"
       },
       "placeholders": {
         "select": "Select",
