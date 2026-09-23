@@ -152,8 +152,6 @@
       "createSubtitle": "새 청년의 기본 정보를 입력하세요.",
       "editSubtitle": "청년의 정보를 수정합니다.",
       "submit": "저장",
-      "yearOption": "{{value}}년",
-      "monthOption": "{{value}}월",
       "tabs": {
         "basic": "기본 정보",
         "church": "교회",
@@ -164,8 +162,6 @@
         "course": "양육 과정",
         "status": "상태",
         "completedAt": "수료일",
-        "completedYearAria": "수료 연도",
-        "completedMonthAria": "수료 월",
         "add": "양육 추가",
         "remove": "양육 삭제",
         "emptyHeading": "등록된 양육이 없습니다",
@@ -175,10 +171,6 @@
         "name": "사역",
         "startDate": "시작일",
         "endDate": "종료일",
-        "startYearAria": "시작 연도",
-        "startMonthAria": "시작 월",
-        "endYearAria": "종료 연도",
-        "endMonthAria": "종료 월",
         "add": "사역 추가",
         "remove": "사역 삭제",
         "emptyHeading": "등록된 사역이 없습니다",
@@ -198,8 +190,7 @@
         "houseNumber": "번지",
         "zipCode": "우편번호",
         "city": "도시",
-        "registrationYear": "등록 연도",
-        "registrationMonth": "등록 월"
+        "registrationDate": "등록일"
       },
       "placeholders": {
         "select": "선택",

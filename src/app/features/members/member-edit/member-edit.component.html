@@ -247,34 +247,19 @@
                   </div>
                 </div>
 
-                <!-- 등록일: Figma shows 연도 + 월; the API takes a date, so the day is the 1st. -->
-                <div class="flex gap-[var(--space-12)]">
-                  <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
-                    <label for="memberRegistrationYear" class="type-caption text-ink-muted">
-                      {{ 'members.edit.fields.registrationYear' | translate }}
-                    </label>
-                    <p-select
-                      inputId="memberRegistrationYear"
-                      formControlName="registrationYear"
-                      [options]="registrationYearOptions()"
-                      optionLabel="label"
-                      optionValue="value"
-                      [placeholder]="'members.edit.placeholders.select' | translate"
-                      styleClass="w-full" />
-                  </div>
-                  <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
-                    <label for="memberRegistrationMonth" class="type-caption text-ink-muted">
-                      {{ 'members.edit.fields.registrationMonth' | translate }}
-                    </label>
-                    <p-select
-                      inputId="memberRegistrationMonth"
-                      formControlName="registrationMonth"
-                      [options]="registrationMonthOptions()"
-                      optionLabel="label"
-                      optionValue="value"
-                      [placeholder]="'members.edit.placeholders.select' | translate"
-                      styleClass="w-full" />
-                  </div>
+                <div class="flex flex-col gap-[var(--space-4)]">
+                  <label for="memberRegistrationDate" class="type-caption text-ink-muted">
+                    {{ 'members.edit.fields.registrationDate' | translate }}
+                  </label>
+                  <p-datepicker
+                    inputId="memberRegistrationDate"
+                    formControlName="registrationDate"
+                    dateFormat="yy-mm-dd"
+                    placeholder="YYYY-MM-DD"
+                    [showIcon]="true"
+                    [showClear]="true"
+                    appendTo="body"
+                    styleClass="w-full" />
                 </div>
               </div>
             </div>
@@ -373,36 +358,25 @@
                       </div>
 
                       <!--
-                        Die API kennt nur Monat + Jahr (Tag auf den 1. gepinnt),
-                        deshalb steht in der 수료일-Spalte ein Select-Paar statt
-                        eines Datumsfeldes. Solange der Status nicht 수료 ist,
-                        sind beide Controls disabled und damit leer.
+                        수료일 ist wie in Figma (555:26766) ein Datumsfeld mit Kalender;
+                        die API nimmt ein volles Datum. Solange der Status nicht 수료
+                        ist, bleibt das Feld disabled und damit leer.
                       -->
                       <div class="flex min-w-px flex-[1_0_0] flex-col gap-[var(--space-4)]">
                         @if ($first) {
-                          <label [for]="'memberTrainingYear-' + i" class="type-caption text-ink-muted">
+                          <label [for]="'memberTrainingCompletedAt-' + i" class="type-caption text-ink-muted">
                             {{ 'members.edit.training.completedAt' | translate }}
                           </label>
                         }
-                        <div class="flex items-center gap-[var(--space-4)]">
-                          <p-select
-                            [inputId]="'memberTrainingYear-' + i"
-                            formControlName="year"
-                            [options]="activityYearOptions()"
-                            optionLabel="label"
-                            optionValue="value"
-                            [placeholder]="'members.edit.placeholders.select' | translate"
-                            [ariaLabel]="'members.edit.training.completedYearAria' | translate"
-                            styleClass="min-w-px flex-1" />
-                          <p-select
-                            formControlName="month"
-                            [options]="activityMonthOptions()"
-                            optionLabel="label"
-                            optionValue="value"
-                            [placeholder]="'members.edit.placeholders.select' | translate"
-                            [ariaLabel]="'members.edit.training.completedMonthAria' | translate"
-                            styleClass="min-w-px flex-1" />
-                        </div>
+                        <p-datepicker
+                          [inputId]="'memberTrainingCompletedAt-' + i"
+                          formControlName="completedAt"
+                          dateFormat="yy-mm-dd"
+                          placeholder="YYYY-MM-DD"
+                          [showIcon]="true"
+                          [ariaLabel]="'members.edit.training.completedAt' | translate"
+                          appendTo="body"
+                          styleClass="w-full" />
                       </div>
 
                       <button
@@ -463,65 +437,41 @@
                           styleClass="w-full" />
                       </div>
 
+                      <!-- 시작일/종료일 wie in Figma (556:27121) als Datumsfeld mit Kalender. -->
                       <div class="flex min-w-px flex-[1_0_0] flex-col gap-[var(--space-4)]">
                         @if ($first) {
-                          <label [for]="'memberMinistryStartYear-' + i" class="type-caption text-ink-muted">
+                          <label [for]="'memberMinistryStartDate-' + i" class="type-caption text-ink-muted">
                             {{ 'members.edit.ministry.startDate' | translate }}
                           </label>
                         }
-                        <div class="flex items-center gap-[var(--space-4)]">
-                          <p-select
-                            [inputId]="'memberMinistryStartYear-' + i"
-                            formControlName="startYear"
-                            [options]="activityYearOptions()"
-                            optionLabel="label"
-                            optionValue="value"
-                            [placeholder]="'members.edit.placeholders.select' | translate"
-                            [ariaLabel]="'members.edit.ministry.startYearAria' | translate"
-                            styleClass="min-w-px flex-1" />
-                          <p-select
-                            formControlName="startMonth"
-                            [options]="activityMonthOptions()"
-                            optionLabel="label"
-                            optionValue="value"
-                            [placeholder]="'members.edit.placeholders.select' | translate"
-                            [ariaLabel]="'members.edit.ministry.startMonthAria' | translate"
-                            styleClass="min-w-px flex-1" />
-                        </div>
+                        <p-datepicker
+                          [inputId]="'memberMinistryStartDate-' + i"
+                          formControlName="startDate"
+                          dateFormat="yy-mm-dd"
+                          placeholder="YYYY-MM-DD"
+                          [showIcon]="true"
+                          [ariaLabel]="'members.edit.ministry.startDate' | translate"
+                          appendTo="body"
+                          styleClass="w-full" />
                       </div>
 
-                      <!-- Leeres 종료일 = laufend; deshalb gibt es keine „ongoing"-Checkbox mehr. -->
+                      <!-- Leeres 종료일 = laufend; deshalb gibt es keine „ongoing"-Checkbox. -->
                       <div class="flex min-w-px flex-[1_0_0] flex-col gap-[var(--space-4)]">
                         @if ($first) {
-                          <label [for]="'memberMinistryEndYear-' + i" class="type-caption text-ink-muted">
+                          <label [for]="'memberMinistryEndDate-' + i" class="type-caption text-ink-muted">
                             {{ 'members.edit.ministry.endDate' | translate }}
                           </label>
                         }
-                        <div class="flex items-center gap-[var(--space-4)]">
-                          <p-select
-                            [inputId]="'memberMinistryEndYear-' + i"
-                            formControlName="endYear"
-                            [options]="activityYearOptions()"
-                            optionLabel="label"
-                            optionValue="value"
-                            [showClear]="true"
-                            [placeholder]="'members.edit.placeholders.select' | translate"
-                            [ariaLabel]="'members.edit.ministry.endYearAria' | translate"
-                            (onChange)="onMinistryEndChange(i)"
-                            (onClear)="onMinistryEndChange(i)"
-                            styleClass="min-w-px flex-1" />
-                          <p-select
-                            formControlName="endMonth"
-                            [options]="activityMonthOptions()"
-                            optionLabel="label"
-                            optionValue="value"
-                            [showClear]="true"
-                            [placeholder]="'members.edit.placeholders.select' | translate"
-                            [ariaLabel]="'members.edit.ministry.endMonthAria' | translate"
-                            (onChange)="onMinistryEndChange(i)"
-                            (onClear)="onMinistryEndChange(i)"
-                            styleClass="min-w-px flex-1" />
-                        </div>
+                        <p-datepicker
+                          [inputId]="'memberMinistryEndDate-' + i"
+                          formControlName="endDate"
+                          dateFormat="yy-mm-dd"
+                          placeholder="YYYY-MM-DD"
+                          [showIcon]="true"
+                          [showClear]="true"
+                          [ariaLabel]="'members.edit.ministry.endDate' | translate"
+                          appendTo="body"
+                          styleClass="w-full" />
                       </div>
 
                       <button

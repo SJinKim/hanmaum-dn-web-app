@@ -32,98 +32,66 @@ describe('MemberEditComponent — ministry editor', () => {
     component = fixture.componentInstance;
   });
 
-  it('addMinistry() pushes a card with ongoing=true; removeMinistry(0) empties the array', () => {
+  it('addMinistry() pushes an empty card; removeMinistry(0) empties the array', () => {
     expect(component.ministries.length).toBe(0);
 
     component.addMinistry();
     expect(component.ministries.length).toBe(1);
-    expect(component.ministries.at(0).get('ongoing')!.value).toBeTrue();
+    expect(component.ministries.at(0).get('endDate')!.value).toBeNull();
 
     component.removeMinistry(0);
     expect(component.ministries.length).toBe(0);
   });
 
-  it('derives ongoing=false from a filled 종료일 (#75: no checkbox any more)', () => {
+  it('collectMinistryItems() maps an empty 종료일 to an ongoing PUT item', () => {
     component.addMinistry();
-    const group = component.ministries.at(0);
-
-    // The end date is always editable — there is nothing left to unlock first.
-    expect(group.get('endMonth')!.enabled).toBeTrue();
-    expect(group.get('endYear')!.enabled).toBeTrue();
-    expect(group.get('ongoing')!.value).toBeTrue();
-
-    group.patchValue({ endYear: 2025, endMonth: 11 });
-    component.onMinistryEndChange(0);
-
-    expect(group.get('ongoing')!.value).toBeFalse();
-  });
-
-  it('collectMinistryItems() maps an ongoing card to the correct PUT item', () => {
-    component.addMinistry();
-    const group = component.ministries.at(0);
-    group.patchValue({
+    component.ministries.at(0).patchValue({
       ministryPublicId: 'abc',
-      startMonth: 3,
-      startYear: 2024,
-      ongoing: true,
+      startDate: new Date(2024, 2, 15),
     });
 
     const items: MemberMinistryItem[] = component['collectMinistryItems']();
 
     expect(items).toEqual([{
       ministryPublicId: 'abc',
-      startDate: '2024-03-01',
+      startDate: '2024-03-15',
       endDate: null,
       note: null,
     }]);
   });
 
-  it('clearing the 종료일 makes the assignment ongoing again', () => {
+  it('collectMinistryItems() sends the picked day of a finished row and drops a row without 시작일', () => {
     component.addMinistry();
-    const group = component.ministries.at(0);
-
-    group.patchValue({ endMonth: 11, endYear: 2025 });
-    component.onMinistryEndChange(0);
-    expect(group.get('ongoing')!.value).toBeFalse();
-
-    // Clearing one half is enough — a half-filled end date is not a date.
-    group.get('endMonth')!.setValue(null);
-    component.onMinistryEndChange(0);
-
-    expect(group.get('ongoing')!.value).toBeTrue();
-  });
-
-  it('collectMinistryItems() maps a finished row to a real endDate and keeps a half-filled one as ongoing', () => {
-    // Row with an end date → endDate populated.
-    component.addMinistry();
-    const finished = component.ministries.at(0);
-    finished.patchValue({
+    component.ministries.at(0).patchValue({
       ministryPublicId: 'abc',
-      startMonth: 3,
-      startYear: 2024,
-      endMonth: 5,
-      endYear: 2025,
+      startDate: new Date(2024, 2, 15),
+      endDate: new Date(2025, 4, 31),
     });
-    component.onMinistryEndChange(0);
-
-    // Row with only half an end date → still laufend, so it is persisted with endDate null
-    // instead of being dropped. Without the checkbox an empty 종료일 has a meaning.
     component.addMinistry();
-    const halfFilled = component.ministries.at(1);
-    halfFilled.patchValue({ ministryPublicId: 'def', startMonth: 1, startYear: 2023, endYear: 2025 });
-    component.onMinistryEndChange(1);
+    component.ministries.at(1).patchValue({ ministryPublicId: 'def' });
 
     const items: MemberMinistryItem[] = component['collectMinistryItems']();
 
     expect(items).toEqual([
-      { ministryPublicId: 'abc', startDate: '2024-03-01', endDate: '2025-05-01', note: null },
-      { ministryPublicId: 'def', startDate: '2023-01-01', endDate: null, note: null },
+      { ministryPublicId: 'abc', startDate: '2024-03-15', endDate: '2025-05-31', note: null },
     ]);
+  });
+
+  it('clearing the 종료일 makes the assignment ongoing again', () => {
+    component.addMinistry();
+    const group = component.ministries.at(0);
+    group.patchValue({ ministryPublicId: 'abc', startDate: new Date(2024, 2, 15), endDate: new Date(2025, 10, 3) });
+
+    // PrimeNG showClear sets the control to null.
+    group.get('endDate')!.setValue(null);
+
+    const items: MemberMinistryItem[] = component['collectMinistryItems']();
+    expect(items[0].endDate).toBeNull();
   });
 });
 
 // Reproduction of the reported bug: a member loaded with an ONGOING ministry, edited
-// via the real rendered checkbox to a finished (To month/year) assignment, must persist
+// with a picked 종료일 to a finished assignment, must persist
 // the endDate. Drives the actual DOM through a stubbed MemberService (no HTTP matching).
 describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', () => {
   const memberWithOngoing = {
@@ -166,7 +134,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     return fixture;
   }
 
-  it('round-trips 등록일 through the 연도/월 selects and back to a first-of-month date', () => {
+  it('round-trips 등록일 through the datepicker and back to an ISO date', () => {
     const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of(memberWithOngoing));
     const registered = { ...memberWithOngoing, registrationDate: '2019-04-01' };
     const memberServiceStub = {
@@ -195,16 +163,15 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
-    // Reverse-fill: the stored date becomes the two selects.
-    expect(component.form.get('registrationYear')!.value).toBe(2019);
-    expect(component.form.get('registrationMonth')!.value).toBe(4);
+    // Reverse-fill: the stored date becomes a local Date for the datepicker.
+    expect(component.form.get('registrationDate')!.value).toEqual(new Date(2019, 3, 1));
 
-    // The user picks another month; the day stays pinned to the 1st.
-    component.form.get('registrationMonth')!.setValue(11);
+    // The user picks any day; it is sent as-is.
+    component.form.get('registrationDate')!.setValue(new Date(2019, 10, 17));
     component.save();
 
     const req = updateSpy.calls.mostRecent().args[1] as { registrationDate?: string };
-    expect(req.registrationDate).toBe('2019-11-01');
+    expect(req.registrationDate).toBe('2019-11-17');
   });
 
   it('sends groupPublicId="" when a loaded group is cleared, so the backend removes it', () => {
@@ -254,9 +221,9 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
 
     expect(component.ministries.length).toBe(1);
     const card = component.ministries.at(0);
-    expect(card.get('ongoing')!.value).toBeTrue();
-    // #75 dropped the „laufend"-Häkchen: the end date is editable from the start.
-    expect(card.get('endMonth')!.enabled).toBeTrue();
+    expect(card.get('endDate')!.value).toBeNull();
+    // Loaded ISO dates become local calendar dates.
+    expect(card.get('startDate')!.value).toEqual(new Date(2024, 2, 1));
 
     // 사역 sits in its own tab now. `p-tabpanel` is not lazy, so the row is in the
     // DOM either way — activating the tab keeps the test honest about what the user
@@ -266,20 +233,18 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
 
     expect(fixture.debugElement.query(By.css('#memberMinistryOngoing-0')))
       .withContext('the ongoing checkbox must be gone').toBeNull();
-    expect(fixture.debugElement.query(By.css('#memberMinistryEndYear-0')))
-      .withContext('the 종료일 row should render a year select').toBeTruthy();
+    expect(fixture.debugElement.query(By.css('#memberMinistryEndDate-0')))
+      .withContext('the 종료일 row should render a date picker').toBeTruthy();
 
-    // User picks 종료일, which derives ongoing=false, then saves.
-    card.get('endYear')!.setValue(2025);
-    card.get('endMonth')!.setValue(11);
-    component.onMinistryEndChange(0);
-    expect(card.get('ongoing')!.value).toBeFalse();
+    // User picks a 종료일 on the calendar, then saves.
+    card.get('endDate')!.setValue(new Date(2025, 10, 17));
+    card.markAsDirty();
     component.save();
 
     expect(replaceSpy).toHaveBeenCalled();
     const items = replaceSpy.calls.mostRecent().args[1] as MemberMinistryItem[];
     expect(items.length).toBe(1);
-    expect(items[0].endDate).withContext('endDate must be persisted, not null').toBe('2025-11-01');
+    expect(items[0].endDate).withContext('endDate must be persisted, not null').toBe('2025-11-17');
   });
 });
 
@@ -459,8 +424,7 @@ describe('MemberEditComponent — training catalog', () => {
     expect(component.trainings.length).toBe(2);
     expect(component.trainings.at(0).get('code')!.value).toBe('QT_BASIC_SEMINAR');
     expect(component.trainings.at(0).get('status')!.value).toBe('COMPLETED');
-    expect(component.trainings.at(0).get('month')!.value).toBe(5);
-    expect(component.trainings.at(0).get('year')!.value).toBe(2023);
+    expect(component.trainings.at(0).get('completedAt')!.value).toEqual(new Date(2023, 4, 1));
     // A status the old two-value model could not represent survives the round trip.
     expect(component.trainings.at(1).get('status')!.value).toBe('APPLIED');
   });
@@ -484,14 +448,15 @@ describe('MemberEditComponent — training catalog', () => {
     // What Angular's value accessor does on a real edit; setValue() alone does not.
     status.markAsDirty();
     component.onTrainingStatusChange(1);
-    component.trainings.at(1).patchValue({ month: 11, year: 2025 });
+    // Any day from the calendar, not just the 1st.
+    component.trainings.at(1).patchValue({ completedAt: new Date(2025, 10, 17) });
     component.save();
 
     expect(replaceTrainingsSpy).toHaveBeenCalled();
     const items = replaceTrainingsSpy.calls.mostRecent().args[1] as MemberTrainingItem[];
     expect(items).toEqual([
       { trainingPublicId: 'p-qtbs', status: 'COMPLETED', completedAt: '2023-05-01' },
-      { trainingPublicId: 'p-1on1', status: 'COMPLETED', completedAt: '2025-11-01' },
+      { trainingPublicId: 'p-1on1', status: 'COMPLETED', completedAt: '2025-11-17' },
     ]);
   });
 

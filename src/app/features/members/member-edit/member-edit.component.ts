@@ -39,8 +39,6 @@ import {
   ChurchGroupSummary,
 } from '../../../core/models/member.model';
 import {
-  MONTH_OPTIONS,
-  YEAR_OPTIONS,
   TRAINING_STATUSES,
   TrainingStatus,
   TrainingFormValue,
@@ -49,13 +47,13 @@ import {
   UserTraining,
   mapUserTrainingToFormValue,
   mapFormValueToItem,
+  localDateToIso,
+  isoToLocalDate,
   trainingOptions,
   MinistryCatalogEntry,
   MemberMinistryItem,
   MinistryFormValue,
   MinistryHistory,
-  monthYearToFirstOfMonth,
-  firstOfMonthToMonthYear,
 } from '../../../core/models/member-activity.model';
 import { injectAppLang } from '../../../core/i18n/language';
 import {
@@ -175,53 +173,10 @@ export class MemberEditComponent implements OnInit {
     ];
   });
 
-  /**
-   * 등록일 is two selects in Figma (등록 연도 / 등록 월) while the API wants a full
-   * date, so the day is pinned to the 1st. `YEAR_OPTIONS` cannot be reused: its
-   * labels are two-digit ("25"), and this field spells the year out.
-   */
-  readonly registrationYearOptions = computed(() => {
-    this.lang();
-    const current = new Date().getFullYear();
-    const years: { value: number; label: string }[] = [];
-    for (let y = current; y >= 2000; y--) {
-      years.push({ value: y, label: this.translate.instant('members.edit.yearOption', { value: y }) as string });
-    }
-    return years;
-  });
-
-  readonly registrationMonthOptions = computed(() => {
-    this.lang();
-    return Array.from({ length: 12 }, (_, i) => ({
-      value: i + 1,
-      label: this.translate.instant('members.edit.monthOption', { value: i + 1 }) as string,
-    }));
-  });
-
-  /**
-   * Year list for 수료일 · 시작일 · 종료일. `YEAR_OPTIONS` cannot be reused — its labels
-   * are two-digit ("25") and these columns spell the year out, like 등록 연도 does.
-   * Unlike 등록 연도 it reaches one year ahead: an assignment may end in the future.
-   */
-  readonly activityYearOptions = computed(() => {
-    this.lang();
-    const current = new Date().getFullYear();
-    const years: { value: number; label: string }[] = [];
-    for (let y = current + 1; y >= 2000; y--) {
-      years.push({ value: y, label: this.translate.instant('members.edit.yearOption', { value: y }) as string });
-    }
-    return years;
-  });
-
-  /** Same twelve entries as 등록 월 — kept under its own name so the template reads right. */
-  readonly activityMonthOptions = this.registrationMonthOptions;
-
   readonly phoneCountryOptions = PHONE_COUNTRIES;
   readonly statusOptions       = MEMBER_STATUS_OPTIONS;
   readonly genderOptions       = GENDER_OPTIONS;
   readonly baptismOptions      = BAPTISM_OPTIONS;
-  readonly monthOptions        = MONTH_OPTIONS;
-  readonly yearOptions         = YEAR_OPTIONS;
 
   readonly form = this.fb.group({
     lastName:        ['', Validators.required],
@@ -237,9 +192,7 @@ export class MemberEditComponent implements OnInit {
     houseNumber:     [''],
     zipCode:         [''],
     city:            [''],
-    // Sent as `registrationDate` = `YYYY-MM-01`; see `registrationYearOptions`.
-    registrationYear: [null as number | null],
-    registrationMonth:[null as number | null],
+    registrationDate: [null as Date | null],
     // 직업 is designed but has no backend field yet (hanmaum-dn-server#197), so
     // the control renders disabled and is excluded from every request payload.
     occupation:      [{ value: '', disabled: true }],
@@ -326,7 +279,6 @@ export class MemberEditComponent implements OnInit {
 
   private patchForm(member: Member): void {
     const { country: phoneCountry, local: phoneLocal } = parseE164(member.phoneNumber);
-    const registration = firstOfMonthToMonthYear(member.registrationDate ?? null);
     this.loaded.set(member);
     this.form.patchValue({
       lastName:         member.lastName,
@@ -342,8 +294,7 @@ export class MemberEditComponent implements OnInit {
       houseNumber:      member.houseNumber ?? '',
       zipCode:          member.zipCode ?? '',
       city:             member.city ?? '',
-      registrationYear: registration.year,
-      registrationMonth: registration.month,
+      registrationDate: isoToLocalDate(member.registrationDate ?? null),
       groupPublicId:    member.groupPublicId ?? null,
       memberStatus:     member.memberStatus,
       isGroupLeader:    !!member.isGroupLeader,
@@ -369,13 +320,9 @@ export class MemberEditComponent implements OnInit {
 
     const trainingItems  = this.collectTrainingItems();
     const ministryItems  = this.collectMinistryItems();
-    // Local date parts, not `toISOString()`: that converts to UTC, which in CET
-    // turns a picked 1998-03-02 into 1998-03-01.
-    const toIso = (d: Date | null | undefined) =>
-      d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : undefined;
+    const toIso = (d: Date | null | undefined) => localDateToIso(d) ?? undefined;
     // Figma splits 등록일 into 연도 + 월; the API wants a date, so the day is the 1st.
-    const registrationDate =
-      monthYearToFirstOfMonth(raw.registrationMonth, raw.registrationYear) ?? undefined;
+    const registrationDate = toIso(raw.registrationDate);
 
     const isEdit = this.isEdit() && !!this.publicId;
     const successDetail = isEdit ? '저장되었습니다.' : '등록되었습니다.';
@@ -565,34 +512,26 @@ export class MemberEditComponent implements OnInit {
       .filter(o => !taken.includes(o.value));
   }
 
-  /** Only a COMPLETED training carries a completion month/year; the rest clear it. */
+  /** Only a COMPLETED training carries a completion date; the rest clear it. */
   onTrainingStatusChange(index: number): void {
     const group = this.trainings.at(index);
-    const month = group.get('month')!;
-    const year  = group.get('year')!;
+    const completedAt = group.get('completedAt')!;
     if (group.get('status')!.value === 'COMPLETED') {
-      month.enable();
-      year.enable();
+      completedAt.enable();
     } else {
-      month.reset(null);
-      year.reset(null);
-      month.disable();
-      year.disable();
+      completedAt.reset(null);
+      completedAt.disable();
     }
   }
 
   private newTrainingGroup(value?: TrainingFormValue): FormGroup {
     const status = value?.status ?? 'COMPLETED';
     const group = this.fb.group({
-      code:   [value?.code ?? null as string | null, Validators.required],
-      month:  [value?.month ?? null as number | null],
-      year:   [value?.year ?? null as number | null],
-      status: [status as TrainingStatus, Validators.required],
+      code:        [value?.code ?? null as string | null, Validators.required],
+      completedAt: [value?.completedAt ?? null as Date | null],
+      status:      [status as TrainingStatus, Validators.required],
     });
-    if (status !== 'COMPLETED') {
-      group.get('month')!.disable();
-      group.get('year')!.disable();
-    }
+    if (status !== 'COMPLETED') group.get('completedAt')!.disable();
     return group;
   }
 
@@ -600,17 +539,16 @@ export class MemberEditComponent implements OnInit {
 
   /**
    * Maps the training form rows to backend request items, dropping incomplete cards
-   * (no course, or a completed card missing month/year) and any course absent from the catalog.
+   * (no course, or a completed card missing its date) and any course absent from the catalog.
    */
   private collectTrainingItems(): MemberTrainingItem[] {
     return this.trainings.controls
       .map(c => c.getRawValue())
-      .filter(v => v.code && (v.status !== 'COMPLETED' || (v.month && v.year)))
+      .filter(v => v.code && (v.status !== 'COMPLETED' || v.completedAt))
       .map(v => ({
-        code:   v.code as string,
-        month:  v.status === 'COMPLETED' ? v.month : null,
-        year:   v.status === 'COMPLETED' ? v.year : null,
-        status: v.status as TrainingStatus,
+        code:        v.code as string,
+        completedAt: v.status === 'COMPLETED' ? v.completedAt : null,
+        status:      v.status as TrainingStatus,
       } as TrainingFormValue))
       .map(v => mapFormValueToItem(v, this.trainingCatalog()))
       .filter((i): i is MemberTrainingItem => i !== null);
@@ -637,58 +575,37 @@ export class MemberEditComponent implements OnInit {
 
   /**
    * The row has no "laufend" checkbox (Figma 556:27121, DESIGN.md §9.1): an empty
-   * 종료일 *is* the ongoing state. `ongoing` stays in the form because
-   * {@link collectMinistryItems} and the server DTO are built around it — it is
-   * derived here instead of being toggled by hand. A half-filled end date (only a
-   * month or only a year) counts as ongoing, so the row is still persisted.
+   * 종료일 *is* the ongoing state, so it is sent as `endDate: null`.
    */
-  onMinistryEndChange(index: number): void {
-    const g = this.ministries.at(index);
-    const month = g.get('endMonth')!.value, year = g.get('endYear')!.value;
-    g.get('ongoing')!.setValue(!(month && year));
-  }
-
   private newMinistryGroup(value?: MinistryFormValue): FormGroup {
-    const ongoing = value?.ongoing ?? true;
-    const group = this.fb.group({
+    return this.fb.group({
       ministryPublicId: [value?.ministryPublicId ?? null as string | null, Validators.required],
-      startMonth: [value?.startMonth ?? null as number | null, Validators.required],
-      startYear:  [value?.startYear  ?? null as number | null, Validators.required],
-      endMonth:   [value?.endMonth   ?? null as number | null],
-      endYear:    [value?.endYear    ?? null as number | null],
-      ongoing:    [ongoing],
-      note:       [value?.note       ?? null as string | null],
+      startDate: [value?.startDate ?? null as Date | null, Validators.required],
+      endDate:   [value?.endDate   ?? null as Date | null],
+      note:      [value?.note      ?? null as string | null],
     });
-    return group;
   }
 
   private collectMinistryItems(): MemberMinistryItem[] {
     return this.ministries.controls
       .map(c => c.getRawValue())
-      // A finished (not ongoing) assignment must have an end month+year, otherwise it
-      // would be indistinguishable from an active one. Such incomplete cards are dropped.
-      .filter(v => v.ministryPublicId && v.startMonth && v.startYear && (v.ongoing || (v.endMonth && v.endYear)))
+      .filter(v => v.ministryPublicId && v.startDate)
       .map(v => ({
         ministryPublicId: v.ministryPublicId as string,
-        startDate: monthYearToFirstOfMonth(v.startMonth, v.startYear)!,
-        endDate: v.ongoing ? null : monthYearToFirstOfMonth(v.endMonth, v.endYear),
+        startDate: localDateToIso(v.startDate)!,
+        endDate: localDateToIso(v.endDate),
         note: (v.note as string | null)?.trim() || null,
       }));
   }
 
   private rebuildMinistries(ministries: MinistryHistory[] = []): void {
     this.ministries.clear();
-    ministries.forEach(m => {
-      const s = firstOfMonthToMonthYear(m.startDate);
-      const e = firstOfMonthToMonthYear(m.endDate);
-      this.ministries.push(this.newMinistryGroup({
-        ministryPublicId: m.ministryPublicId,
-        startMonth: s.month, startYear: s.year,
-        endMonth: e.month, endYear: e.year,
-        ongoing: m.endDate === null,
-        note: m.note,
-      }));
-    });
+    ministries.forEach(m => this.ministries.push(this.newMinistryGroup({
+      ministryPublicId: m.ministryPublicId,
+      startDate: isoToLocalDate(m.startDate),
+      endDate: isoToLocalDate(m.endDate),
+      note: m.note,
+    })));
   }
 
   private persistMinistries(member: Member, items: MemberMinistryItem[]): Observable<Member> {
