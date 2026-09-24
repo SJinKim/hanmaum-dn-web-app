@@ -1,13 +1,14 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
+import { Menu, MenuModule } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
 
-import { TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MemberService } from '../member.service';
 import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
@@ -21,18 +22,34 @@ import {
   UserTraining,
   MinistryHistory,
   monthYearFromCompletedAt,
+  trainingStatusGroup,
 } from '../../../core/models/member-activity.model';
 import { trainingLabelForName } from '../../../core/models/member-activity.model';
 import { injectAppLang } from '../../../core/i18n/language';
 import { formatForDisplay } from '../../../core/models/phone.util';
+import { BadgeVariant, resolveBadgeVariant } from '../../../core/ui/variant-tokens';
+import { BadgeComponent } from '../../../core/ui/badge/badge.component';
+import { DefinitionRowComponent } from '../../../core/ui/definition-list/definition-row.component';
+import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
+import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
+import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
+import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-member-detail',
   standalone: true,
   imports: [
+    BadgeComponent,
     ButtonModule,
     ConfirmDialogModule,
+    DefinitionRowComponent,
+    EmptyStateComponent,
+    MenuModule,
+    PageHeaderComponent,
+    SectionHeaderComponent,
+    SkeletonComponent,
     ToastModule,
+    TranslatePipe,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './member-detail.component.html',
@@ -52,6 +69,48 @@ export class MemberDetailComponent implements OnInit {
   loading = signal(true);
 
   readonly formatPhone = formatForDisplay;
+
+  private readonly moreMenu = viewChild<Menu>('moreMenu');
+
+  /** Full name as the list shows it, family name first. */
+  readonly fullName = computed(() => {
+    const m = this.member();
+    return m ? `${m.lastName}${m.firstName}` : '';
+  });
+
+  readonly breadcrumb = computed(() => {
+    this.lang();
+    return [this.translate.instant('members.detail.breadcrumb') as string, this.fullName()];
+  });
+
+  /** "{순} · {등록일} 등록"; empty when neither is known. */
+  readonly subtitle = computed(() => {
+    this.lang();
+    const m = this.member();
+    if (!m || (!m.groupName && !m.registrationDate)) return '';
+    return this.translate.instant('members.detail.subtitle', {
+      group: m.groupName ?? '—',
+      date: m.registrationDate ?? '—',
+    }) as string;
+  });
+
+  /** "Straße Hausnummer, PLZ Ort", leaving out whatever is missing; `—` when all is. */
+  readonly address = computed(() => {
+    const m = this.member();
+    if (!m) return '—';
+    const line1 = [m.street, m.houseNumber].filter(Boolean).join(' ');
+    const line2 = [m.zipCode, m.city].filter(Boolean).join(' ');
+    return [line1, line2].filter(Boolean).join(', ') || '—';
+  });
+
+  readonly moreItems = computed<MenuItem[]>(() => {
+    this.lang();
+    return [{
+      label: this.translate.instant('members.detail.delete') as string,
+      icon: 'pi pi-trash',
+      command: ({ originalEvent }) => this.confirmDelete(originalEvent as Event),
+    }];
+  });
 
   /**
    * 순장 row of the 교회 정보 card: the running tenure ("시작 ~ 현재"), else the last
@@ -83,7 +142,11 @@ export class MemberDetailComponent implements OnInit {
       .subscribe({
         next:  m   => { this.member.set(m); this.loading.set(false); },
         error: ()  => {
-          this.messageService.add({ severity: 'error', summary: '오류', detail: '회원 정보를 불러올 수 없습니다.' });
+          this.messageService.add({
+            severity: 'error',
+            summary: this.translate.instant('members.toast.error'),
+            detail: this.translate.instant('members.detail.toast.loadFailed'),
+          });
           this.loading.set(false);
         },
       });
@@ -97,25 +160,37 @@ export class MemberDetailComponent implements OnInit {
     this.router.navigate(['/members']);
   }
 
+  toggleMore(event: Event): void {
+    this.moreMenu()?.toggle(event);
+  }
+
   confirmDelete(event: Event): void {
     this.confirmService.confirm({
       target: event.target as EventTarget,
-      message: '이 회원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
-      header: '회원 삭제',
+      message: this.translate.instant('members.detail.deleteDialog.message'),
+      header: this.translate.instant('members.detail.deleteDialog.header'),
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: '삭제',
-      rejectLabel: '취소',
+      acceptLabel: this.translate.instant('members.detail.deleteDialog.accept'),
+      rejectLabel: this.translate.instant('members.detail.deleteDialog.cancel'),
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.memberService.deleteMember(this.member()!.publicId)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {
-              this.messageService.add({ severity: 'success', summary: '완료', detail: '삭제되었습니다.' });
+              this.messageService.add({
+                severity: 'success',
+                summary: this.translate.instant('members.toast.done'),
+                detail: this.translate.instant('members.detail.toast.deleted'),
+              });
               setTimeout(() => this.router.navigate(['/members']), 1000);
             },
             error: () => {
-              this.messageService.add({ severity: 'error', summary: '오류', detail: '삭제에 실패했습니다.' });
+              this.messageService.add({
+                severity: 'error',
+                summary: this.translate.instant('members.toast.error'),
+                detail: this.translate.instant('members.detail.toast.deleteFailed'),
+              });
             },
           });
       },
@@ -125,14 +200,9 @@ export class MemberDetailComponent implements OnInit {
   genderLabel(g: string | null): string       { return g ? (GENDER_LABELS[g as keyof typeof GENDER_LABELS] ?? g) : '—'; }
   baptismLabel(b: string | null): string      { return b ? (BAPTISM_LABELS[b as keyof typeof BAPTISM_LABELS] ?? b) : '—'; }
 
-  statusBadgeClass(status: MemberStatus): string {
-    const map: Record<MemberStatus, string> = {
-      ACTIVE:   'badge-active',
-      INACTIVE: 'badge-inactive',
-      PENDING:  'badge-pending',
-      DELETED:  'badge-deleted',
-    };
-    return map[status] ?? '';
+  statusVariant(status: MemberStatus): BadgeVariant { return resolveBadgeVariant(status.toLowerCase()); }
+  statusLabel(status: MemberStatus): string {
+    return this.translate.instant(`members.status.${status}`) as string;
   }
 
   // --- Training / ministry display ---
@@ -148,6 +218,23 @@ export class MemberDetailComponent implements OnInit {
     if (t.status !== 'COMPLETED' || !t.completedAt) return status;
     const { month, year } = monthYearFromCompletedAt(t.completedAt);
     return month && year ? this.mmYy(month, year) : status;
+  }
+
+  /** Badge above the training rows: "{과정} {상태}", colored by the status bucket. */
+  trainingBadge(t: UserTraining): { label: string; variant: BadgeVariant } {
+    const status = this.translate.instant(`members.trainingStatus.${t.status}`) as string;
+    const group = trainingStatusGroup(t.status);
+    const variant: BadgeVariant =
+      group === 'COMPLETED' ? 'training-completed' : group === 'ACTIVE' ? 'training-progress' : 'neutral';
+    return { label: `${this.trainingName(t)} ${status}`, variant };
+  }
+
+  /** Ministries still running — the badge row above the history. */
+  activeMinistries(): MinistryHistory[] { return this.ministries().filter(m => !m.endDate); }
+
+  /** "MM/YY – MM/YY", plus the note when there is one. */
+  ministryValue(m: MinistryHistory): string {
+    return m.note ? `${this.ministryRange(m)} · ${m.note}` : this.ministryRange(m);
   }
 
   private mmYy(month: number, year: number): string {
