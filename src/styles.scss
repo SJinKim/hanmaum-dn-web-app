@@ -386,7 +386,7 @@ html, body {
   &.badge-member   { background: var(--color-badge-member-bg);   color: var(--color-badge-member-fg); }
 
   // Training chips by status group: orange = still running (applied/enrolled/in
-  // progress), grey = completed, red = dropped or unknown.
+  // progress), green = completed, red = dropped or unknown.
   &.badge-training-completed { background: var(--color-badge-training-completed-bg); color: var(--color-badge-training-completed-fg); }
   &.badge-training-progress  { background: var(--color-badge-training-progress-bg);  color: var(--color-badge-training-progress-fg); }
   // No own Figma token — "dropped/unknown" is the same red as badge/deleted.

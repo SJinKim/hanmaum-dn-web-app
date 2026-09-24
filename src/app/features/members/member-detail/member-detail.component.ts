@@ -22,7 +22,7 @@ import {
   UserTraining,
   MinistryHistory,
   monthYearFromCompletedAt,
-  trainingStatusGroup,
+  TrainingStatus,
 } from '../../../core/models/member-activity.model';
 import { trainingLabelForName } from '../../../core/models/member-activity.model';
 import { injectAppLang } from '../../../core/i18n/language';
@@ -34,6 +34,19 @@ import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.co
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
 import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
+
+/**
+ * 양육 badge color per 상태: 신청/등록 grey, 진행 중 orange, 수료 green,
+ * 중단/미확인 red (`deleted` is the red pair).
+ */
+const TRAINING_BADGE_VARIANTS: Record<TrainingStatus, BadgeVariant> = {
+  APPLIED:     'neutral',
+  ENROLLED:    'neutral',
+  IN_PROGRESS: 'training-progress',
+  COMPLETED:   'training-completed',
+  DROPPED:     'deleted',
+  UNKNOWN:     'deleted',
+};
 
 @Component({
   selector: 'app-member-detail',
@@ -220,17 +233,10 @@ export class MemberDetailComponent implements OnInit {
     return month && year ? this.mmYy(month, year) : status;
   }
 
-  /**
-   * Badge above the training rows: "{과정} {상태}". A 종료일 (`completedAt`) means
-   * done (green) whatever the status says; otherwise the status bucket decides:
-   * running is orange, dropped/unknown stays neutral.
-   */
+  /** Badge above the training rows: "{과정} {상태}", colored by 상태 alone. */
   trainingBadge(t: UserTraining): { label: string; variant: BadgeVariant } {
     const status = this.translate.instant(`members.trainingStatus.${t.status}`) as string;
-    const group = t.completedAt ? 'COMPLETED' : trainingStatusGroup(t.status);
-    const variant: BadgeVariant =
-      group === 'COMPLETED' ? 'training-completed' : group === 'ACTIVE' ? 'training-progress' : 'neutral';
-    return { label: `${this.trainingName(t)} ${status}`, variant };
+    return { label: `${this.trainingName(t)} ${status}`, variant: TRAINING_BADGE_VARIANTS[t.status] ?? 'deleted' };
   }
 
   /** Ministries still running — the badge row above the history. */
