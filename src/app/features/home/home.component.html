@@ -19,7 +19,7 @@
               @if (loading()) {
                 <app-skeleton variant="line" width="64px" />
               } @else {
-                <span class="type-h2 text-ink-strong">{{ snapshot()?.pendingApprovals ?? 0 }}</span>
+                <span class="type-h2 text-ink-strong">{{ snapshot()?.pendingApprovals ?? '—' }}</span>
               }
             </span>
             <p-button
@@ -38,7 +38,7 @@
               @if (loading()) {
                 <app-skeleton variant="line" width="64px" />
               } @else {
-                <span class="type-h2 text-ink-strong">{{ snapshot()?.awaitingRsvps ?? 0 }}</span>
+                <span class="type-h2 text-ink-strong">{{ snapshot()?.awaitingRsvps ?? '—' }}</span>
               }
             </span>
             <p-button
@@ -90,15 +90,15 @@
             <app-definition-row
               layout="inline"
               [term]="'home.overview.totalMembers' | translate"
-              [value]="(snapshot()?.overview?.totalMembers ?? 0).toString()" />
+              [value]="(snapshot()?.overview?.totalMembers ?? '—').toString()" />
             <app-definition-row
               layout="inline"
               [term]="'home.overview.activeMembers' | translate"
-              [value]="(snapshot()?.overview?.activeMembers ?? 0).toString()" />
+              [value]="(snapshot()?.overview?.activeMembers ?? '—').toString()" />
             <app-definition-row
               layout="inline"
               [term]="'home.overview.ministries' | translate"
-              [value]="(snapshot()?.overview?.ministries ?? 0).toString()" />
+              [value]="(snapshot()?.overview?.ministries ?? '—').toString()" />
           </dl>
         }
       </section>
