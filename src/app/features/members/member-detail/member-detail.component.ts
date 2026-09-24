@@ -220,10 +220,14 @@ export class MemberDetailComponent implements OnInit {
     return month && year ? this.mmYy(month, year) : status;
   }
 
-  /** Badge above the training rows: "{과정} {상태}", colored by the status bucket. */
+  /**
+   * Badge above the training rows: "{과정} {상태}". A 종료일 (`completedAt`) means
+   * done (green) whatever the status says; otherwise the status bucket decides:
+   * running is orange, dropped/unknown stays neutral.
+   */
   trainingBadge(t: UserTraining): { label: string; variant: BadgeVariant } {
     const status = this.translate.instant(`members.trainingStatus.${t.status}`) as string;
-    const group = trainingStatusGroup(t.status);
+    const group = t.completedAt ? 'COMPLETED' : trainingStatusGroup(t.status);
     const variant: BadgeVariant =
       group === 'COMPLETED' ? 'training-completed' : group === 'ACTIVE' ? 'training-progress' : 'neutral';
     return { label: `${this.trainingName(t)} ${status}`, variant };

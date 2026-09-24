@@ -81,6 +81,17 @@ describe('MemberDetailComponent — 교회 정보', () => {
     expect(basicCard()).toContain('개발자');
   });
 
+  it('colors a 양육 badge green once it has a 종료일, orange while it runs', () => {
+    const { component } = render({});
+    const t = (status: string, completedAt: string | null) =>
+      component.trainingBadge({ trainingPublicId: 't', name: 'x', status, completedAt } as never).variant;
+    expect(t('COMPLETED', '2024-03-01')).toBe('training-completed');
+    expect(t('IN_PROGRESS', '2024-03-01')).toBe('training-completed');
+    expect(t('IN_PROGRESS', null)).toBe('training-progress');
+    expect(t('APPLIED', null)).toBe('training-progress');
+    expect(t('DROPPED', null)).toBe('neutral');
+  });
+
   it('shows the error state instead of the cards when the member cannot be loaded', () => {
     const { el, churchCard } = render({}, () => throwError(() => new Error('404')));
     expect(churchCard()).toBe('');
