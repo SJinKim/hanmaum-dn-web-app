@@ -27,6 +27,14 @@ export interface MemberSummary {
   groupLeaderSince?: string | null;
 }
 
+/** One 순장 tenure. `endDate` is null while it is still running. */
+export interface GroupLeaderTenure {
+  groupPublicId: string;
+  groupName: string;
+  startDate: string;
+  endDate: string | null;
+}
+
 /** Full detail DTO — used in detail + edit views */
 export interface Member {
   publicId: string;
@@ -56,6 +64,11 @@ export interface Member {
   isGroupLeader?: boolean;
   /** Day the member took over as group leader. Null/absent when isGroupLeader is false. */
   groupLeaderSince?: string | null;
+  /**
+   * Most recent 순장 tenure, running or ended — lets a former 순장 see when they served.
+   * Null when the member never led a group.
+   */
+  lastGroupLeaderTenure?: GroupLeaderTenure | null;
   /**
    * Training history — persisted, sent by `GET /members/{id}`. Edited via
    * `PUT /members/{id}/trainings`. See member-activity.model.ts.

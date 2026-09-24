@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { By } from '@angular/platform-browser';
-import { provideTranslateService } from '@ngx-translate/core';
+import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 
@@ -254,22 +254,47 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
   });
 });
 
-describe('MemberEditComponent — 순장 checkbox', () => {
+describe('MemberEditComponent — 순장', () => {
   const member = {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
     city: null, registrationDate: null, memberStatus: 'ACTIVE' as const, churchRole: null,
     groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, trainings: [], ministries: [],
-    isGroupLeader: false,
+    isGroupLeader: false as boolean,
+    groupLeaderSince: null as string | null,
+    lastGroupLeaderTenure: null as {
+      groupPublicId: string; groupName: string; startDate: string; endDate: string | null;
+    } | null,
   };
 
   const groups = [
-    { publicId: 'grp-1', division: 'NEHEMIA', name: '믿음', leaderPublicId: 'other', leaderName: '박민수' },
+    { publicId: 'grp-1', division: 'NEHEMIA', name: '믿음', leaderPublicId: 'other', leaderName: '박민수', leaderSince: '2025-01-05' },
     { publicId: 'grp-2', division: 'NEHEMIA', name: '소망' },
   ];
 
-  function setup(loaded: Partial<typeof member> = {}) {
+  const ko = {
+    members: {
+      edit: {
+        leaderDialog: {
+          assign: '{{name}}{{obj}} {{group}} 순장으로 지정할까요?',
+          replace: '현재 순장 {{leader}} ({{since}}~){{topic}} 오늘 날짜로 종료됩니다.',
+          end: '{{name}}의 {{group}} 순장 임기를 종료할까요? 종료일은 오늘({{today}})로 기록됩니다.',
+          move: '{{name}}{{obj}} {{group}} 순장으로 옮길까요?',
+          moveEndsOld: '{{group}} 순장 임기는 오늘 날짜로 종료됩니다.',
+          moveReplace: '현재 {{group}} 순장 {{leader}} ({{since}}~)도 오늘 날짜로 종료됩니다.',
+        },
+      },
+    },
+  };
+
+  const today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  /** `answer` decides every leader dialog: true = 예, false = 취소. */
+  function setup(loaded: Partial<typeof member> = {}, answer = true) {
     const assignSpy = jasmine.createSpy('assignGroupLeader').and.returnValue(of(groups[0]));
     const clearSpy = jasmine.createSpy('clearGroupLeader').and.returnValue(of({
       ...groups[0], leaderPublicId: null, leaderName: null,
@@ -294,15 +319,26 @@ describe('MemberEditComponent — 순장 checkbox', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        provideTranslateService({ fallbackLang: 'en' }),
+        provideTranslateService({ fallbackLang: 'ko' }),
         ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: stub },
       ],
     });
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('ko', ko);
+    translate.use('ko');
+
+    const confirmSpy = spyOn(TestBed.inject(ConfirmationService), 'confirm').and.callFake(c => {
+      if (c.key === 'leader-change') {
+        if (answer) c.accept?.(); else c.reject?.();
+      }
+      return TestBed.inject(ConfirmationService);
+    });
     const fixture = TestBed.createComponent(MemberEditComponent);
     fixture.detectChanges();
-    return { fixture, component: fixture.componentInstance, assignSpy, clearSpy, updateSpy };
+    const leaderDialogs = () => confirmSpy.calls.all().map(c => c.args[0]).filter(c => c.key === 'leader-change');
+    return { fixture, component: fixture.componentInstance, assignSpy, clearSpy, updateSpy, leaderDialogs };
   }
 
   it('shows a replacement hint when checking 순장 on a group that already has another leader', () => {
@@ -314,41 +350,108 @@ describe('MemberEditComponent — 순장 checkbox', () => {
   });
 
   it('does not hint when this member is already the group\'s 순장', () => {
-    const { component } = setup({
-      isGroupLeader: true,
-    });
-    // The loaded groups still list "other" as leader; override to this member.
+    const { component } = setup({ isGroupLeader: true });
     component['churchGroups'].set([{ ...groups[0], leaderPublicId: 'm1', leaderName: '김철수' }]);
-    component.form.get('isGroupLeader')!.setValue(true);
     component.refreshLeaderHint();
     expect(component.leaderChangeHintName()).toBeNull();
   });
 
-  it('calls assignGroupLeader after save when the checkbox is checked', () => {
-    const { component, assignSpy, clearSpy, updateSpy } = setup();
+  it('asks before assigning and names the replaced leader with leaderSince', () => {
+    const { component, assignSpy, clearSpy, updateSpy, leaderDialogs } = setup();
     component.form.get('isGroupLeader')!.setValue(true);
-    component.save();
 
-    expect(updateSpy).toHaveBeenCalled();
+    expect(leaderDialogs().length).toBe(1);
+    expect(leaderDialogs()[0].message)
+      .toBe('김철수를 믿음 순장으로 지정할까요? 현재 순장 박민수 (2025-01-05~)는 오늘 날짜로 종료됩니다.');
+    expect(component.form.get('isGroupLeader')!.value).toBeTrue();
+    expect(component.tenure()).toEqual(jasmine.objectContaining({ startDate: today(), endDate: null }));
+
+    component.save();
     const req = updateSpy.calls.mostRecent().args[1] as { isNextGroupLeader?: boolean };
     expect(req.isNextGroupLeader).toBeFalse();
     expect(assignSpy).toHaveBeenCalledWith('grp-1', 'm1');
     expect(clearSpy).not.toHaveBeenCalled();
   });
 
-  it('calls clearGroupLeader after save when the current 순장 is unchecked', () => {
-    const { component, assignSpy, clearSpy } = setup({ isGroupLeader: true });
-    component.form.get('isGroupLeader')!.setValue(false);
-    component.save();
+  it('leaves the toggle off when the assign dialog is cancelled', () => {
+    const { component, assignSpy } = setup({}, false);
+    component.form.get('isGroupLeader')!.setValue(true);
 
+    expect(component.form.get('isGroupLeader')!.value).toBeFalse();
+    expect(component.form.get('isGroupLeader')!.dirty).toBeFalse();
+    component.save();
+    expect(assignSpy).not.toHaveBeenCalled();
+  });
+
+  it('omits the replacement sentence when the 순 has no leader', () => {
+    const { component, leaderDialogs } = setup({ groupPublicId: 'grp-2', groupName: '소망' });
+    component.form.get('isGroupLeader')!.setValue(true);
+    expect(leaderDialogs()[0].message).toBe('김철수를 소망 순장으로 지정할까요?');
+  });
+
+  it('asks before ending a tenure, shows today as end date and clears on save', () => {
+    const { component, assignSpy, clearSpy, leaderDialogs } = setup({ isGroupLeader: true, groupLeaderSince: '2024-03-01' });
+    expect(component.tenure()).toEqual(jasmine.objectContaining({ startDate: '2024-03-01', endDate: null, endHint: 'end' }));
+
+    component.form.get('isGroupLeader')!.setValue(false);
+    expect(leaderDialogs()[0].message)
+      .toBe(`김철수의 믿음 순장 임기를 종료할까요? 종료일은 오늘(${today()})로 기록됩니다.`);
+    expect(component.tenure()).toEqual(jasmine.objectContaining({ startDate: '2024-03-01', endDate: today(), endHint: 'pendingEnd' }));
+
+    component.save();
     expect(clearSpy).toHaveBeenCalledWith('grp-1');
     expect(assignSpy).not.toHaveBeenCalled();
   });
 
-  it('does not re-assign when the current 순장 is saved unchanged', () => {
-    const { component, assignSpy, clearSpy } = setup({ isGroupLeader: true });
+  it('treats on → off → on before 저장 as undo: one dialog, end date back to —, no calls', () => {
+    const { component, assignSpy, clearSpy, leaderDialogs } = setup({ isGroupLeader: true, groupLeaderSince: '2024-03-01' });
+    component.form.get('isGroupLeader')!.setValue(false);
+    component.form.get('isGroupLeader')!.setValue(true);
+
+    expect(leaderDialogs().length).toBe(1);
+    expect(component.tenure().endDate).toBeNull();
+    component.save();
+    expect(assignSpy).not.toHaveBeenCalled();
+    expect(clearSpy).not.toHaveBeenCalled();
+  });
+
+  it('asks before moving a 순장 and reverts the 순 on 취소', () => {
+    const { component, leaderDialogs } = setup({ isGroupLeader: true }, false);
+    component.form.get('groupPublicId')!.setValue('grp-2');
+
+    expect(leaderDialogs()[0].message)
+      .toBe('김철수를 소망 순장으로 옮길까요? 믿음 순장 임기는 오늘 날짜로 종료됩니다.');
+    expect(component.form.get('groupPublicId')!.value).toBe('grp-1');
+    expect(component.form.get('groupPublicId')!.dirty).toBeFalse();
+  });
+
+  it('names the target 순\'s leader when a move replaces them', () => {
+    const { component, leaderDialogs } = setup({ isGroupLeader: true, groupPublicId: 'grp-2', groupName: '소망' });
+    component.form.get('groupPublicId')!.setValue('grp-1');
+    expect(leaderDialogs()[0].message).toBe(
+      '김철수를 믿음 순장으로 옮길까요? 소망 순장 임기는 오늘 날짜로 종료됩니다. '
+      + '현재 믿음 순장 박민수 (2025-01-05~)도 오늘 날짜로 종료됩니다.');
+  });
+
+  it('on a confirmed move PATCHes the new 순 and assigns there — the server ends the old tenure', () => {
+    const { component, assignSpy, clearSpy, updateSpy } = setup({ isGroupLeader: true });
+    component['churchGroups'].set([{ ...groups[0], leaderPublicId: 'm1', leaderName: '김철수' }, groups[1]]);
+    assignSpy.and.returnValue(of({ ...groups[1], leaderPublicId: 'm1', leaderName: '김철수' }));
+    component.form.get('groupPublicId')!.setValue('grp-2');
     component.save();
 
+    const req = updateSpy.calls.mostRecent().args[1] as { groupPublicId?: string };
+    expect(req.groupPublicId).toBe('grp-2');
+    expect(assignSpy).toHaveBeenCalledWith('grp-2', 'm1');
+    expect(clearSpy).not.toHaveBeenCalled();
+    expect(component['churchGroups']().find(g => g.publicId === 'grp-1')!.leaderPublicId).toBeNull();
+  });
+
+  it('does not ask or call anything when the current 순장 is saved unchanged', () => {
+    const { component, assignSpy, clearSpy, leaderDialogs } = setup({ isGroupLeader: true });
+    component.save();
+
+    expect(leaderDialogs().length).toBe(0);
     expect(assignSpy).not.toHaveBeenCalled();
     expect(clearSpy).not.toHaveBeenCalled();
   });
@@ -361,6 +464,28 @@ describe('MemberEditComponent — 순장 checkbox', () => {
 
     expect(clearSpy).not.toHaveBeenCalled();
     expect(assignSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows a former 순장\'s last tenure, naming the 순 when it was another one', () => {
+    const { component } = setup({
+      lastGroupLeaderTenure: { groupPublicId: 'grp-2', groupName: '소망', startDate: '2024-03-01', endDate: '2026-09-10' },
+    });
+    expect(component.tenure()).toEqual({
+      startDate: '2024-03-01', endDate: '2026-09-10', startHint: null, endHint: 'past', pastGroupName: '소망',
+    });
+  });
+
+  it('starts a new tenure when a former 순장 is switched on again', () => {
+    const { component, assignSpy, leaderDialogs } = setup({
+      lastGroupLeaderTenure: { groupPublicId: 'grp-1', groupName: '믿음', startDate: '2024-03-01', endDate: '2026-09-10' },
+    });
+    expect(component.tenure().pastGroupName).toBeNull();
+
+    component.form.get('isGroupLeader')!.setValue(true);
+    expect(leaderDialogs().length).toBe(1);
+    expect(component.tenure()).toEqual(jasmine.objectContaining({ startDate: today(), endDate: null }));
+    component.save();
+    expect(assignSpy).toHaveBeenCalledWith('grp-1', 'm1');
   });
 });
 

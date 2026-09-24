@@ -151,7 +151,7 @@
     },
     "edit": {
       "churchGroupLeader": "Church Group Leader",
-      "leaderChangeHint": "This change will replace {{name}} as church group leader.",
+      "leaderChangeHint": "Current leader: {{name}} · replaced on save",
       "cardTitle": "Member details",
       "createHeading": "Add member",
       "editHeading": "Edit member",
@@ -215,6 +215,36 @@
       },
       "hints": {
         "occupation": "Occupation is not stored by the backend yet (hanmaum-dn-server#197)."
+      },
+      "church": {
+        "group": "Cell group",
+        "leaderToggle": "This member is the cell leader",
+        "leaderStart": "Leader since",
+        "leaderEnd": "Leader until",
+        "baptism": "Baptism",
+        "status": "Status",
+        "hints": {
+          "start": "Recorded automatically on save",
+          "end": "Recorded when the leader role is removed and saved",
+          "pendingEnd": "Saving ends the term today",
+          "past": "Past term · turning it on starts a new term",
+          "pastInGroup": "Past term · {{group}} · turning it on starts a new term"
+        }
+      },
+      "leaderDialog": {
+        "assignHeader": "Assign cell leader",
+        "assign": "Make {{name}} the leader of {{group}}?",
+        "replace": "The current leader {{leader}} ({{since}}~) ends today.",
+        "assignAccept": "Yes, assign",
+        "endHeader": "End leader term",
+        "end": "End {{name}}'s term as leader of {{group}}? The end date will be today ({{today}}).",
+        "endAccept": "Yes, end it",
+        "moveHeader": "Move cell leader",
+        "move": "Move {{name}} to lead {{group}}?",
+        "moveEndsOld": "The term in {{group}} ends today.",
+        "moveReplace": "The current leader of {{group}}, {{leader}} ({{since}}~), also ends today.",
+        "moveAccept": "Yes, move",
+        "cancel": "Cancel"
       }
     },
     "toast": {
