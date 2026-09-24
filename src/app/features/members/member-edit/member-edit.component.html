@@ -125,11 +125,6 @@
                     styleClass="w-full" />
                 </div>
 
-                <!--
-                  직업 is designed but has no backend field yet
-                  (hanmaum-dn-server#197): the control stays disabled and is never
-                  sent, so the gap is visible instead of silently dropped.
-                -->
                 <div class="flex flex-col gap-[var(--space-4)]">
                   <label for="memberOccupation" class="type-caption text-ink-muted">
                     {{ 'members.edit.fields.occupation' | translate }}
@@ -140,9 +135,6 @@
                     formControlName="occupation"
                     [placeholder]="'members.edit.placeholders.occupation' | translate"
                     class="w-full" />
-                  <small class="type-caption text-ink-disabled">
-                    {{ 'members.edit.hints.occupation' | translate }}
-                  </small>
                 </div>
 
                 <div class="flex flex-col gap-[var(--space-4)]">
