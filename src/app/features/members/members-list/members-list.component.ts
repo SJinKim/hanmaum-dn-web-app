@@ -22,10 +22,10 @@ import {
   MemberSummary,
 } from '../../../core/models/member.model';
 import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
-import { AvatarComponent } from '../../../core/ui/avatar/avatar.component';
-import { BadgeComponent } from '../../../core/ui/badge/badge.component';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
-import { DataRecord } from '../../../core/ui/data-record.model';
+import { DataColumn, DataRecord } from '../../../core/ui/data-record.model';
+import { DataCellDirective } from '../../../core/ui/data-table/data-cell.directive';
+import { DataTableComponent, DataTableSort } from '../../../core/ui/data-table/data-table.component';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
 import { ListCardComponent } from '../../../core/ui/list-card/list-card.component';
 import { MemberPillComponent } from '../../../core/ui/member-pill/member-pill.component';
@@ -74,11 +74,6 @@ interface TrainingTag {
  * precedent instead: below 834px the table becomes a list of `app-list-card`,
  * never a horizontally scrolling table.
  *
- * The table is hand-built rather than `app-data-table`, for the same reason
- * Home's two tables are (`home.component.ts:43-46`): `DataRecord` carries one
- * badge and one subtitle, and this table needs three text columns plus a
- * MemberPill. Widening `DataRecord` is a UI-kit follow-up, not a Members change.
- *
  * Filter, page and result live in {@link MemberService}, per #53 — the Home
  * deep-link `/members?status=PENDING` and the approve flow write the same state.
  * Every list request is a real `Page<T>` request; nothing is filtered or sorted
@@ -96,8 +91,8 @@ interface TrainingTag {
     PageHeaderComponent,
     ToolbarComponent,
     SearchFieldComponent,
-    AvatarComponent,
-    BadgeComponent,
+    DataTableComponent,
+    DataCellDirective,
     MemberPillComponent,
     ListCardComponent,
     EmptyStateComponent,
@@ -250,6 +245,62 @@ export class MembersListComponent implements OnInit {
     })),
   );
 
+  /**
+   * Desktop: one record per member. The name and the 상태 badge sit in the
+   * named fields, the other columns in `cells`; 양육 and 승인 are custom cells
+   * and read the member itself through {@link memberFor}.
+   */
+  readonly tableRows = computed<DataRecord[]>(() => {
+    this.translate.currentLang();
+    return this.members().map(member => ({
+      id: member.publicId,
+      title: this.memberName(member),
+      cells: {
+        status: {
+          variant: this.statusVariant(member),
+          label: this.translate.instant(`members.status.${member.memberStatus}`),
+        },
+        group: member.groupName ?? this.translate.instant('members.unassigned'),
+        ministry: this.ministryLabel(member),
+        baptism: this.baptismLabel(member.baptism),
+        updatedAt: this.shortDate(member.updatedAt),
+      },
+    }));
+  });
+
+  /**
+   * Only 이름, 상태, 순 and 세례 sort (#68) — the columns the server sorts by.
+   * Their `sortKey` is the server's sort property, which `onSort` receives.
+   */
+  readonly columns = computed<DataColumn[]>(() => {
+    this.translate.currentLang();
+    const header = (key: string) => this.translate.instant(`members.columns.${key}`);
+    const columns: DataColumn[] = [
+      { type: 'avatar-name', key: 'name', header: header('name'), sortKey: 'lastName' },
+      { type: 'badge', key: 'status', header: header('status'), sortKey: 'memberStatus', width: '120px' },
+      { type: 'text', key: 'group', header: header('group'), sortKey: 'groupName', width: '140px' },
+      { type: 'custom', key: 'training', header: header('training') },
+      { type: 'text', key: 'ministry', header: header('ministry'), sortable: false, width: '160px' },
+      { type: 'text', key: 'baptism', header: header('baptism'), sortKey: 'baptism', width: '120px' },
+      { type: 'date', key: 'updatedAt', header: header('updatedAt'), sortable: false, width: '120px' },
+    ];
+    if (this.showsApprove()) {
+      // 1%: in an auto-layout table the column shrinks to its widest cell — the
+      // 승인 button, or the group select while one member is being approved.
+      columns.push({ type: 'custom', key: 'approve', header: header('approve'), width: '1%' });
+    }
+    return columns;
+  });
+
+  readonly tableSort = computed<DataTableSort | null>(() => {
+    const sort = this.sort();
+    return sort ? { field: sort.property, direction: sort.direction } : null;
+  });
+
+  private readonly membersById = computed(
+    () => new Map(this.members().map(member => [member.publicId, member] as const)),
+  );
+
   /** 1-based row window for `members.pagination.range`. */
   readonly rangeParams = computed(() => {
     const total = this.total();
@@ -342,21 +393,9 @@ export class MembersListComponent implements OnInit {
   // ── Sortierung (#68) ─────────────────────────────────────────────────────
   // Only 이름, 상태, 순 and 세례 sort; the other headers stay plain text.
 
-  onSort(property: MemberSortProperty): void {
-    this.memberService.toggleSort(property);
-  }
-
-  /** `aria-sort` of a sortable header — the active one says its direction. */
-  ariaSort(property: MemberSortProperty): 'ascending' | 'descending' | 'none' {
-    const sort = this.sort();
-    if (sort?.property !== property) return 'none';
-    return sort.direction === 'asc' ? 'ascending' : 'descending';
-  }
-
-  sortIcon(property: MemberSortProperty): string {
-    const sort = this.sort();
-    if (sort?.property !== property) return 'pi pi-sort-alt';
-    return sort.direction === 'asc' ? 'pi pi-sort-amount-up-alt' : 'pi pi-sort-amount-down';
+  /** `property` is a column's `sortKey`, so always a {@link MemberSortProperty}. */
+  onSort(property: string): void {
+    this.memberService.toggleSort(property as MemberSortProperty);
   }
 
   resetFilters(): void {
@@ -427,6 +466,11 @@ export class MembersListComponent implements OnInit {
   }
 
   // ── Cell helpers ──────────────────────────────────────────────────────────
+
+  /** The member behind a table row, for the custom cells. */
+  memberFor(record: DataRecord): MemberSummary {
+    return this.membersById().get(record.id)!;
+  }
 
   memberName(member: MemberSummary): string {
     return `${member.lastName}${member.firstName}`;

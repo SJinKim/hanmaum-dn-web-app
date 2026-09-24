@@ -131,135 +131,65 @@
       } @else {
         <!--
           Sortable headers (#68): 이름, 상태, 순 and 세례 only — the columns the
-          server sorts by. 양육, 사역 and 최근 활동 stay plain text; a header
-          that looks clickable and does nothing is worse than a plain one.
-          The label is a real <button> so the sort is reachable by keyboard.
+          server sorts by. The table reports the click; the service sorts.
         -->
-        <table class="w-full border-collapse">
-          <caption class="sr-only">{{ 'members.caption' | translate }}</caption>
-          <thead>
-            <tr>
-              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left" [attr.aria-sort]="ariaSort('lastName')">
-                <button type="button" class="-mx-[var(--space-4)] inline-flex items-center gap-[var(--space-4)] rounded-[var(--radius-sm)] px-[var(--space-4)] uppercase hover:text-ink-strong focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]" (click)="onSort('lastName')">
-                  {{ 'members.columns.name' | translate }}
-                  <i class="text-[8px]" [class]="sortIcon('lastName')" aria-hidden="true"></i>
-                </button>
-              </th>
-              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left" [attr.aria-sort]="ariaSort('memberStatus')">
-                <button type="button" class="-mx-[var(--space-4)] inline-flex items-center gap-[var(--space-4)] rounded-[var(--radius-sm)] px-[var(--space-4)] uppercase hover:text-ink-strong focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]" (click)="onSort('memberStatus')">
-                  {{ 'members.columns.status' | translate }}
-                  <i class="text-[8px]" [class]="sortIcon('memberStatus')" aria-hidden="true"></i>
-                </button>
-              </th>
-              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left" [attr.aria-sort]="ariaSort('groupName')">
-                <button type="button" class="-mx-[var(--space-4)] inline-flex items-center gap-[var(--space-4)] rounded-[var(--radius-sm)] px-[var(--space-4)] uppercase hover:text-ink-strong focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]" (click)="onSort('groupName')">
-                  {{ 'members.columns.group' | translate }}
-                  <i class="text-[8px]" [class]="sortIcon('groupName')" aria-hidden="true"></i>
-                </button>
-              </th>
-              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
-                {{ 'members.columns.training' | translate }}
-              </th>
-              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
-                {{ 'members.columns.ministry' | translate }}
-              </th>
-              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left" [attr.aria-sort]="ariaSort('baptism')">
-                <button type="button" class="-mx-[var(--space-4)] inline-flex items-center gap-[var(--space-4)] rounded-[var(--radius-sm)] px-[var(--space-4)] uppercase hover:text-ink-strong focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]" (click)="onSort('baptism')">
-                  {{ 'members.columns.baptism' | translate }}
-                  <i class="text-[8px]" [class]="sortIcon('baptism')" aria-hidden="true"></i>
-                </button>
-              </th>
-              <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] border-b px-[var(--space-8)] text-left">
-                {{ 'members.columns.updatedAt' | translate }}
-              </th>
-              @if (showsApprove()) {
-                <th class="type-overline text-ink-muted bg-surface border-line-subtle sticky top-0 z-[1] h-[var(--size-table-row)] w-[140px] border-b px-[var(--space-8)] text-left">
-                  {{ 'members.columns.approve' | translate }}
-                </th>
+        <app-data-table
+          externalSort
+          stickyHeader
+          [rows]="tableRows()"
+          [columns]="columns()"
+          [sort]="tableSort()"
+          [caption]="'members.caption' | translate"
+          (sortChange)="onSort($event)"
+          (rowSelected)="goToDetail($event.id)">
+          <!--
+            One tag per completed course (#82). The column *is* the course, so
+            the course name carries both label and title.
+          -->
+          <ng-template appDataCell="training" let-record>
+            <span class="flex flex-wrap items-center gap-[var(--space-4)]">
+              @for (tag of trainingTags(memberFor(record)); track tag.label) {
+                <app-member-pill [stage]="tag.stage" [label]="tag.label" [stageLabel]="tag.label" />
               }
-            </tr>
-          </thead>
-          <tbody>
-            @for (member of members(); track member.publicId) {
-              <tr
-                class="border-line-subtle hover:bg-surface-subtle border-b cursor-pointer"
-                (click)="goToDetail(member.publicId)">
-                <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
-                  <span class="flex items-center gap-[var(--space-8)]">
-                    <app-avatar [name]="memberName(member)" [size]="32" decorative />
-                    <span class="type-body text-ink-strong truncate">{{ memberName(member) }}</span>
-                  </span>
-                </td>
-                <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
-                  <app-badge
-                    [variant]="statusVariant(member)"
-                    [label]="'members.status.' + member.memberStatus | translate" />
-                </td>
-                <td class="type-body text-ink h-[var(--size-table-row)] px-[var(--space-8)]">
-                  {{ member.groupName ?? ('members.unassigned' | translate) }}
-                </td>
-                <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
-                  <!--
-                    One tag per completed course (#82). The column *is* the
-                    course, so the course name carries both label and title.
-                  -->
-                  <span class="flex flex-wrap items-center gap-[var(--space-4)]">
-                    @for (tag of trainingTags(member); track tag.label) {
-                      <app-member-pill
-                        [stage]="tag.stage"
-                        [label]="tag.label"
-                        [stageLabel]="tag.label" />
-                    }
-                  </span>
-                </td>
-                <td class="type-body text-ink h-[var(--size-table-row)] px-[var(--space-8)]">
-                  {{ ministryLabel(member) }}
-                </td>
-                <td class="type-body text-ink h-[var(--size-table-row)] px-[var(--space-8)]">
-                  {{ baptismLabel(member.baptism) }}
-                </td>
-                <td class="type-body text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)]">
-                  {{ shortDate(member.updatedAt) }}
-                </td>
-                @if (showsApprove()) {
-                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]" (click)="$event.stopPropagation()">
-                    @if (member.memberStatus === 'PENDING') {
-                      @if (approvingId() === member.publicId) {
-                        <i
-                          class="pi pi-spinner pi-spin text-ink-muted"
-                          [attr.aria-label]="'members.actions.approving' | translate"></i>
-                      } @else if (selectingId() === member.publicId) {
-                        <span class="flex items-center gap-[var(--space-4)]">
-                          <p-select
-                            size="small"
-                            optionLabel="label"
-                            optionValue="value"
-                            [options]="groupOptions()"
-                            [placeholder]="'members.actions.selectGroupPlaceholder' | translate"
-                            [ariaLabel]="'members.actions.selectGroup' | translate"
-                            (onChange)="chooseGroup(member, $event.value)" />
-                          <p-button
-                            size="small"
-                            severity="secondary"
-                            icon="pi pi-times"
-                            [text]="true"
-                            [ariaLabel]="'members.actions.cancel' | translate"
-                            (onClick)="cancelApprove($event)" />
-                        </span>
-                      } @else {
-                        <p-button
-                          size="small"
-                          icon="pi pi-check"
-                          [label]="'members.actions.approve' | translate"
-                          (onClick)="startApprove(member, $event)" />
-                      }
-                    }
-                  </td>
+            </span>
+          </ng-template>
+
+          <ng-template appDataCell="approve" let-record>
+            @let member = memberFor(record);
+            <!-- A click in here must not also open the member's detail. -->
+            <span role="presentation" class="flex items-center gap-[var(--space-4)] whitespace-nowrap" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+              @if (member.memberStatus === 'PENDING') {
+                @if (approvingId() === member.publicId) {
+                  <i
+                    class="pi pi-spinner pi-spin text-ink-muted"
+                    [attr.aria-label]="'members.actions.approving' | translate"></i>
+                } @else if (selectingId() === member.publicId) {
+                  <p-select
+                    size="small"
+                    optionLabel="label"
+                    optionValue="value"
+                    [options]="groupOptions()"
+                    [placeholder]="'members.actions.selectGroupPlaceholder' | translate"
+                    [ariaLabel]="'members.actions.selectGroup' | translate"
+                    (onChange)="chooseGroup(member, $event.value)" />
+                  <p-button
+                    size="small"
+                    severity="secondary"
+                    icon="pi pi-times"
+                    [text]="true"
+                    [ariaLabel]="'members.actions.cancel' | translate"
+                    (onClick)="cancelApprove($event)" />
+                } @else {
+                  <p-button
+                    size="small"
+                    icon="pi pi-check"
+                    [label]="'members.actions.approve' | translate"
+                    (onClick)="startApprove(member, $event)" />
                 }
-              </tr>
-            }
-          </tbody>
-        </table>
+              }
+            </span>
+          </ng-template>
+        </app-data-table>
       }
     </div>
 
