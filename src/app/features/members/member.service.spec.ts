@@ -75,6 +75,16 @@ describe('MemberService — 청년 list state (#53)', () => {
     expect(flushList()).toContain('sort=groupName,asc');
   });
 
+  // A lone `sort=lastName,asc` is split at the comma by the server → 400
+  // (hanmaum-dn-server#203). The blank second value keeps the pair whole.
+  it('sends sort as a repeated parameter with a blank second value', () => {
+    service.toggleSort('lastName');
+    const req = http.expectOne(r => r.url.endsWith('/v1/members'));
+
+    expect(req.request.params.getAll('sort')).toEqual(['lastName,asc', '']);
+    req.flush({ success: true, message: null, data: { content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 } });
+  });
+
   it('starts a different column ascending again', () => {
     service.toggleSort('baptism');
     flushList();

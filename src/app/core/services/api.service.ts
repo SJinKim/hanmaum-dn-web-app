@@ -21,11 +21,14 @@ export class ApiService {
     );
   }
 
-  get<T>(path: string, params?: Record<string, string | number | boolean>): Observable<T> {
+  /** An array value goes out as a repeated parameter (`k=a&k=b`). */
+  get<T>(path: string, params?: Record<string, string | number | boolean | readonly string[]>): Observable<T> {
     let httpParams = new HttpParams();
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
-        if (v !== undefined && v !== null) {
+        if (Array.isArray(v)) {
+          v.forEach(item => (httpParams = httpParams.append(k, item)));
+        } else if (v !== undefined && v !== null) {
           httpParams = httpParams.set(k, String(v));
         }
       });

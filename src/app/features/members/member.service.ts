@@ -205,7 +205,7 @@ export class MemberService {
     page?: number;
     size?: number;
   }): Observable<PageResponse<MemberSummary>> {
-    const qp: Record<string, string | number | boolean> = {
+    const qp: Record<string, string | number | boolean | readonly string[]> = {
       page: params.page ?? 0,
       size: params.size ?? 20,
     };
@@ -218,7 +218,11 @@ export class MemberService {
     else if (params.group)                 qp['groupPublicId']  = params.group;
     if (params.training)                   qp['trainingCode']     = params.training;
     if (params.ministry)                   qp['ministryPublicId'] = params.ministry;
-    if (params.sort)                       qp['sort'] = `${params.sort.property},${params.sort.direction}`;
+    // `sort` is a `List<String>` on the server, and Spring splits a *single* value
+    // at the comma: `sort=lastName,asc` arrives as ["lastName", "asc"] and "asc"
+    // is rejected as a property (400). A second, blank value keeps the pair whole;
+    // the server drops blank entries (hanmaum-dn-server#203).
+    if (params.sort) qp['sort'] = [`${params.sort.property},${params.sort.direction}`, ''];
     return this.api.get<PageResponse<MemberSummary>>('/v1/members', qp);
   }
 
