@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -52,6 +52,23 @@ export class MemberDetailComponent implements OnInit {
   loading = signal(true);
 
   readonly formatPhone = formatForDisplay;
+
+  /**
+   * 순장 row of the 교회 정보 card: the running tenure ("시작 ~ 현재"), else the last
+   * ended one ("시작 ~ 종료", plus the 순 when it was another one). Null when the
+   * member never led a group — the row is then left out.
+   */
+  readonly leaderRow = computed<{ label: string; value: string } | null>(() => {
+    const m = this.member();
+    if (!m) return null;
+    if (m.isGroupLeader) {
+      return { label: '순장', value: `${m.groupLeaderSince ?? '—'} ~ 현재` };
+    }
+    const past = m.lastGroupLeaderTenure;
+    if (!past?.endDate) return null;
+    const otherGroup = past.groupPublicId !== m.groupPublicId ? ` · ${past.groupName}` : '';
+    return { label: '전 순장', value: `${past.startDate} ~ ${past.endDate}${otherGroup}` };
+  });
 
   trainings(): UserTraining[]    { return this.member()?.trainings ?? []; }
   ministries(): MinistryHistory[] { return this.member()?.ministries ?? []; }
