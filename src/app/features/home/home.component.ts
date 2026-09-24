@@ -6,16 +6,15 @@ import { ButtonModule } from 'primeng/button';
 import { MemberSummary } from '../../core/models/member.model';
 import { HomeBlockId } from '../../core/navigation/home-blocks';
 import { RoleService } from '../../core/services/role.service';
-import { AvatarComponent } from '../../core/ui/avatar/avatar.component';
 import { BadgeComponent } from '../../core/ui/badge/badge.component';
 import { BreakpointService } from '../../core/ui/breakpoint.service';
-import { DataRecord } from '../../core/ui/data-record.model';
+import { DataColumn, DataRecord } from '../../core/ui/data-record.model';
+import { DataTableComponent } from '../../core/ui/data-table/data-table.component';
 import { DefinitionRowComponent } from '../../core/ui/definition-list/definition-row.component';
 import { EmptyStateComponent } from '../../core/ui/empty-state/empty-state.component';
 import { IconTileComponent } from '../../core/ui/icon-tile/icon-tile.component';
 import { ListCardComponent } from '../../core/ui/list-card/list-card.component';
 import { PageHeaderComponent } from '../../core/ui/page-header/page-header.component';
-import { ProgressBarComponent } from '../../core/ui/progress-bar/progress-bar.component';
 import { SectionHeaderComponent } from '../../core/ui/section-header/section-header.component';
 import {
   SegmentOption,
@@ -39,11 +38,8 @@ import { HomeService } from './home.service';
  * when the answer is no. DESIGN.md §9: a block a role may not see is *absent*,
  * never greyed out.
  *
- * The two tables (순별 참석 현황, 최근 활동) are hand-built rather than
- * `app-data-table`: `DataRecord` carries one badge and one subtitle, so it can
- * express neither 참석 + 전체 in one row nor 역할 + 상태 side by side. CLAUDE.md
- * allows the fallback ("custom only when PrimeNG has no fit"); widening
- * `DataRecord` is a UI-kit follow-up, not a Home change.
+ * Both tables (순별 참석 현황, 최근 활동) are `app-data-table`; the columns a
+ * `DataRecord` has no named field for — 참석 + 전체, 역할 + 상태 — are `cells` (#69).
  */
 @Component({
   selector: 'app-home',
@@ -55,9 +51,8 @@ import { HomeService } from './home.service';
     SectionHeaderComponent,
     SegmentedControlComponent,
     DefinitionRowComponent,
-    AvatarComponent,
     BadgeComponent,
-    ProgressBarComponent,
+    DataTableComponent,
     IconTileComponent,
     ListCardComponent,
     EmptyStateComponent,
@@ -102,6 +97,72 @@ export class HomeComponent implements OnInit {
   readonly attendanceTotal = computed<GroupAttendanceRow | null>(() => {
     const rows = this.attendanceRows();
     return rows.length > 0 ? totalAttendanceRow(rows, this.translate.instant('home.attendance.totalRow')) : null;
+  });
+
+  /** 순별 참석 현황 as table rows; the title is also the progress bar's name. */
+  readonly attendanceRecords = computed<DataRecord[]>(() =>
+    this.attendanceRows().map(row => ({
+      id: row.groupPublicId ?? row.groupName,
+      title: row.groupName,
+      cells: {
+        group: row.groupName,
+        attended: row.attended,
+        total: row.total,
+        ratio: { value: row.ratio, label: `${row.ratio}%` },
+      },
+    })),
+  );
+
+  /** The 합계 row as the table footer — its ratio is text, not a bar. */
+  readonly attendanceFooter = computed<DataRecord | null>(() => {
+    const total = this.attendanceTotal();
+    return total
+      ? {
+          id: 'total',
+          title: total.groupName,
+          cells: { group: total.groupName, attended: total.attended, total: total.total, ratio: `${total.ratio}%` },
+        }
+      : null;
+  });
+
+  /** Re-resolves on language change — `currentLang()` is the dependency. */
+  readonly attendanceColumns = computed<DataColumn[]>(() => {
+    this.translate.currentLang();
+    const header = (key: string) => this.translate.instant(`home.attendance.${key}`);
+    return [
+      { type: 'text', key: 'group', header: header('group'), tone: 'strong', sortable: false, width: 'auto' },
+      { type: 'text', key: 'attended', header: header('attended'), align: 'end', sortable: false, width: '96px' },
+      { type: 'text', key: 'total', header: header('total'), align: 'end', tone: 'muted', sortable: false, width: '96px' },
+      { type: 'progress', key: 'ratio', header: header('ratio'), sortable: false, width: '160px' },
+    ];
+  });
+
+  /** Desktop/Tablet 최근 활동: 역할 and 상태 are two badge cells side by side. */
+  readonly recentTableRecords = computed<DataRecord[]>(() => {
+    this.translate.currentLang();
+    return (this.snapshot()?.recentActivity ?? []).map(member => ({
+      id: member.publicId,
+      title: this.memberName(member),
+      cells: {
+        role: { variant: this.roleVariant(member), label: this.translate.instant(this.roleLabelKey(member)) },
+        status: {
+          variant: this.statusVariant(member),
+          label: this.translate.instant(`members.status.${member.memberStatus}`),
+        },
+        updated: this.shortDate(member.updatedAt),
+      },
+    }));
+  });
+
+  readonly recentColumns = computed<DataColumn[]>(() => {
+    this.translate.currentLang();
+    const header = (key: string) => this.translate.instant(`home.recent.${key}`);
+    return [
+      { type: 'avatar-name', key: 'name', header: header('name'), sortable: false, width: 'auto' },
+      { type: 'badge', key: 'role', header: header('role'), sortable: false },
+      { type: 'badge', key: 'status', header: header('status'), sortable: false },
+      { type: 'date', key: 'updated', header: header('updated'), sortable: false, width: '120px' },
+    ];
   });
 
   /** Phone 최근 활동: `app-list-card` instead of a table (Figma 237:1901). */

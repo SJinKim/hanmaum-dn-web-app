@@ -69,51 +69,12 @@
         } @else if (attendanceRows().length === 0) {
           <app-empty-state variant="no-data" [heading]="'home.attendance.empty' | translate" />
         } @else {
-          <table class="w-full border-collapse">
-            <caption class="sr-only">{{ 'home.attendance.heading' | translate }}</caption>
-            <thead>
-              <tr class="border-line-subtle border-b">
-                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
-                  {{ 'home.attendance.group' | translate }}
-                </th>
-                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-right">
-                  {{ 'home.attendance.attended' | translate }}
-                </th>
-                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-right">
-                  {{ 'home.attendance.total' | translate }}
-                </th>
-                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
-                  {{ 'home.attendance.ratio' | translate }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of attendanceRows(); track row.groupPublicId ?? row.groupName) {
-                <tr class="border-line-subtle border-b">
-                  <td class="type-body text-ink-strong h-[var(--size-table-row)] px-[var(--space-8)]">{{ row.groupName }}</td>
-                  <td class="type-body text-ink tabular-nums h-[var(--size-table-row)] px-[var(--space-8)] text-right">{{ row.attended }}</td>
-                  <td class="type-body text-ink-muted tabular-nums h-[var(--size-table-row)] px-[var(--space-8)] text-right">{{ row.total }}</td>
-                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
-                    <div class="w-[96px]">
-                      <app-progress-bar
-                        size="small"
-                        [value]="row.ratio"
-                        [label]="row.ratio + '%'"
-                        [ariaLabel]="row.groupName" />
-                    </div>
-                  </td>
-                </tr>
-              }
-              @if (attendanceTotal(); as total) {
-                <tr>
-                  <td class="type-body text-ink-strong h-[var(--size-table-row)] px-[var(--space-8)] font-semibold">{{ total.groupName }}</td>
-                  <td class="type-body text-ink-strong tabular-nums h-[var(--size-table-row)] px-[var(--space-8)] text-right font-semibold">{{ total.attended }}</td>
-                  <td class="type-body text-ink-strong tabular-nums h-[var(--size-table-row)] px-[var(--space-8)] text-right font-semibold">{{ total.total }}</td>
-                  <td class="type-body text-ink-strong h-[var(--size-table-row)] px-[var(--space-8)] font-semibold">{{ total.ratio }}%</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <app-data-table
+            [selectable]="false"
+            [rows]="attendanceRecords()"
+            [columns]="attendanceColumns()"
+            [footer]="attendanceFooter()"
+            [caption]="'home.attendance.heading' | translate" />
         }
       </section>
     }
@@ -164,52 +125,11 @@
             }
           </div>
         } @else {
-          <table class="w-full border-collapse">
-            <caption class="sr-only">{{ 'home.recent.heading' | translate }}</caption>
-            <thead>
-              <tr class="border-line-subtle border-b">
-                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
-                  {{ 'home.recent.name' | translate }}
-                </th>
-                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
-                  {{ 'home.recent.role' | translate }}
-                </th>
-                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
-                  {{ 'home.recent.status' | translate }}
-                </th>
-                <th class="type-overline text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)] text-left">
-                  {{ 'home.recent.updated' | translate }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (member of snapshot()?.recentActivity ?? []; track member.publicId) {
-                <tr
-                  class="border-line-subtle hover:bg-surface-subtle border-b cursor-pointer"
-                  (click)="goToMember(member.publicId)">
-                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
-                    <span class="flex items-center gap-[var(--space-8)]">
-                      <app-avatar [name]="memberName(member)" [size]="32" decorative />
-                      <span class="type-body text-ink-strong truncate">{{ memberName(member) }}</span>
-                    </span>
-                  </td>
-                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
-                    <app-badge
-                      [variant]="roleVariant(member)"
-                      [label]="roleLabelKey(member) | translate" />
-                  </td>
-                  <td class="h-[var(--size-table-row)] px-[var(--space-8)]">
-                    <app-badge
-                      [variant]="statusVariant(member)"
-                      [label]="'members.status.' + member.memberStatus | translate" />
-                  </td>
-                  <td class="type-body text-ink-muted h-[var(--size-table-row)] px-[var(--space-8)]">
-                    {{ shortDate(member.updatedAt) }}
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <app-data-table
+            [rows]="recentTableRecords()"
+            [columns]="recentColumns()"
+            [caption]="'home.recent.heading' | translate"
+            (rowSelected)="goToMember($event.id)" />
         }
       </section>
     }

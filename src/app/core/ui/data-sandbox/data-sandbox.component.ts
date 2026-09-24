@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { AvatarComponent } from '../avatar/avatar.component';
 import { BadgeComponent, BadgeSize } from '../badge/badge.component';
 import { ChartComponent, ChartSeries, ChartType } from '../chart/chart.component';
+import { DataCellDirective } from '../data-table/data-cell.directive';
 import { DataTableComponent } from '../data-table/data-table.component';
 import { DefinitionRowComponent } from '../definition-list/definition-row.component';
 import { GroupCardComponent, GroupCardMember } from '../group-card/group-card.component';
@@ -40,6 +41,7 @@ const STAGE_LABELS: Record<MemberPillStage, string> = {
     AvatarComponent,
     BadgeComponent,
     ChartComponent,
+    DataCellDirective,
     DataTableComponent,
     DefinitionRowComponent,
     GroupCardComponent,
@@ -120,6 +122,19 @@ const STAGE_LABELS: Record<MemberPillStage, string> = {
           <div class="mb-6 grid gap-gutter">
             <app-data-table [rows]="[]" [columns]="columns" loading />
             <app-data-table [rows]="[]" [columns]="columns" emptyDescription="필터를 지우고 다시 시도하세요." />
+          </div>
+          <h3 class="type-h3 text-ink-strong mb-2">Table — keyed cells · custom cell · footer</h3>
+          <div class="mb-6">
+            <app-data-table
+              [rows]="cellRecords"
+              [columns]="cellColumns"
+              [footer]="cellFooter"
+              [selectable]="false"
+              caption="Keyed cells">
+              <ng-template appDataCell="stage" let-record>
+                <app-member-pill stage="discipleship" [label]="record.title" [stageLabel]="stageLabel('discipleship')" />
+              </ng-template>
+            </app-data-table>
           </div>
 
           <h3 class="type-h3 text-ink-strong mb-2">ListCard — the Phone rendering of a row</h3>
@@ -220,6 +235,41 @@ export class DataSandboxComponent {
       progress: { value: 18, label: '18%' },
     },
   ];
+
+  /** Any number of text and badge columns, read from `cells` by key (#69). */
+  readonly cellColumns: DataColumn[] = [
+    { type: 'avatar-name', header: '이름', sortable: false, width: 'auto' },
+    { type: 'badge', key: 'role', header: '역할', sortable: false },
+    { type: 'badge', key: 'status', header: '상태', sortable: false },
+    { type: 'text', key: 'attended', header: '참석', align: 'end', sortable: false, width: '96px' },
+    { type: 'text', key: 'total', header: '전체', align: 'end', tone: 'muted', sortable: false, width: '96px' },
+    { type: 'custom', key: 'stage', header: '단계', sortable: false },
+  ];
+
+  readonly cellRecords: DataRecord[] = [
+    {
+      id: 'c-1',
+      title: '김승진',
+      cells: {
+        role: { variant: 'group-leader', label: '순장' },
+        status: { variant: 'active', label: '활동' },
+        attended: 8,
+        total: 10,
+      },
+    },
+    {
+      id: 'c-2',
+      title: '이수민',
+      cells: {
+        role: { variant: 'member', label: '순원' },
+        status: { variant: 'pending', label: '대기' },
+        attended: 3,
+        total: 10,
+      },
+    },
+  ];
+
+  readonly cellFooter: DataRecord = { id: 'total', title: '합계', cells: { attended: 11, total: 20 } };
 
   readonly groupMembers: GroupCardMember[] = [
     { label: '박지훈', stage: 'next-leader', stageLabel: STAGE_LABELS['next-leader'] },
