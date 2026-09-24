@@ -285,7 +285,9 @@ export class MembersListComponent implements OnInit {
       { type: 'date', key: 'updatedAt', header: header('updatedAt'), sortable: false, width: '120px' },
     ];
     if (this.showsApprove()) {
-      columns.push({ type: 'custom', key: 'approve', header: header('approve'), width: '200px' });
+      // 1%: in an auto-layout table the column shrinks to its widest cell — the
+      // 승인 button, or the group select while one member is being approved.
+      columns.push({ type: 'custom', key: 'approve', header: header('approve'), width: '1%' });
     }
     return columns;
   });

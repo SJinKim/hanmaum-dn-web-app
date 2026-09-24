@@ -157,7 +157,7 @@
           <ng-template appDataCell="approve" let-record>
             @let member = memberFor(record);
             <!-- A click in here must not also open the member's detail. -->
-            <span role="presentation" class="flex items-center gap-[var(--space-4)]" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+            <span role="presentation" class="flex items-center gap-[var(--space-4)] whitespace-nowrap" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
               @if (member.memberStatus === 'PENDING') {
                 @if (approvingId() === member.publicId) {
                   <i
