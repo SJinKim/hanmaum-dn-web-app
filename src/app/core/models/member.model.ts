@@ -92,6 +92,7 @@ export interface CreateMemberRequest {
   houseNumber?: string;
   zipCode?: string;
   city?: string;
+  occupation?: string;
   registrationDate?: string;
   churchRole?: string;
   /** publicId of the church group to assign. */
@@ -113,6 +114,7 @@ export interface UpdateMemberRequest {
   houseNumber?: string;
   zipCode?: string;
   city?: string;
+  occupation?: string;
   registrationDate?: string;
   memberStatus?: MemberStatus;
   churchRole?: string;

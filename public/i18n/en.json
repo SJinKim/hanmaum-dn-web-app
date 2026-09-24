@@ -213,9 +213,6 @@
         "email": "Invalid email format.",
         "phone": "Not a valid mobile number."
       },
-      "hints": {
-        "occupation": "Occupation is not stored by the backend yet (hanmaum-dn-server#197)."
-      },
       "church": {
         "group": "Cell group",
         "leaderToggle": "This member is the cell leader",

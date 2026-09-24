@@ -233,9 +233,7 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
     zipCode:         [''],
     city:            [''],
     registrationDate: [null as Date | null],
-    // 직업 is designed but has no backend field yet (hanmaum-dn-server#197), so
-    // the control renders disabled and is excluded from every request payload.
-    occupation:      [{ value: '', disabled: true }],
+    occupation:      [''],
     groupPublicId:   [null as string | null],
     memberStatus:    [null as string | null],
     isGroupLeader:   [{ value: false, disabled: true }],
@@ -378,6 +376,7 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
       houseNumber:      member.houseNumber ?? '',
       zipCode:          member.zipCode ?? '',
       city:             member.city ?? '',
+      occupation:       member.occupation ?? '',
       registrationDate: isoToLocalDate(member.registrationDate ?? null),
       groupPublicId:    member.groupPublicId ?? null,
       memberStatus:     member.memberStatus,
@@ -407,6 +406,7 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
     const toIso = (d: Date | null | undefined) => localDateToIso(d) ?? undefined;
     // Figma splits 등록일 into 연도 + 월; the API wants a date, so the day is the 1st.
     const registrationDate = toIso(raw.registrationDate);
+    const occupation = raw.occupation?.trim() ?? '';
 
     const isEdit = this.isEdit() && !!this.publicId;
     const successDetail = isEdit ? '저장되었습니다.' : '등록되었습니다.';
@@ -427,6 +427,9 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
         houseNumber:      raw.houseNumber || undefined,
         zipCode:          raw.zipCode || undefined,
         city:             raw.city || undefined,
+        // The backend ignores an omitted occupation, so clearing a saved one
+        // must send "" — but a never-set one stays omitted.
+        occupation:       occupation || (this.loaded()?.occupation ? '' : undefined),
         registrationDate,
         // Always send the group: a chosen publicId assigns it, a blank string
         // clears it (backend treats "" as "remove the group"). Omitting it would
@@ -450,6 +453,7 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
         houseNumber:      raw.houseNumber || undefined,
         zipCode:          raw.zipCode || undefined,
         city:             raw.city || undefined,
+        occupation:       occupation || undefined,
         registrationDate,
       };
       member$ = this.memberService.createMember(req);

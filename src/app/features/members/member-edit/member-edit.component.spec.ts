@@ -889,3 +889,86 @@ describe('MemberEditComponent — unsaved changes', () => {
     expect(component.hasUnsavedChanges()).toBeTrue();
   });
 });
+
+// hanmaum-dn-server#197: 직업 is a stored field, loaded into the form and sent on 저장.
+describe('MemberEditComponent — 직업', () => {
+  const member = {
+    publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
+    baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null,
+    zipCode: null, city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
+    groupPublicId: null, groupName: null, isGroupLeader: false,
+    profileImageUrl: null, trainings: [], ministries: [],
+    occupation: null as string | null,
+  };
+
+  function setup(publicId: string | null, occupation: string | null = null) {
+    const loaded = { ...member, occupation };
+    const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of(loaded));
+    const createSpy = jasmine.createSpy('createMember').and.returnValue(of(loaded));
+    const stub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([]),
+      getChurchGroups: () => of([]),
+      getMember: () => of(loaded),
+      updateMember: updateSpy,
+      createMember: createSpy,
+      replaceMemberTrainings: () => of(loaded),
+      replaceMemberMinistries: () => of(loaded),
+      assignGroupLeader: () => of({}),
+      clearGroupLeader: () => of({}),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(publicId ? { publicId } : {}) } } },
+        { provide: MemberService, useValue: stub },
+      ],
+    });
+    spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const sent = () => updateSpy.calls.mostRecent().args[1];
+    return { fixture, component, updateSpy, createSpy, sent };
+  }
+
+  it('loads the saved occupation into an enabled control', () => {
+    const { fixture, component } = setup('m1', '간호사');
+    const input: HTMLInputElement = fixture.debugElement.query(By.css('#memberOccupation')).nativeElement;
+    expect(component.form.get('occupation')!.value).toBe('간호사');
+    expect(input.disabled).toBeFalse();
+  });
+
+  it('sends the trimmed occupation on 저장', () => {
+    const { component, sent } = setup('m1');
+    component.form.get('occupation')!.setValue('  개발자 ');
+    component.save();
+    expect(sent().occupation).toBe('개발자');
+  });
+
+  it('sends an empty string to clear a saved occupation', () => {
+    const { component, sent } = setup('m1', '간호사');
+    component.form.get('occupation')!.setValue('');
+    component.save();
+    expect(sent().occupation).toBe('');
+  });
+
+  it('omits an occupation that was never set', () => {
+    const { component, sent } = setup('m1');
+    component.save();
+    expect(sent().occupation).toBeUndefined();
+  });
+
+  it('sends the occupation when registering a new member', () => {
+    const { component, createSpy } = setup(null);
+    component.form.patchValue({ lastName: '이', firstName: '영희', occupation: '교사' });
+    component.save();
+    expect(createSpy.calls.mostRecent().args[0].occupation).toBe('교사');
+  });
+});

@@ -213,9 +213,6 @@
         "email": "이메일 형식이 올바르지 않습니다.",
         "phone": "휴대폰 번호 형식이 올바르지 않습니다."
       },
-      "hints": {
-        "occupation": "직업은 백엔드에 아직 저장되지 않습니다 (hanmaum-dn-server#197)."
-      },
       "church": {
         "group": "순",
         "leaderToggle": "이 청년이 순장입니다",
