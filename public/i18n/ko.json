@@ -297,6 +297,50 @@
       "heading": "목록을 불러올 수 없습니다",
       "description": "잠시 후 다시 시도해 주세요.",
       "retry": "다시 시도"
+    },
+    "detail": {
+      "breadcrumb": "청년",
+      "subtitle": "{{group}} · {{date}} 등록",
+      "edit": "수정",
+      "more": "더 보기",
+      "delete": "삭제",
+      "cards": {
+        "basic": "기본 정보",
+        "church": "교회 정보",
+        "training": "양육",
+        "ministry": "사역"
+      },
+      "fields": {
+        "name": "이름",
+        "birthDate": "생년월일",
+        "gender": "성별",
+        "occupation": "직업",
+        "phone": "전화번호",
+        "email": "이메일",
+        "address": "주소",
+        "group": "순",
+        "baptism": "세례",
+        "status": "상태",
+        "registrationDate": "등록일"
+      },
+      "trainingEmpty": "등록된 양육이 없습니다",
+      "ministryEmpty": "등록된 사역이 없습니다",
+      "notFound": {
+        "heading": "청년 정보를 불러올 수 없습니다",
+        "description": "목록으로 돌아가 다시 시도하세요.",
+        "action": "청년 리스트로"
+      },
+      "deleteDialog": {
+        "header": "청년 삭제",
+        "message": "이 청년을 삭제할까요? 이 작업은 되돌릴 수 없습니다.",
+        "accept": "삭제",
+        "cancel": "취소"
+      },
+      "toast": {
+        "loadFailed": "청년 정보를 불러올 수 없습니다.",
+        "deleted": "삭제되었습니다.",
+        "deleteFailed": "삭제에 실패했습니다."
+      }
     }
   }
 }

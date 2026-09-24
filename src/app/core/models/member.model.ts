@@ -44,6 +44,7 @@ export interface Member {
   gender: Gender | null;
   baptism: Baptism | null;
   birthDate: string | null;       // ISO date string
+  occupation?: string | null;
   phoneNumber: string | null;
   email: string | null;
   street: string | null;

@@ -297,6 +297,50 @@
       "heading": "Could not load the list",
       "description": "Please try again in a moment.",
       "retry": "Retry"
+    },
+    "detail": {
+      "breadcrumb": "Members",
+      "subtitle": "{{group}} · registered {{date}}",
+      "edit": "Edit",
+      "more": "More",
+      "delete": "Delete",
+      "cards": {
+        "basic": "Basic info",
+        "church": "Church",
+        "training": "Training",
+        "ministry": "Ministry"
+      },
+      "fields": {
+        "name": "Name",
+        "birthDate": "Date of birth",
+        "gender": "Gender",
+        "occupation": "Occupation",
+        "phone": "Phone",
+        "email": "Email",
+        "address": "Address",
+        "group": "Group",
+        "baptism": "Baptism",
+        "status": "Status",
+        "registrationDate": "Registered"
+      },
+      "trainingEmpty": "No training recorded",
+      "ministryEmpty": "No ministry recorded",
+      "notFound": {
+        "heading": "Could not load this member",
+        "description": "Go back to the list and try again.",
+        "action": "Back to members"
+      },
+      "deleteDialog": {
+        "header": "Delete member",
+        "message": "Delete this member? This cannot be undone.",
+        "accept": "Delete",
+        "cancel": "Cancel"
+      },
+      "toast": {
+        "loadFailed": "Could not load the member.",
+        "deleted": "Deleted.",
+        "deleteFailed": "Delete failed."
+      }
     }
   }
 }

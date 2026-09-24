@@ -1,207 +1,147 @@
-<!-- src/app/features/members/member-detail/member-detail.component.html -->
-<div class="p-6">
-
-  <!-- Back + actions -->
-  <div class="flex items-center gap-3 mb-6">
-    <button
-      (click)="goBack()"
-      aria-label="Back to members list"
-      class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-secondary hover:text-primary hover:border-primary transition-colors"
-    >
-      <i class="pi pi-arrow-left text-[12px]"></i>
-    </button>
-    <h1 class="text-[22px] font-extrabold text-primary tracking-tight flex-1">
-      @if (!loading() && member()) {
-        {{ member()!.lastName }}{{ member()!.firstName }}
-        @if (member()!.discriminator) {
-          <span class="text-[14px] text-tertiary font-medium ml-2">({{ member()!.discriminator }})</span>
-        }
-      }
-    </h1>
-    @if (!loading() && member()) {
-      <div class="flex gap-2">
-        <button
-          (click)="goToEdit()"
-          class="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[12px] font-bold hover:bg-primary-hover transition-colors tracking-tight"
-        >
-          <i class="pi pi-pencil text-[11px]"></i>
-          Edit
-        </button>
-        <button
-          (click)="confirmDelete($event)"
-          class="flex items-center gap-2 h-9 px-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-[12px] font-bold hover:bg-red-100 transition-colors tracking-tight"
-        >
-          <i class="pi pi-trash text-[11px]"></i>
-          Delete
-        </button>
+<!--
+  Figma: 청년 상세 · Desktop · Light (201:6234), 청년 상세 · 전 순장 · Desktop · Light.
+  기본 정보 spans the full width; 교회 정보, 양육 and 사역 sit in a two-column grid
+  below it and stack under the `tablet` breakpoint.
+-->
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    hasBack
+    [breadcrumb]="breadcrumb()"
+    [eyebrow]="'members.eyebrow' | translate"
+    [heading]="fullName() || ('members.detail.breadcrumb' | translate)"
+    [subtitle]="subtitle()"
+    (back)="goBack()">
+    @if (member()) {
+      <div appActions class="flex items-center gap-[var(--space-8)]">
+        <p-button
+          icon="pi pi-pencil"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'members.detail.edit' | translate"
+          (onClick)="goToEdit()" />
+        <p-button
+          icon="pi pi-ellipsis-v"
+          severity="secondary"
+          [text]="true"
+          [rounded]="true"
+          [ariaLabel]="'members.detail.more' | translate"
+          (onClick)="toggleMore($event)" />
+        <p-menu #moreMenu [model]="moreItems()" [popup]="true" appendTo="body" />
       </div>
     }
-  </div>
+  </app-page-header>
 
-  <!-- Loading -->
   @if (loading()) {
-    <div class="flex justify-center py-16 text-tertiary text-[13px]">Loading...</div>
-  }
-
-  <!-- Detail content -->
-  @if (!loading() && member()) {
-
-    <!--
-      기본 정보 über volle Breite; darunter 교회 정보, 양육 und 사역 im
-      2-Spalten-Raster (#74) — stacked when narrow.
-    -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-
-    <!-- Basic info box -->
-    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-
-      <!-- Avatar + name + badges -->
-      <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-50">
-        <div class="w-14 h-14 rounded-full bg-primary text-white text-[18px] font-bold flex items-center justify-center flex-shrink-0">
-          {{ member()!.lastName.slice(0, 1) }}
-        </div>
-        <div>
-          <div class="text-[18px] font-extrabold text-primary tracking-tight">
-            {{ member()!.lastName }}{{ member()!.firstName }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Fields grid -->
-      <div class="grid grid-cols-2 gap-x-10 gap-y-4 text-[13px]">
-
-        <div class="col-span-2 text-[9px] font-bold text-tertiary uppercase tracking-widest pb-1 border-b border-gray-50">
-          Basic Info
-        </div>
-
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Date of Birth</div>
-          <div class="font-medium text-gray-800">{{ member()!.birthDate ?? '—' }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Gender</div>
-          <div class="font-medium text-gray-800">{{ genderLabel(member()!.gender) }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Email</div>
-          <div class="font-medium text-gray-800">{{ member()!.email ?? '—' }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Phone</div>
-          <div class="font-medium text-gray-800">{{ formatPhone(member()!.phoneNumber) }}</div>
-        </div>
-
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Street</div>
-          <div class="font-medium text-gray-800">{{ member()!.street ?? '—' }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Street No.</div>
-          <div class="font-medium text-gray-800">{{ member()!.houseNumber ?? '—' }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Zip Code</div>
-          <div class="font-medium text-gray-800">{{ member()!.zipCode ?? '—' }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">City</div>
-          <div class="font-medium text-gray-800">{{ member()!.city ?? '—' }}</div>
-        </div>
-
-      </div>
+    <app-skeleton variant="card" />
+    <div class="grid grid-cols-1 gap-gutter tablet:grid-cols-2">
+      <app-skeleton variant="card" />
+      <app-skeleton variant="card" />
     </div>
+  } @else if (member(); as m) {
+    <div class="grid grid-cols-1 items-start gap-gutter tablet:grid-cols-2">
 
-    <!-- 교회 정보 -->
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6" data-testid="church-card">
-      <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest pb-1 border-b border-gray-50 mb-4">
-        교회 정보
-      </div>
-      <div class="grid grid-cols-2 gap-x-10 gap-y-4 text-[13px]">
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">순</div>
-          <div class="font-medium text-gray-800">{{ member()!.groupName ?? '—' }}</div>
+      <!-- 기본 정보 -->
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card tablet:col-span-2"
+        data-testid="basic-card">
+        <app-section-header [heading]="'members.detail.cards.basic' | translate" />
+        <div class="grid grid-cols-1 gap-x-[var(--space-32)] gap-y-[var(--space-8)] tablet:grid-cols-2">
+          <dl class="m-0 flex flex-col gap-[var(--space-8)]">
+            <app-definition-row
+              layout="inline"
+              [term]="'members.detail.fields.name' | translate"
+              [value]="m.discriminator ? fullName() + ' (' + m.discriminator + ')' : fullName()" />
+            <app-definition-row layout="inline" [term]="'members.detail.fields.birthDate' | translate" [value]="m.birthDate ?? '—'" />
+            <app-definition-row layout="inline" [term]="'members.detail.fields.gender' | translate" [value]="genderLabel(m.gender)" />
+            <app-definition-row layout="inline" [term]="'members.detail.fields.occupation' | translate" [value]="m.occupation || '—'" />
+          </dl>
+          <dl class="m-0 flex flex-col gap-[var(--space-8)]">
+            <app-definition-row layout="inline" [term]="'members.detail.fields.phone' | translate" [value]="formatPhone(m.phoneNumber)" />
+            <app-definition-row layout="inline" [term]="'members.detail.fields.email' | translate" [value]="m.email ?? '—'" />
+            <app-definition-row layout="inline" [term]="'members.detail.fields.address' | translate" [value]="address()" />
+          </dl>
         </div>
-        @if (leaderRow(); as row) {
-          <div data-testid="leader-row">
-            <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">{{ row.label }}</div>
-            <div class="font-medium text-gray-800 tabular-nums">{{ row.value }}</div>
-          </div>
-        }
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">세례</div>
-          @if (member()!.baptism) {
-            <span class="status-badge badge-active">{{ baptismLabel(member()!.baptism) }}</span>
-          } @else {
-            <div class="font-medium text-gray-800">—</div>
+      </section>
+
+      <!-- 교회 정보 -->
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+        data-testid="church-card">
+        <app-section-header [heading]="'members.detail.cards.church' | translate" />
+        <dl class="m-0 flex flex-col gap-[var(--space-8)]">
+          <app-definition-row layout="inline" [term]="'members.detail.fields.group' | translate" [value]="m.groupName ?? '—'" />
+          @if (leaderRow(); as row) {
+            <app-definition-row layout="inline" data-testid="leader-row" [term]="row.label" [value]="row.value" />
           }
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">상태</div>
-          <span [class]="'status-badge ' + statusBadgeClass(member()!.memberStatus)">
-            {{ member()!.memberStatus }}
-          </span>
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">등록일</div>
-          <div class="font-medium text-gray-800">{{ member()!.registrationDate ?? '—' }}</div>
-        </div>
-      </div>
-    </div>
+          <app-definition-row layout="inline" [term]="'members.detail.fields.baptism' | translate">
+            @if (m.baptism) {
+              <app-badge variant="neutral" [label]="baptismLabel(m.baptism)" />
+            } @else {
+              —
+            }
+          </app-definition-row>
+          <app-definition-row layout="inline" [term]="'members.detail.fields.status' | translate">
+            <app-badge [variant]="statusVariant(m.memberStatus)" [label]="statusLabel(m.memberStatus)" />
+          </app-definition-row>
+          <app-definition-row layout="inline" [term]="'members.detail.fields.registrationDate' | translate" [value]="m.registrationDate ?? '—'" />
+        </dl>
+      </section>
 
-    <!-- Training box -->
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-      <div class="flex items-center justify-between pb-1 border-b border-gray-50 mb-4">
-        <span class="text-[9px] font-bold text-tertiary uppercase tracking-widest">Completed Trainings</span>
-        @if (trainings().length > 0) {
-          <span class="text-[12px] font-bold text-tertiary tracking-wide tabular-nums">월/년</span>
+      <!-- 양육 -->
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+        data-testid="training-card">
+        <app-section-header [heading]="'members.detail.cards.training' | translate" />
+        @if (trainings().length === 0) {
+          <p class="type-body text-ink-muted m-0">{{ 'members.detail.trainingEmpty' | translate }}</p>
+        } @else {
+          <div class="flex flex-wrap gap-[var(--space-6)]">
+            @for (t of trainings(); track $index) {
+              @let badge = trainingBadge(t);
+              <app-badge [variant]="badge.variant" [label]="badge.label" />
+            }
+          </div>
+          <dl class="m-0 flex flex-col gap-[var(--space-8)]">
+            @for (t of trainings(); track $index) {
+              <app-definition-row layout="inline" [term]="trainingName(t)" [value]="trainingDate(t)" />
+            }
+          </dl>
         }
-      </div>
-      @if (trainings().length === 0) {
-        <div class="text-[13px] text-tertiary py-6 text-center">No trainings recorded.</div>
-      } @else {
-        <div class="flex flex-col gap-2">
-          @for (t of trainings(); track $index) {
-            <div class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-100 bg-gray-50/50">
-              <span class="text-[13px] font-semibold text-gray-800">{{ trainingName(t) }}</span>
-              <span class="text-[13px] text-secondary tabular-nums">{{ trainingDate(t) }}</span>
-            </div>
-          }
-        </div>
-      }
-    </div>
+      </section>
 
-    <!-- Ministry box -->
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-      <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest pb-1 border-b border-gray-50 mb-4">
-        Ministry History
-      </div>
-      @if (ministries().length === 0) {
-        <div class="text-[13px] text-tertiary py-6 text-center">No ministries recorded.</div>
-      } @else {
-        <div class="flex flex-col gap-2">
-          @for (m of ministries(); track $index) {
-            <div class="flex flex-col gap-1 px-4 py-3 rounded-lg border border-gray-100 bg-gray-50/50">
-              <div class="flex items-center justify-between">
-                <span class="text-[13px] font-semibold text-gray-800">{{ m.name }}</span>
-                <span class="text-[13px] text-secondary tabular-nums">{{ ministryRange(m) }}</span>
-              </div>
-              @if (m.note) {
-                <span class="text-[12px] text-tertiary">{{ m.note }}</span>
+      <!-- 사역 -->
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+        data-testid="ministry-card">
+        <app-section-header [heading]="'members.detail.cards.ministry' | translate" />
+        @if (ministries().length === 0) {
+          <p class="type-body text-ink-muted m-0">{{ 'members.detail.ministryEmpty' | translate }}</p>
+        } @else {
+          @if (activeMinistries().length > 0) {
+            <div class="flex flex-wrap gap-[var(--space-6)]">
+              @for (mi of activeMinistries(); track $index) {
+                <app-badge variant="ministry-active" [label]="mi.name" />
               }
             </div>
           }
-        </div>
-      }
+          <dl class="m-0 flex flex-col gap-[var(--space-8)]">
+            @for (mi of ministries(); track $index) {
+              <app-definition-row layout="inline" [term]="mi.name" [value]="ministryValue(mi)" />
+            }
+          </dl>
+        }
+      </section>
+
     </div>
-
-    </div><!-- /grid -->
+  } @else {
+    <app-empty-state
+      variant="error"
+      [heading]="'members.detail.notFound.heading' | translate"
+      [description]="'members.detail.notFound.description' | translate"
+      [actionLabel]="'members.detail.notFound.action' | translate"
+      actionIcon="pi pi-arrow-left"
+      (action)="goBack()" />
   }
-
-  <!-- Not found -->
-  @if (!loading() && !member()) {
-    <div class="text-center py-16 text-tertiary text-[13px]">Member not found.</div>
-  }
-
 </div>
 
 <p-confirmDialog />

@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { MemberDetailComponent } from './member-detail.component';
 import { MemberService } from '../member.service';
@@ -19,7 +19,7 @@ describe('MemberDetailComponent — 교회 정보', () => {
     isGroupLeader: false,
   } as unknown as Member;
 
-  function render(member: Partial<Member>) {
+  function render(member: Partial<Member>, getMember: () => Observable<Member> = () => of({ ...base, ...member })) {
     TestBed.configureTestingModule({
       imports: [MemberDetailComponent],
       providers: [
@@ -28,7 +28,7 @@ describe('MemberDetailComponent — 교회 정보', () => {
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'ko' }),
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
-        { provide: MemberService, useValue: { getMember: () => of({ ...base, ...member }) } },
+        { provide: MemberService, useValue: { getMember } },
       ],
     });
     const fixture = TestBed.createComponent(MemberDetailComponent);
@@ -38,9 +38,11 @@ describe('MemberDetailComponent — 교회 정보', () => {
       component: fixture.componentInstance,
       leaderRow: () => {
         const row = el.querySelector('[data-testid="leader-row"]');
-        return row ? Array.from(row.children, c => c.textContent?.trim()).join(' | ') : null;
+        return row ? Array.from(row.querySelectorAll('dt, dd'), c => c.textContent?.trim()).join(' | ') : null;
       },
       churchCard: () => el.querySelector('[data-testid="church-card"]')?.textContent ?? '',
+      basicCard: () => el.querySelector('[data-testid="basic-card"]')?.textContent ?? '',
+      el,
     };
   }
 
@@ -61,5 +63,39 @@ describe('MemberDetailComponent — 교회 정보', () => {
     expect(leaderRow()).toBeNull();
     expect(churchCard()).toContain('믿음');
     expect(churchCard()).toContain('2023-02-01');
+  });
+
+  it('joins the address into one line and leaves out missing parts', () => {
+    const { component } = render({ street: 'Hauptstraße', houseNumber: '12a', zipCode: '10115', city: 'Berlin' });
+    expect(component.address()).toBe('Hauptstraße 12a, 10115 Berlin');
+  });
+
+  it('shows — for an address with nothing in it, and only the city when that is all there is', () => {
+    expect(render({}).component.address()).toBe('—');
+    TestBed.resetTestingModule();
+    expect(render({ city: 'Berlin' }).component.address()).toBe('Berlin');
+  });
+
+  it('shows the occupation in 기본 정보', () => {
+    const { basicCard } = render({ occupation: '개발자' });
+    expect(basicCard()).toContain('개발자');
+  });
+
+  it('colors a 양육 badge by 상태: 신청/등록 grey, 진행 중 orange, 수료 green, 중단/미확인 red', () => {
+    const { component } = render({});
+    const t = (status: string) =>
+      component.trainingBadge({ trainingPublicId: 't', name: 'x', status, completedAt: null } as never).variant;
+    expect(t('APPLIED')).toBe('neutral');
+    expect(t('ENROLLED')).toBe('neutral');
+    expect(t('IN_PROGRESS')).toBe('training-progress');
+    expect(t('COMPLETED')).toBe('training-completed');
+    expect(t('DROPPED')).toBe('deleted');
+    expect(t('UNKNOWN')).toBe('deleted');
+  });
+
+  it('shows the error state instead of the cards when the member cannot be loaded', () => {
+    const { el, churchCard } = render({}, () => throwError(() => new Error('404')));
+    expect(churchCard()).toBe('');
+    expect(el.querySelector('app-empty-state')).not.toBeNull();
   });
 });
