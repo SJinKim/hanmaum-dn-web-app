@@ -265,38 +265,124 @@
             </div>
           </p-tabpanel>
 
-          <!-- 교회 — unchanged markup, redesigned by #74 -->
+          <!--
+            교회 (Figma 555:24807): links 순 und 순장, rechts 세례 und 상태.
+            순장 시작일 / 종료일 sind read-only — der Server datiert beides beim
+            저장 selbst; `tenure()` zeigt, was er eintragen wird.
+            순 und 순장 gibt es erst beim Bearbeiten: assign/clear brauchen die
+            publicId des Members.
+          -->
           <p-tabpanel [value]="1">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1">
-                <label for="memberBaptism" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Baptism</label>
-                <p-select inputId="memberBaptism" formControlName="baptism" [options]="baptismOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
-              </div>
-
+            <div class="flex flex-col gap-gutter tablet:flex-row">
               @if (isEdit()) {
-                <div class="flex flex-col gap-1">
-                  <label for="memberChurchGroup" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Church Group</label>
-                  <p-select inputId="memberChurchGroup" formControlName="groupPublicId" [options]="groupOptions()" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" class="w-full" />
+                <div class="flex flex-1 flex-col gap-[var(--space-16)]">
+                  <div class="flex flex-col gap-[var(--space-4)]">
+                    <label for="memberChurchGroup" class="type-caption text-ink-muted">
+                      {{ 'members.edit.church.group' | translate }}
+                    </label>
+                    <p-select
+                      inputId="memberChurchGroup"
+                      formControlName="groupPublicId"
+                      [options]="groupOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                      [placeholder]="'members.edit.placeholders.select' | translate"
+                      [showClear]="true"
+                      appendTo="body"
+                      styleClass="w-full" />
+                    @if (leaderChangeHintName(); as name) {
+                      <small class="type-caption text-[var(--color-badge-inactive-fg)]" data-testid="leader-change-hint">
+                        {{ 'members.edit.leaderChangeHint' | translate:{ name } }}
+                      </small>
+                    }
+                  </div>
+
                   <label
                     for="memberIsGroupLeader"
-                    class="flex items-center gap-2 mt-1"
+                    class="flex items-center gap-[var(--space-8)]"
                     [class.cursor-pointer]="!!form.get('groupPublicId')!.value"
                     [class.cursor-not-allowed]="!form.get('groupPublicId')!.value"
-                    [class.opacity-40]="!form.get('groupPublicId')!.value"
-                  >
-                    <p-checkbox inputId="memberIsGroupLeader" formControlName="isGroupLeader" [binary]="true" />
-                    <span class="text-[11px] font-semibold text-secondary">{{ 'members.edit.churchGroupLeader' | translate }}</span>
+                    [class.opacity-40]="!form.get('groupPublicId')!.value">
+                    <p-toggleswitch inputId="memberIsGroupLeader" formControlName="isGroupLeader" />
+                    <span class="type-body text-ink">{{ 'members.edit.church.leaderToggle' | translate }}</span>
                   </label>
-                  @if (leaderChangeHintName(); as name) {
-                    <small class="text-amber-600 text-[11px]">{{ 'members.edit.leaderChangeHint' | translate:{ name } }}</small>
-                  }
-                </div>
 
-                <div class="flex flex-col gap-1">
-                  <label for="memberStatus" class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Status</label>
-                  <p-select inputId="memberStatus" formControlName="memberStatus" [options]="statusOptions" optionLabel="label" optionValue="value" placeholder="Select" class="w-full" />
+                  <div class="flex gap-[var(--space-12)]">
+                    <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+                      <label for="memberLeaderStart" class="type-caption text-ink-muted">
+                        {{ 'members.edit.church.leaderStart' | translate }}
+                      </label>
+                      <input
+                        id="memberLeaderStart"
+                        pInputText
+                        readonly
+                        tabindex="-1"
+                        class="w-full bg-[var(--color-bg-subtle)] text-ink-muted"
+                        data-testid="leader-start"
+                        [value]="tenure().startDate ?? '—'" />
+                      @if (tenure().startHint; as hint) {
+                        <small class="type-caption text-ink-disabled">
+                          {{ 'members.edit.church.hints.' + hint | translate }}
+                        </small>
+                      }
+                    </div>
+                    <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+                      <label for="memberLeaderEnd" class="type-caption text-ink-muted">
+                        {{ 'members.edit.church.leaderEnd' | translate }}
+                      </label>
+                      <input
+                        id="memberLeaderEnd"
+                        pInputText
+                        readonly
+                        tabindex="-1"
+                        class="w-full bg-[var(--color-bg-subtle)] text-ink-muted"
+                        data-testid="leader-end"
+                        [value]="tenure().endDate ?? '—'" />
+                      <small class="type-caption text-ink-disabled" data-testid="leader-end-hint">
+                        @if (tenure().pastGroupName; as group) {
+                          {{ 'members.edit.church.hints.pastInGroup' | translate:{ group } }}
+                        } @else {
+                          {{ 'members.edit.church.hints.' + tenure().endHint | translate }}
+                        }
+                      </small>
+                    </div>
+                  </div>
                 </div>
               }
+
+              <div class="flex flex-1 flex-col gap-[var(--space-16)]">
+                <div class="flex flex-col gap-[var(--space-4)]">
+                  <label for="memberBaptism" class="type-caption text-ink-muted">
+                    {{ 'members.edit.church.baptism' | translate }}
+                  </label>
+                  <p-select
+                    inputId="memberBaptism"
+                    formControlName="baptism"
+                    [options]="baptismOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    [placeholder]="'members.edit.placeholders.select' | translate"
+                    appendTo="body"
+                    styleClass="w-full" />
+                </div>
+
+                @if (isEdit()) {
+                  <div class="flex flex-col gap-[var(--space-4)]">
+                    <label for="memberStatus" class="type-caption text-ink-muted">
+                      {{ 'members.edit.church.status' | translate }}
+                    </label>
+                    <p-select
+                      inputId="memberStatus"
+                      formControlName="memberStatus"
+                      [options]="statusOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      [placeholder]="'members.edit.placeholders.select' | translate"
+                      appendTo="body"
+                      styleClass="w-full" />
+                  </div>
+                }
+              </div>
             </div>
           </p-tabpanel>
 
@@ -521,3 +607,4 @@
 
 <p-toast />
 <p-confirmdialog [key]="unsavedChangesDialogKey" />
+<p-confirmdialog [key]="leaderDialogKey" />

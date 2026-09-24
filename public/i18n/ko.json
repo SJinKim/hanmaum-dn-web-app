@@ -151,7 +151,7 @@
     },
     "edit": {
       "churchGroupLeader": "순장",
-      "leaderChangeHint": "이 변경으로 순장이 {{name}}에서 바뀝니다.",
+      "leaderChangeHint": "현재 순장: {{name}} · 저장하면 교체됩니다",
       "cardTitle": "청년 정보",
       "createHeading": "청년 추가",
       "editHeading": "청년 정보 수정",
@@ -215,6 +215,36 @@
       },
       "hints": {
         "occupation": "직업은 백엔드에 아직 저장되지 않습니다 (hanmaum-dn-server#197)."
+      },
+      "church": {
+        "group": "순",
+        "leaderToggle": "이 청년이 순장입니다",
+        "leaderStart": "순장 시작일",
+        "leaderEnd": "순장 종료일",
+        "baptism": "세례",
+        "status": "상태",
+        "hints": {
+          "start": "저장 시 자동으로 기록됩니다",
+          "end": "순장 해제 후 저장하면 기록됩니다",
+          "pendingEnd": "저장하면 오늘 날짜로 임기가 종료됩니다",
+          "past": "지난 임기 · 다시 켜면 새 임기가 시작됩니다",
+          "pastInGroup": "지난 임기 · {{group}} · 다시 켜면 새 임기가 시작됩니다"
+        }
+      },
+      "leaderDialog": {
+        "assignHeader": "순장 지정",
+        "assign": "{{name}}{{obj}} {{group}} 순장으로 지정할까요?",
+        "replace": "현재 순장 {{leader}} ({{since}}~){{topic}} 오늘 날짜로 종료됩니다.",
+        "assignAccept": "예, 지정합니다",
+        "endHeader": "순장 종료",
+        "end": "{{name}}의 {{group}} 순장 임기를 종료할까요? 종료일은 오늘({{today}})로 기록됩니다.",
+        "endAccept": "예, 종료합니다",
+        "moveHeader": "순장 이동",
+        "move": "{{name}}{{obj}} {{group}} 순장으로 옮길까요?",
+        "moveEndsOld": "{{group}} 순장 임기는 오늘 날짜로 종료됩니다.",
+        "moveReplace": "현재 {{group}} 순장 {{leader}} ({{since}}~)도 오늘 날짜로 종료됩니다.",
+        "moveAccept": "예, 옮깁니다",
+        "cancel": "취소"
       }
     },
     "toast": {

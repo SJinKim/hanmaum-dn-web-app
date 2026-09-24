@@ -17,12 +17,12 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
-import { CheckboxModule } from 'primeng/checkbox';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
@@ -66,6 +66,38 @@ import {
 } from '../../../core/models/phone.util';
 import { HasUnsavedChanges, UNSAVED_CHANGES_DIALOG_KEY } from '../../../core/guards/unsaved-changes.guard';
 
+const LEADER_DIALOG_KEY = 'leader-change';
+
+/** Read-only 순장 시작일 / 종료일 plus which hint each field shows. */
+export interface TenureView {
+  startDate: string | null;
+  endDate: string | null;
+  startHint: 'start' | null;
+  endHint: 'end' | 'pendingEnd' | 'past';
+  /** Set when the past tenure was in another 순 than the one selected. */
+  pastGroupName?: string | null;
+}
+
+/** Whether the last Hangul syllable of `word` ends in a final consonant (받침). */
+function hasFinalConsonant(word: string): boolean {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  return code >= 0 && code <= 11171 && code % 28 !== 0;
+}
+
+/** 을 / 를 for `word`; 을(를) when it does not end in Hangul. */
+function objectParticle(word: string): string {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  if (!(code >= 0 && code <= 11171)) return '을(를)';
+  return hasFinalConsonant(word) ? '을' : '를';
+}
+
+/** 은 / 는 for `word`; 은(는) when it does not end in Hangul. */
+function topicParticle(word: string): string {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  if (!(code >= 0 && code <= 11171)) return '은(는)';
+  return hasFinalConsonant(word) ? '은' : '는';
+}
+
 /** Validates the mobile number against the country chosen in the sibling control. Empty = valid (phone is optional). */
 const mobileValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const value = (control.value ?? '') as string;
@@ -83,7 +115,7 @@ const mobileValidator: ValidatorFn = (control: AbstractControl): ValidationError
     InputTextModule,
     SelectModule,
     DatePickerModule,
-    CheckboxModule,
+    ToggleSwitchModule,
     TabsModule,
     ToastModule,
     ConfirmDialogModule,
@@ -104,9 +136,11 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
   private readonly messageService = inject(MessageService);
   private readonly destroyRef    = inject(DestroyRef);
   private readonly translate     = inject(TranslateService);
+  private readonly confirmation  = inject(ConfirmationService);
 
   /** Key of the dialog the unsaved-changes guard opens; rendered at the end of the template. */
   readonly unsavedChangesDialogKey = UNSAVED_CHANGES_DIALOG_KEY;
+  readonly leaderDialogKey = LEADER_DIALOG_KEY;
 
   readonly isEdit     = signal(false);
   readonly loading    = signal(false);
@@ -212,6 +246,42 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
   /** Name of the sitting 순장 that this save would replace, or null when no hint is needed. */
   readonly leaderChangeHintName = signal<string | null>(null);
 
+  /** Mirrors of the 순 select and the 순장 toggle, so the tenure fields can be computed. */
+  private readonly leaderOn = signal(false);
+  private readonly selectedGroupId = signal<string | null>(null);
+
+  /**
+   * The read-only 순장 시작일 / 종료일 pair under the toggle. The API has no end date
+   * for a running tenure, so a pending 해제 shows today — the day the server will record.
+   */
+  readonly tenure = computed<TenureView>(() => {
+    const m = this.loaded();
+    const today = localDateToIso(new Date())!;
+    const leadsLoadedGroup = !!m?.isGroupLeader;
+
+    if (this.leaderOn()) {
+      if (leadsLoadedGroup && this.selectedGroupId() === m?.groupPublicId) {
+        return { startDate: m?.groupLeaderSince ?? null, endDate: null, startHint: 'start', endHint: 'end' };
+      }
+      // A new tenure starts on save, and the server dates it today.
+      return { startDate: today, endDate: null, startHint: 'start', endHint: 'end' };
+    }
+    if (leadsLoadedGroup) {
+      return { startDate: m?.groupLeaderSince ?? null, endDate: today, startHint: 'start', endHint: 'pendingEnd' };
+    }
+    const past = m?.lastGroupLeaderTenure;
+    if (past?.endDate) {
+      return {
+        startDate: past.startDate,
+        endDate: past.endDate,
+        startHint: null,
+        endHint: 'past',
+        pastGroupName: past.groupPublicId !== this.selectedGroupId() ? past.groupName : null,
+      };
+    }
+    return { startDate: null, endDate: null, startHint: 'start', endHint: 'end' };
+  });
+
   get trainings(): FormArray<FormGroup> { return this.form.get('trainings') as FormArray<FormGroup>; }
   get ministries(): FormArray<FormGroup> { return this.form.get('ministries') as FormArray<FormGroup>; }
 
@@ -219,6 +289,8 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
   private originalIsGroupLeader = false;
   private originalGroupPublicId: string | null = null;
   private leaderPersistError: 'assign' | 'clear' | null = null;
+  /** Set while the component itself writes the 순 / 순장 controls, so no dialog opens. */
+  private silentLeaderWrite = false;
 
   /**
    * Only user edits count: `patchValue` while loading never marks the form dirty,
@@ -255,14 +327,11 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
 
     this.form.get('groupPublicId')!.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.syncLeaderCheckboxEnabled();
-        this.refreshLeaderHint();
-      });
+      .subscribe(group => this.onGroupChange(group));
 
     this.form.get('isGroupLeader')!.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.refreshLeaderHint());
+      .subscribe(checked => this.onLeaderToggle(!!checked));
 
     if (this.publicId) {
       this.loading.set(true);
@@ -294,6 +363,7 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
   private patchForm(member: Member): void {
     const { country: phoneCountry, local: phoneLocal } = parseE164(member.phoneNumber);
     this.loaded.set(member);
+    this.silentLeaderWrite = true;
     this.form.patchValue({
       lastName:         member.lastName,
       firstName:        member.firstName,
@@ -313,10 +383,10 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
       memberStatus:     member.memberStatus,
       isGroupLeader:    !!member.isGroupLeader,
     });
+    this.silentLeaderWrite = false;
     this.originalIsGroupLeader = !!member.isGroupLeader;
     this.originalGroupPublicId = member.groupPublicId ?? null;
-    this.syncLeaderCheckboxEnabled();
-    this.refreshLeaderHint();
+    this.syncLeaderState();
 
     this.rebuildActivities(member.trainings ?? []);
     this.rebuildMinistries(member.ministries ?? []);
@@ -419,6 +489,10 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
   /**
    * Appoints or clears 순장 after the member PATCH. The backend requires the member
    * to already belong to the group, so this must run after `updateMember`.
+   *
+   * A 순장 moved to another 순 needs no clear: the PATCH itself ends the tenure in the
+   * old group (`MemberService.endLeadershipIfMovedOutOfGroup` on the server). Only the
+   * local group list is updated so the old 순 no longer shows them as leader.
    */
   private persistLeadership(
     member: Member,
@@ -429,6 +503,13 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
 
     const alreadyLeadsThisGroup =
       this.originalIsGroupLeader && newGroup === this.originalGroupPublicId;
+
+    if (this.originalIsGroupLeader && !alreadyLeadsThisGroup) {
+      this.churchGroups.update(gs => gs.map(g =>
+        g.publicId === this.originalGroupPublicId && g.leaderPublicId === this.publicId
+        ? { ...g, leaderPublicId: null, leaderName: null, leaderSince: null }
+        : g));
+    }
 
     if (checked && newGroup && !alreadyLeadsThisGroup) {
       return this.memberService.assignGroupLeader(newGroup, member.publicId).pipe(
@@ -468,6 +549,140 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
       ctrl.setValue(false, { emitEvent: false });
       ctrl.disable({ emitEvent: false });
     }
+  }
+
+  /** Re-derives everything that hangs off the 순 select and the 순장 toggle. */
+  private syncLeaderState(): void {
+    this.syncLeaderCheckboxEnabled();
+    this.selectedGroupId.set(this.form.get('groupPublicId')!.value);
+    this.leaderOn.set(!!this.form.get('isGroupLeader')!.value);
+    this.refreshLeaderHint();
+  }
+
+  private writeLeaderControls(values: { groupPublicId?: string | null; isGroupLeader?: boolean }): void {
+    this.silentLeaderWrite = true;
+    this.form.patchValue(values);
+    this.silentLeaderWrite = false;
+    this.syncLeaderState();
+  }
+
+  /** True when the 순 / 순장 pair is back where it was loaded — undoing needs no dialog. */
+  private isOriginalLeaderState(group: string | null, checked: boolean): boolean {
+    return group === this.originalGroupPublicId && checked === this.originalIsGroupLeader;
+  }
+
+  /**
+   * Every 순장 change ends or replaces a tenure, so it waits for 예 in a dialog. The
+   * control has already taken the new value when this runs; it is put back first and
+   * only re-applied on accept, so 취소 leaves toggle and select untouched.
+   */
+  private onLeaderToggle(checked: boolean): void {
+    if (this.silentLeaderWrite) return;
+    const group = this.selectedGroupId();
+    if (!group || this.isOriginalLeaderState(group, checked)) {
+      this.syncLeaderState();
+      return;
+    }
+    this.writeLeaderControls({ isGroupLeader: !checked });
+    const ctrl = this.form.get('isGroupLeader')!;
+    if (this.isOriginalLeaderState(group, !checked)) ctrl.markAsPristine();
+
+    this.askLeaderChange(
+      checked ? this.assignMessage(group) : this.endMessage(group),
+      checked ? 'assign' : 'end',
+      () => {
+        this.writeLeaderControls({ isGroupLeader: checked });
+        ctrl.markAsDirty();
+      },
+    );
+  }
+
+  private onGroupChange(group: string | null): void {
+    if (this.silentLeaderWrite) return;
+    const previous = this.selectedGroupId();
+    const leading = this.leaderOn();
+    if (!leading || this.isOriginalLeaderState(group, leading)) {
+      this.syncLeaderState();
+      return;
+    }
+    this.writeLeaderControls({ groupPublicId: previous });
+    const ctrl = this.form.get('groupPublicId')!;
+    if (this.isOriginalLeaderState(previous, leading)) ctrl.markAsPristine();
+
+    // Clearing the 순 of a 순장 ends the tenure; picking another one moves it.
+    const moving = !!group;
+    this.askLeaderChange(
+      moving ? this.moveMessage(previous!, group!) : this.endMessage(previous!),
+      moving ? 'move' : 'end',
+      () => {
+        this.writeLeaderControls(moving ? { groupPublicId: group } : { groupPublicId: null, isGroupLeader: false });
+        ctrl.markAsDirty();
+      },
+    );
+  }
+
+  private askLeaderChange(message: string, kind: 'assign' | 'end' | 'move', accept: () => void): void {
+    const t = (key: string) => this.translate.instant(`members.edit.leaderDialog.${key}`) as string;
+    this.confirmation.confirm({
+      key: LEADER_DIALOG_KEY,
+      header: t(`${kind}Header`),
+      message,
+      acceptLabel: t(`${kind}Accept`),
+      rejectLabel: t('cancel'),
+      accept,
+    });
+  }
+
+  private assignMessage(groupId: string): string {
+    const group = this.groupById(groupId);
+    const name = this.memberName();
+    return [
+      this.dialogText('assign', { name, obj: objectParticle(name), group: group?.name ?? '' }),
+      this.replacedLeaderText('replace', group),
+    ].filter(Boolean).join(' ');
+  }
+
+  private endMessage(groupId: string): string {
+    const today = localDateToIso(new Date())!;
+    return this.dialogText('end', { name: this.memberName(), group: this.groupById(groupId)?.name ?? '', today });
+  }
+
+  private moveMessage(fromId: string, toId: string): string {
+    const to = this.groupById(toId);
+    const name = this.memberName();
+    // Only a tenure that already exists in the old 순 is ended by the move.
+    const endsOld = this.originalIsGroupLeader && fromId === this.originalGroupPublicId;
+    return [
+      this.dialogText('move', { name, obj: objectParticle(name), group: to?.name ?? '' }),
+      endsOld ? this.dialogText('moveEndsOld', { group: this.groupById(fromId)?.name ?? '' }) : '',
+      this.replacedLeaderText('moveReplace', to),
+    ].filter(Boolean).join(' ');
+  }
+
+  /** Sentence naming the sitting 순장 the change would end — empty when there is none, or it is this member. */
+  private replacedLeaderText(key: string, group: ChurchGroupSummary | undefined): string {
+    if (!group?.leaderPublicId || group.leaderPublicId === this.publicId) return '';
+    const leader = group.leaderName || group.leaderPublicId;
+    return this.dialogText(key, {
+      group: group.name,
+      leader,
+      topic: topicParticle(leader),
+      since: group.leaderSince ?? '',
+    });
+  }
+
+  private dialogText(key: string, params: Record<string, string>): string {
+    return this.translate.instant(`members.edit.leaderDialog.${key}`, params) as string;
+  }
+
+  private groupById(id: string): ChurchGroupSummary | undefined {
+    return this.churchGroups().find(g => g.publicId === id);
+  }
+
+  private memberName(): string {
+    const m = this.loaded();
+    const raw = this.form.getRawValue();
+    return `${raw.lastName || m?.lastName || ''}${raw.firstName || m?.firstName || ''}`;
   }
 
   refreshLeaderHint(): void {

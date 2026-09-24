@@ -46,8 +46,11 @@
   <!-- Detail content -->
   @if (!loading() && member()) {
 
-    <!-- Basic Info | Training | Ministry — three columns on wide screens, stacked when narrow -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+    <!--
+      기본 정보 über volle Breite; darunter 교회 정보, 양육 und 사역 im
+      2-Spalten-Raster (#74) — stacked when narrow.
+    -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
     <!-- Basic info box -->
     <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
@@ -60,11 +63,6 @@
         <div>
           <div class="text-[18px] font-extrabold text-primary tracking-tight">
             {{ member()!.lastName }}{{ member()!.firstName }}
-          </div>
-          <div class="flex items-center gap-2 mt-1">
-            <span [class]="'status-badge ' + statusBadgeClass(member()!.memberStatus)">
-              {{ member()!.memberStatus }}
-            </span>
           </div>
         </div>
       </div>
@@ -110,29 +108,43 @@
           <div class="font-medium text-gray-800">{{ member()!.city ?? '—' }}</div>
         </div>
 
-        <div class="col-span-2 text-[9px] font-bold text-tertiary uppercase tracking-widest pb-1 border-b border-gray-50 mt-2">
-          Church Info
-        </div>
+      </div>
+    </div>
 
+    <!-- 교회 정보 -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6" data-testid="church-card">
+      <div class="text-[9px] font-bold text-tertiary uppercase tracking-widest pb-1 border-b border-gray-50 mb-4">
+        교회 정보
+      </div>
+      <div class="grid grid-cols-2 gap-x-10 gap-y-4 text-[13px]">
         <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Baptism</div>
-          <div class="font-medium text-gray-800">{{ baptismLabel(member()!.baptism) }}</div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">순</div>
+          <div class="font-medium text-gray-800">{{ member()!.groupName ?? '—' }}</div>
         </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Group</div>
-          <div class="font-medium text-gray-800 flex items-center gap-1.5">
-            {{ member()!.groupName ?? '—' }}
-            @if (member()!.isGroupLeader) {
-              <i class="pi pi-star-fill text-[12px]" style="color: #b45309" aria-hidden="true"></i>
-              <span class="font-bold" style="color: #b45309">순장</span>
-            }
+        @if (leaderRow(); as row) {
+          <div data-testid="leader-row">
+            <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">{{ row.label }}</div>
+            <div class="font-medium text-gray-800 tabular-nums">{{ row.value }}</div>
           </div>
+        }
+        <div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">세례</div>
+          @if (member()!.baptism) {
+            <span class="status-badge badge-active">{{ baptismLabel(member()!.baptism) }}</span>
+          } @else {
+            <div class="font-medium text-gray-800">—</div>
+          }
         </div>
         <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Registration Date</div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">상태</div>
+          <span [class]="'status-badge ' + statusBadgeClass(member()!.memberStatus)">
+            {{ member()!.memberStatus }}
+          </span>
+        </div>
+        <div>
+          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">등록일</div>
           <div class="font-medium text-gray-800">{{ member()!.registrationDate ?? '—' }}</div>
         </div>
-
       </div>
     </div>
 
