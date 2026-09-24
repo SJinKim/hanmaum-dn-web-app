@@ -123,6 +123,19 @@ describe('HomeComponent', () => {
       expect(rendered).toContain('D-5');
     });
 
+    it('prints — instead of 0 for a count that failed to load (#93)', () => {
+      const { fixture, home } = createHarness();
+      home.loadSnapshot.and.returnValue(of({ ...SNAPSHOT, awaitingRsvps: null }));
+      fixture.componentInstance.ngOnInit();
+      fixture.detectChanges();
+
+      const counts = Array.from(
+        fixture.nativeElement.querySelectorAll('.type-h2') as NodeListOf<HTMLElement>,
+        el => el.textContent?.trim(),
+      );
+      expect(counts).toEqual(['3', '—']);
+    });
+
     it('pins a 합계 row under the 순 rows', () => {
       const { fixture } = createHarness();
       const total = fixture.componentInstance.attendanceTotal();

@@ -33,11 +33,17 @@ export interface GroupAttendanceRow {
   ratio: number;
 }
 
+/**
+ * A count Home could not load. Rendered as `—`, never as `0`: a 0 claims there
+ * is nothing to do, which is wrong when the request simply failed (#93).
+ */
+export type HomeCount = number | null;
+
 /** The 현황 card: 전체 청년 / 활동 청년 / 사역. */
 export interface HomeOverview {
-  totalMembers: number;
-  activeMembers: number;
-  ministries: number;
+  totalMembers: HomeCount;
+  activeMembers: HomeCount;
+  ministries: HomeCount;
 }
 
 /** One 다가오는 일정 row — `daysUntil` renders as the D-N badge. */
@@ -49,8 +55,8 @@ export interface UpcomingEvent {
 
 /** Everything Home loads in one pass, except the range-dependent 순별 참석 현황. */
 export interface HomeSnapshot {
-  pendingApprovals: number;
-  awaitingRsvps: number;
+  pendingApprovals: HomeCount;
+  awaitingRsvps: HomeCount;
   overview: HomeOverview;
   recentActivity: MemberSummary[];
   upcomingEvents: UpcomingEvent[];
