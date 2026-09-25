@@ -419,6 +419,45 @@
           "namesFailed": "Could not load members."
         }
       }
+    },
+    "form": {
+      "card": "Ministry info",
+      "editTitle": "Edit ministry",
+      "newTitle": "New ministry",
+      "newSubtitle": "Register a new ministry team.",
+      "breadcrumbEdit": "Edit",
+      "breadcrumbNew": "New ministry",
+      "fields": {
+        "title": "Name",
+        "subtitle": "Description",
+        "leader": "Leader",
+        "status": "Status"
+      },
+      "placeholders": {
+        "title": "e.g. Worship team",
+        "subtitle": "Describe the ministry in one line",
+        "leader": "Select a leader"
+      },
+      "hints": {
+        "subtitle": "Up to {{max}} characters",
+        "leader": "Assigning a leader is coming soon"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "errors": {
+        "required": "This field is required."
+      },
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create",
+      "toast": {
+        "error": "Error",
+        "loadFailed": "Could not load the ministry.",
+        "saveFailed": "Could not save the changes.",
+        "createFailed": "Could not create the ministry."
+      }
     }
   }
 }

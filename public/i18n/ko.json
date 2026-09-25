@@ -419,6 +419,45 @@
           "namesFailed": "청년 목록을 불러올 수 없습니다."
         }
       }
+    },
+    "form": {
+      "card": "사역 정보",
+      "editTitle": "사역 정보 수정",
+      "newTitle": "새 사역 추가",
+      "newSubtitle": "새로운 사역 팀을 등록합니다.",
+      "breadcrumbEdit": "수정",
+      "breadcrumbNew": "새 사역 등록",
+      "fields": {
+        "title": "사역명",
+        "subtitle": "설명",
+        "leader": "리더",
+        "status": "상태"
+      },
+      "placeholders": {
+        "title": "예: 찬양팀",
+        "subtitle": "사역을 한 줄로 소개해 주세요",
+        "leader": "리더 선택"
+      },
+      "hints": {
+        "subtitle": "최대 {{max}}자",
+        "leader": "리더 지정은 준비 중입니다"
+      },
+      "status": {
+        "active": "운영 중",
+        "inactive": "비활성"
+      },
+      "errors": {
+        "required": "필수 입력 항목입니다."
+      },
+      "cancel": "취소",
+      "save": "저장",
+      "create": "등록",
+      "toast": {
+        "error": "오류",
+        "loadFailed": "사역 정보를 불러올 수 없습니다.",
+        "saveFailed": "수정에 실패했습니다.",
+        "createFailed": "사역을 등록하지 못했습니다."
+      }
     }
   }
 }

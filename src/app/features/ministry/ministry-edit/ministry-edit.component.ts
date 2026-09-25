@@ -1,40 +1,47 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { Observable, of, switchMap } from 'rxjs';
 
-import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { CheckboxModule } from 'primeng/checkbox';
-import { MessageService } from 'primeng/api';
+import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { MessageService } from 'primeng/api';
 
+import { injectAppLang } from '../../../core/i18n/language';
+import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
+import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
+import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 import { MinistryService } from '../ministry.service';
-import {
-  CreateMinistryRequest,
-  Ministry,
-  MinistryContact,
-  MinistrySchedule,
-  UpdateMinistryRequest,
-} from '../ministry.model';
+import { CreateMinistryRequest, Ministry, UpdateMinistryRequest } from '../ministry.model';
 
+export const TITLE_MAX = 100;
+export const SUBTITLE_MAX = 200;
+
+/**
+ * Figma: 사역 정보 수정 (204:7690) and 새 사역 추가 (285:21140) share this form.
+ *
+ * 설명 is the ministry's `subtitle`, the short line the detail header shows.
+ * The server also requires `about`: a new ministry takes 설명 for it, an edit
+ * keeps the stored one along with requirements, schedules, contacts and image.
+ * 리더 stays disabled until the API carries a leader (hanmaum-dn-server#214).
+ */
 @Component({
   selector: 'app-ministry-edit',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    CardModule,
+    ReactiveFormsModule,
+    TranslatePipe,
     ButtonModule,
     InputTextModule,
-    TextareaModule,
-    CheckboxModule,
+    SelectModule,
     ToastModule,
-    ProgressSpinnerModule,
+    PageHeaderComponent,
+    SectionHeaderComponent,
+    SkeletonComponent,
   ],
   providers: [MessageService],
   templateUrl: './ministry-edit.component.html',
@@ -43,185 +50,165 @@ export class MinistryEditComponent implements OnInit {
   private readonly ministryService = inject(MinistryService);
   private readonly route           = inject(ActivatedRoute);
   private readonly router          = inject(Router);
+  private readonly translate       = inject(TranslateService);
   private readonly messageService  = inject(MessageService);
   private readonly destroyRef      = inject(DestroyRef);
+  private readonly lang            = injectAppLang();
 
-  isEdit   = false;
-  loading  = signal(false);
-  saving   = signal(false);
+  readonly titleMax    = TITLE_MAX;
+  readonly subtitleMax = SUBTITLE_MAX;
 
-  readonly maxStructuredItems = 20;
+  private readonly publicId = this.route.snapshot.paramMap.get('publicId') ?? '';
+  readonly isEdit = !!this.publicId;
 
-  form = {
-    title:        '',
-    subtitle:     '',
-    about:        '',
-    requirements: [] as string[],
-    schedules:    [] as MinistrySchedule[],
-    contacts:     [] as MinistryContact[],
-    imageUrl:     '',
-    isActive:     true,
-  };
+  readonly ministry    = signal<Ministry | null>(null);
+  readonly memberCount = signal(0);
+  readonly loading     = signal(this.isEdit);
+  readonly saving      = signal(false);
 
-  private publicId = '';
+  readonly form = inject(FormBuilder).nonNullable.group({
+    title:    ['', [Validators.required, Validators.maxLength(TITLE_MAX)]],
+    // Required only for a new ministry, which sends it as `about` too.
+    subtitle: ['', this.isEdit
+      ? [Validators.maxLength(SUBTITLE_MAX)]
+      : [Validators.required, Validators.maxLength(SUBTITLE_MAX)]],
+    leader:   [{ value: null as string | null, disabled: true }],
+    isActive: [true],
+  });
+
+  readonly statusOptions = computed(() => {
+    this.lang();
+    return [
+      { value: true,  label: this.translate.instant('ministry.form.status.active') as string },
+      { value: false, label: this.translate.instant('ministry.form.status.inactive') as string },
+    ];
+  });
+
+  readonly breadcrumb = computed(() => {
+    this.lang();
+    const t = (key: string) => this.translate.instant(key) as string;
+    return this.isEdit
+      ? [t('ministry.title'), this.ministry()?.title ?? '', t('ministry.form.breadcrumbEdit')]
+      : [t('ministry.title'), t('ministry.form.breadcrumbNew')];
+  });
+
+  readonly heading = computed(() => {
+    this.lang();
+    return this.translate.instant(this.isEdit ? 'ministry.form.editTitle' : 'ministry.form.newTitle') as string;
+  });
+
+  /** Edit: "{title} · 팀원 N명", as on the detail page. New: a fixed line. */
+  readonly subtitle = computed(() => {
+    this.lang();
+    if (!this.isEdit) return this.translate.instant('ministry.form.newSubtitle') as string;
+    const m = this.ministry();
+    if (!m) return '';
+    const count = this.translate.instant('ministry.memberCount', { count: this.memberCount() }) as string;
+    return [m.title, count].join(' · ');
+  });
 
   ngOnInit(): void {
-    this.publicId = this.route.snapshot.paramMap.get('publicId') ?? '';
-    this.isEdit   = !!this.publicId;
+    if (!this.isEdit) return;
 
-    if (this.isEdit) {
-      this.loading.set(true);
-      this.ministryService.getMinistry(this.publicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: m => { this.fillForm(m); this.loading.set(false); },
-        error: () => {
-          this.messageService.add({ severity: 'error', summary: '오류', detail: '부서 정보를 불러올 수 없습니다.' });
+    this.ministryService.getMinistry(this.publicId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: m => {
+          this.ministry.set(m);
+          this.form.patchValue({ title: m.title, subtitle: m.subtitle, isActive: m.isActive });
           this.loading.set(false);
         },
+        error: () => {
+          this.loading.set(false);
+          this.toastError('ministry.form.toast.loadFailed');
+        },
       });
-    }
+
+    // The count only decorates the subtitle; a failure leaves it at 0.
+    this.ministryService.getActiveMembers(this.publicId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: members => this.memberCount.set(members.length), error: () => undefined });
   }
 
-  private fillForm(m: Ministry): void {
-    this.form.title        = m.title;
-    this.form.subtitle     = m.subtitle;
-    this.form.about        = m.about;
-    this.form.requirements = [...m.requirements];
-    this.form.schedules    = m.schedules.map(schedule => ({ ...schedule }));
-    this.form.contacts     = m.contacts.map(contact => ({ ...contact }));
-    this.form.imageUrl     = m.imageUrl ?? '';
-    this.form.isActive     = m.isActive;
+  hasError(control: 'title' | 'subtitle', error: 'required' | 'maxlength'): boolean {
+    const c = this.form.controls[control];
+    return c.hasError(error) && (c.touched || c.dirty);
   }
 
   save(): void {
-    const request = this.isEdit ? this.buildUpdateRequest() : this.buildCreateRequest();
-    if (!request) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
     this.saving.set(true);
-
-    const request$ = this.isEdit
-      ? this.ministryService.updateMinistry(this.publicId, request as UpdateMinistryRequest)
-      : this.ministryService.createMinistry(request as CreateMinistryRequest);
+    const request$ = this.isEdit ? this.update$() : this.create$();
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: ministry => {
-        this.messageService.add({
-          severity: 'success',
-          summary: '완료',
-          detail: this.isEdit ? '수정되었습니다.' : '부서가 생성되었습니다.',
-        });
-        setTimeout(() => this.router.navigate(['/ministry', ministry.publicId]), 800);
-      },
+      next: ministry => this.router.navigate(['/ministry', ministry.publicId]),
       error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: '오류',
-          detail: this.isEdit ? '수정에 실패했습니다.' : '생성에 실패했습니다.',
-        });
         this.saving.set(false);
+        this.toastError(this.isEdit ? 'ministry.form.toast.saveFailed' : 'ministry.form.toast.createFailed');
       },
     });
   }
 
-  addRequirement(): void {
-    if (this.form.requirements.length < this.maxStructuredItems) {
-      this.form.requirements.push('');
-    }
-  }
-
-  removeRequirement(index: number): void {
-    this.form.requirements.splice(index, 1);
-  }
-
-  addSchedule(): void {
-    if (this.form.schedules.length < this.maxStructuredItems) {
-      this.form.schedules.push({ description: '', startTime: '', endTime: '' });
-    }
-  }
-
-  removeSchedule(index: number): void {
-    this.form.schedules.splice(index, 1);
-  }
-
-  addContact(): void {
-    if (this.form.contacts.length < this.maxStructuredItems) {
-      this.form.contacts.push({ role: '', name: '' });
-    }
-  }
-
-  removeContact(index: number): void {
-    this.form.contacts.splice(index, 1);
-  }
-
-  private buildCreateRequest(): CreateMinistryRequest | null {
-    const structured = this.normalizedStructuredFields();
-    if (!structured) return null;
-
-    return {
-      ...structured,
-      imageUrl: this.form.imageUrl.trim() || null,
-    };
-  }
-
-  private buildUpdateRequest(): UpdateMinistryRequest | null {
-    const structured = this.normalizedStructuredFields();
-    if (!structured) return null;
-
-    return {
-      ...structured,
-      // PATCH treats null as "not supplied"; an empty string explicitly clears the image.
-      imageUrl: this.form.imageUrl.trim(),
-      isActive: this.form.isActive,
-    };
-  }
-
-  private normalizedStructuredFields(): Omit<CreateMinistryRequest, 'imageUrl'> | null {
-    const title = this.form.title.trim();
-    const subtitle = this.form.subtitle.trim();
-    const about = this.form.about.trim();
-
-    if (!title || !subtitle || !about) {
-      this.showValidationError('사역 제목, 부제목, 소개는 필수입니다.');
-      return null;
-    }
-
-    const requirements = this.form.requirements.map(requirement => requirement.trim()).filter(Boolean);
-    const schedules = this.form.schedules.map(schedule => ({
-      description: schedule.description.trim(),
-      startTime: schedule.startTime,
-      endTime: schedule.endTime,
-    }));
-    const contacts = this.form.contacts.map(contact => ({
-      role: contact.role.trim(),
-      name: contact.name.trim(),
-    }));
-
-    if (schedules.some(schedule => !schedule.description || !schedule.startTime || !schedule.endTime)) {
-      this.showValidationError('일정의 설명, 시작 시간, 종료 시간을 모두 입력해 주세요.');
-      return null;
-    }
-
-    if (schedules.some(schedule => schedule.endTime <= schedule.startTime)) {
-      this.showValidationError('일정의 종료 시간은 시작 시간보다 늦어야 합니다.');
-      return null;
-    }
-
-    if (contacts.some(contact => !contact.role || !contact.name)) {
-      this.showValidationError('연락처의 역할과 이름을 모두 입력해 주세요.');
-      return null;
-    }
-
-    return { title, subtitle, about, requirements, schedules, contacts };
-  }
-
-  private showValidationError(detail: string): void {
-    this.messageService.add({ severity: 'warn', summary: '입력 오류', detail });
-  }
-
   goBack(): void {
-    if (this.isEdit) {
-      this.router.navigate(['/ministry', this.publicId]);
-    } else {
-      this.router.navigate(['/ministry']);
-    }
+    this.router.navigate(this.isEdit ? ['/ministry', this.publicId] : ['/ministry']);
   }
+
+  private update$(): Observable<Ministry> {
+    const m = this.ministry()!;
+    return this.ministryService.updateMinistry(this.publicId, {
+      ...toUpdateRequest(m),
+      ...this.editedFields(),
+    });
+  }
+
+  /** POST cannot carry `isActive`; a ministry created as 비활성 is patched right after. */
+  private create$(): Observable<Ministry> {
+    const { title, subtitle, isActive } = this.editedFields();
+    const request: CreateMinistryRequest = {
+      title,
+      subtitle,
+      about: subtitle,
+      requirements: [],
+      schedules: [],
+      contacts: [],
+      imageUrl: null,
+    };
+    return this.ministryService.createMinistry(request).pipe(
+      switchMap(created => isActive
+        ? of(created)
+        : this.ministryService.updateMinistry(created.publicId, { ...toUpdateRequest(created), isActive: false })),
+    );
+  }
+
+  private editedFields(): Pick<UpdateMinistryRequest, 'title' | 'subtitle' | 'isActive'> {
+    const { title, subtitle, isActive } = this.form.getRawValue();
+    return { title: title.trim(), subtitle: subtitle.trim(), isActive };
+  }
+
+  private toastError(detailKey: string): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: this.translate.instant('ministry.form.toast.error'),
+      detail: this.translate.instant(detailKey),
+    });
+  }
+}
+
+/** The PATCH replaces every field, so start from what the server holds. */
+function toUpdateRequest(m: Ministry): UpdateMinistryRequest {
+  return {
+    title: m.title,
+    subtitle: m.subtitle,
+    about: m.about,
+    requirements: m.requirements,
+    schedules: m.schedules,
+    contacts: m.contacts,
+    // PATCH treats null as "not supplied"; '' would clear the image.
+    imageUrl: m.imageUrl ?? '',
+    isActive: m.isActive,
+  };
 }
