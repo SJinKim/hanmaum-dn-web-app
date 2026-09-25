@@ -421,6 +421,8 @@
         "member": "팀원",
         "memberPlaceholder": "팀원 선택",
         "startDate": "시작일",
+        "year": "년",
+        "month": "월",
         "note": "메모",
         "cancel": "취소",
         "submit": "추가",

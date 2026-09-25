@@ -421,6 +421,8 @@
         "member": "Member",
         "memberPlaceholder": "Select a member",
         "startDate": "Start",
+        "year": "Year",
+        "month": "Month",
         "note": "Note",
         "cancel": "Cancel",
         "submit": "Add",

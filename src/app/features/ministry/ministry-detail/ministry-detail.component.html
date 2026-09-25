@@ -59,7 +59,7 @@
         } @else {
           <div class="flex flex-col gap-[var(--space-8)]">
             @for (r of records(); track r.id) {
-              <app-list-card [record]="r" (selected)="goToMember($event.id)" />
+              <app-list-card [record]="r" (selected)="openEditMember($event.id)" />
             }
           </div>
         }
@@ -73,7 +73,7 @@
           [emptyDescription]="'ministry.detail.membersEmpty.description' | translate"
           [editLabel]="'ministry.detail.editMember' | translate"
           [deleteLabel]="'ministry.detail.removeMember' | translate"
-          (rowSelected)="goToMember($event.id)"
+          selectable="false"
           (edit)="openEditMember($event.id)"
           (remove)="confirmRemoveMember($event.id)">
           <ng-template appDataCell="note" let-record>
@@ -101,7 +101,7 @@
         } @else {
           <div class="flex flex-col gap-[var(--space-8)]">
             @for (r of historyRecords(); track r.id) {
-              <app-list-card [record]="{ id: r.id, title: r.title, subtitle: r.subtitle, meta: historyPeriod(r) }" (selected)="goToHistoryMember($event.id)" />
+              <app-list-card [record]="{ id: r.id, title: r.title, subtitle: r.subtitle, meta: historyPeriod(r) }" selectable="false" />
             }
           </div>
         }
@@ -112,7 +112,7 @@
           [loading]="historyLoading()"
           [caption]="'ministry.detail.history' | translate"
           [emptyHeading]="'ministry.detail.historyEmpty' | translate"
-          (rowSelected)="goToHistoryMember($event.id)">
+          selectable="false">
           <ng-template appDataCell="note" let-record>
             @let note = noteOf(record);
             <span

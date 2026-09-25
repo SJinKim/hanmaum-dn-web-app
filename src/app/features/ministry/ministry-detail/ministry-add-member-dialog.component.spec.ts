@@ -26,6 +26,15 @@ describe('MinistryAddMemberDialogComponent', () => {
     });
   });
 
+  it('labels the 시작일 selects with 년 and 월', async () => {
+    const fixture = makeComponent();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const body = document.body;
+    expect(body.querySelector('[data-testid="year-unit"]')).not.toBeNull();
+    expect(body.querySelector('[data-testid="month-unit"]')).not.toBeNull();
+  });
+
   it('memberLabel() appends the discriminator only when present', () => {
     const c = makeComponent().componentInstance;
     expect(c.memberLabel({ publicId: 'a', fullName: '김철수', discriminator: 'A' })).toBe('김철수 A');

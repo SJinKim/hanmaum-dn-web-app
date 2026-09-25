@@ -279,12 +279,6 @@ export class MinistryDetailComponent implements OnInit {
     });
   }
 
-  goToMember(publicId: string): void { this.router.navigate(['/members', publicId]); }
-
-  goToHistoryMember(id: string): void {
-    const member = this.history().find(m => historyId(m) === id);
-    if (member) this.goToMember(member.publicId);
-  }
   goToEdit(): void { this.router.navigate(['/ministry', this.publicId, 'edit']); }
   goBack(): void { this.router.navigate(['/ministry']); }
 
