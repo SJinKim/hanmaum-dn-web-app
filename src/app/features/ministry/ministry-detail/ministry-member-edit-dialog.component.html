@@ -1,0 +1,58 @@
+<p-dialog
+  [header]="'ministry.detail.editDialog.header' | translate"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [style]="{ width: '28rem' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)] pt-[var(--space-8)]" data-testid="member-edit-form">
+    <p class="type-body-strong">{{ member()?.fullName }}</p>
+
+    <div class="grid grid-cols-2 gap-[var(--space-12)]">
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="edit-member-role" class="type-caption text-ink-muted">{{ 'ministry.detail.editDialog.role' | translate }}</label>
+        <p-select inputId="edit-member-role" formControlName="role" [options]="[]" placeholder="—" styleClass="w-full" />
+      </div>
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="edit-member-status" class="type-caption text-ink-muted">{{ 'ministry.detail.editDialog.status' | translate }}</label>
+        <p-select inputId="edit-member-status" formControlName="status" [options]="[]" placeholder="—" styleClass="w-full" />
+      </div>
+      <small class="type-caption text-ink-disabled col-span-2" data-testid="role-hint">
+        {{ 'ministry.detail.editDialog.roleHint' | translate }}
+      </small>
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="edit-member-start" class="type-caption text-ink-muted">
+        {{ 'ministry.detail.editDialog.startDate' | translate }}
+        <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+      </label>
+      <p-datepicker
+        inputId="edit-member-start"
+        formControlName="startDate"
+        dateFormat="yy-mm-dd"
+        placeholder="YYYY-MM-DD"
+        [showIcon]="true"
+        [readonlyInput]="true"
+        appendTo="body"
+        styleClass="w-full" />
+      @if (hasError('startDate', 'required')) {
+        <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+          {{ 'ministry.detail.editDialog.required' | translate }}
+        </small>
+      }
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="edit-member-note" class="type-caption text-ink-muted">{{ 'ministry.detail.editDialog.note' | translate }}</label>
+      <input id="edit-member-note" pInputText formControlName="note" [maxlength]="noteMax" class="w-full" />
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <p-button [label]="'ministry.detail.editDialog.cancel' | translate" severity="secondary" [text]="true" (onClick)="close()" />
+    <p-button [label]="'ministry.detail.editDialog.save' | translate" icon="pi pi-check" [loading]="saving()" (onClick)="submit()" />
+  </ng-template>
+</p-dialog>

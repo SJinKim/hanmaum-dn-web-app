@@ -235,7 +235,7 @@ export interface DataTableSort {
               type="button"
               [pTooltip]="editLabel()"
               [attr.aria-label]="editLabel()"
-              (click)="edit.emit(record)">
+              (click)="$event.stopPropagation(); edit.emit(record)">
               <i class="pi pi-pencil text-[16px]" aria-hidden="true"></i>
             </button>
             <button
@@ -243,7 +243,7 @@ export interface DataTableSort {
               type="button"
               [pTooltip]="deleteLabel()"
               [attr.aria-label]="deleteLabel()"
-              (click)="remove.emit(record)">
+              (click)="$event.stopPropagation(); remove.emit(record)">
               <i class="pi pi-trash text-[16px]" aria-hidden="true"></i>
             </button>
           </span>
