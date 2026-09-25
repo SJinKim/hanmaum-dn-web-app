@@ -135,12 +135,24 @@ describe('MinistryDetailComponent', () => {
     expect(history.querySelector('p-button')).toBeNull();
   });
 
-  it('opens the member from a history row', () => {
-    const c = render().componentInstance;
+  it('keeps both tables read-only: no row opens the member detail', () => {
+    const fixture = render();
     const router = TestBed.inject(Router);
     spyOn(router, 'navigate');
-    c.goToHistoryMember('m3:2019-03-01');
-    expect(router.navigate).toHaveBeenCalledWith(['/members', 'm3']);
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelectorAll('tr[tabindex]').length).toBe(0);
+    el.querySelector<HTMLElement>('tbody tr')!.click();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('opens 수정 from an active card and keeps history cards read-only on phone', () => {
+    isPhone.set(true);
+    const fixture = render();
+    const el: HTMLElement = fixture.nativeElement;
+    el.querySelector<HTMLButtonElement>('[data-testid="members-card"] app-list-card button')!.click();
+    expect(fixture.componentInstance.editingMember()).toBe(MEMBERS[0]);
+    expect(fixture.componentInstance.editDialogVisible()).toBeTrue();
+    expect(el.querySelector('[data-testid="history-card"] app-list-card button')).toBeNull();
   });
 
   it('shows the history period as ListCard meta on phone', () => {
@@ -178,12 +190,10 @@ describe('MinistryDetailComponent', () => {
     expect(service.getMemberHistory).toHaveBeenCalledOnceWith('min-1');
   });
 
-  it('navigates to the member on row select and back to the list', () => {
+  it('navigates to 수정', () => {
     const c = render().componentInstance;
     const router = TestBed.inject(Router);
     spyOn(router, 'navigate');
-    c.goToMember('m1');
-    expect(router.navigate).toHaveBeenCalledWith(['/members', 'm1']);
     c.goToEdit();
     expect(router.navigate).toHaveBeenCalledWith(['/ministry', 'min-1', 'edit']);
   });

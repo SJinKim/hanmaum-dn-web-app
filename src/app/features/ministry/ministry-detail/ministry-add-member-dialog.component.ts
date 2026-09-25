@@ -9,6 +9,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
+import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
@@ -17,14 +18,14 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MinistryService } from '../ministry.service';
 import { MemberNameDto, ActiveMinistryMemberDto, AddMinistryMemberRequest } from '../ministry.model';
-import { MONTH_OPTIONS, YEAR_OPTIONS, monthYearToFirstOfMonth } from '../../../core/models/member-activity.model';
+import { localDateToIso } from '../../../core/models/member-activity.model';
 
 @Component({
   selector: 'app-ministry-add-member-dialog',
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule,
-    DialogModule, ButtonModule, SelectModule, InputTextModule, ToastModule, TranslatePipe,
+    DialogModule, ButtonModule, DatePickerModule, SelectModule, InputTextModule, ToastModule, TranslatePipe,
   ],
   providers: [MessageService],
   templateUrl: './ministry-add-member-dialog.component.html',
@@ -41,18 +42,19 @@ export class MinistryAddMemberDialogComponent implements OnInit {
   readonly ministryPublicId = input.required<string>();
   @Output() readonly added = new EventEmitter<ActiveMinistryMemberDto>();
 
+  /** Figma Dialog/Medium: 24 panel padding, 16 between title, subtitle, form and footer. */
+  readonly dialogPt = {
+    header: { style: { paddingBottom: 'var(--space-16)' } },
+  };
+
   readonly saving = signal(false);
   private readonly memberNames = signal<MemberNameDto[]>([]);
   readonly memberOptions = computed(() =>
     this.memberNames().map(m => ({ value: m.publicId, label: this.memberLabel(m) })));
 
-  readonly monthOptions = MONTH_OPTIONS;
-  readonly yearOptions  = YEAR_OPTIONS;
-
   readonly form = this.fb.group({
     memberId:   [null as string | null, Validators.required],
-    startYear:  [null as number | null, Validators.required],
-    startMonth: [null as number | null, Validators.required],
+    startDate:  [null as Date | null, Validators.required],
     note:       ['' as string | null],
   });
 
@@ -60,10 +62,10 @@ export class MinistryAddMemberDialogComponent implements OnInit {
     this.form.reset(this.defaultFormValue());
   }
 
-  /** Pristine form values, with 시작일 defaulted to the current month (computed fresh each call). */
-  private defaultFormValue(): { memberId: null; startYear: number; startMonth: number; note: string } {
+  /** Pristine form values, with 시작일 defaulted to today (computed fresh each call). */
+  private defaultFormValue(): { memberId: null; startDate: Date; note: string } {
     const now = new Date();
-    return { memberId: null, startYear: now.getFullYear(), startMonth: now.getMonth() + 1, note: '' };
+    return { memberId: null, startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate()), note: '' };
   }
 
   ngOnInit(): void {
@@ -85,7 +87,7 @@ export class MinistryAddMemberDialogComponent implements OnInit {
     const raw = this.form.getRawValue();
     const body: AddMinistryMemberRequest = {
       memberId:  raw.memberId!,
-      startDate: monthYearToFirstOfMonth(raw.startMonth, raw.startYear),
+      startDate: localDateToIso(raw.startDate),
       note:      raw.note?.trim() || null,
     };
     this.saving.set(true);
