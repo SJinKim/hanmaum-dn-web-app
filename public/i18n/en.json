@@ -371,13 +371,22 @@
       "deactivate": "Deactivate",
       "members": "Members",
       "addMember": "Add member",
+      "history": "Member history",
+      "historyEmpty": "No history yet",
       "statusActive": "Active",
+      "roles": {
+        "LEADER": "Leader",
+        "SUB_LEADER": "Sub-leader",
+        "MEMBER": "Member"
+      },
       "columns": {
         "name": "Name",
         "role": "Role",
         "status": "Status",
         "startDate": "Start",
-        "actions": "Manage"
+        "actions": "Manage",
+        "endDate": "End",
+        "note": "Note"
       },
       "membersEmpty": {
         "heading": "No members yet",
@@ -404,7 +413,8 @@
         "memberUpdated": "Team member saved.",
         "memberUpdateFailed": "Could not save the team member.",
         "memberRemoved": "Membership ended.",
-        "memberRemoveFailed": "Could not end the membership."
+        "memberRemoveFailed": "Could not end the membership.",
+        "historyFailed": "Could not load the member history."
       },
       "addDialog": {
         "header": "Add member",
@@ -492,6 +502,16 @@
         "placeholder": "e.g. Main hall",
         "start": "Start",
         "end": "End",
+        "weekday": "Weekday",
+        "weekdays": {
+          "MONDAY": "Monday",
+          "TUESDAY": "Tuesday",
+          "WEDNESDAY": "Wednesday",
+          "THURSDAY": "Thursday",
+          "FRIDAY": "Friday",
+          "SATURDAY": "Saturday",
+          "SUNDAY": "Sunday"
+        },
         "incomplete": "Enter a place, start and end."
       },
       "requirements": {

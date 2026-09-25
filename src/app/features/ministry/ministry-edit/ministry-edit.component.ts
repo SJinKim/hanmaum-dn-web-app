@@ -16,6 +16,7 @@ import { injectAppLang } from '../../../core/i18n/language';
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
 import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
+import { DayOfWeek } from '../../attendance/attendance.model';
 import { MinistryService } from '../ministry.service';
 import {
   CreateMinistryRequest, Ministry, MinistryContact, MinistrySchedule, UpdateMinistryRequest,
@@ -26,6 +27,9 @@ export const SUBTITLE_MAX = 200;
 export const LIST_MAX = 20;
 export const SCHEDULE_LOCATION_MAX = 100;
 export const LEADER_ROLE = '리더';
+export const WEEKDAYS: readonly DayOfWeek[] = [
+  'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY',
+];
 
 /**
  * Figma: 사역 정보 수정 (204:7690) and 새 사역 추가 (285:21140) share this form;
@@ -110,6 +114,15 @@ export class MinistryEditComponent implements OnInit {
       { value: true,  label: this.translate.instant('ministry.form.status.active') as string },
       { value: false, label: this.translate.instant('ministry.form.status.inactive') as string },
     ];
+  });
+
+  /** 요일 for 장소 및 시간, 월 to 일; optional, so the select can be cleared. */
+  readonly weekdayOptions = computed(() => {
+    this.lang();
+    return WEEKDAYS.map(value => ({
+      value,
+      label: this.translate.instant(`ministry.form.schedules.weekdays.${value}`) as string,
+    }));
   });
 
   /** Sizes the 상태 select to its longest option, e.g. 운영 중. */
@@ -272,6 +285,7 @@ export class MinistryEditComponent implements OnInit {
       startTime: r.startTime,
       endTime: r.endTime,
       location: r.location.trim(),
+      dayOfWeek: r.dayOfWeek,
     }));
   }
 
@@ -279,6 +293,7 @@ export class MinistryEditComponent implements OnInit {
   private newSchedule(s?: MinistrySchedule): FormGroup {
     return this.fb.group({
       location:    [s ? (s.location ?? s.description) : '', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(SCHEDULE_LOCATION_MAX)]],
+      dayOfWeek:   [s?.dayOfWeek ?? null as DayOfWeek | null],
       startTime:   [s?.startTime ?? '', Validators.required],
       endTime:     [s?.endTime ?? '', Validators.required],
     });
@@ -287,8 +302,8 @@ export class MinistryEditComponent implements OnInit {
   /** Rows the user added but left empty are not an error; they are just not sent. */
   private dropBlankRows(): void {
     for (let i = this.schedules.length - 1; i >= 0; i--) {
-      const { location, startTime, endTime } = this.schedules.at(i).getRawValue();
-      if (!location.trim() && !startTime && !endTime) this.schedules.removeAt(i);
+      const { location, dayOfWeek, startTime, endTime } = this.schedules.at(i).getRawValue();
+      if (!location.trim() && !dayOfWeek && !startTime && !endTime) this.schedules.removeAt(i);
     }
     for (let i = this.requirements.length - 1; i >= 0; i--) {
       if (!this.requirements.at(i).value.trim()) this.requirements.removeAt(i);
@@ -304,7 +319,7 @@ export class MinistryEditComponent implements OnInit {
   }
 }
 
-interface ScheduleRow { location: string; startTime: string; endTime: string; }
+interface ScheduleRow { location: string; dayOfWeek: DayOfWeek | null; startTime: string; endTime: string; }
 
 /** The PATCH replaces every field, so start from what the server holds. */
 function toUpdateRequest(m: Ministry): UpdateMinistryRequest {

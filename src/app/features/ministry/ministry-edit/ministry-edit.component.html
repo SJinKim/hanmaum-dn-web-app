@@ -128,7 +128,7 @@
         }
       </div>
 
-      <!-- 장소 및 시간 → schedules[].location, startTime, endTime -->
+      <!-- 장소 및 시간 → schedules[].location, dayOfWeek, startTime, endTime -->
       <section class="border-line-subtle flex flex-col gap-[var(--space-12)] border-t pt-[var(--space-16)]" data-testid="schedules">
         <div class="flex items-center justify-between gap-[var(--space-8)]">
           <span class="type-body-strong">{{ 'ministry.form.schedules.title' | translate }}</span>
@@ -145,14 +145,14 @@
         <div formArrayName="schedules" class="flex flex-col gap-[var(--space-8)]">
           @for (row of schedules.controls; track row; let i = $index) {
             <div [formGroupName]="i" class="flex flex-col gap-[var(--space-4)]">
-              <div class="grid grid-cols-[1fr_auto] items-center gap-[var(--space-8)] tablet:grid-cols-[1fr_8rem_8rem_auto]">
+              <div class="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-[var(--space-8)] tablet:grid-cols-[1fr_9rem_8rem_8rem_auto]">
                 <input
                   pInputText
                   formControlName="location"
                   [maxlength]="scheduleLocationMax"
                   [attr.aria-label]="'ministry.form.schedules.location' | translate"
                   [placeholder]="'ministry.form.schedules.placeholder' | translate"
-                  class="w-full" />
+                  class="col-span-3 w-full tablet:col-span-1" />
                 <p-button
                   type="button"
                   icon="pi pi-trash"
@@ -161,6 +161,15 @@
                   class="tablet:order-last"
                   [ariaLabel]="'ministry.form.remove' | translate"
                   (onClick)="removeSchedule(i)" />
+                <p-select
+                  formControlName="dayOfWeek"
+                  [options]="weekdayOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  [ariaLabel]="'ministry.form.schedules.weekday' | translate"
+                  [placeholder]="'ministry.form.schedules.weekday' | translate"
+                  styleClass="w-full" />
                 <input
                   pInputText
                   type="time"
