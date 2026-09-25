@@ -42,6 +42,12 @@ export class MinistryAddMemberDialogComponent implements OnInit {
   readonly ministryPublicId = input.required<string>();
   @Output() readonly added = new EventEmitter<ActiveMinistryMemberDto>();
 
+  /** Figma Dialog/Medium: 24 panel padding, 16 between title, subtitle, form and footer. */
+  readonly dialogPt = {
+    header:  { style: { paddingBottom: 'var(--space-16)' } },
+    content: { style: { paddingBottom: '0' } },
+  };
+
   readonly saving = signal(false);
   private readonly memberNames = signal<MemberNameDto[]>([]);
   readonly memberOptions = computed(() =>

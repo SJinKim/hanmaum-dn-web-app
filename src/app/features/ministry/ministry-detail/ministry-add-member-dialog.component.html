@@ -1,13 +1,17 @@
 <p-dialog
-  [header]="'ministry.detail.addDialog.header' | translate"
   [visible]="visible()"
   (visibleChange)="onVisibleChange($event)"
   [modal]="true"
-  [style]="{ width: '28rem' }"
+  [style]="{ width: 'min(92vw, 560px)' }"
   [draggable]="false"
   [resizable]="false"
+  [pt]="dialogPt"
 >
-  <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)] pt-[var(--space-8)]">
+  <ng-template #header>
+    <h2 class="type-h3 text-ink-strong" data-testid="add-member-title">{{ 'ministry.detail.addDialog.header' | translate }}</h2>
+  </ng-template>
+
+  <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)]" data-testid="add-member-form">
     <p class="type-body text-ink-muted" data-testid="add-member-subtitle">{{ 'ministry.detail.addDialog.subtitle' | translate }}</p>
 
     <div class="flex flex-col gap-[var(--space-4)]">
@@ -21,6 +25,7 @@
         [filter]="true"
         filterBy="label"
         [placeholder]="'ministry.detail.addDialog.memberPlaceholder' | translate"
+        appendTo="body"
         class="w-full"
       />
     </div>
@@ -47,9 +52,9 @@
     </div>
   </form>
 
-  <ng-template pTemplate="footer">
-    <p-button [label]="'ministry.detail.addDialog.cancel' | translate" severity="secondary" [text]="true" (onClick)="close()" />
-    <p-button [label]="'ministry.detail.addDialog.submit' | translate" icon="pi pi-plus" [loading]="saving()" (onClick)="submit()" />
+  <ng-template #footer>
+    <p-button [label]="'ministry.detail.addDialog.cancel' | translate" severity="secondary" [outlined]="true" (onClick)="close()" />
+    <p-button [label]="'ministry.detail.addDialog.submit' | translate" [loading]="saving()" (onClick)="submit()" />
   </ng-template>
 </p-dialog>
 
