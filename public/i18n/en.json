@@ -363,6 +363,62 @@
       "heading": "Could not load ministries",
       "description": "Please try again shortly",
       "retry": "Retry"
+    },
+    "detail": {
+      "eyebrow": "Ministry",
+      "edit": "Edit",
+      "more": "More",
+      "deactivate": "Deactivate",
+      "members": "Members",
+      "addMember": "Add member",
+      "statusActive": "Active",
+      "columns": {
+        "name": "Name",
+        "role": "Role",
+        "status": "Status",
+        "startDate": "Start"
+      },
+      "membersEmpty": {
+        "heading": "No members yet",
+        "description": "Add a member"
+      },
+      "notFound": {
+        "heading": "Ministry not found",
+        "description": "It was removed or the link is wrong",
+        "action": "Back to ministries"
+      },
+      "deactivateDialog": {
+        "header": "Deactivate ministry",
+        "message": "Deactivate {{title}}? It will show as inactive in the list.",
+        "accept": "Deactivate",
+        "cancel": "Cancel"
+      },
+      "toast": {
+        "done": "Done",
+        "error": "Error",
+        "deactivated": "The ministry was deactivated.",
+        "deactivateFailed": "Could not deactivate.",
+        "loadFailed": "Could not load the ministry.",
+        "membersFailed": "Could not load members."
+      },
+      "addDialog": {
+        "header": "Add member",
+        "member": "Member",
+        "memberPlaceholder": "Select a member",
+        "startDate": "Start",
+        "note": "Note",
+        "cancel": "Cancel",
+        "submit": "Add",
+        "toast": {
+          "done": "Done",
+          "info": "Notice",
+          "error": "Error",
+          "added": "Added.",
+          "conflict": "This member is already active.",
+          "failed": "Could not add.",
+          "namesFailed": "Could not load members."
+        }
+      }
     }
   }
 }
