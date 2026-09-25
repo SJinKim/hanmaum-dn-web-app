@@ -525,5 +525,87 @@
       },
       "remove": "Remove"
     }
+  },
+  "events": {
+    "eyebrow": "Activities",
+    "title": "Events",
+    "subtitle": "Manage each event's sign-up window and review who attended.",
+    "add": "New event",
+    "list": "Events",
+    "attendees": "View attendees",
+    "edit": "Edit",
+    "saved": "Event saved",
+    "stats": {
+      "total": "All events",
+      "totalSub": "Registered",
+      "open": "Open",
+      "openSub": "Accepting sign-ups",
+      "scheduled": "Scheduled",
+      "scheduledSub": "Not open yet",
+      "closed": "Closed · inactive",
+      "closedSub": "Sign-up ended"
+    },
+    "columns": {
+      "title": "Event",
+      "windowStart": "Opens",
+      "windowEnd": "Closes",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "OPEN": "Open",
+      "SCHEDULED": "Scheduled",
+      "CLOSED": "Closed",
+      "INACTIVE": "Inactive"
+    },
+    "empty": {
+      "heading": "No events yet",
+      "description": "Events you add will show up here."
+    },
+    "dialog": {
+      "addHeader": "New event",
+      "editHeader": "Edit event",
+      "subtitle": "The app accepts sign-ups during the window.",
+      "title": "Event name",
+      "description": "Description",
+      "status": "Status",
+      "statusPlaceholder": "Set by the window",
+      "publishNow": "Publish now",
+      "windowStart": "Opens",
+      "windowEnd": "Closes",
+      "endBeforeStart": "The window cannot close before it opens.",
+      "required": "Required.",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "breadcrumb": "Breadcrumb",
+    "back": "Back to events",
+    "attendeesEyebrow": "Event attendees",
+    "attendeesSubtitle": "Shows check-in order and each member's 순 at sign-up.",
+    "refresh": "Refresh",
+    "attendeeList": "Attendees",
+    "attendeeStats": {
+      "total": "Attendees",
+      "totalSub": "Checked in",
+      "groups": "순 attending",
+      "announcement": "Linked announcement",
+      "noAnnouncement": "No linked announcement"
+    },
+    "attendeeColumns": {
+      "order": "#",
+      "name": "Name",
+      "group": "순",
+      "checkedInAt": "Checked in"
+    },
+    "attendeeEmpty": {
+      "heading": "No attendees yet",
+      "description": "Members appear here once they check in."
+    },
+    "errors": {
+      "summary": "Error",
+      "load": "Could not load events.",
+      "save": "Could not save the event.",
+      "attendees": "Could not load the attendee list."
+    }
   }
 }
