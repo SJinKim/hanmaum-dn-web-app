@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { provideTranslateService } from '@ngx-translate/core';
 
 import { MinistryAddMemberDialogComponent } from './ministry-add-member-dialog.component';
 import { MinistryService } from '../ministry.service';
@@ -21,7 +22,7 @@ describe('MinistryAddMemberDialogComponent', () => {
     service.getMemberNames.and.returnValue(of([]));
     TestBed.configureTestingModule({
       imports: [MinistryAddMemberDialogComponent],
-      providers: [{ provide: MinistryService, useValue: service }],
+      providers: [{ provide: MinistryService, useValue: service }, provideTranslateService({ fallbackLang: 'ko' })],
     });
   });
 

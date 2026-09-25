@@ -1,82 +1,143 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { of } from 'rxjs';
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { TranslateService, provideTranslateService } from '@ngx-translate/core';
+import { ConfirmationService } from 'primeng/api';
+import { of, throwError } from 'rxjs';
 
+import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { MinistryDetailComponent } from './ministry-detail.component';
 import { MinistryService } from '../ministry.service';
-import { Ministry } from '../ministry.model';
+import { ActiveMinistryMemberDto, Ministry } from '../ministry.model';
+
+const KO = {
+  ministry: {
+    title: '사역',
+    memberCount: '팀원 {{count}}명',
+    detail: {
+      members: '팀원',
+      addMember: '팀원 추가',
+      statusActive: '활동',
+      deactivate: '비활성화',
+      columns: { name: '이름', role: '역할', status: '상태', startDate: '시작일' },
+      membersEmpty: { heading: '팀원이 없습니다' },
+      notFound: { heading: '사역을 찾을 수 없습니다' },
+    },
+  },
+};
+
+const MINISTRY = {
+  publicId: 'min-1', title: '찬양팀', subtitle: '주일 예배 찬양', isActive: true,
+} as unknown as Ministry;
+
+const MEMBERS = [
+  { publicId: 'm1', fullName: '김철수', startDate: '2023-03-01', note: null, gender: 'M' },
+  { publicId: 'm2', fullName: '이영희', startDate: null, note: null, gender: 'F' },
+] as unknown as ActiveMinistryMemberDto[];
 
 describe('MinistryDetailComponent', () => {
-  let fixture: ComponentFixture<MinistryDetailComponent>;
-
-  const ministry: Ministry = {
-    publicId: 'ministry-1',
-    title: '난민 사역',
-    subtitle: '하나님의 사랑을 나눕니다.',
-    about: '한 달에 한 번 난민 아이들을 섬깁니다.',
-    requirements: ['큐베세 양육 수료자'],
-    schedules: [
-      { description: '준비 모임', startTime: '07:00', endTime: '09:00' },
-    ],
-    contacts: [{ role: '팀장', name: '김영원 권사님' }],
-    imageUrl: null,
-    isActive: true,
-  };
+  let service: jasmine.SpyObj<MinistryService>;
+  let isPhone: ReturnType<typeof signal<boolean>>;
 
   beforeEach(() => {
-    const ministryService = jasmine.createSpyObj<MinistryService>(
-      'MinistryService',
-      ['getMinistry', 'getActiveMembers', 'getMemberNames', 'addMember'],
-    );
-    ministryService.getMinistry.and.returnValue(of(ministry));
-    ministryService.getActiveMembers.and.returnValue(of([]));
-    ministryService.getMemberNames.and.returnValue(of([]));
+    service = jasmine.createSpyObj<MinistryService>('MinistryService', [
+      'getMinistry', 'getActiveMembers', 'deactivateMinistry', 'getMemberNames', 'addMember',
+    ]);
+    service.getMinistry.and.returnValue(of(MINISTRY));
+    service.getActiveMembers.and.returnValue(of(MEMBERS));
+    service.getMemberNames.and.returnValue(of([]));
+    isPhone = signal(false);
 
     TestBed.configureTestingModule({
       imports: [MinistryDetailComponent],
       providers: [
-        { provide: MinistryService, useValue: ministryService },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: { paramMap: convertToParamMap({ publicId: ministry.publicId }) },
-          },
-        },
-        { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } },
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'ko' }),
+        { provide: MinistryService, useValue: service },
+        { provide: BreakpointService, useValue: { isPhone } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'min-1' }) } } },
       ],
     });
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('ko', KO);
+    translate.use('ko');
+  });
 
-    fixture = TestBed.createComponent(MinistryDetailComponent);
+  function render() {
+    const fixture = TestBed.createComponent(MinistryDetailComponent);
     fixture.detectChanges();
+    return fixture;
+  }
+
+  it('shows the title as heading and "{subtitle} · 팀원 N명" as subtitle', () => {
+    const fixture = render();
+    const c = fixture.componentInstance;
+    expect(c.breadcrumb()).toEqual(['사역', '찬양팀']);
+    expect(c.subtitle()).toBe('주일 예배 찬양 · 팀원 2명');
+    expect(fixture.nativeElement.textContent).toContain('찬양팀');
   });
 
-  it('renders the structured ministry details returned by the server', () => {
-    const text = fixture.nativeElement.textContent as string;
-
-    expect(text).toContain(ministry.title);
-    expect(text).toContain(ministry.subtitle);
-    expect(text).toContain(ministry.about);
-    expect(text).toContain(ministry.requirements[0]);
-    expect(text).toContain(ministry.schedules[0].description);
-    expect(text).toContain('07:00 – 09:00');
-    expect(text).toContain(ministry.contacts[0].role);
-    expect(text).toContain(ministry.contacts[0].name);
+  it('leaves out an empty ministry subtitle', () => {
+    service.getMinistry.and.returnValue(of({ ...MINISTRY, subtitle: '' }));
+    expect(render().componentInstance.subtitle()).toBe('팀원 2명');
   });
 
-  it('uses 맴버 wording for the active-members section', () => {
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('현재 활동 맴버');
-    expect(text).toContain('맴버 추가');
-    expect(text).not.toContain('현재 활동 회원');
+  it('maps members to rows with 역할 —, badge 활동 and start date YY.MM', () => {
+    const records = render().componentInstance.records();
+    expect(records).toEqual([
+      { id: 'm1', title: '김철수', subtitle: '—', badge: { variant: 'active', label: '활동' }, meta: '23.03' },
+      { id: 'm2', title: '이영희', subtitle: '—', badge: { variant: 'active', label: '활동' }, meta: '—' },
+    ]);
   });
 
-  it('onMemberAdded() appends the returned row to the active members table', () => {
-    const component = fixture.componentInstance;
-    component.onMemberAdded({
-      publicId: 'm9', fullName: '박지성', startDate: '2026-06-01', note: null, gender: 'M',
-    });
-    fixture.detectChanges();
-    expect(component.activeMembers().length).toBe(1);
-    expect((fixture.nativeElement.textContent as string)).toContain('박지성');
+  it('renders the table on desktop and list cards on phone', () => {
+    let el: HTMLElement = render().nativeElement;
+    expect(el.querySelector('app-data-table')).not.toBeNull();
+    expect(el.querySelector('app-list-card')).toBeNull();
+
+    isPhone.set(true);
+    el = render().nativeElement;
+    expect(el.querySelector('app-data-table')).toBeNull();
+    expect(el.querySelectorAll('app-list-card').length).toBe(2);
+  });
+
+  it('shows the not-found state when the ministry fails to load', () => {
+    service.getMinistry.and.returnValue(throwError(() => new Error('404')));
+    const el: HTMLElement = render().nativeElement;
+    expect(el.textContent).toContain('사역을 찾을 수 없습니다');
+    expect(el.querySelector('[data-testid="members-card"]')).toBeNull();
+  });
+
+  it('reloads the members after one was added', () => {
+    const c = render().componentInstance;
+    service.getActiveMembers.calls.reset();
+    c.onMemberAdded();
+    expect(service.getActiveMembers).toHaveBeenCalledOnceWith('min-1');
+  });
+
+  it('navigates to the member on row select and back to the list', () => {
+    const c = render().componentInstance;
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
+    c.goToMember('m1');
+    expect(router.navigate).toHaveBeenCalledWith(['/members', 'm1']);
+    c.goToEdit();
+    expect(router.navigate).toHaveBeenCalledWith(['/ministry', 'min-1', 'edit']);
+  });
+
+  it('offers 비활성화 only while active and deactivates after confirm', () => {
+    const fixture = render();
+    const c = fixture.componentInstance;
+    expect(c.moreItems().map(i => i.label)).toEqual(['비활성화']);
+
+    const confirm = fixture.debugElement.injector.get(ConfirmationService);
+    spyOn(confirm, 'confirm').and.callFake(opts => { opts.accept?.(); return confirm; });
+    service.deactivateMinistry.and.returnValue(of(void 0));
+    service.getMinistry.and.returnValue(of({ ...MINISTRY, isActive: false }));
+
+    c.confirmDeactivate(new Event('click'));
+
+    expect(service.deactivateMinistry).toHaveBeenCalledWith('min-1');
+    expect(c.moreItems()).toEqual([]);
   });
 });

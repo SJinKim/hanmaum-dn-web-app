@@ -1,156 +1,94 @@
-<div class="p-6">
-  <div class="flex items-center gap-3 mb-6">
-    <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" (onClick)="goBack()" />
-    <h1 class="text-2xl font-bold text-gray-800">부서 상세</h1>
-    <div class="ml-auto">
-      <p-button label="수정" icon="pi pi-pencil" severity="info" (onClick)="goToEdit()" />
-    </div>
-  </div>
-
-  @if (loading()) {
-    <div class="flex justify-center py-12">
-      <p-progressSpinner strokeWidth="4" />
-    </div>
-  } @else if (ministry()) {
-    <!-- Info card -->
-    <p-card class="mb-6">
-      <div class="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_16rem]">
-        <div>
-          <div class="mb-4 flex items-start gap-3">
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">사역 제목</p>
-              <p class="text-xl font-semibold text-gray-800">{{ ministry()!.title }}</p>
-              <p class="mt-1 text-gray-600">{{ ministry()!.subtitle }}</p>
-            </div>
-            <p-tag
-              class="ml-auto"
-              [value]="ministry()!.isActive ? '활성' : '비활성'"
-              [severity]="ministry()!.isActive ? 'success' : 'secondary'"
-            />
-          </div>
-
-          <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">사역 소개</p>
-            <p class="text-gray-700 whitespace-pre-wrap">{{ ministry()!.about }}</p>
-          </div>
-        </div>
-
-        @if (ministry()!.imageUrl) {
-          <img
-            [src]="ministry()!.imageUrl"
-            [alt]="ministry()!.title"
-            class="h-44 w-full rounded-lg object-cover"
-          />
-        } @else {
-          <div class="flex h-44 items-center justify-center rounded-lg bg-gray-100 text-gray-400">
-            <i class="pi pi-image text-3xl"></i>
-          </div>
+<!--
+  Figma: 사역 상세 · Desktop · Light (204:6930). One card 팀원; on Phone the
+  table becomes a stack of list cards.
+-->
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    hasBack
+    [breadcrumb]="breadcrumb()"
+    [eyebrow]="'ministry.detail.eyebrow' | translate"
+    [heading]="ministry()?.title ?? ('ministry.title' | translate)"
+    [subtitle]="subtitle()"
+    (back)="goBack()">
+    @if (ministry()) {
+      <div appActions class="flex items-center gap-[var(--space-8)]">
+        <p-button
+          icon="pi pi-pencil"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'ministry.detail.edit' | translate"
+          (onClick)="goToEdit()" />
+        @if (moreItems().length > 0) {
+          <p-button
+            icon="pi pi-ellipsis-v"
+            severity="secondary"
+            [text]="true"
+            [rounded]="true"
+            [ariaLabel]="'ministry.detail.more' | translate"
+            (onClick)="toggleMore($event)" />
+          <p-menu #moreMenu [model]="moreItems()" [popup]="true" appendTo="body" />
         }
       </div>
-    </p-card>
+    }
+  </app-page-header>
 
-    <div class="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <!-- Requirements -->
-      <p-card>
-        <h2 class="mb-3 text-base font-semibold text-gray-700">지원 자격</h2>
-        @if (ministry()!.requirements.length) {
-          <ul class="flex list-disc flex-col gap-2 pl-5 text-sm text-gray-700">
-            @for (requirement of ministry()!.requirements; track $index) {
-              <li>{{ requirement }}</li>
-            }
-          </ul>
+  @if (loading()) {
+    <app-skeleton variant="card" />
+  } @else if (ministry()) {
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+      data-testid="members-card">
+      <app-section-header [heading]="'ministry.detail.members' | translate">
+        <p-button
+          appActions
+          icon="pi pi-plus"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'ministry.detail.addMember' | translate"
+          (onClick)="openAddMember()" />
+      </app-section-header>
+
+      @if (isPhone()) {
+        @if (membersLoading()) {
+          <app-skeleton variant="card" />
+        } @else if (records().length === 0) {
+          <app-empty-state
+            [heading]="'ministry.detail.membersEmpty.heading' | translate"
+            [description]="'ministry.detail.membersEmpty.description' | translate" />
         } @else {
-          <p class="text-sm text-gray-400">등록된 지원 자격이 없습니다.</p>
-        }
-      </p-card>
-
-      <!-- Schedules -->
-      <p-card>
-        <h2 class="mb-3 text-base font-semibold text-gray-700">사역 일정</h2>
-        @if (ministry()!.schedules.length) {
-          <div class="flex flex-col gap-3">
-            @for (schedule of ministry()!.schedules; track $index) {
-              <div>
-                <p class="text-sm font-medium text-gray-700">{{ schedule.description }}</p>
-                <p class="text-xs text-gray-500">{{ schedule.startTime }} – {{ schedule.endTime }}</p>
-              </div>
-            }
-          </div>
-        } @else {
-          <p class="text-sm text-gray-400">등록된 일정이 없습니다.</p>
-        }
-      </p-card>
-
-      <!-- Contacts -->
-      <p-card>
-        <h2 class="mb-3 text-base font-semibold text-gray-700">연락처</h2>
-        @if (ministry()!.contacts.length) {
-          <div class="flex flex-col gap-3">
-            @for (contact of ministry()!.contacts; track $index) {
-              <div>
-                <p class="text-xs text-gray-400">{{ contact.role }}</p>
-                <p class="text-sm font-medium text-gray-700">{{ contact.name }}</p>
-              </div>
+          <div class="flex flex-col gap-[var(--space-8)]">
+            @for (r of records(); track r.id) {
+              <app-list-card [record]="r" (selected)="goToMember($event.id)" />
             }
           </div>
-        } @else {
-          <p class="text-sm text-gray-400">등록된 연락처가 없습니다.</p>
         }
-      </p-card>
-    </div>
-
-    <!-- Active members -->
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-700">현재 활동 맴버</h2>
-      <p-button label="맴버 추가" icon="pi pi-plus" (onClick)="openAddMember()" />
-    </div>
-
-    <p-table
-      [value]="activeMembers()"
-      [loading]="membersLoading()"
-      styleClass="p-datatable-sm"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th>맴버명</th>
-          <th>시작일</th>
-        </tr>
-      </ng-template>
-
-      <ng-template pTemplate="body" let-m>
-        <tr>
-          <td>
-            <div class="flex items-center gap-1">
-              @if (m.gender === 'M') {
-                <span class="text-blue-400 text-sm leading-none">♂</span>
-              } @else if (m.gender === 'F') {
-                <span class="text-pink-400 text-sm leading-none">♀</span>
-              }
-              <button
-                class="text-black hover:underline cursor-pointer bg-transparent border-none p-0 font-medium text-sm"
-                (click)="goToMember(m.publicId)"
-              >{{ m.fullName }}</button>
-            </div>
-          </td>
-          <td class="text-gray-500">{{ formatStartDate(m.startDate) }}</td>
-        </tr>
-      </ng-template>
-
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="2" class="text-center py-8 text-gray-400">
-            현재 활동 중인 맴버가 없습니다.
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+      } @else {
+        <app-data-table
+          [rows]="records()"
+          [columns]="columns()"
+          [loading]="membersLoading()"
+          [caption]="'ministry.detail.members' | translate"
+          [emptyHeading]="'ministry.detail.membersEmpty.heading' | translate"
+          [emptyDescription]="'ministry.detail.membersEmpty.description' | translate"
+          (rowSelected)="goToMember($event.id)" />
+      }
+    </section>
 
     <app-ministry-add-member-dialog
       [(visible)]="addDialogVisible"
       [ministryPublicId]="ministry()!.publicId"
-      (added)="onMemberAdded($event)"
-    />
+      (added)="onMemberAdded()" />
+  } @else {
+    <app-empty-state
+      variant="error"
+      [heading]="'ministry.detail.notFound.heading' | translate"
+      [description]="'ministry.detail.notFound.description' | translate"
+      [actionLabel]="'ministry.detail.notFound.action' | translate"
+      actionIcon="pi pi-arrow-left"
+      (action)="goBack()" />
   }
 </div>
 
+<p-confirmDialog />
 <p-toast />

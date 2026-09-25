@@ -1,5 +1,5 @@
 <p-dialog
-  header="맴버 추가"
+  [header]="'ministry.detail.addDialog.header' | translate"
   [visible]="visible()"
   (visibleChange)="onVisibleChange($event)"
   [modal]="true"
@@ -7,9 +7,9 @@
   [draggable]="false"
   [resizable]="false"
 >
-  <form [formGroup]="form" class="flex flex-col gap-4 pt-2">
-    <div class="flex flex-col gap-1">
-      <label for="add-member-select" class="text-sm font-medium text-gray-700">맴버</label>
+  <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)] pt-[var(--space-8)]">
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="add-member-select" class="type-caption text-ink-muted">{{ 'ministry.detail.addDialog.member' | translate }}</label>
       <p-select
         inputId="add-member-select"
         formControlName="memberId"
@@ -18,28 +18,28 @@
         optionValue="value"
         [filter]="true"
         filterBy="label"
-        placeholder="맴버 선택"
+        [placeholder]="'ministry.detail.addDialog.memberPlaceholder' | translate"
         class="w-full"
       />
     </div>
 
-    <div class="flex flex-col gap-1">
-      <label for="add-member-year" class="text-sm font-medium text-gray-700">시작일</label>
-      <div class="flex gap-2">
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="add-member-year" class="type-caption text-ink-muted">{{ 'ministry.detail.addDialog.startDate' | translate }}</label>
+      <div class="flex gap-[var(--space-8)]">
         <p-select inputId="add-member-year" formControlName="startYear" [options]="yearOptions" optionLabel="label" optionValue="value" placeholder="YY" class="w-20" />
         <p-select formControlName="startMonth" [options]="monthOptions" optionLabel="label" optionValue="value" placeholder="MM" class="w-20" />
       </div>
     </div>
 
-    <div class="flex flex-col gap-1">
-      <label for="add-member-note" class="text-sm font-medium text-gray-700">비고</label>
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="add-member-note" class="type-caption text-ink-muted">{{ 'ministry.detail.addDialog.note' | translate }}</label>
       <input id="add-member-note" pInputText formControlName="note" maxlength="500" class="w-full" />
     </div>
   </form>
 
   <ng-template pTemplate="footer">
-    <p-button label="취소" severity="secondary" [text]="true" (onClick)="close()" />
-    <p-button label="추가" icon="pi pi-plus" [loading]="saving()" (onClick)="submit()" />
+    <p-button [label]="'ministry.detail.addDialog.cancel' | translate" severity="secondary" [text]="true" (onClick)="close()" />
+    <p-button [label]="'ministry.detail.addDialog.submit' | translate" icon="pi pi-plus" [loading]="saving()" (onClick)="submit()" />
   </ng-template>
 </p-dialog>
 
