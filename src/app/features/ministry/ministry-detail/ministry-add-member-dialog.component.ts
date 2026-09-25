@@ -44,8 +44,7 @@ export class MinistryAddMemberDialogComponent implements OnInit {
 
   /** Figma Dialog/Medium: 24 panel padding, 16 between title, subtitle, form and footer. */
   readonly dialogPt = {
-    header:  { style: { paddingBottom: 'var(--space-16)' } },
-    content: { style: { paddingBottom: '0' } },
+    header: { style: { paddingBottom: 'var(--space-16)' } },
   };
 
   readonly saving = signal(false);
