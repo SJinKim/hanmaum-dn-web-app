@@ -453,18 +453,21 @@
       "breadcrumbNew": "New ministry",
       "fields": {
         "title": "Name",
-        "subtitle": "Description",
+        "subtitle": "Short description",
         "leader": "Leader",
-        "status": "Status"
+        "status": "Status",
+        "about": "Description"
       },
       "placeholders": {
         "title": "e.g. Worship team",
         "subtitle": "Describe the ministry in one line",
-        "leader": "Select a leader"
+        "leader": "Select a leader",
+        "about": "Describe the ministry in detail. The mobile app shows it under “Our heart”."
       },
       "hints": {
         "subtitle": "Up to {{max}} characters",
-        "leader": "Assigning a leader is coming soon"
+        "leader": "Shown as the leader in the mobile app",
+        "about": "Line breaks are kept"
       },
       "status": {
         "active": "Active",
@@ -481,7 +484,22 @@
         "loadFailed": "Could not load the ministry.",
         "saveFailed": "Could not save the changes.",
         "createFailed": "Could not create the ministry."
-      }
+      },
+      "schedules": {
+        "title": "Place & time",
+        "add": "Add place & time",
+        "location": "Place",
+        "placeholder": "e.g. Main hall",
+        "start": "Start",
+        "end": "End",
+        "incomplete": "Enter a place, start and end."
+      },
+      "requirements": {
+        "title": "Requirements",
+        "add": "Add requirement",
+        "placeholder": "e.g. Completed discipleship"
+      },
+      "remove": "Remove"
     }
   }
 }

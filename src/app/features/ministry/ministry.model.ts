@@ -28,6 +28,7 @@ export interface MinistrySchedule {
   description: string;
   startTime: string;
   endTime: string;
+  location?: string | null;
 }
 
 export interface ActiveMinistryMemberDto {
