@@ -24,7 +24,7 @@ import {
 export const TITLE_MAX = 100;
 export const SUBTITLE_MAX = 200;
 export const LIST_MAX = 20;
-export const SCHEDULE_DESCRIPTION_MAX = 200;
+export const SCHEDULE_LOCATION_MAX = 100;
 export const LEADER_ROLE = '리더';
 
 /**
@@ -69,7 +69,7 @@ export class MinistryEditComponent implements OnInit {
   readonly titleMax    = TITLE_MAX;
   readonly subtitleMax = SUBTITLE_MAX;
   readonly listMax     = LIST_MAX;
-  readonly scheduleDescriptionMax = SCHEDULE_DESCRIPTION_MAX;
+  readonly scheduleLocationMax = SCHEDULE_LOCATION_MAX;
 
   private readonly publicId = this.route.snapshot.paramMap.get('publicId') ?? '';
   readonly isEdit = !!this.publicId;
@@ -249,7 +249,7 @@ export class MinistryEditComponent implements OnInit {
       subtitle: v.subtitle.trim(),
       about: v.about.trim(),
       requirements: v.requirements.map(r => r.trim()),
-      schedules: (v.schedules as MinistrySchedule[]).map(s => ({ ...s, description: s.description.trim() })),
+      schedules: this.scheduleRequests(v.title.trim(), v.schedules as ScheduleRow[]),
       contacts: this.contacts(v.leader),
       isActive: v.isActive,
     };
@@ -262,9 +262,23 @@ export class MinistryEditComponent implements OnInit {
     return name ? [{ role: first?.role || LEADER_ROLE, name }, ...rest] : rest;
   }
 
+  /**
+   * The form only asks for 장소; the server still requires `description`, which
+   * says what happens there, so it is always "<사역명> 모임".
+   */
+  private scheduleRequests(title: string, rows: ScheduleRow[]): MinistrySchedule[] {
+    return rows.map(r => ({
+      description: `${title} 모임`,
+      startTime: r.startTime,
+      endTime: r.endTime,
+      location: r.location.trim(),
+    }));
+  }
+
+  /** Schedules saved before `location` existed keep their place in `description`; show it as 장소. */
   private newSchedule(s?: MinistrySchedule): FormGroup {
     return this.fb.group({
-      description: [s?.description ?? '', [Validators.required, Validators.maxLength(SCHEDULE_DESCRIPTION_MAX)]],
+      location:    [s ? (s.location ?? s.description) : '', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(SCHEDULE_LOCATION_MAX)]],
       startTime:   [s?.startTime ?? '', Validators.required],
       endTime:     [s?.endTime ?? '', Validators.required],
     });
@@ -273,8 +287,8 @@ export class MinistryEditComponent implements OnInit {
   /** Rows the user added but left empty are not an error; they are just not sent. */
   private dropBlankRows(): void {
     for (let i = this.schedules.length - 1; i >= 0; i--) {
-      const { description, startTime, endTime } = this.schedules.at(i).getRawValue();
-      if (!description.trim() && !startTime && !endTime) this.schedules.removeAt(i);
+      const { location, startTime, endTime } = this.schedules.at(i).getRawValue();
+      if (!location.trim() && !startTime && !endTime) this.schedules.removeAt(i);
     }
     for (let i = this.requirements.length - 1; i >= 0; i--) {
       if (!this.requirements.at(i).value.trim()) this.requirements.removeAt(i);
@@ -289,6 +303,8 @@ export class MinistryEditComponent implements OnInit {
     });
   }
 }
+
+interface ScheduleRow { location: string; startTime: string; endTime: string; }
 
 /** The PATCH replaces every field, so start from what the server holds. */
 function toUpdateRequest(m: Ministry): UpdateMinistryRequest {

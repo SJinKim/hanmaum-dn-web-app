@@ -31,7 +31,10 @@ const MINISTRY: Ministry = {
   subtitle: '주일 예배 찬양',
   about: '찬양으로 예배를 섬깁니다.',
   requirements: ['양육 수료'],
-  schedules: [{ description: '본당', startTime: '09:00', endTime: '10:00' }],
+  schedules: [
+    { description: '찬양팀 모임', startTime: '09:00', endTime: '10:00', location: '본당' },
+    { description: '주일 모임 · 방송실', startTime: '13:00', endTime: '14:00', location: null },
+  ],
   contacts: [{ role: '팀장', name: '김영원' }, { role: '총무', name: '박하늘' }],
   imageUrl: null,
   isActive: true,
@@ -103,7 +106,7 @@ describe('MinistryEditComponent', () => {
       const c = fixture.componentInstance;
       c.form.patchValue({ title: ' 난민 사역 ', subtitle: ' 사랑을 나눕니다 ', about: ' 긴 설명\n둘째 줄 ', leader: '이하나' });
       c.addSchedule();
-      c.schedules.at(0).patchValue({ description: ' 3층 ', startTime: '14:00', endTime: '16:00' });
+      c.schedules.at(0).patchValue({ location: ' 3층 ', startTime: '14:00', endTime: '16:00' });
       c.addRequirement();
       c.requirements.at(0).setValue(' 세례 ');
 
@@ -114,7 +117,7 @@ describe('MinistryEditComponent', () => {
         subtitle: '사랑을 나눕니다',
         about: '긴 설명\n둘째 줄',
         requirements: ['세례'],
-        schedules: [{ description: '3층', startTime: '14:00', endTime: '16:00' }],
+        schedules: [{ description: '난민 사역 모임', startTime: '14:00', endTime: '16:00', location: '3층' }],
         contacts: [{ role: '리더', name: '이하나' }],
         imageUrl: null,
       });
@@ -130,7 +133,7 @@ describe('MinistryEditComponent', () => {
       c.addSchedule();
       c.addRequirement();
       c.addSchedule();
-      c.schedules.at(1).patchValue({ description: '본당' });
+      c.schedules.at(1).patchValue({ location: '본당' });
 
       c.save();
 
@@ -167,7 +170,11 @@ describe('MinistryEditComponent', () => {
         leader: '김영원',
         subtitle: '주일 예배 찬양',
         about: '찬양으로 예배를 섬깁니다.',
-        schedules: MINISTRY.schedules,
+        // A schedule saved before `location` existed shows its description as 장소.
+        schedules: [
+          { location: '본당', startTime: '09:00', endTime: '10:00' },
+          { location: '주일 모임 · 방송실', startTime: '13:00', endTime: '14:00' },
+        ],
         requirements: MINISTRY.requirements,
       });
       expect(c.breadcrumb()).toEqual(['사역', '찬양팀', '수정']);
@@ -185,7 +192,7 @@ describe('MinistryEditComponent', () => {
       service.updateMinistry.and.returnValue(of(MINISTRY));
       const c = fixture.componentInstance;
       c.form.patchValue({ title: '찬양팀 A', subtitle: '', about: '새 설명', leader: '이하나', isActive: false });
-      c.removeSchedule(0);
+      c.removeSchedule(1);
 
       c.save();
 
@@ -194,7 +201,8 @@ describe('MinistryEditComponent', () => {
         subtitle: '',
         about: '새 설명',
         requirements: MINISTRY.requirements,
-        schedules: [],
+        // description follows the new 사역명.
+        schedules: [{ description: '찬양팀 A 모임', startTime: '09:00', endTime: '10:00', location: '본당' }],
         contacts: [{ role: '팀장', name: '이하나' }, { role: '총무', name: '박하늘' }],
         imageUrl: '',
         isActive: false,
