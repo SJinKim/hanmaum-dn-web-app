@@ -1,7 +1,7 @@
 <!--
   Figma: 사역 정보 수정 (204:7690), 새 사역 추가 (285:21140).
-  One card 사역 정보: 사역명 | 상태, then 리더, 한 줄 소개, 설명 (tall textarea),
-  then 연습 시간 and 참여 조건 as editable lists.
+  One card 사역 정보: 사역명 | 리더 | 상태, then 한 줄 소개, 설명 (tall textarea),
+  then 모임 시간 and 참여 조건 as editable lists.
 -->
 <div class="flex flex-col gap-gutter">
   <app-page-header
@@ -22,8 +22,8 @@
       data-testid="ministry-form">
       <app-section-header [heading]="'ministry.form.card' | translate" />
 
-      <!-- 사역명 | 상태 -->
-      <div class="grid grid-cols-1 gap-[var(--space-16)] tablet:grid-cols-2">
+      <!-- 사역명 | 리더 | 상태 -->
+      <div class="grid grid-cols-1 items-start gap-[var(--space-16)] tablet:grid-cols-[1fr_1fr_auto]">
         <div class="flex flex-col gap-[var(--space-4)]">
           <label for="ministryTitle" class="type-caption text-ink-muted">
             {{ 'ministry.form.fields.title' | translate }}
@@ -45,6 +45,26 @@
         </div>
 
         <div class="flex flex-col gap-[var(--space-4)]">
+          <label for="ministryLeader" class="type-caption text-ink-muted">
+            {{ 'ministry.form.fields.leader' | translate }}
+          </label>
+          <p-select
+            inputId="ministryLeader"
+            formControlName="leader"
+            [options]="leaderOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [filter]="true"
+            filterBy="label"
+            [showClear]="true"
+            [placeholder]="'ministry.form.placeholders.leader' | translate"
+            styleClass="w-full" />
+          <small class="type-caption text-ink-disabled" data-testid="leader-hint">
+            {{ 'ministry.form.hints.leader' | translate }}
+          </small>
+        </div>
+
+        <div class="flex flex-col gap-[var(--space-4)]">
           <label for="ministryStatus" class="type-caption text-ink-muted">
             {{ 'ministry.form.fields.status' | translate }}
           </label>
@@ -55,27 +75,9 @@
             optionLabel="label"
             optionValue="value"
             styleClass="w-full" />
+          <!-- Invisible sizer: the column is as wide as the longest option, plus the select's padding (formField.paddingX), 2.5rem arrow and 1px borders. -->
+          <span aria-hidden="true" class="invisible h-0 overflow-hidden whitespace-nowrap pl-[calc(var(--space-12)+1px)] pr-[calc(var(--space-12)+2.5rem+1px)]">{{ statusLongestLabel() }}</span>
         </div>
-      </div>
-
-      <div class="flex flex-col gap-[var(--space-4)]">
-        <label for="ministryLeader" class="type-caption text-ink-muted">
-          {{ 'ministry.form.fields.leader' | translate }}
-        </label>
-        <p-select
-          inputId="ministryLeader"
-          formControlName="leader"
-          [options]="leaderOptions()"
-          optionLabel="label"
-          optionValue="value"
-          [filter]="true"
-          filterBy="label"
-          [showClear]="true"
-          [placeholder]="'ministry.form.placeholders.leader' | translate"
-          styleClass="w-full" />
-        <small class="type-caption text-ink-disabled" data-testid="leader-hint">
-          {{ 'ministry.form.hints.leader' | translate }}
-        </small>
       </div>
 
       <div class="flex flex-col gap-[var(--space-4)]">
@@ -126,7 +128,7 @@
         }
       </div>
 
-      <!-- 연습 시간 → schedules -->
+      <!-- 모임 시간 → schedules -->
       <section class="border-line-subtle flex flex-col gap-[var(--space-12)] border-t pt-[var(--space-16)]" data-testid="schedules">
         <div class="flex items-center justify-between gap-[var(--space-8)]">
           <div class="flex flex-col">

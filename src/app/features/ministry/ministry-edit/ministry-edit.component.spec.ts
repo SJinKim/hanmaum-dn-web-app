@@ -122,7 +122,7 @@ describe('MinistryEditComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/ministry', 'new-1']);
     });
 
-    it('drops blank rows and blocks an incomplete 연습 시간', () => {
+    it('drops blank rows and blocks an incomplete 모임 시간', () => {
       const fixture = setup(null);
       service.createMinistry.and.returnValue(of({ ...MINISTRY, publicId: 'new-1' }));
       const c = fixture.componentInstance;
