@@ -376,7 +376,8 @@
         "name": "Name",
         "role": "Role",
         "status": "Status",
-        "startDate": "Start"
+        "startDate": "Start",
+        "actions": "Manage"
       },
       "membersEmpty": {
         "heading": "No members yet",
@@ -399,7 +400,11 @@
         "deactivated": "The ministry was deactivated.",
         "deactivateFailed": "Could not deactivate.",
         "loadFailed": "Could not load the ministry.",
-        "membersFailed": "Could not load members."
+        "membersFailed": "Could not load members.",
+        "memberUpdated": "Team member saved.",
+        "memberUpdateFailed": "Could not save the team member.",
+        "memberRemoved": "Membership ended.",
+        "memberRemoveFailed": "Could not end the membership."
       },
       "addDialog": {
         "header": "Add member",
@@ -418,6 +423,25 @@
           "failed": "Could not add.",
           "namesFailed": "Could not load members."
         }
+      },
+      "editMember": "Edit",
+      "removeMember": "End",
+      "editDialog": {
+        "header": "Edit team member",
+        "role": "Role",
+        "status": "Status",
+        "roleHint": "Setting role and status is coming soon",
+        "startDate": "Start date",
+        "note": "Note",
+        "required": "This field is required",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "removeDialog": {
+        "header": "End membership",
+        "message": "End {{name}}'s membership? Today is recorded as the end date.",
+        "accept": "End",
+        "cancel": "Cancel"
       }
     },
     "form": {

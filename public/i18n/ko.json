@@ -376,7 +376,8 @@
         "name": "이름",
         "role": "역할",
         "status": "상태",
-        "startDate": "시작일"
+        "startDate": "시작일",
+        "actions": "관리"
       },
       "membersEmpty": {
         "heading": "팀원이 없습니다",
@@ -399,7 +400,11 @@
         "deactivated": "사역이 비활성화되었습니다.",
         "deactivateFailed": "비활성화에 실패했습니다.",
         "loadFailed": "사역 정보를 불러올 수 없습니다.",
-        "membersFailed": "팀원 목록을 불러올 수 없습니다."
+        "membersFailed": "팀원 목록을 불러올 수 없습니다.",
+        "memberUpdated": "팀원 정보가 저장되었습니다.",
+        "memberUpdateFailed": "팀원 정보 저장에 실패했습니다.",
+        "memberRemoved": "팀원 활동이 종료되었습니다.",
+        "memberRemoveFailed": "팀원 활동 종료에 실패했습니다."
       },
       "addDialog": {
         "header": "팀원 추가",
@@ -418,6 +423,25 @@
           "failed": "추가에 실패했습니다.",
           "namesFailed": "청년 목록을 불러올 수 없습니다."
         }
+      },
+      "editMember": "수정",
+      "removeMember": "종료",
+      "editDialog": {
+        "header": "팀원 정보 수정",
+        "role": "역할",
+        "status": "상태",
+        "roleHint": "역할·상태 지정은 준비 중입니다",
+        "startDate": "시작일",
+        "note": "메모",
+        "required": "필수 항목입니다",
+        "cancel": "취소",
+        "save": "저장"
+      },
+      "removeDialog": {
+        "header": "팀원 활동 종료",
+        "message": "{{name}}님의 활동을 종료할까요? 종료일이 오늘로 기록됩니다.",
+        "accept": "종료",
+        "cancel": "취소"
       }
     },
     "form": {

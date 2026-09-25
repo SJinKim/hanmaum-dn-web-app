@@ -71,7 +71,11 @@
           [caption]="'ministry.detail.members' | translate"
           [emptyHeading]="'ministry.detail.membersEmpty.heading' | translate"
           [emptyDescription]="'ministry.detail.membersEmpty.description' | translate"
-          (rowSelected)="goToMember($event.id)" />
+          [editLabel]="'ministry.detail.editMember' | translate"
+          [deleteLabel]="'ministry.detail.removeMember' | translate"
+          (rowSelected)="goToMember($event.id)"
+          (edit)="openEditMember($event.id)"
+          (remove)="confirmRemoveMember($event.id)" />
       }
     </section>
 
@@ -79,6 +83,13 @@
       [(visible)]="addDialogVisible"
       [ministryPublicId]="ministry()!.publicId"
       (added)="onMemberAdded()" />
+
+    <app-ministry-member-edit-dialog
+      [(visible)]="editDialogVisible"
+      [ministryPublicId]="ministry()!.publicId"
+      [member]="editingMember()"
+      (saved)="onMemberEdited()"
+      (failed)="onMemberEditFailed()" />
   } @else {
     <app-empty-state
       variant="error"

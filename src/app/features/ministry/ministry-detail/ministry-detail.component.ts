@@ -19,14 +19,18 @@ import { SectionHeaderComponent } from '../../../core/ui/section-header/section-
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 import { MinistryService } from '../ministry.service';
 import { ActiveMinistryMemberDto, Ministry } from '../ministry.model';
+import { localDateToIso } from '../../../core/models/member-activity.model';
+import { MinistryAssignmentService } from '../ministry-assignment.service';
 import { MinistryAddMemberDialogComponent } from './ministry-add-member-dialog.component';
+import { MinistryMemberEditDialogComponent } from './ministry-member-edit-dialog.component';
 
 /**
  * Figma: 사역 상세 · Desktop (204:6930). A header and one card 팀원; the table
  * becomes `app-list-card`s on Phone.
  *
  * 역할 shows `—` until the API carries a role per assignment
- * (hanmaum-dn-server#214). The 관리 column arrives with #101.
+ * (hanmaum-dn-server#214). 관리 edits or ends an assignment through the
+ * member's list (see MinistryAssignmentService); Phone has no 관리 yet.
  */
 @Component({
   selector: 'app-ministry-detail',
@@ -44,12 +48,14 @@ import { MinistryAddMemberDialogComponent } from './ministry-add-member-dialog.c
     SectionHeaderComponent,
     SkeletonComponent,
     MinistryAddMemberDialogComponent,
+    MinistryMemberEditDialogComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './ministry-detail.component.html',
 })
 export class MinistryDetailComponent implements OnInit {
   private readonly ministryService = inject(MinistryService);
+  private readonly assignments     = inject(MinistryAssignmentService);
   private readonly route           = inject(ActivatedRoute);
   private readonly router          = inject(Router);
   private readonly translate       = inject(TranslateService);
@@ -65,6 +71,8 @@ export class MinistryDetailComponent implements OnInit {
   readonly loading          = signal(true);
   readonly membersLoading   = signal(true);
   readonly addDialogVisible = signal(false);
+  readonly editDialogVisible = signal(false);
+  readonly editingMember    = signal<ActiveMinistryMemberDto | null>(null);
 
   private readonly moreMenu = viewChild<Menu>('moreMenu');
   private readonly publicId = this.route.snapshot.paramMap.get('publicId')!;
@@ -91,6 +99,7 @@ export class MinistryDetailComponent implements OnInit {
       { type: 'text', header: t('role') },
       { type: 'badge', header: t('status') },
       { type: 'date', header: t('startDate') },
+      { type: 'actions', header: t('actions') },
     ];
   });
 
@@ -159,6 +168,33 @@ export class MinistryDetailComponent implements OnInit {
   /** Reload rather than append, so the order and count match the server. */
   onMemberAdded(): void { this.loadActiveMembers(); }
 
+  openEditMember(publicId: string): void {
+    this.editingMember.set(this.activeMembers().find(m => m.publicId === publicId) ?? null);
+    this.editDialogVisible.set(true);
+  }
+
+  onMemberEdited(): void {
+    this.toastSuccess('ministry.detail.toast.memberUpdated');
+    this.loadActiveMembers();
+  }
+
+  onMemberEditFailed(): void { this.toastError('ministry.detail.toast.memberUpdateFailed'); }
+
+  confirmRemoveMember(publicId: string): void {
+    const member = this.activeMembers().find(m => m.publicId === publicId);
+    if (!member) return;
+    const t = (key: string) => this.translate.instant(`ministry.detail.removeDialog.${key}`) as string;
+    this.confirmService.confirm({
+      header: t('header'),
+      message: this.translate.instant('ministry.detail.removeDialog.message', { name: member.fullName }),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: t('accept'),
+      rejectLabel: t('cancel'),
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.removeMember(member.publicId),
+    });
+  }
+
   toggleMore(event: Event): void { this.moreMenu()?.toggle(event); }
 
   confirmDeactivate(event: Event): void {
@@ -179,20 +215,37 @@ export class MinistryDetailComponent implements OnInit {
   goToEdit(): void { this.router.navigate(['/ministry', this.publicId, 'edit']); }
   goBack(): void { this.router.navigate(['/ministry']); }
 
+  /** Ends the assignment today; the member leaves the active list. */
+  private removeMember(memberPublicId: string): void {
+    this.assignments.endAssignment(memberPublicId, this.publicId, localDateToIso(new Date())!)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toastSuccess('ministry.detail.toast.memberRemoved');
+          this.loadActiveMembers();
+        },
+        error: () => this.toastError('ministry.detail.toast.memberRemoveFailed'),
+      });
+  }
+
   private deactivate(): void {
     this.ministryService.deactivateMinistry(this.publicId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: this.translate.instant('ministry.detail.toast.done'),
-            detail: this.translate.instant('ministry.detail.toast.deactivated'),
-          });
+          this.toastSuccess('ministry.detail.toast.deactivated');
           this.loadMinistry();
         },
         error: () => this.toastError('ministry.detail.toast.deactivateFailed'),
       });
+  }
+
+  private toastSuccess(detailKey: string): void {
+    this.messageService.add({
+      severity: 'success',
+      summary: this.translate.instant('ministry.detail.toast.done'),
+      detail: this.translate.instant(detailKey),
+    });
   }
 
   private toastError(detailKey: string): void {
