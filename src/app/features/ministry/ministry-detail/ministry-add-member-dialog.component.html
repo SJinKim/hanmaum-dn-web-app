@@ -8,6 +8,8 @@
   [resizable]="false"
 >
   <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)] pt-[var(--space-8)]">
+    <p class="type-body text-ink-muted" data-testid="add-member-subtitle">{{ 'ministry.detail.addDialog.subtitle' | translate }}</p>
+
     <div class="flex flex-col gap-[var(--space-4)]">
       <label for="add-member-select" class="type-caption text-ink-muted">{{ 'ministry.detail.addDialog.member' | translate }}</label>
       <p-select
@@ -24,28 +26,19 @@
     </div>
 
     <div class="flex flex-col gap-[var(--space-4)]">
-      <label for="add-member-year" class="type-caption text-ink-muted">{{ 'ministry.detail.addDialog.startDate' | translate }}</label>
-      <div class="flex items-center gap-[var(--space-8)]">
-        <p-select
-          inputId="add-member-year"
-          formControlName="startYear"
-          [options]="yearOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="YY"
-          [ariaLabel]="('ministry.detail.addDialog.startDate' | translate) + ' ' + ('ministry.detail.addDialog.year' | translate)"
-          class="w-20" />
-        <span class="type-body text-ink-muted" data-testid="year-unit">{{ 'ministry.detail.addDialog.year' | translate }}</span>
-        <p-select
-          formControlName="startMonth"
-          [options]="monthOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="MM"
-          [ariaLabel]="('ministry.detail.addDialog.startDate' | translate) + ' ' + ('ministry.detail.addDialog.month' | translate)"
-          class="w-20" />
-        <span class="type-body text-ink-muted" data-testid="month-unit">{{ 'ministry.detail.addDialog.month' | translate }}</span>
-      </div>
+      <label for="add-member-start" class="type-caption text-ink-muted">{{ 'ministry.detail.addDialog.startDate' | translate }}</label>
+      <p-datepicker
+        inputId="add-member-start"
+        formControlName="startDate"
+        dateFormat="yy-mm-dd"
+        placeholder="YYYY-MM-DD"
+        [showIcon]="true"
+        [readonlyInput]="true"
+        appendTo="body"
+        styleClass="w-full" />
+      <small class="type-caption text-ink-disabled" data-testid="start-date-hint">
+        {{ 'ministry.detail.addDialog.startDateHint' | translate }}
+      </small>
     </div>
 
     <div class="flex flex-col gap-[var(--space-4)]">

@@ -418,11 +418,11 @@
       },
       "addDialog": {
         "header": "Add member",
+        "subtitle": "Register the selected member on this ministry team.",
         "member": "Member",
         "memberPlaceholder": "Select a member",
         "startDate": "Start",
-        "year": "Year",
-        "month": "Month",
+        "startDateHint": "Pick a date from the calendar",
         "note": "Note",
         "cancel": "Cancel",
         "submit": "Add",
