@@ -1,6 +1,7 @@
 <!--
   Figma: 사역 정보 수정 (204:7690), 새 사역 추가 (285:21140).
-  One card 사역 정보 with two columns that stack under the `tablet` breakpoint.
+  One card 사역 정보: 사역명 | 상태, then 리더, 한 줄 소개, 설명 (tall textarea),
+  then 연습 시간 and 참여 조건 as editable lists.
 -->
 <div class="flex flex-col gap-gutter">
   <app-page-header
@@ -21,87 +22,203 @@
       data-testid="ministry-form">
       <app-section-header [heading]="'ministry.form.card' | translate" />
 
+      <!-- 사역명 | 상태 -->
       <div class="grid grid-cols-1 gap-[var(--space-16)] tablet:grid-cols-2">
-        <!-- left column -->
-        <div class="flex flex-col gap-[var(--space-16)]">
-          <div class="flex flex-col gap-[var(--space-4)]">
-            <label for="ministryTitle" class="type-caption text-ink-muted">
-              {{ 'ministry.form.fields.title' | translate }}
-              <span class="text-[var(--color-badge-deleted-fg)]">*</span>
-            </label>
-            <input
-              id="ministryTitle"
-              pInputText
-              formControlName="title"
-              [maxlength]="titleMax"
-              [placeholder]="'ministry.form.placeholders.title' | translate"
-              class="w-full"
-              [class.ng-invalid]="hasError('title', 'required')" />
-            @if (hasError('title', 'required')) {
-              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
-                {{ 'ministry.form.errors.required' | translate }}
-              </small>
-            }
-          </div>
-
-          <div class="flex flex-col gap-[var(--space-4)]">
-            <label for="ministrySubtitle" class="type-caption text-ink-muted">
-              {{ 'ministry.form.fields.subtitle' | translate }}
-              @if (!isEdit) {
-                <span class="text-[var(--color-badge-deleted-fg)]">*</span>
-              }
-            </label>
-            <input
-              id="ministrySubtitle"
-              pInputText
-              formControlName="subtitle"
-              [maxlength]="subtitleMax"
-              [placeholder]="'ministry.form.placeholders.subtitle' | translate"
-              class="w-full"
-              [class.ng-invalid]="hasError('subtitle', 'required')" />
-            @if (hasError('subtitle', 'required')) {
-              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
-                {{ 'ministry.form.errors.required' | translate }}
-              </small>
-            } @else {
-              <small class="type-caption text-ink-disabled">
-                {{ 'ministry.form.hints.subtitle' | translate:{ max: subtitleMax } }}
-              </small>
-            }
-          </div>
+        <div class="flex flex-col gap-[var(--space-4)]">
+          <label for="ministryTitle" class="type-caption text-ink-muted">
+            {{ 'ministry.form.fields.title' | translate }}
+            <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+          </label>
+          <input
+            id="ministryTitle"
+            pInputText
+            formControlName="title"
+            [maxlength]="titleMax"
+            [placeholder]="'ministry.form.placeholders.title' | translate"
+            class="w-full"
+            [class.ng-invalid]="hasError('title', 'required')" />
+          @if (hasError('title', 'required')) {
+            <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+              {{ 'ministry.form.errors.required' | translate }}
+            </small>
+          }
         </div>
 
-        <!-- right column -->
-        <div class="flex flex-col gap-[var(--space-16)]">
-          <div class="flex flex-col gap-[var(--space-4)]">
-            <label for="ministryLeader" class="type-caption text-ink-muted">
-              {{ 'ministry.form.fields.leader' | translate }}
-            </label>
-            <p-select
-              inputId="ministryLeader"
-              formControlName="leader"
-              [options]="[]"
-              [placeholder]="'ministry.form.placeholders.leader' | translate"
-              styleClass="w-full" />
-            <small class="type-caption text-ink-disabled" data-testid="leader-hint">
-              {{ 'ministry.form.hints.leader' | translate }}
-            </small>
-          </div>
-
-          <div class="flex flex-col gap-[var(--space-4)]">
-            <label for="ministryStatus" class="type-caption text-ink-muted">
-              {{ 'ministry.form.fields.status' | translate }}
-            </label>
-            <p-select
-              inputId="ministryStatus"
-              formControlName="isActive"
-              [options]="statusOptions()"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="w-full" />
-          </div>
+        <div class="flex flex-col gap-[var(--space-4)]">
+          <label for="ministryStatus" class="type-caption text-ink-muted">
+            {{ 'ministry.form.fields.status' | translate }}
+          </label>
+          <p-select
+            inputId="ministryStatus"
+            formControlName="isActive"
+            [options]="statusOptions()"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full" />
         </div>
       </div>
+
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="ministryLeader" class="type-caption text-ink-muted">
+          {{ 'ministry.form.fields.leader' | translate }}
+        </label>
+        <p-select
+          inputId="ministryLeader"
+          formControlName="leader"
+          [options]="leaderOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [filter]="true"
+          filterBy="label"
+          [showClear]="true"
+          [placeholder]="'ministry.form.placeholders.leader' | translate"
+          styleClass="w-full" />
+        <small class="type-caption text-ink-disabled" data-testid="leader-hint">
+          {{ 'ministry.form.hints.leader' | translate }}
+        </small>
+      </div>
+
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="ministrySubtitle" class="type-caption text-ink-muted">
+          {{ 'ministry.form.fields.subtitle' | translate }}
+          @if (!isEdit) {
+            <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+          }
+        </label>
+        <input
+          id="ministrySubtitle"
+          pInputText
+          formControlName="subtitle"
+          [maxlength]="subtitleMax"
+          [placeholder]="'ministry.form.placeholders.subtitle' | translate"
+          class="w-full"
+          [class.ng-invalid]="hasError('subtitle', 'required')" />
+        @if (hasError('subtitle', 'required')) {
+          <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+            {{ 'ministry.form.errors.required' | translate }}
+          </small>
+        } @else {
+          <small class="type-caption text-ink-disabled">
+            {{ 'ministry.form.hints.subtitle' | translate:{ max: subtitleMax } }}
+          </small>
+        }
+      </div>
+
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="ministryAbout" class="type-caption text-ink-muted">
+          {{ 'ministry.form.fields.about' | translate }}
+          <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+        </label>
+        <textarea
+          id="ministryAbout"
+          pTextarea
+          formControlName="about"
+          rows="8"
+          [placeholder]="'ministry.form.placeholders.about' | translate"
+          class="min-h-48 w-full resize-y"
+          [class.ng-invalid]="hasError('about', 'required')"></textarea>
+        @if (hasError('about', 'required')) {
+          <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+            {{ 'ministry.form.errors.required' | translate }}
+          </small>
+        } @else {
+          <small class="type-caption text-ink-disabled">{{ 'ministry.form.hints.about' | translate }}</small>
+        }
+      </div>
+
+      <!-- 연습 시간 → schedules -->
+      <section class="border-line-subtle flex flex-col gap-[var(--space-12)] border-t pt-[var(--space-16)]" data-testid="schedules">
+        <div class="flex items-center justify-between gap-[var(--space-8)]">
+          <div class="flex flex-col">
+            <span class="type-body-strong">{{ 'ministry.form.schedules.title' | translate }}</span>
+            <small class="type-caption text-ink-disabled">{{ 'ministry.form.schedules.hint' | translate }}</small>
+          </div>
+          <p-button
+            type="button"
+            icon="pi pi-plus"
+            severity="secondary"
+            [outlined]="true"
+            size="small"
+            [disabled]="schedules.length >= listMax"
+            [label]="'ministry.form.schedules.add' | translate"
+            (onClick)="addSchedule()" />
+        </div>
+        <div formArrayName="schedules" class="flex flex-col gap-[var(--space-8)]">
+          @for (row of schedules.controls; track row; let i = $index) {
+            <div [formGroupName]="i" class="flex flex-col gap-[var(--space-4)]">
+              <div class="grid grid-cols-[1fr_auto] items-center gap-[var(--space-8)] tablet:grid-cols-[1fr_8rem_8rem_auto]">
+                <input
+                  pInputText
+                  formControlName="description"
+                  [maxlength]="scheduleDescriptionMax"
+                  [attr.aria-label]="'ministry.form.schedules.description' | translate"
+                  [placeholder]="'ministry.form.schedules.placeholder' | translate"
+                  class="w-full" />
+                <p-button
+                  type="button"
+                  icon="pi pi-trash"
+                  severity="secondary"
+                  [text]="true"
+                  class="tablet:order-last"
+                  [ariaLabel]="'ministry.form.remove' | translate"
+                  (onClick)="removeSchedule(i)" />
+                <input
+                  pInputText
+                  type="time"
+                  formControlName="startTime"
+                  [attr.aria-label]="'ministry.form.schedules.start' | translate"
+                  class="w-full" />
+                <input
+                  pInputText
+                  type="time"
+                  formControlName="endTime"
+                  [attr.aria-label]="'ministry.form.schedules.end' | translate"
+                  class="w-full" />
+              </div>
+              @if (scheduleInvalid(i)) {
+                <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                  {{ 'ministry.form.schedules.incomplete' | translate }}
+                </small>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- 참여 조건 → requirements -->
+      <section class="border-line-subtle flex flex-col gap-[var(--space-12)] border-t pt-[var(--space-16)]" data-testid="requirements">
+        <div class="flex items-center justify-between gap-[var(--space-8)]">
+          <span class="type-body-strong">{{ 'ministry.form.requirements.title' | translate }}</span>
+          <p-button
+            type="button"
+            icon="pi pi-plus"
+            severity="secondary"
+            [outlined]="true"
+            size="small"
+            [disabled]="requirements.length >= listMax"
+            [label]="'ministry.form.requirements.add' | translate"
+            (onClick)="addRequirement()" />
+        </div>
+        <div formArrayName="requirements" class="flex flex-col gap-[var(--space-8)]">
+          @for (row of requirements.controls; track row; let i = $index) {
+            <div class="flex items-center gap-[var(--space-8)]">
+              <input
+                pInputText
+                [formControlName]="i"
+                [attr.aria-label]="'ministry.form.requirements.title' | translate"
+                [placeholder]="'ministry.form.requirements.placeholder' | translate"
+                class="w-full" />
+              <p-button
+                type="button"
+                icon="pi pi-trash"
+                severity="secondary"
+                [text]="true"
+                [ariaLabel]="'ministry.form.remove' | translate"
+                (onClick)="removeRequirement(i)" />
+            </div>
+          }
+        </div>
+      </section>
 
       <footer class="border-line-subtle flex items-center justify-end gap-[var(--space-8)] border-t pt-[var(--space-16)]">
         <p-button
