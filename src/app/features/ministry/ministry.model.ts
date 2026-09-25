@@ -1,3 +1,5 @@
+import { DayOfWeek } from '../attendance/attendance.model';
+
 export interface MinistrySummary {
   publicId: string;
   title: string;
@@ -29,14 +31,23 @@ export interface MinistrySchedule {
   startTime: string;
   endTime: string;
   location?: string | null;
+  /** Optional weekday the schedule repeats on. */
+  dayOfWeek?: DayOfWeek | null;
 }
 
+export type MinistryAssignmentRole = 'LEADER' | 'SUB_LEADER' | 'MEMBER';
+export type MinistryAssignmentStatus = 'ACTIVE' | 'PENDING';
+
+/** One assignment from `GET /v1/ministries/{publicId}/members`. */
 export interface ActiveMinistryMemberDto {
   publicId: string;   // member public ID
   fullName: string;
   startDate: string;  // 'YYYY-MM-DD'
   note: string | null;
   gender: 'M' | 'F' | null;
+  role?: MinistryAssignmentRole;
+  status?: MinistryAssignmentStatus;
+  endDate?: string | null;  // 'YYYY-MM-DD'; set only with `includeEnded`
 }
 
 export interface CreateMinistryRequest {

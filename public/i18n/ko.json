@@ -371,13 +371,22 @@
       "deactivate": "비활성화",
       "members": "팀원",
       "addMember": "팀원 추가",
+      "history": "팀원 히스토리",
+      "historyEmpty": "아직 기록이 없습니다",
       "statusActive": "활동",
+      "roles": {
+        "LEADER": "리더",
+        "SUB_LEADER": "부리더",
+        "MEMBER": "팀원"
+      },
       "columns": {
         "name": "이름",
         "role": "역할",
         "status": "상태",
         "startDate": "시작일",
-        "actions": "관리"
+        "actions": "관리",
+        "endDate": "종료일",
+        "note": "메모"
       },
       "membersEmpty": {
         "heading": "팀원이 없습니다",
@@ -404,7 +413,8 @@
         "memberUpdated": "팀원 정보가 저장되었습니다.",
         "memberUpdateFailed": "팀원 정보 저장에 실패했습니다.",
         "memberRemoved": "팀원 활동이 종료되었습니다.",
-        "memberRemoveFailed": "팀원 활동 종료에 실패했습니다."
+        "memberRemoveFailed": "팀원 활동 종료에 실패했습니다.",
+        "historyFailed": "팀원 히스토리를 불러올 수 없습니다."
       },
       "addDialog": {
         "header": "팀원 추가",
@@ -492,6 +502,16 @@
         "placeholder": "예: 본당",
         "start": "시작",
         "end": "종료",
+        "weekday": "요일",
+        "weekdays": {
+          "MONDAY": "월요일",
+          "TUESDAY": "화요일",
+          "WEDNESDAY": "수요일",
+          "THURSDAY": "목요일",
+          "FRIDAY": "금요일",
+          "SATURDAY": "토요일",
+          "SUNDAY": "일요일"
+        },
         "incomplete": "장소, 시작, 종료를 모두 입력해 주세요."
       },
       "requirements": {

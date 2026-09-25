@@ -22,7 +22,11 @@ const KO = {
       addMember: '팀원 추가',
       statusActive: '활동',
       deactivate: '비활성화',
-      columns: { name: '이름', role: '역할', status: '상태', startDate: '시작일', actions: '관리' },
+      history: '팀원 히스토리',
+      roles: { LEADER: '리더', SUB_LEADER: '부리더', MEMBER: '팀원' },
+      columns: {
+        name: '이름', role: '역할', status: '상태', startDate: '시작일', endDate: '종료일', note: '메모', actions: '관리',
+      },
       membersEmpty: { heading: '팀원이 없습니다' },
       notFound: { heading: '사역을 찾을 수 없습니다' },
     },
@@ -34,8 +38,14 @@ const MINISTRY = {
 } as unknown as Ministry;
 
 const MEMBERS = [
-  { publicId: 'm1', fullName: '김철수', startDate: '2023-03-01', note: null, gender: 'M' },
-  { publicId: 'm2', fullName: '이영희', startDate: null, note: null, gender: 'F' },
+  { publicId: 'm1', fullName: '김철수', startDate: '2023-03-01', note: null, gender: 'M', role: 'LEADER' },
+  { publicId: 'm2', fullName: '이영희', startDate: null, note: '반주', gender: 'F' },
+] as unknown as ActiveMinistryMemberDto[];
+
+const HISTORY = [
+  MEMBERS[0],
+  { publicId: 'm3', fullName: '박민수', startDate: '2021-01-01', endDate: '2022-06-01', note: '군 입대', gender: 'M', role: 'MEMBER' },
+  { publicId: 'm3', fullName: '박민수', startDate: '2019-03-01', endDate: '2020-02-01', note: null, gender: 'M', role: 'SUB_LEADER' },
 ] as unknown as ActiveMinistryMemberDto[];
 
 describe('MinistryDetailComponent', () => {
@@ -45,10 +55,11 @@ describe('MinistryDetailComponent', () => {
 
   beforeEach(() => {
     service = jasmine.createSpyObj<MinistryService>('MinistryService', [
-      'getMinistry', 'getActiveMembers', 'deactivateMinistry', 'getMemberNames', 'addMember',
+      'getMinistry', 'getActiveMembers', 'getMemberHistory', 'deactivateMinistry', 'getMemberNames', 'addMember',
     ]);
     service.getMinistry.and.returnValue(of(MINISTRY));
     service.getActiveMembers.and.returnValue(of(MEMBERS));
+    service.getMemberHistory.and.returnValue(of(HISTORY));
     service.getMemberNames.and.returnValue(of([]));
     assignments = jasmine.createSpyObj<MinistryAssignmentService>('MinistryAssignmentService', [
       'updateAssignment', 'endAssignment',
@@ -90,12 +101,53 @@ describe('MinistryDetailComponent', () => {
     expect(render().componentInstance.subtitle()).toBe('팀원 2명');
   });
 
-  it('maps members to rows with 역할 —, badge 활동 and start date YY.MM', () => {
+  it('maps members to rows with 역할, badge 활동, start date YY.MM and 메모', () => {
     const records = render().componentInstance.records();
     expect(records).toEqual([
-      { id: 'm1', title: '김철수', subtitle: '—', badge: { variant: 'active', label: '활동' }, meta: '23.03' },
-      { id: 'm2', title: '이영희', subtitle: '—', badge: { variant: 'active', label: '활동' }, meta: '—' },
+      { id: 'm1', title: '김철수', subtitle: '리더', badge: { variant: 'active', label: '활동' }, meta: '23.03', cells: { note: '' } },
+      { id: 'm2', title: '이영희', subtitle: '—', badge: { variant: 'active', label: '활동' }, meta: '—', cells: { note: '반주' } },
     ]);
+  });
+
+  it('truncates 메모 in the table and keeps the full text as tooltip source', () => {
+    const el: HTMLElement = render().nativeElement;
+    const note = Array.from(el.querySelectorAll('[data-testid="members-card"] td span.truncate'))
+      .find(n => n.textContent?.trim() === '반주');
+    expect(note).toBeDefined();
+  });
+
+  it('maps every assignment, current and ended, to a history row keyed by member and 시작일', () => {
+    const records = render().componentInstance.historyRecords();
+    expect(records).toEqual([
+      { id: 'm1:2023-03-01', title: '김철수', subtitle: '리더', meta: '23.03', cells: { endDate: '—', note: '' } },
+      { id: 'm3:2021-01-01', title: '박민수', subtitle: '팀원', meta: '21.01', cells: { endDate: '22.06', note: '군 입대' } },
+      { id: 'm3:2019-03-01', title: '박민수', subtitle: '부리더', meta: '19.03', cells: { endDate: '20.02', note: '' } },
+    ]);
+  });
+
+  it('shows the history without 상태 or 관리, so it cannot be edited', () => {
+    const c = render().componentInstance;
+    expect(c.historyColumns().map(col => col.header)).toEqual(['이름', '역할', '시작일', '종료일', '메모']);
+    const el: HTMLElement = render().nativeElement;
+    const history = el.querySelector('[data-testid="history-card"]')!;
+    expect(history.querySelector('.pi-pencil')).toBeNull();
+    expect(history.querySelector('.pi-trash')).toBeNull();
+    expect(history.querySelector('p-button')).toBeNull();
+  });
+
+  it('opens the member from a history row', () => {
+    const c = render().componentInstance;
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
+    c.goToHistoryMember('m3:2019-03-01');
+    expect(router.navigate).toHaveBeenCalledWith(['/members', 'm3']);
+  });
+
+  it('shows the history period as ListCard meta on phone', () => {
+    const c = render().componentInstance;
+    const [current, ended] = c.historyRecords();
+    expect(c.historyPeriod(current)).toBe('23.03 –');
+    expect(c.historyPeriod(ended)).toBe('21.01 – 22.06');
   });
 
   it('renders the table on desktop and list cards on phone', () => {
@@ -106,7 +158,8 @@ describe('MinistryDetailComponent', () => {
     isPhone.set(true);
     el = render().nativeElement;
     expect(el.querySelector('app-data-table')).toBeNull();
-    expect(el.querySelectorAll('app-list-card').length).toBe(2);
+    expect(el.querySelectorAll('[data-testid="members-card"] app-list-card').length).toBe(2);
+    expect(el.querySelectorAll('[data-testid="history-card"] app-list-card').length).toBe(3);
   });
 
   it('shows the not-found state when the ministry fails to load', () => {
@@ -119,8 +172,10 @@ describe('MinistryDetailComponent', () => {
   it('reloads the members after one was added', () => {
     const c = render().componentInstance;
     service.getActiveMembers.calls.reset();
+    service.getMemberHistory.calls.reset();
     c.onMemberAdded();
     expect(service.getActiveMembers).toHaveBeenCalledOnceWith('min-1');
+    expect(service.getMemberHistory).toHaveBeenCalledOnceWith('min-1');
   });
 
   it('navigates to the member on row select and back to the list', () => {
@@ -156,18 +211,20 @@ describe('MinistryDetailComponent', () => {
     expect(c.editDialogVisible()).toBeTrue();
   });
 
-  it('ends the assignment today after confirm and reloads the members', () => {
+  it('ends the assignment today after confirm and reloads the members and history', () => {
     const fixture = render();
     const c = fixture.componentInstance;
     const confirm = fixture.debugElement.injector.get(ConfirmationService);
     spyOn(confirm, 'confirm').and.callFake(opts => { opts.accept?.(); return confirm; });
     assignments.endAssignment.and.returnValue(of({} as Member));
     service.getActiveMembers.calls.reset();
+    service.getMemberHistory.calls.reset();
 
     c.confirmRemoveMember('m1');
 
     expect(assignments.endAssignment).toHaveBeenCalledOnceWith('m1', 'min-1', localDateToIso(new Date())!);
     expect(service.getActiveMembers).toHaveBeenCalledOnceWith('min-1');
+    expect(service.getMemberHistory).toHaveBeenCalledOnceWith('min-1');
   });
 
   it('shows an error toast and keeps the list when ending fails', () => {

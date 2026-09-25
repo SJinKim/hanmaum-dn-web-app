@@ -41,6 +41,11 @@ export class MinistryService {
     return this.api.get<ActiveMinistryMemberDto[]>(`/v1/ministries/${publicId}/members`);
   }
 
+  /** Every assignment this ministry ever had, current and ended — the 팀원 히스토리. */
+  getMemberHistory(publicId: string): Observable<ActiveMinistryMemberDto[]> {
+    return this.api.get<ActiveMinistryMemberDto[]>(`/v1/ministries/${publicId}/members`, { includeEnded: true });
+  }
+
   /** Lightweight 맴버 name list for the add-member picker. Admin or ministry-leader. */
   getMemberNames(): Observable<MemberNameDto[]> {
     return this.api.get<MemberNameDto[]>('/v1/members/names');

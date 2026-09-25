@@ -1,6 +1,6 @@
 <!--
-  Figma: 사역 상세 · Desktop · Light (204:6930). One card 팀원; on Phone the
-  table becomes a stack of list cards.
+  Figma: 사역 상세 · Desktop · Light (204:6930). A card 팀원 and a read-only
+  card 팀원 히스토리; on Phone the tables become stacks of list cards.
 -->
 <div class="flex flex-col gap-gutter">
   <app-page-header
@@ -75,7 +75,53 @@
           [deleteLabel]="'ministry.detail.removeMember' | translate"
           (rowSelected)="goToMember($event.id)"
           (edit)="openEditMember($event.id)"
-          (remove)="confirmRemoveMember($event.id)" />
+          (remove)="confirmRemoveMember($event.id)">
+          <ng-template appDataCell="note" let-record>
+            @let note = noteOf(record);
+            <span
+              class="type-body text-ink-muted block max-w-[240px] truncate"
+              [pTooltip]="note"
+              [tooltipDisabled]="!note"
+              tooltipPosition="top">{{ note || '—' }}</span>
+          </ng-template>
+        </app-data-table>
+      }
+    </section>
+
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+      data-testid="history-card">
+      <app-section-header [heading]="'ministry.detail.history' | translate" />
+
+      @if (isPhone()) {
+        @if (historyLoading()) {
+          <app-skeleton variant="card" />
+        } @else if (historyRecords().length === 0) {
+          <app-empty-state [heading]="'ministry.detail.historyEmpty' | translate" />
+        } @else {
+          <div class="flex flex-col gap-[var(--space-8)]">
+            @for (r of historyRecords(); track r.id) {
+              <app-list-card [record]="{ id: r.id, title: r.title, subtitle: r.subtitle, meta: historyPeriod(r) }" (selected)="goToHistoryMember($event.id)" />
+            }
+          </div>
+        }
+      } @else {
+        <app-data-table
+          [rows]="historyRecords()"
+          [columns]="historyColumns()"
+          [loading]="historyLoading()"
+          [caption]="'ministry.detail.history' | translate"
+          [emptyHeading]="'ministry.detail.historyEmpty' | translate"
+          (rowSelected)="goToHistoryMember($event.id)">
+          <ng-template appDataCell="note" let-record>
+            @let note = noteOf(record);
+            <span
+              class="type-body text-ink-muted block max-w-[240px] truncate"
+              [pTooltip]="note"
+              [tooltipDisabled]="!note"
+              tooltipPosition="top">{{ note || '—' }}</span>
+          </ng-template>
+        </app-data-table>
       }
     </section>
 
