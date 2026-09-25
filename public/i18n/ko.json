@@ -339,5 +339,30 @@
         "deleteFailed": "삭제에 실패했습니다."
       }
     }
+  },
+  "ministry": {
+    "eyebrow": "사역 관리",
+    "title": "사역",
+    "subtitle": "사역 {{total}}개 · 운영 중 {{active}}개",
+    "addButton": "사역 추가",
+    "search": {
+      "placeholder": "사역 검색...",
+      "aria": "사역 검색"
+    },
+    "active": "운영 중",
+    "memberCount": "팀원 {{count}}명",
+    "empty": {
+      "heading": "등록된 사역이 없습니다",
+      "description": "첫 사역을 추가하세요"
+    },
+    "noResults": {
+      "heading": "검색 결과가 없습니다",
+      "description": "다른 이름으로 검색해 보세요"
+    },
+    "error": {
+      "heading": "사역 목록을 불러올 수 없습니다",
+      "description": "잠시 후 다시 시도하세요",
+      "retry": "다시 시도"
+    }
   }
 }

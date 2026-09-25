@@ -1,57 +1,66 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-
-import { TableModule } from 'primeng/table';
+import { Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
-import { TooltipModule } from 'primeng/tooltip';
+import { catchError, forkJoin, map, of } from 'rxjs';
 
+import { AvatarComponent } from '../../../core/ui/avatar/avatar.component';
+import { BadgeComponent } from '../../../core/ui/badge/badge.component';
+import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
+import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
+import { SearchFieldComponent } from '../../../core/ui/search-field/search-field.component';
+import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 import { MinistryService } from '../ministry.service';
-import { MinistrySummary } from '../ministry.model';
+import { ActiveMinistryMemberDto, MinistrySummary } from '../ministry.model';
 
-type ActiveFilter = boolean | null;
+/** Figma shows at most four avatars per card, the rest as `+N`. */
+const PREVIEW_SIZE = 4;
 
-interface FilterTab {
-  label: string;
-  value: ActiveFilter;
+interface MinistryCard {
+  ministry: MinistrySummary;
+  /** Null while the members are loading or when their request failed. */
+  members: ActiveMinistryMemberDto[] | null;
 }
 
 @Component({
   selector: 'app-ministry-list',
   standalone: true,
   imports: [
-    CommonModule,
-    TableModule,
+    RouterLink,
+    TranslatePipe,
     ButtonModule,
-    TagModule,
-    ConfirmDialogModule,
-    ToastModule,
-    TooltipModule,
+    AvatarComponent,
+    BadgeComponent,
+    EmptyStateComponent,
+    PageHeaderComponent,
+    SearchFieldComponent,
+    SkeletonComponent,
   ],
-  providers: [ConfirmationService, MessageService],
   templateUrl: './ministry-list.component.html',
 })
 export class MinistryListComponent implements OnInit {
   private readonly ministryService = inject(MinistryService);
   private readonly router          = inject(Router);
-  private readonly confirmService  = inject(ConfirmationService);
-  private readonly messageService  = inject(MessageService);
   private readonly destroyRef      = inject(DestroyRef);
 
-  ministries   = signal<MinistrySummary[]>([]);
-  loading      = signal(false);
-  activeFilter = signal<ActiveFilter>(null);
+  readonly ministries = signal<MinistrySummary[]>([]);
+  /** Active members per ministry publicId. */
+  readonly members    = signal<ReadonlyMap<string, ActiveMinistryMemberDto[]>>(new Map());
+  readonly loading    = signal(true);
+  readonly failed     = signal(false);
+  readonly searchText = signal('');
 
-  readonly filterTabs: FilterTab[] = [
-    { label: '전체',   value: null },
-    { label: '활성',   value: true },
-    { label: '비활성', value: false },
-  ];
+  readonly total       = computed(() => this.ministries().length);
+  readonly activeCount = computed(() => this.ministries().filter(m => m.isActive).length);
+
+  readonly cards = computed<MinistryCard[]>(() => {
+    const query   = this.searchText().trim().toLowerCase();
+    const members = this.members();
+    return this.ministries()
+      .filter(m => !query || m.title.toLowerCase().includes(query))
+      .map(ministry => ({ ministry, members: members.get(ministry.publicId) ?? null }));
+  });
 
   ngOnInit(): void {
     this.load();
@@ -59,50 +68,56 @@ export class MinistryListComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.ministryService.getMinistries(this.activeFilter()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: list => { this.ministries.set(list); this.loading.set(false); },
-      error: ()  => {
-        this.messageService.add({ severity: 'error', summary: '오류', detail: '부서 목록을 불러올 수 없습니다.' });
+    this.failed.set(false);
+    this.ministryService.getMinistries().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: list => {
+        this.ministries.set(list);
+        this.loading.set(false);
+        this.loadMembers(list);
+      },
+      error: () => {
+        this.failed.set(true);
         this.loading.set(false);
       },
     });
   }
 
-  onFilterTab(value: ActiveFilter): void {
-    this.activeFilter.set(value);
-    this.load();
-  }
-
   goToCreate(): void { this.router.navigate(['/ministry', 'new']); }
-  goToDetail(m: MinistrySummary): void { this.router.navigate(['/ministry', m.publicId]); }
-  goToEdit(m: MinistrySummary, event: Event): void {
-    event.stopPropagation();
-    this.router.navigate(['/ministry', m.publicId, 'edit']);
+
+  preview(members: ActiveMinistryMemberDto[]): ActiveMinistryMemberDto[] {
+    return members.slice(0, PREVIEW_SIZE);
   }
 
-  confirmDeactivate(m: MinistrySummary, event: Event): void {
-    event.stopPropagation();
-    this.confirmService.confirm({
-      target: event.target as EventTarget,
-      message: `'${m.title}' 부서를 비활성화하시겠습니까?`,
-      header: '부서 비활성화',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: '비활성화',
-      rejectLabel: '취소',
-      acceptButtonStyleClass: 'p-button-warn',
-      accept: () => this.deactivate(m),
-    });
+  overflow(members: ActiveMinistryMemberDto[]): number {
+    return Math.max(0, members.length - PREVIEW_SIZE);
   }
 
-  private deactivate(m: MinistrySummary): void {
-    this.ministryService.deactivateMinistry(m.publicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.messageService.add({ severity: 'success', summary: '완료', detail: '비활성화되었습니다.' });
-        this.load();
-      },
-      error: () => {
-        this.messageService.add({ severity: 'error', summary: '오류', detail: '비활성화에 실패했습니다.' });
-      },
-    });
+  /**
+   * One request per card until the summary carries `memberCount` and a preview
+   * (hanmaum-dn-server#214). A failed card keeps `null` and hides its member row
+   * instead of failing the whole list.
+   */
+  private loadMembers(list: MinistrySummary[]): void {
+    if (list.length === 0) {
+      return;
+    }
+    forkJoin(
+      list.map(m =>
+        this.ministryService.getActiveMembers(m.publicId).pipe(
+          map(members => [m.publicId, members] as const),
+          catchError(() => of(null)),
+        ),
+      ),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(entries => {
+        const byId = new Map<string, ActiveMinistryMemberDto[]>();
+        for (const entry of entries) {
+          if (entry) {
+            byId.set(entry[0], entry[1]);
+          }
+        }
+        this.members.set(byId);
+      });
   }
 }

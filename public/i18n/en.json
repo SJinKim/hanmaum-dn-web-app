@@ -339,5 +339,30 @@
         "deleteFailed": "Delete failed."
       }
     }
+  },
+  "ministry": {
+    "eyebrow": "Ministry management",
+    "title": "Ministries",
+    "subtitle": "{{total}} ministries · {{active}} active",
+    "addButton": "Add ministry",
+    "search": {
+      "placeholder": "Search ministries...",
+      "aria": "Search ministries"
+    },
+    "active": "Active",
+    "memberCount": "{{count}} members",
+    "empty": {
+      "heading": "No ministries yet",
+      "description": "Add the first ministry"
+    },
+    "noResults": {
+      "heading": "No results",
+      "description": "Try a different name"
+    },
+    "error": {
+      "heading": "Could not load ministries",
+      "description": "Please try again shortly",
+      "retry": "Retry"
+    }
   }
 }
