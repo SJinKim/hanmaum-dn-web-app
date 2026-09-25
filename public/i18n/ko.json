@@ -374,6 +374,8 @@
       "history": "팀원 히스토리",
       "historyEmpty": "아직 기록이 없습니다",
       "statusActive": "활동",
+      "statusPending": "대기",
+      "review": "검토",
       "roles": {
         "LEADER": "리더",
         "SUB_LEADER": "부리더",
@@ -414,7 +416,10 @@
         "memberUpdateFailed": "팀원 정보 저장에 실패했습니다.",
         "memberRemoved": "팀원 활동이 종료되었습니다.",
         "memberRemoveFailed": "팀원 활동 종료에 실패했습니다.",
-        "historyFailed": "팀원 히스토리를 불러올 수 없습니다."
+        "historyFailed": "팀원 히스토리를 불러올 수 없습니다.",
+        "approved": "신청을 승인했습니다.",
+        "rejected": "신청을 거절했습니다.",
+        "reviewFailed": "신청을 처리하지 못했습니다."
       },
       "addDialog": {
         "header": "팀원 추가",
@@ -456,6 +461,19 @@
         "message": "{{name}}님의 활동을 종료할까요? 종료일이 오늘로 기록됩니다.",
         "accept": "종료",
         "cancel": "취소"
+      },
+      "reviewDialog": {
+        "header": "신청 검토",
+        "applicant": "신청자",
+        "appliedAt": "신청일",
+        "selfIntroduction": "자기소개",
+        "message": "메시지",
+        "messagePlaceholder": "신청자에게 전할 메시지",
+        "messageHint": "거절할 때는 메시지가 필요합니다.",
+        "messageRequired": "거절 사유를 입력해 주세요.",
+        "cancel": "취소",
+        "reject": "거절",
+        "approve": "승인"
       }
     },
     "form": {

@@ -20,10 +20,11 @@ import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.co
 import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 import { MinistryService } from '../ministry.service';
-import { ActiveMinistryMemberDto, Ministry, MinistryAssignmentRole } from '../ministry.model';
+import { ActiveMinistryMemberDto, Ministry, MinistryAssignmentRole, MinistryReviewDecision } from '../ministry.model';
 import { localDateToIso } from '../../../core/models/member-activity.model';
 import { MinistryAssignmentService } from '../ministry-assignment.service';
 import { MinistryAddMemberDialogComponent } from './ministry-add-member-dialog.component';
+import { MinistryApplicationReviewDialogComponent } from './ministry-application-review-dialog.component';
 import { MinistryMemberEditDialogComponent } from './ministry-member-edit-dialog.component';
 
 /**
@@ -32,7 +33,9 @@ import { MinistryMemberEditDialogComponent } from './ministry-member-edit-dialog
  * tables become `app-list-card`s on Phone.
  *
  * 관리 edits or ends an assignment through the member's list (see
- * MinistryAssignmentService); Phone has no 관리 yet. 메모 is cut to one line
+ * MinistryAssignmentService); Phone has no 관리 yet. Self-applications
+ * (HDN-170) sit on top of 팀원 as 대기 with 검토 instead of 관리; only
+ * ADMIN and MINISTRY_LEADER may list them, anyone else just sees none. 메모 is cut to one line
  * in both tables, the full text is the cell's tooltip.
  */
 @Component({
@@ -53,6 +56,7 @@ import { MinistryMemberEditDialogComponent } from './ministry-member-edit-dialog
     SectionHeaderComponent,
     SkeletonComponent,
     MinistryAddMemberDialogComponent,
+    MinistryApplicationReviewDialogComponent,
     MinistryMemberEditDialogComponent,
   ],
   providers: [ConfirmationService, MessageService],
@@ -80,6 +84,9 @@ export class MinistryDetailComponent implements OnInit {
   readonly addDialogVisible = signal(false);
   readonly editDialogVisible = signal(false);
   readonly editingMember    = signal<ActiveMinistryMemberDto | null>(null);
+  readonly pendingApplications = signal<ActiveMinistryMemberDto[]>([]);
+  readonly reviewDialogVisible = signal(false);
+  readonly reviewingApplicant  = signal<ActiveMinistryMemberDto | null>(null);
 
   private readonly moreMenu = viewChild<Menu>('moreMenu');
   private readonly publicId = this.route.snapshot.paramMap.get('publicId')!;
@@ -107,21 +114,33 @@ export class MinistryDetailComponent implements OnInit {
       { type: 'badge', header: t('status') },
       { type: 'date', header: t('startDate') },
       { type: 'custom', key: 'note', header: t('note'), sortKey: 'cells.note' },
-      { type: 'actions', header: t('actions') },
+      { type: 'custom', key: 'manage', header: t('actions') },
     ];
   });
 
+  /** 대기 first, so a leader sees open applications without scrolling. */
   readonly records = computed<DataRecord[]>(() => {
     this.lang();
     const active = this.translate.instant('ministry.detail.statusActive') as string;
-    return this.activeMembers().map(m => ({
-      id: m.publicId,
-      title: m.fullName,
-      subtitle: this.roleLabel(m.role),
-      badge: { variant: 'active', label: active },
-      meta: this.formatStartDate(m.startDate),
-      cells: { note: m.note ?? '' },
-    }));
+    const pending = this.translate.instant('ministry.detail.statusPending') as string;
+    return [
+      ...this.pendingApplications().map(m => ({
+        id: m.publicId,
+        title: m.fullName,
+        subtitle: this.roleLabel(m.role),
+        badge: { variant: 'pending' as const, label: pending },
+        meta: this.formatStartDate(m.appliedAt?.slice(0, 10) ?? null),
+        cells: { note: m.note ?? '' },
+      })),
+      ...this.activeMembers().map(m => ({
+        id: m.publicId,
+        title: m.fullName,
+        subtitle: this.roleLabel(m.role),
+        badge: { variant: 'active' as const, label: active },
+        meta: this.formatStartDate(m.startDate),
+        cells: { note: m.note ?? '' },
+      })),
+    ];
   });
 
   /** 팀원 히스토리: no 상태 and no 관리 — a history is not edited. */
@@ -166,6 +185,7 @@ export class MinistryDetailComponent implements OnInit {
     this.loadMinistry();
     this.loadActiveMembers();
     this.loadHistory();
+    this.loadPendingApplications();
   }
 
   loadMinistry(): void {
@@ -207,6 +227,19 @@ export class MinistryDetailComponent implements OnInit {
       });
   }
 
+  /**
+   * 대기 rows. A 403 means the viewer may not review — not an error to show;
+   * any failure just leaves 대기 empty.
+   */
+  loadPendingApplications(): void {
+    this.ministryService.getPendingApplications(this.publicId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: pending => this.pendingApplications.set(pending),
+        error: () => this.pendingApplications.set([]),
+      });
+  }
+
   /** 역할 as a label; `—` when the server sent none. */
   roleLabel(role: MinistryAssignmentRole | undefined): string {
     return role ? this.translate.instant(`ministry.detail.roles.${role}`) as string : '—';
@@ -217,6 +250,10 @@ export class MinistryDetailComponent implements OnInit {
   noteOf(record: DataRecord): string {
     const note = record.cells?.['note'];
     return typeof note === 'string' ? note : '';
+  }
+
+  isPending(publicId: string): boolean {
+    return this.pendingApplications().some(m => m.publicId === publicId);
   }
 
   historyPeriod(record: DataRecord): string {
@@ -240,6 +277,24 @@ export class MinistryDetailComponent implements OnInit {
     this.editingMember.set(this.activeMembers().find(m => m.publicId === publicId) ?? null);
     this.editDialogVisible.set(true);
   }
+
+  /** A card on Phone: 검토 for 대기, 관리 for 활동. */
+  openMember(publicId: string): void {
+    if (this.isPending(publicId)) this.openReview(publicId);
+    else this.openEditMember(publicId);
+  }
+
+  openReview(publicId: string): void {
+    this.reviewingApplicant.set(this.pendingApplications().find(m => m.publicId === publicId) ?? null);
+    this.reviewDialogVisible.set(true);
+  }
+
+  onApplicationReviewed(decision: MinistryReviewDecision): void {
+    this.toastSuccess(decision === 'APPROVE' ? 'ministry.detail.toast.approved' : 'ministry.detail.toast.rejected');
+    this.loadMembersAndHistory();
+  }
+
+  onApplicationReviewFailed(): void { this.toastError('ministry.detail.toast.reviewFailed'); }
 
   onMemberEdited(): void {
     this.toastSuccess('ministry.detail.toast.memberUpdated');
@@ -299,6 +354,7 @@ export class MinistryDetailComponent implements OnInit {
   private loadMembersAndHistory(): void {
     this.loadActiveMembers();
     this.loadHistory();
+    this.loadPendingApplications();
   }
 
   private deactivate(): void {

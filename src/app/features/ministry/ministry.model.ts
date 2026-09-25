@@ -36,7 +36,7 @@ export interface MinistrySchedule {
 }
 
 export type MinistryAssignmentRole = 'LEADER' | 'SUB_LEADER' | 'MEMBER';
-export type MinistryAssignmentStatus = 'ACTIVE' | 'PENDING';
+export type MinistryAssignmentStatus = 'ACTIVE' | 'PENDING' | 'REJECTED';
 
 /** One assignment from `GET /v1/ministries/{publicId}/members`. */
 export interface ActiveMinistryMemberDto {
@@ -48,6 +48,29 @@ export interface ActiveMinistryMemberDto {
   role?: MinistryAssignmentRole;
   status?: MinistryAssignmentStatus;
   endDate?: string | null;  // 'YYYY-MM-DD'; set only with `includeEnded`
+  /** Set on a self-application (HDN-170): what the applicant wrote to the leader. */
+  selfIntroduction?: string | null;
+  /** When the self-application was sent (ISO date-time). */
+  appliedAt?: string | null;
+}
+
+export type MinistryReviewDecision = 'APPROVE' | 'REJECT';
+
+/** Body for `PATCH /v1/ministries/{publicId}/applications/{memberPublicId}`. */
+export interface ReviewMinistryApplicationRequest {
+  decision: MinistryReviewDecision;
+  /** Required for REJECT — the applicant reads it in the app. */
+  message?: string | null;
+}
+
+/** Response of the review: the application after the decision. */
+export interface MinistryRegistrationDto {
+  ministryPublicId: string;
+  ministryName: string;
+  appliedAt: string | null;
+  status: MinistryAssignmentStatus;
+  leaderNotified: boolean;
+  rejectionMessage: string | null;
 }
 
 export interface CreateMinistryRequest {
