@@ -525,5 +525,80 @@
       },
       "remove": "Remove"
     }
+  },
+  "attendance": {
+    "eyebrow": "Activity",
+    "title": "Attendance",
+    "subtitle": "{{count}} definitions · {{active}} active",
+    "add": "Add definition",
+    "tabs": {
+      "definitions": "Definitions",
+      "records": "Records"
+    },
+    "definitions": "Attendance definitions",
+    "records": "Attendance by group",
+    "edit": "Edit",
+    "columns": {
+      "title": "Title",
+      "day": "Day",
+      "window": "Check-in time",
+      "status": "Status",
+      "actions": "Actions",
+      "group": "Group",
+      "count": "Attendance",
+      "share": "Share"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "days": {
+      "MONDAY": "Monday",
+      "TUESDAY": "Tuesday",
+      "WEDNESDAY": "Wednesday",
+      "THURSDAY": "Thursday",
+      "FRIDAY": "Friday",
+      "SATURDAY": "Saturday",
+      "SUNDAY": "Sunday"
+    },
+    "empty": {
+      "heading": "No attendance definitions",
+      "description": "Add a definition to start taking check-ins."
+    },
+    "date": "Date",
+    "definition": "Definition",
+    "all": "All",
+    "people": "{{count}}",
+    "noGroup": "No group",
+    "recordsEmpty": "No attendance on this date",
+    "privacyNote": "Until access rules are decided, attendance is shown as group totals only.",
+    "saved": "Attendance definition saved",
+    "deactivate": {
+      "header": "Deactivate definition",
+      "message": "Deactivate '{{title}}'? Records are kept.",
+      "accept": "Deactivate"
+    },
+    "dialog": {
+      "addHeader": "Add attendance definition",
+      "editHeader": "Edit attendance definition",
+      "subtitle": "Pick a day and check-in window; members can check in during that time.",
+      "title": "Title",
+      "description": "Description",
+      "dayOfWeek": "Day",
+      "dayPlaceholder": "Select a day",
+      "windowStart": "Check-in start",
+      "windowEnd": "Check-in end",
+      "required": "Required",
+      "endNotAfterStart": "End must be later than start",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "errors": {
+      "summary": "Error",
+      "load": "Could not load definitions",
+      "save": "Could not save",
+      "counts": "Could not load attendance",
+      "deactivate": "Could not deactivate"
+    }
   }
 }
