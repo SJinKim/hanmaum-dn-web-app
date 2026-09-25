@@ -9,7 +9,10 @@ import { ActiveMinistryMemberDto } from '../ministry.model';
 import { MinistryMemberEditDialogComponent } from './ministry-member-edit-dialog.component';
 
 const KO = {
-  ministry: { detail: { editDialog: { roleHint: '역할·상태 지정은 준비 중입니다' } } },
+  ministry: { detail: { editDialog: {
+    endDateHint: '비워 두면 계속 활동 중입니다',
+    endBeforeStart: '종료일은 시작일 이후여야 합니다',
+  } } },
 };
 
 const MEMBER = {
@@ -41,14 +44,15 @@ describe('MinistryMemberEditDialogComponent', () => {
     return fixture;
   }
 
-  it('fills 시작일 and 메모 from the member', () => {
+  it('fills 시작일 and 메모 from the member and leaves 종료일 empty', () => {
     const c = render().componentInstance;
-    const { startDate, note } = c.form.getRawValue();
+    const { startDate, endDate, note } = c.form.getRawValue();
     expect(startDate).toEqual(new Date(2023, 2, 1));
+    expect(endDate).toBeNull();
     expect(note).toBe('보컬');
   });
 
-  it('saves the ISO start date and trimmed note, then closes', () => {
+  it('saves the ISO start date, no end date and trimmed note, then closes', () => {
     const c = render().componentInstance;
     assignments.updateAssignment.and.returnValue(of({} as Member));
     const saved = jasmine.createSpy('saved');
@@ -58,7 +62,7 @@ describe('MinistryMemberEditDialogComponent', () => {
     c.submit();
 
     expect(assignments.updateAssignment).toHaveBeenCalledOnceWith('m1', 'min-1', {
-      startDate: '2023-04-15', note: '리더',
+      startDate: '2023-04-15', endDate: null, note: '리더',
     });
     expect(saved).toHaveBeenCalled();
     expect(c.visible()).toBeFalse();
@@ -93,11 +97,36 @@ describe('MinistryMemberEditDialogComponent', () => {
     expect(c.visible()).toBeTrue();
   });
 
-  it('keeps 역할 and 상태 disabled with a hint', () => {
+  it('offers an optional 종료일 calendar with a hint', () => {
+    render();
+    expect(document.querySelector('p-datepicker input#edit-member-end')).not.toBeNull();
+    const hint = document.querySelector('[data-testid="end-date-hint"]') as HTMLElement;
+    expect(hint.textContent).toContain('비워 두면 계속 활동 중입니다');
+  });
+
+  it('ends the assignment by sending the ISO 종료일', () => {
+    const c = render().componentInstance;
+    assignments.updateAssignment.and.returnValue(of({} as Member));
+    c.form.patchValue({ endDate: new Date(2026, 8, 20) });
+
+    c.submit();
+
+    expect(assignments.updateAssignment.calls.mostRecent().args[2]).toEqual({
+      startDate: '2023-03-01', endDate: '2026-09-20', note: '보컬',
+    });
+  });
+
+  it('blocks a 종료일 before 시작일', () => {
     const fixture = render();
-    const { role, status } = fixture.componentInstance.form.controls;
-    expect(role.disabled && status.disabled).toBeTrue();
-    const hint = document.querySelector('[data-testid="role-hint"]') as HTMLElement;
-    expect(hint.textContent).toContain('역할·상태 지정은 준비 중입니다');
+    const c = fixture.componentInstance;
+    c.form.patchValue({ endDate: new Date(2023, 1, 28) });
+
+    c.submit();
+    fixture.detectChanges();
+
+    expect(assignments.updateAssignment).not.toHaveBeenCalled();
+    expect(c.endBeforeStart()).toBeTrue();
+    const error = document.querySelector('[data-testid="end-date-error"]') as HTMLElement;
+    expect(error.textContent).toContain('종료일은 시작일 이후여야 합니다');
   });
 });
