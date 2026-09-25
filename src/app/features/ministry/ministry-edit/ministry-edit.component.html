@@ -1,189 +1,122 @@
-<div class="p-6 max-w-2xl mx-auto">
-  <div class="flex items-center gap-3 mb-6">
-    <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" (onClick)="goBack()" />
-    <h1 class="text-2xl font-bold text-gray-800">{{ isEdit ? '부서 수정' : '사역 추가' }}</h1>
-  </div>
+<!--
+  Figma: 사역 정보 수정 (204:7690), 새 사역 추가 (285:21140).
+  One card 사역 정보 with two columns that stack under the `tablet` breakpoint.
+-->
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    hasBack
+    [breadcrumb]="breadcrumb()"
+    [eyebrow]="'ministry.title' | translate"
+    [heading]="heading()"
+    [subtitle]="subtitle()"
+    (back)="goBack()" />
 
   @if (loading()) {
-    <div class="flex justify-center py-12">
-      <p-progressSpinner strokeWidth="4" />
-    </div>
+    <app-skeleton variant="card" />
   } @else {
-    <p-card>
-      <div class="flex flex-col gap-4">
-        <!-- Title -->
-        <div class="flex flex-col gap-1">
-          <label for="ministryTitle" class="text-sm font-medium text-gray-700">사역 제목 <span class="text-red-500">*</span></label>
-          <input id="ministryTitle" pInputText [(ngModel)]="form.title" placeholder="사역 제목" maxlength="100" />
-        </div>
+    <form
+      [formGroup]="form"
+      (ngSubmit)="save()"
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card"
+      data-testid="ministry-form">
+      <app-section-header [heading]="'ministry.form.card' | translate" />
 
-        <!-- Subtitle -->
-        <div class="flex flex-col gap-1">
-          <label for="ministrySubtitle" class="text-sm font-medium text-gray-700">부제목 <span class="text-red-500">*</span></label>
-          <input id="ministrySubtitle" pInputText [(ngModel)]="form.subtitle" placeholder="부제목" maxlength="200" />
-        </div>
-
-        <!-- About -->
-        <div class="flex flex-col gap-1">
-          <label for="ministryAbout" class="text-sm font-medium text-gray-700">사역 소개 <span class="text-red-500">*</span></label>
-          <textarea
-            id="ministryAbout"
-            pTextarea
-            [(ngModel)]="form.about"
-            rows="6"
-            placeholder="사역 소개"
-          ></textarea>
-        </div>
-
-        <!-- Requirements -->
-        <div class="flex flex-col gap-2 rounded-lg bg-gray-50 p-4">
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-gray-700">지원 자격</span>
-            <p-button
-              label="추가"
-              icon="pi pi-plus"
-              size="small"
-              severity="secondary"
-              [text]="true"
-              [disabled]="form.requirements.length >= maxStructuredItems"
-              (onClick)="addRequirement()"
-            />
+      <div class="grid grid-cols-1 gap-[var(--space-16)] tablet:grid-cols-2">
+        <!-- left column -->
+        <div class="flex flex-col gap-[var(--space-16)]">
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="ministryTitle" class="type-caption text-ink-muted">
+              {{ 'ministry.form.fields.title' | translate }}
+              <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+            </label>
+            <input
+              id="ministryTitle"
+              pInputText
+              formControlName="title"
+              [maxlength]="titleMax"
+              [placeholder]="'ministry.form.placeholders.title' | translate"
+              class="w-full"
+              [class.ng-invalid]="hasError('title', 'required')" />
+            @if (hasError('title', 'required')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                {{ 'ministry.form.errors.required' | translate }}
+              </small>
+            }
           </div>
-          @for (requirement of form.requirements; track $index; let i = $index) {
-            <div class="flex items-center gap-2">
-              <input
-                [id]="'ministryRequirement-' + i"
-                [attr.aria-label]="'지원 자격 ' + (i + 1)"
-                pInputText
-                [(ngModel)]="form.requirements[i]"
-                class="flex-1"
-                placeholder="지원 자격"
-              />
-              <p-button
-                icon="pi pi-trash"
-                severity="danger"
-                [text]="true"
-                size="small"
-                ariaLabel="지원 자격 삭제"
-                (onClick)="removeRequirement(i)"
-              />
-            </div>
-          } @empty {
-            <p class="text-sm text-gray-400">등록된 지원 자격이 없습니다.</p>
-          }
-        </div>
 
-        <!-- Schedules -->
-        <div class="flex flex-col gap-3 rounded-lg bg-gray-50 p-4">
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-gray-700">사역 일정</span>
-            <p-button
-              label="추가"
-              icon="pi pi-plus"
-              size="small"
-              severity="secondary"
-              [text]="true"
-              [disabled]="form.schedules.length >= maxStructuredItems"
-              (onClick)="addSchedule()"
-            />
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="ministrySubtitle" class="type-caption text-ink-muted">
+              {{ 'ministry.form.fields.subtitle' | translate }}
+              @if (!isEdit) {
+                <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+              }
+            </label>
+            <input
+              id="ministrySubtitle"
+              pInputText
+              formControlName="subtitle"
+              [maxlength]="subtitleMax"
+              [placeholder]="'ministry.form.placeholders.subtitle' | translate"
+              class="w-full"
+              [class.ng-invalid]="hasError('subtitle', 'required')" />
+            @if (hasError('subtitle', 'required')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                {{ 'ministry.form.errors.required' | translate }}
+              </small>
+            } @else {
+              <small class="type-caption text-ink-disabled">
+                {{ 'ministry.form.hints.subtitle' | translate:{ max: subtitleMax } }}
+              </small>
+            }
           </div>
-          @for (schedule of form.schedules; track $index; let i = $index) {
-            <div class="grid grid-cols-1 gap-2 rounded-lg bg-white p-3 sm:grid-cols-[1fr_8rem_8rem_auto] sm:items-end">
-              <div class="flex flex-col gap-1">
-                <label [for]="'ministryScheduleDescription-' + i" class="text-xs font-medium text-gray-500">설명</label>
-                <input
-                  [id]="'ministryScheduleDescription-' + i"
-                  pInputText
-                  [(ngModel)]="schedule.description"
-                  placeholder="일정 설명"
-                  maxlength="200"
-                />
-              </div>
-              <div class="flex flex-col gap-1">
-                <label [for]="'ministryScheduleStart-' + i" class="text-xs font-medium text-gray-500">시작 시간</label>
-                <input [id]="'ministryScheduleStart-' + i" pInputText type="time" [(ngModel)]="schedule.startTime" />
-              </div>
-              <div class="flex flex-col gap-1">
-                <label [for]="'ministryScheduleEnd-' + i" class="text-xs font-medium text-gray-500">종료 시간</label>
-                <input [id]="'ministryScheduleEnd-' + i" pInputText type="time" [(ngModel)]="schedule.endTime" />
-              </div>
-              <p-button
-                icon="pi pi-trash"
-                severity="danger"
-                [text]="true"
-                size="small"
-                ariaLabel="일정 삭제"
-                (onClick)="removeSchedule(i)"
-              />
-            </div>
-          } @empty {
-            <p class="text-sm text-gray-400">등록된 일정이 없습니다.</p>
-          }
         </div>
 
-        <!-- Contacts -->
-        <div class="flex flex-col gap-3 rounded-lg bg-gray-50 p-4">
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-gray-700">연락처</span>
-            <p-button
-              label="추가"
-              icon="pi pi-plus"
-              size="small"
-              severity="secondary"
-              [text]="true"
-              [disabled]="form.contacts.length >= maxStructuredItems"
-              (onClick)="addContact()"
-            />
+        <!-- right column -->
+        <div class="flex flex-col gap-[var(--space-16)]">
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="ministryLeader" class="type-caption text-ink-muted">
+              {{ 'ministry.form.fields.leader' | translate }}
+            </label>
+            <p-select
+              inputId="ministryLeader"
+              formControlName="leader"
+              [options]="[]"
+              [placeholder]="'ministry.form.placeholders.leader' | translate"
+              styleClass="w-full" />
+            <small class="type-caption text-ink-disabled" data-testid="leader-hint">
+              {{ 'ministry.form.hints.leader' | translate }}
+            </small>
           </div>
-          @for (contact of form.contacts; track $index; let i = $index) {
-            <div class="grid grid-cols-1 gap-2 rounded-lg bg-white p-3 sm:grid-cols-[10rem_1fr_auto] sm:items-end">
-              <div class="flex flex-col gap-1">
-                <label [for]="'ministryContactRole-' + i" class="text-xs font-medium text-gray-500">역할</label>
-                <input [id]="'ministryContactRole-' + i" pInputText [(ngModel)]="contact.role" placeholder="예: 팀장" maxlength="50" />
-              </div>
-              <div class="flex flex-col gap-1">
-                <label [for]="'ministryContactName-' + i" class="text-xs font-medium text-gray-500">이름</label>
-                <input [id]="'ministryContactName-' + i" pInputText [(ngModel)]="contact.name" placeholder="담당자 이름" maxlength="150" />
-              </div>
-              <p-button
-                icon="pi pi-trash"
-                severity="danger"
-                [text]="true"
-                size="small"
-                ariaLabel="연락처 삭제"
-                (onClick)="removeContact(i)"
-              />
-            </div>
-          } @empty {
-            <p class="text-sm text-gray-400">등록된 연락처가 없습니다.</p>
-          }
-        </div>
 
-        <!-- Image URL -->
-        <div class="flex flex-col gap-1">
-          <label for="ministryImageUrl" class="text-sm font-medium text-gray-700">이미지 URL</label>
-          <input id="ministryImageUrl" pInputText [(ngModel)]="form.imageUrl" placeholder="이미지 URL (선택)" />
-        </div>
-
-        <!-- isActive — edit only -->
-        @if (isEdit) {
-          <div class="flex items-center gap-2">
-            <p-checkbox [(ngModel)]="form.isActive" [binary]="true" inputId="isActive" />
-            <label for="isActive" class="text-sm font-medium text-gray-700">활성 상태</label>
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="ministryStatus" class="type-caption text-ink-muted">
+              {{ 'ministry.form.fields.status' | translate }}
+            </label>
+            <p-select
+              inputId="ministryStatus"
+              formControlName="isActive"
+              [options]="statusOptions()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full" />
           </div>
-        }
-
-        <!-- Actions -->
-        <div class="flex gap-2 justify-end pt-2">
-          <p-button label="취소" severity="secondary" [text]="true" (onClick)="goBack()" />
-          <p-button
-            [label]="isEdit ? '저장' : '생성'"
-            [loading]="saving()"
-            (onClick)="save()"
-          />
         </div>
       </div>
-    </p-card>
+
+      <footer class="border-line-subtle flex items-center justify-end gap-[var(--space-8)] border-t pt-[var(--space-16)]">
+        <p-button
+          type="button"
+          severity="secondary"
+          [text]="true"
+          [label]="'ministry.form.cancel' | translate"
+          (onClick)="goBack()" />
+        <p-button
+          type="submit"
+          icon="pi pi-check"
+          [loading]="saving()"
+          [label]="(isEdit ? 'ministry.form.save' : 'ministry.form.create') | translate" />
+      </footer>
+    </form>
   }
 </div>
 
