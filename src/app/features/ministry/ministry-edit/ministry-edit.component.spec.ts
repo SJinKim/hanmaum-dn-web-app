@@ -31,7 +31,7 @@ const MINISTRY: Ministry = {
   subtitle: '주일 예배 찬양',
   about: '찬양으로 예배를 섬깁니다.',
   requirements: ['양육 수료'],
-  schedules: [{ description: '연습', startTime: '09:00', endTime: '10:00' }],
+  schedules: [{ description: '본당', startTime: '09:00', endTime: '10:00' }],
   contacts: [{ role: '팀장', name: '김영원' }, { role: '총무', name: '박하늘' }],
   imageUrl: null,
   isActive: true,
@@ -103,7 +103,7 @@ describe('MinistryEditComponent', () => {
       const c = fixture.componentInstance;
       c.form.patchValue({ title: ' 난민 사역 ', subtitle: ' 사랑을 나눕니다 ', about: ' 긴 설명\n둘째 줄 ', leader: '이하나' });
       c.addSchedule();
-      c.schedules.at(0).patchValue({ description: ' 토요 모임 · 3층 ', startTime: '14:00', endTime: '16:00' });
+      c.schedules.at(0).patchValue({ description: ' 3층 ', startTime: '14:00', endTime: '16:00' });
       c.addRequirement();
       c.requirements.at(0).setValue(' 세례 ');
 
@@ -114,7 +114,7 @@ describe('MinistryEditComponent', () => {
         subtitle: '사랑을 나눕니다',
         about: '긴 설명\n둘째 줄',
         requirements: ['세례'],
-        schedules: [{ description: '토요 모임 · 3층', startTime: '14:00', endTime: '16:00' }],
+        schedules: [{ description: '3층', startTime: '14:00', endTime: '16:00' }],
         contacts: [{ role: '리더', name: '이하나' }],
         imageUrl: null,
       });
@@ -122,7 +122,7 @@ describe('MinistryEditComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/ministry', 'new-1']);
     });
 
-    it('drops blank rows and blocks an incomplete 모임 시간', () => {
+    it('drops blank rows and blocks an incomplete 장소 및 시간', () => {
       const fixture = setup(null);
       service.createMinistry.and.returnValue(of({ ...MINISTRY, publicId: 'new-1' }));
       const c = fixture.componentInstance;
@@ -130,7 +130,7 @@ describe('MinistryEditComponent', () => {
       c.addSchedule();
       c.addRequirement();
       c.addSchedule();
-      c.schedules.at(1).patchValue({ description: '연습' });
+      c.schedules.at(1).patchValue({ description: '본당' });
 
       c.save();
 

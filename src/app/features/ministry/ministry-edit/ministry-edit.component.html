@@ -1,7 +1,7 @@
 <!--
   Figma: 사역 정보 수정 (204:7690), 새 사역 추가 (285:21140).
   One card 사역 정보: 사역명 | 리더 | 상태, then 한 줄 소개, 설명 (tall textarea),
-  then 모임 시간 and 참여 조건 as editable lists.
+  then 장소 및 시간 and 참여 조건 as editable lists.
 -->
 <div class="flex flex-col gap-gutter">
   <app-page-header
@@ -128,13 +128,11 @@
         }
       </div>
 
-      <!-- 모임 시간 → schedules -->
+      <!-- 장소 및 시간 → schedules. 장소 binds to `description` until
+           schedules[].location is in the ops contract (hanmaum-dn-server#216). -->
       <section class="border-line-subtle flex flex-col gap-[var(--space-12)] border-t pt-[var(--space-16)]" data-testid="schedules">
         <div class="flex items-center justify-between gap-[var(--space-8)]">
-          <div class="flex flex-col">
-            <span class="type-body-strong">{{ 'ministry.form.schedules.title' | translate }}</span>
-            <small class="type-caption text-ink-disabled">{{ 'ministry.form.schedules.hint' | translate }}</small>
-          </div>
+          <span class="type-body-strong">{{ 'ministry.form.schedules.title' | translate }}</span>
           <p-button
             type="button"
             icon="pi pi-plus"
@@ -153,7 +151,7 @@
                   pInputText
                   formControlName="description"
                   [maxlength]="scheduleDescriptionMax"
-                  [attr.aria-label]="'ministry.form.schedules.description' | translate"
+                  [attr.aria-label]="'ministry.form.schedules.location' | translate"
                   [placeholder]="'ministry.form.schedules.placeholder' | translate"
                   class="w-full" />
                 <p-button

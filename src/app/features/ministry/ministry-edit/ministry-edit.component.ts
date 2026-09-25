@@ -32,7 +32,7 @@ export const LEADER_ROLE = '리더';
  * the order 사역명 · 리더 · 상태 / 한 줄 소개 / 설명 follows the user's design change.
  *
  * Fields map to the contract: 한 줄 소개 → `subtitle` (the mobile list line),
- * 설명 → `about` (mobile "우리의 마음"), 모임 시간 → `schedules`,
+ * 설명 → `about` (mobile "우리의 마음"), 장소 및 시간 → `schedules`,
  * 참여 조건 → `requirements`. The API has no leader field: the mobile app shows
  * the first contact as 리더, so the picked name goes to `contacts[0]` and any
  * further contacts are kept. The image is kept as stored.
@@ -182,7 +182,7 @@ export class MinistryEditComponent implements OnInit {
     return failed && (c.touched || c.dirty);
   }
 
-  /** A row of 모임 시간 is invalid only once one of its fields has been touched. */
+  /** A row of 장소 및 시간 is invalid only once one of its fields has been touched. */
   scheduleInvalid(index: number): boolean {
     const row = this.schedules.at(index);
     return row.invalid && (row.touched || row.dirty);

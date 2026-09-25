@@ -486,14 +486,13 @@
         "createFailed": "Could not create the ministry."
       },
       "schedules": {
-        "title": "Meeting times",
-        "hint": "Add the meeting place to the description",
-        "add": "Add time",
-        "description": "Description",
-        "placeholder": "e.g. Sunday meeting · Main hall",
+        "title": "Place & time",
+        "add": "Add place & time",
+        "location": "Place",
+        "placeholder": "e.g. Main hall",
         "start": "Start",
         "end": "End",
-        "incomplete": "Enter a description, start and end."
+        "incomplete": "Enter a place, start and end."
       },
       "requirements": {
         "title": "Requirements",
