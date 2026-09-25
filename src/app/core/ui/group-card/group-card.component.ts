@@ -1,4 +1,4 @@
-import { Component, computed, input, model } from '@angular/core';
+import { Component, computed, input, model, output } from '@angular/core';
 import { BadgeComponent } from '../badge/badge.component';
 import { MemberPillComponent, MemberPillState } from '../member-pill/member-pill.component';
 import { MEMBER_PILL_STAGES, MemberPillStage, memberPillTokens } from '../variant-tokens';
@@ -11,6 +11,10 @@ export interface GroupCardMember {
   /** Human-readable stage name — the non-colour signal. */
   stageLabel: string;
   state?: MemberPillState;
+  /** Stable id, echoed back by `memberClicked`. */
+  id?: string;
+  /** Renders the pill as a button that emits `memberClicked` — 예비순장 지정/해제. */
+  interactive?: boolean;
 }
 
 /** One segment of the distribution bar. */
@@ -86,12 +90,27 @@ const STAGE_RANK = new Map<MemberPillStage, number>(MEMBER_PILL_STAGES.map((stag
 
       @if (expanded()) {
         <span class="flex w-full flex-wrap items-start gap-[var(--space-6)]">
-          @for (member of orderedMembers(); track member.label) {
-            <app-member-pill
-              [label]="member.label"
-              [stage]="member.stage"
-              [stageLabel]="member.stageLabel"
-              [state]="member.state ?? 'default'" />
+          @for (member of orderedMembers(); track member.id ?? member.label) {
+            @if (member.interactive) {
+              <button
+                class="rounded-[var(--radius-full)] focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
+                type="button"
+                (click)="memberClicked.emit(member)">
+                <app-member-pill
+                  [label]="member.label"
+                  [stage]="member.stage"
+                  [stageLabel]="member.stageLabel"
+                  [state]="member.state ?? 'default'"
+                  [candidateLabel]="candidateLabel()" />
+              </button>
+            } @else {
+              <app-member-pill
+                [label]="member.label"
+                [stage]="member.stage"
+                [stageLabel]="member.stageLabel"
+                [state]="member.state ?? 'default'"
+                [candidateLabel]="candidateLabel()" />
+            }
           }
         </span>
       }
@@ -111,6 +130,10 @@ export class GroupCardComponent {
   readonly leaderTermLabel = input('순장');
   readonly matchLabel = input('일치');
   readonly countSuffix = input('명');
+  readonly candidateLabel = input('+ 지정');
+
+  /** A pill marked `interactive` was clicked. */
+  readonly memberClicked = output<GroupCardMember>();
 
   protected readonly memberCount = computed(() => this.members().length);
 

@@ -525,5 +525,39 @@
       },
       "remove": "삭제"
     }
+  },
+  "groups": {
+    "eyebrow": "순 관리",
+    "title": "순",
+    "subtitle": "{{groups}}개 순 · 청년 {{members}}명 · 단계는 누적 (예비순장 ⊃ 제자반수료 ⊃ 일대일 ⊃ 큐베세)",
+    "all": "전체",
+    "collapseAll": "모두 접기",
+    "expandAll": "모두 펼치기",
+    "stage": {
+      "next-leader": "예비순장",
+      "discipleship": "제자반수료",
+      "one-on-one-completed": "일대일수료",
+      "one-on-one-progress": "일대일진행",
+      "one-on-one-waiting": "일대일대기",
+      "qbs": "큐베세수료",
+      "unbaptized": "세례 확인대상",
+      "none": "미수료"
+    },
+    "hint": {
+      "filter": "{{stage}} {{count}}명 강조",
+      "assign": "{{stage}} {{count}}명 강조 · 점선 테두리 = 지정 가능한 제자반수료자 · 이름을 눌러 예비순장으로 지정하거나 해제"
+    },
+    "division": {
+      "DANIEL": "다니엘",
+      "NEHEMIA": "느헤미야",
+      "none": "기타"
+    },
+    "divisionHeading": "{{name}} 그룹",
+    "divisionCaption": "{{groups}}개 순 · {{members}}명",
+    "leaderTerm": "순장",
+    "countSuffix": "명",
+    "candidate": "+ 지정",
+    "empty": "등록된 순이 없습니다",
+    "saveFailed": "저장 실패. 다시 시도해주세요."
   }
 }

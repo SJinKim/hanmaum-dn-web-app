@@ -525,5 +525,39 @@
       },
       "remove": "Remove"
     }
+  },
+  "groups": {
+    "eyebrow": "Small groups",
+    "title": "Small groups",
+    "subtitle": "{{groups}} groups · {{members}} young adults · stages are cumulative (next leader ⊃ discipleship ⊃ one-on-one ⊃ QBS)",
+    "all": "All",
+    "collapseAll": "Collapse all",
+    "expandAll": "Expand all",
+    "stage": {
+      "next-leader": "Next leader",
+      "discipleship": "Discipleship",
+      "one-on-one-completed": "1:1 completed",
+      "one-on-one-progress": "1:1 in progress",
+      "one-on-one-waiting": "1:1 waiting",
+      "qbs": "QBS completed",
+      "unbaptized": "Check baptism",
+      "none": "Not completed"
+    },
+    "hint": {
+      "filter": "{{count}} × {{stage}} highlighted",
+      "assign": "{{count}} × {{stage}} highlighted · dashed border = discipleship graduates who can be assigned · click a name to assign or unassign"
+    },
+    "division": {
+      "DANIEL": "Daniel",
+      "NEHEMIA": "Nehemiah",
+      "none": "Other"
+    },
+    "divisionHeading": "{{name}} group",
+    "divisionCaption": "{{groups}} groups · {{members}}",
+    "leaderTerm": "Leader",
+    "countSuffix": "",
+    "candidate": "+ Assign",
+    "empty": "No small groups yet",
+    "saveFailed": "Could not save. Please try again."
   }
 }
