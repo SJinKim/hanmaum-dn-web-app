@@ -1,6 +1,8 @@
 export interface EventRsvpDto {
   publicId: string;
   title: string;
+  /** Server #226 (PR #227); absent until that is deployed. */
+  description?: string | null;
   windowStart: string;
   windowEnd: string;
   isActive: boolean;
@@ -25,13 +27,18 @@ export interface ActiveEventRsvpDto {
 
 export interface CreateEventRsvpRequest {
   title: string;
+  description?: string | null;
   windowStart: string;
   windowEnd: string;
+  /** 바로 공개; the server defaults to `true` when it is left out. */
+  isActive?: boolean;
   announcementId?: string;
 }
 
 export interface UpdateEventRsvpRequest {
   title?: string;
+  /** Blank clears it, `undefined` leaves it unchanged. */
+  description?: string;
   windowStart?: string;
   windowEnd?: string;
   isActive?: boolean;

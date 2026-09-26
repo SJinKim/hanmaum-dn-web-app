@@ -1,110 +1,101 @@
-<div class="p-6">
-  <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-    <div class="flex items-start gap-3">
-      <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" (onClick)="goBack()" />
-      <div>
-        <div class="text-[10px] font-bold uppercase tracking-widest text-tertiary">Event RSVP Attendees</div>
-        <h1 class="mt-1 text-[26px] font-extrabold tracking-tight text-primary">
-          {{ result()?.eventTitle ?? '참석자 명단' }}
-        </h1>
-        <p class="mt-1 text-[13px] text-tertiary">체크인 순서와 RSVP 당시의 Church Group을 표시합니다.</p>
-      </div>
-    </div>
-    <p-button icon="pi pi-refresh" label="새로고침" severity="secondary" [outlined]="true" (onClick)="load()" />
-  </div>
-
-  <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-    <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-      <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">전체 참석자</div>
-      <div class="mt-2 text-[32px] font-extrabold leading-none tracking-tighter text-primary">{{ result()?.totalCount ?? 0 }}</div>
-    </div>
-    <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-      <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">참여 그룹</div>
-      <div class="mt-2 text-[32px] font-extrabold leading-none tracking-tighter text-primary">{{ groupCount() }}</div>
-    </div>
-    @if (linkedAnnouncement(); as announcement) {
-      <button
-        type="button"
-        class="group flex w-full flex-col rounded-xl border border-gray-100 bg-white p-4 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
-        (click)="viewAnnouncement()"
-      >
-        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">연결 공지</div>
-        <div class="mt-2 line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-primary">
-          {{ announcement.title }}
-        </div>
-        <span class="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-secondary group-hover:text-primary">
-          공지 보기 <i class="pi pi-arrow-right text-[9px]"></i>
-        </span>
-      </button>
-    } @else {
-      <div class="flex flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">연결 공지</div>
-        <div class="mt-2 text-[13px] font-semibold text-amber-600">공지 미연결</div>
-      </div>
-    }
-  </div>
-
-  <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-    <div class="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 class="text-[15px] font-bold tracking-tight text-primary">참석자</h2>
-        <p class="mt-1 text-[11px] text-tertiary">모바일 앱에서 RSVP한 등록 교인 명단입니다.</p>
-      </div>
-      <div class="relative w-full sm:w-72">
-        <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-tertiary"></i>
-        <input
-          pInputText
-          type="search"
-          class="w-full pl-9"
-          placeholder="이름 또는 그룹 검색"
-          [ngModel]="searchTerm()"
-          (ngModelChange)="searchTerm.set($event)"
-        />
-      </div>
-    </div>
-
-    <p-table
-      [value]="filteredAttendees()"
-      [loading]="loading()"
-      [paginator]="filteredAttendees().length > 20"
-      [rows]="20"
-      rowHover
-      styleClass="p-datatable-sm"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th class="w-20">#</th>
-          <th>이름</th>
-          <th>Church Group</th>
-          <th>체크인 시간</th>
-        </tr>
-      </ng-template>
-
-      <ng-template pTemplate="body" let-attendee let-rowIndex="rowIndex">
-        <tr>
-          <td class="text-[11px] font-semibold text-tertiary">{{ rowIndex + 1 }}</td>
-          <td class="font-bold tracking-tight text-gray-800">{{ attendee.memberName }}</td>
-          <td>
-            @if (attendee.groupName) {
-              <p-tag [value]="groupLabel(attendee.groupDivision, attendee.groupName)" severity="info" />
-            } @else {
-              <span class="text-[12px] text-tertiary">소속 그룹 없음</span>
-            }
-          </td>
-          <td class="text-[12px] font-medium text-secondary">{{ formatDateTime(attendee.checkedInAt) }}</td>
-        </tr>
-      </ng-template>
-
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="4" class="py-10 text-center text-gray-400">
-            <i class="pi pi-users mb-3 block text-2xl"></i>
-            아직 등록된 참석자가 없습니다.
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
-</div>
-
+<!-- Figma: 이벤트 참석자 · Desktop (220:11145); on Phone the table becomes list cards. -->
 <p-toast />
+
+<div class="flex flex-col gap-gutter">
+  <nav class="flex items-center gap-[var(--space-8)]" [attr.aria-label]="'events.breadcrumb' | translate">
+    <p-button
+      icon="pi pi-arrow-left"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      [ariaLabel]="'events.back' | translate"
+      (onClick)="goBack()"
+      data-testid="back" />
+    <span class="type-body-sm text-ink-muted flex min-w-0 items-center gap-[var(--space-4)]">
+      <button type="button" class="hover:text-ink cursor-pointer" (click)="goBack()">
+        {{ 'events.title' | translate }}
+      </button>
+      <i class="pi pi-angle-right text-xs" aria-hidden="true"></i>
+      <span class="text-ink truncate" data-testid="crumb-title">{{ title() }}</span>
+    </span>
+  </nav>
+
+  <app-page-header
+    [eyebrow]="'events.attendeesEyebrow' | translate"
+    [heading]="title()"
+    [subtitle]="'events.attendeesSubtitle' | translate">
+    <div appActions>
+      <p-button
+        icon="pi pi-refresh"
+        [outlined]="true"
+        severity="secondary"
+        [label]="'events.refresh' | translate"
+        [loading]="loading()"
+        (onClick)="load()"
+        data-testid="refresh" />
+    </div>
+  </app-page-header>
+
+  <div class="grid grid-cols-1 gap-gutter sm:grid-cols-3" data-testid="attendee-stats">
+    <app-stat-card
+      icon="pi pi-users"
+      [label]="'events.attendeeStats.total' | translate"
+      [value]="'' + totalCount()"
+      [subtext]="'events.attendeeStats.totalSub' | translate" />
+    <app-stat-card
+      icon="pi pi-sitemap"
+      [label]="'events.attendeeStats.groups' | translate"
+      [value]="'' + groups().total"
+      [subtext]="groups().byDivision" />
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-8)] rounded-[var(--radius-lg)] border p-card"
+      data-testid="linked-announcement">
+      <span class="type-body-sm text-ink-muted flex items-center gap-[var(--space-8)]">
+        <i class="pi pi-megaphone" aria-hidden="true"></i>
+        {{ 'events.attendeeStats.announcement' | translate }}
+      </span>
+      @if (linkedAnnouncement(); as announcement) {
+        <button
+          type="button"
+          class="type-h3 text-ink-strong flex cursor-pointer items-center gap-[var(--space-4)] text-left hover:underline"
+          (click)="viewAnnouncement()">
+          <span class="truncate">{{ announcement.title }}</span>
+          <i class="pi pi-angle-right" aria-hidden="true"></i>
+        </button>
+      } @else {
+        <span class="type-h3 text-ink-muted">{{ 'events.attendeeStats.noAnnouncement' | translate }}</span>
+      }
+    </section>
+  </div>
+
+  <section
+    class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+    data-testid="attendees-card">
+    <app-section-header [heading]="'events.attendeeList' | translate" />
+
+    @if (isPhone()) {
+      @if (loading()) {
+        <app-skeleton variant="card" />
+      } @else if (records().length === 0) {
+        <app-empty-state
+          [heading]="'events.attendeeEmpty.heading' | translate"
+          [description]="'events.attendeeEmpty.description' | translate" />
+      } @else {
+        <div class="flex flex-col gap-[var(--space-8)]">
+          @for (r of records(); track r.id) {
+            <app-list-card [record]="r" selectable="false" />
+          }
+        </div>
+      }
+    } @else {
+      <app-data-table
+        [rows]="records()"
+        [columns]="columns()"
+        [loading]="loading()"
+        [caption]="'events.attendeeList' | translate"
+        [emptyHeading]="'events.attendeeEmpty.heading' | translate"
+        [emptyDescription]="'events.attendeeEmpty.description' | translate"
+        selectable="false" />
+    }
+  </section>
+</div>
