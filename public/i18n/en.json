@@ -820,5 +820,33 @@
       "groupShare": "Attendance by group",
       "ministries": "Members per ministry"
     }
+  },
+  "archive": {
+    "eyebrow": "Archive",
+    "title": "Archive",
+    "subtitle": "Past training graduates and ministry members",
+    "tabs": {
+      "training": "Training",
+      "ministry": "Ministry"
+    },
+    "columns": {
+      "name": "Name",
+      "group": "Group",
+      "status": "Status",
+      "role": "Role",
+      "startDate": "Start",
+      "endDate": "End"
+    },
+    "status": {
+      "active": "Active",
+      "graduated": "Graduated"
+    },
+    "trainingHeading": "{{name}} · {{count}} completed",
+    "ministryHeading": "{{name}} · {{count}} former members",
+    "empty": {
+      "training": "No one has completed a training yet",
+      "ministry": "No former ministry members yet"
+    },
+    "error": "Could not load the archive"
   }
 }

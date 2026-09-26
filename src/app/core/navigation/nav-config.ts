@@ -28,8 +28,8 @@ export interface NavItem {
   /** Omitted = every authenticated user. Gated items are absent, not disabled. */
   readonly role?: NavRole;
   /**
-   * The screen behind this entry is not routed yet (#39 newcomers, #31
-   * archive). The entry stays here so the structure is complete
+   * The screen behind this entry is not routed yet (#39 newcomers). The entry
+   * stays here so the structure is complete
    * and reviewable; it is filtered out of the rendered navigation until the
    * route exists, because a nav item that lands on the `**` redirect is worse
    * than a missing one.
@@ -65,7 +65,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     labelKey: 'nav.groups.admin',
     items: [
       { labelKey: 'nav.items.announcements', icon: 'pi pi-megaphone', route: '/announcements' },
-      { labelKey: 'nav.items.archive', icon: 'pi pi-inbox', route: '/archive', pending: true },
+      { labelKey: 'nav.items.archive', icon: 'pi pi-clock', route: '/archive' },
       {
         labelKey: 'nav.items.analytics',
         icon: 'pi pi-chart-bar',
