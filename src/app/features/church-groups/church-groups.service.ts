@@ -54,12 +54,17 @@ const CATEGORY_BY_STAGE: Record<MemberPillStage, MemberCategory> = {
   'none':                 'DEFAULT',
 };
 
+/** The inverse of the stage → category mapping, for rendering a cell as a MemberPill. */
+export const STAGE_BY_CATEGORY = Object.fromEntries(
+  Object.entries(CATEGORY_BY_STAGE).map(([stage, category]) => [category, stage]),
+) as Record<MemberCategory, MemberPillStage>;
+
 /**
- * Left-to-right order of divisions in the matrix. Divisions not listed here
- * keep their incoming (division-name) order and render after the listed ones.
+ * Order of divisions on the 순 page — 다니엘 before 느헤미야, as in Figma 215:7645.
+ * Divisions not listed here keep their incoming (division-name) order and render after the listed ones.
  * The 새가족 division is intentionally absent so it always sorts last.
  */
-export const DIVISION_ORDER: readonly string[] = ['NEHEMIA', 'DANIEL'];
+export const DIVISION_ORDER: readonly string[] = ['DANIEL', 'NEHEMIA'];
 
 /**
  * Name of the 새가족 group/division. It is an ordinary church_groups row, but
