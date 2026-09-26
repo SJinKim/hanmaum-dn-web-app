@@ -47,7 +47,6 @@ src/environments/environment.local.ts
 .claude/
 .superpowers/
 AGENTS.md
-CLAUDE.md
 CONTRIBUTING.md
 design-specs/
 tasks/
