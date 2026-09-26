@@ -794,5 +794,31 @@
       "saveFailed": "Could not save the announcement",
       "deleteFailed": "Could not delete the announcement"
     }
+  },
+  "statistics": {
+    "eyebrow": "Admin",
+    "title": "Statistics",
+    "subtitle": "Data-driven analysis — aggregation in progress",
+    "period": {
+      "label": "Period",
+      "last30Days": "Last 30 days",
+      "quarter": "Quarter",
+      "year": "Year"
+    },
+    "pendingBanner": "Some aggregates are still being prepared on the server — only ready charts show real data",
+    "pendingEmpty": {
+      "heading": "Aggregation in progress",
+      "description": "Shown here once the server aggregates are ready"
+    },
+    "empty": "No data",
+    "charts": {
+      "growth": "Growth",
+      "gender": "Gender distribution",
+      "attendanceRate": "Attendance rate",
+      "trainingStages": "Training stages",
+      "services": "Services · this week",
+      "groupShare": "Attendance by group",
+      "ministries": "Members per ministry"
+    }
   }
 }
