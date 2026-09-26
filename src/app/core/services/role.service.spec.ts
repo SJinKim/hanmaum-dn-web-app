@@ -51,7 +51,7 @@ describe('RoleService', () => {
         .navGroups()
         .flatMap(group => group.items.map(item => item.route));
       expect(routes).not.toContain('/newcomers');
-      expect(routes).not.toContain('/archive');
+      expect(routes).toContain('/archive');
       expect(routes).not.toContain('/analytics');
     });
 

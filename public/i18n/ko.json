@@ -734,5 +734,33 @@
       "counts": "출석 기록을 불러오지 못했습니다",
       "deactivate": "비활성화하지 못했습니다"
     }
+  },
+  "archive": {
+    "eyebrow": "기록",
+    "title": "기록",
+    "subtitle": "지난 양육 수료자와 사역 팀원",
+    "tabs": {
+      "training": "양육",
+      "ministry": "사역"
+    },
+    "columns": {
+      "name": "이름",
+      "group": "순",
+      "status": "상태",
+      "role": "역할",
+      "startDate": "시작일",
+      "endDate": "종료일"
+    },
+    "status": {
+      "active": "활동",
+      "graduated": "졸업"
+    },
+    "trainingHeading": "{{name}} · 수료 {{count}}명",
+    "ministryHeading": "{{name}} · 지난 팀원 {{count}}명",
+    "empty": {
+      "training": "아직 수료한 청년이 없습니다",
+      "ministry": "아직 지난 팀원이 없습니다"
+    },
+    "error": "기록을 불러오지 못했습니다"
   }
 }

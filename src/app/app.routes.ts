@@ -67,6 +67,12 @@ export const APP_ROUTES: Routes = [
           import('./features/church-groups/church-groups.routes')
             .then(m => m.CHURCH_GROUPS_ROUTES),
       },
+      {
+        path: 'archive',
+        loadChildren: () =>
+          import('./features/archive/archive.routes')
+            .then(m => m.ARCHIVE_ROUTES),
+      },
     ],
   },
   {
