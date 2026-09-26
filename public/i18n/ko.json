@@ -734,5 +734,31 @@
       "counts": "출석 기록을 불러오지 못했습니다",
       "deactivate": "비활성화하지 못했습니다"
     }
+  },
+  "statistics": {
+    "eyebrow": "관리",
+    "title": "통계",
+    "subtitle": "데이터 기반 분석 — 집계 로직 준비 중",
+    "period": {
+      "label": "기간",
+      "last30Days": "최근 30일",
+      "quarter": "분기",
+      "year": "연간"
+    },
+    "pendingBanner": "일부 집계는 서버에서 준비 중입니다 — 준비된 차트만 실제 데이터를 보여줍니다",
+    "pendingEmpty": {
+      "heading": "집계 준비 중",
+      "description": "서버 집계가 준비되면 여기에 표시됩니다"
+    },
+    "empty": "데이터가 없습니다",
+    "charts": {
+      "growth": "성장 추이",
+      "gender": "성별 분포",
+      "attendanceRate": "출석률",
+      "trainingStages": "양육 단계 분포",
+      "services": "예배별 집계 · 이번 주",
+      "groupShare": "그룹별 출석 비율",
+      "ministries": "사역별 인원"
+    }
   }
 }

@@ -62,6 +62,12 @@ export const APP_ROUTES: Routes = [
             .then(m => m.DataSandboxComponent),
       },
       {
+        path: 'analytics',
+        loadChildren: () =>
+          import('./features/statistics/statistics.routes')
+            .then(m => m.STATISTICS_ROUTES),
+      },
+      {
         path: 'church-groups',
         loadChildren: () =>
           import('./features/church-groups/church-groups.routes')
