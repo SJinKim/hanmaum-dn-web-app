@@ -4,7 +4,7 @@ Gilt für jede Session, Mensch oder Agent.
 
 ## Repo und Stack
 
-Admin-Dashboard von hanmaum D+N. Backend ist `../hanmaum-dn-server`, der Keycloak-Realm wird mit `../hanmaum-dn-mobile-app` geteilt.
+Admin-Dashboard von hanmaum D+N. Backend ist `../hanmaum-dn-server`, der Keycloak-Realm wird mit `../hanmaum-dn-mobile-app` geteilt. Produktumfang: `../hanmaum-dn-ops/docs/MVP.md`.
 
 - Angular 21, standalone Components, Signals
 - PrimeNG 21, Tailwind CSS 3 (Tokens in `tailwind.config.js`)
@@ -17,7 +17,7 @@ Admin-Dashboard von hanmaum D+N. Backend ist `../hanmaum-dn-server`, der Keycloa
 - Keine Imports zwischen Features. Was geteilt wird, gehört nach `core/`.
 - HTTP nur über `core/services/api.service.ts`, nie `HttpClient` in Components. Es entpackt `ApiResponse<T>`.
 - Das JWT setzt `core/interceptors/jwt.interceptor.ts`. Keine eigenen Authorization-Header.
-- Datenrouten laufen hinter `authGuard`, Admin-Routen hinter `adminGuard` (`core/guards/auth.guard.ts`). Features werden lazy geladen.
+- Jede Datenroute läuft hinter `featureGuard('<FeatureId>')` (`core/guards/feature.guard.ts`). Wer was sehen darf, steht allein in der Rollenmatrix `FEATURE_ACCESS` (`core/navigation/feature-access.ts`); Navigation und Guard lesen dieselbe Zeile. Features werden lazy geladen.
 - In URLs steht die `publicId` (UUID), nie die interne `id`.
 
 ## Figma ist Single Source of Truth für Design
@@ -32,6 +32,11 @@ Admin-Dashboard von hanmaum D+N. Backend ist `../hanmaum-dn-server`, der Keycloa
 1. Vor jeder Implementierung existiert ein GitHub-Issue.
 2. Ein Branch pro Issue, abgezweigt von `dev` (z. B. `feat/statistics-60-figma`).
 3. PR gegen `dev`, im Text `Closes #N`.
+4. Issue immer mit Kommentaren lesen: `gh issue view <N> --json title,body,comments,labels`.
+5. Labels: `type:bug`, `type:feature`, `type:chore` und `priority: high|medium|low`. Issues mit `needs-info` oder `in-progress` nicht aufnehmen.
+6. Ist etwas unklar, nicht raten: `gh issue comment` mit der Frage, Label `needs-info` setzen, Issue liegen lassen.
+7. Issues werden nie gelöscht, nur geschlossen (`gh issue close`, Board auf `Done`).
+8. Gemerged wird nur mit ausdrücklichem OK des Users, nie eigenmächtig nach `dev` oder `main`.
 
 ## Board pflegen
 
