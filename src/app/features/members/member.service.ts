@@ -59,6 +59,9 @@ export class MemberService {
   /** Catalog `code` of the course, never its display name. */
   readonly training = signal<string | null>(null);
   readonly ministry = signal<string | null>(null);
+  /** 최근 활동 range as ISO 'YYYY-MM-DD', both ends inclusive and optional (#88). */
+  readonly updatedFrom = signal<string | null>(null);
+  readonly updatedTo   = signal<string | null>(null);
   /** Null sends no `sort`; the server then orders by name. */
   readonly sort     = signal<MemberSort | null>(null);
   readonly page    = signal(0);
@@ -88,6 +91,8 @@ export class MemberService {
             group:    this.group(),
             training: this.training(),
             ministry: this.ministry(),
+            updatedFrom: this.updatedFrom(),
+            updatedTo:   this.updatedTo(),
             sort:     this.sort(),
             page:    this.page(),
             size:    this.size(),
@@ -151,6 +156,18 @@ export class MemberService {
     this.loadMembers();
   }
 
+  setUpdatedFrom(value: string | null): void {
+    this.updatedFrom.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setUpdatedTo(value: string | null): void {
+    this.updatedTo.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
   /**
    * A header click: a new column starts ascending, the current one flips
    * direction. There is no "off" state — the name fallback is only the default.
@@ -177,6 +194,8 @@ export class MemberService {
     this.group.set(null);
     this.training.set(null);
     this.ministry.set(null);
+    this.updatedFrom.set(null);
+    this.updatedTo.set(null);
     this.page.set(0);
     this.loadMembers();
   }
@@ -191,8 +210,8 @@ export class MemberService {
   /**
    * Every filter is a real query parameter of `MemberController.listMembers`
    * (hanmaum-dn-server#196); nothing is filtered or sorted in the client.
-   * `sort` goes out only once a header was clicked (#68). There is no parameter for 최근 활동 (`updatedAt`) yet, so that column has
-   * no filter.
+   * `sort` goes out only once a header was clicked (#68). 최근 활동 filters on
+   * `updatedAt` through `updatedFrom` / `updatedTo` (#88).
    */
   getMembers(params: {
     search?: string;
@@ -201,6 +220,8 @@ export class MemberService {
     group?: string | null;
     training?: string | null;
     ministry?: string | null;
+    updatedFrom?: string | null;
+    updatedTo?: string | null;
     sort?: MemberSort | null;
     page?: number;
     size?: number;
@@ -218,6 +239,8 @@ export class MemberService {
     else if (params.group)                 qp['groupPublicId']  = params.group;
     if (params.training)                   qp['trainingCode']     = params.training;
     if (params.ministry)                   qp['ministryPublicId'] = params.ministry;
+    if (params.updatedFrom)                qp['updatedFrom']      = params.updatedFrom;
+    if (params.updatedTo)                  qp['updatedTo']        = params.updatedTo;
     if (params.sort) qp['sort'] = `${params.sort.property},${params.sort.direction}`;
     return this.api.get<PageResponse<MemberSummary>>('/v1/members', qp);
   }

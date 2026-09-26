@@ -6,6 +6,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { Subject, debounceTime, firstValueFrom, take } from 'rxjs';
@@ -13,6 +14,8 @@ import { injectAppLang } from '../../../core/i18n/language';
 import {
   MinistryCatalogEntry,
   catalogEntryByName,
+  isoToLocalDate,
+  localDateToIso,
   trainingLabel,
   trainingLabelForName,
 } from '../../../core/models/member-activity.model';
@@ -88,6 +91,7 @@ interface TrainingTag {
     TranslatePipe,
     ButtonModule,
     ConfirmDialogModule,
+    DatePickerModule,
     SelectModule,
     ToastModule,
     PageHeaderComponent,
@@ -132,6 +136,9 @@ export class MembersListComponent implements OnInit {
   readonly group = this.memberService.group;
   readonly training = this.memberService.training;
   readonly ministry = this.memberService.ministry;
+  /** 최근 활동 range (#88), as Dates for the pickers; the service keeps ISO days. */
+  readonly updatedFrom = computed(() => this.toDate(this.memberService.updatedFrom()));
+  readonly updatedTo   = computed(() => this.toDate(this.memberService.updatedTo()));
   readonly sort = this.memberService.sort;
   readonly pendingCount = this.memberService.pendingCount;
 
@@ -231,7 +238,9 @@ export class MembersListComponent implements OnInit {
       !!this.baptism() ||
       !!this.group() ||
       !!this.training() ||
-      !!this.ministry(),
+      !!this.ministry() ||
+      !!this.memberService.updatedFrom() ||
+      !!this.memberService.updatedTo(),
   );
 
   /** Phone/Tablet: the same page rendered as `app-list-card`s (Home precedent). */
@@ -391,6 +400,18 @@ export class MembersListComponent implements OnInit {
 
   onMinistryChange(value: string | null): void {
     this.memberService.setMinistry(value);
+  }
+
+  onUpdatedFromChange(value: Date | null): void {
+    this.memberService.setUpdatedFrom(value ? localDateToIso(value) : null);
+  }
+
+  onUpdatedToChange(value: Date | null): void {
+    this.memberService.setUpdatedTo(value ? localDateToIso(value) : null);
+  }
+
+  private toDate(iso: string | null): Date | null {
+    return iso ? isoToLocalDate(iso) : null;
   }
 
   // ── Sortierung (#68) ─────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { computed, inject, Injectable } from '@angular/core';
+import { FEATURE_ACCESS, FeatureId, SUPER_ROLES } from '../navigation/feature-access';
 import { HomeBlockId, HomeBlockScope, HOME_BLOCKS } from '../navigation/home-blocks';
 import { NavGroup, NavItem, NavRole, NAV_GROUPS } from '../navigation/nav-config';
 import { AuthService } from './auth.service';
@@ -32,6 +33,24 @@ export class RoleService {
     return role === 'admin' ? false : this.auth.isAdmin();
   }
 
+  /** True when the user holds at least one of `roles`, compared case-insensitively. */
+  hasAnyRole(roles: readonly string[]): boolean {
+    const wanted = roles.map(role => role.toLowerCase());
+    return this.auth.roles().some(granted => wanted.includes(granted.toLowerCase()));
+  }
+
+  /**
+   * The role matrix (`feature-access.ts`) answered for the current user. Guards,
+   * sidebar and header all ask this — nothing checks a role name on its own.
+   */
+  canAccess(feature: FeatureId): boolean {
+    const allowed = FEATURE_ACCESS[feature];
+    if (allowed === 'all') {
+      return true;
+    }
+    return this.hasAnyRole([...SUPER_ROLES, ...allowed]);
+  }
+
   /**
    * `NAV_GROUPS` filtered to what this user may see and what is routed today.
    * A group whose every item is filtered out disappears with its label.
@@ -44,7 +63,7 @@ export class RoleService {
   );
 
   private isVisible(item: NavItem): boolean {
-    return !item.pending && this.can(item.role);
+    return !item.pending && this.canAccess(item.feature);
   }
 
   /**

@@ -283,7 +283,9 @@
       "ministry": "Ministry",
       "ministryAll": "All ministries",
       "baptism": "Baptism",
-      "baptismAll": "All baptisms"
+      "baptismAll": "All baptisms",
+      "updatedFrom": "Last activity from",
+      "updatedTo": "Last activity to"
     },
     "empty": {
       "heading": "No members yet",
@@ -689,7 +691,10 @@
       "actions": "Actions",
       "group": "Group",
       "count": "Attendance",
-      "share": "Share"
+      "share": "Share",
+      "inPlace": "In church",
+      "outside": "Outside",
+      "unconfirmed": "Unconfirmed"
     },
     "status": {
       "active": "Active",
@@ -742,6 +747,125 @@
       "save": "Could not save",
       "counts": "Could not load attendance",
       "deactivate": "Could not deactivate"
+    },
+    "locationTotals": "Total · {{totals}}.",
+    "unconfirmedHint": "Unconfirmed means the check-in location is unknown, not that the person was absent."
+  },
+  "forbidden": {
+    "eyebrow": "403",
+    "title": "No access",
+    "subtitle": "This screen is only open to accounts with permission.",
+    "empty": {
+      "heading": "You don't have access",
+      "description": "Your account has no role that can see this screen. Ask an administrator for access.",
+      "action": "Go to home"
     }
+  },
+  "announcements": {
+    "eyebrow": "Admin",
+    "title": "Announcements",
+    "subtitle": "Write church notices and ministry or event news, and choose which stay pinned on top.",
+    "add": "Add announcement",
+    "all": "All",
+    "listHeading": "Announcements",
+    "search": {
+      "aria": "Search announcements",
+      "placeholder": "Search title or content"
+    },
+    "category": {
+      "NOTICE": "Notice",
+      "MINISTRY": "Ministry",
+      "EVENT": "Event"
+    },
+    "period": "Published {{start}} - {{end}}",
+    "openEnd": "no end date",
+    "pinned": "Pinned",
+    "more": "More",
+    "edit": "Edit",
+    "empty": "No announcements yet",
+    "noMatch": "No announcements match",
+    "loadFailed": "Could not load announcements",
+    "loadFailedHint": "Please try again in a moment.",
+    "delete": {
+      "action": "Delete",
+      "header": "Delete announcement",
+      "message": "Delete \"{{title}}\"? This cannot be undone."
+    },
+    "dialog": {
+      "addHeader": "New announcement",
+      "editHeader": "Edit announcement",
+      "subtitle": "Shown in the youth app's announcements tab and on its home screen during the publishing period.",
+      "title": "Title",
+      "body": "Content",
+      "category": "Category",
+      "pinned": "Pin to top",
+      "startAt": "Start date",
+      "endAt": "End date",
+      "required": "This field is required.",
+      "endBeforeStart": "The end date cannot be before the start date.",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "toast": {
+      "created": "Announcement added",
+      "updated": "Announcement updated",
+      "deleted": "Announcement deleted",
+      "saveFailed": "Could not save the announcement",
+      "deleteFailed": "Could not delete the announcement"
+    }
+  },
+  "statistics": {
+    "eyebrow": "Admin",
+    "title": "Statistics",
+    "subtitle": "Data-driven analysis — aggregation in progress",
+    "period": {
+      "label": "Period",
+      "last30Days": "Last 30 days",
+      "quarter": "Quarter",
+      "year": "Year"
+    },
+    "pendingBanner": "Some aggregates are still being prepared on the server — only ready charts show real data",
+    "pendingEmpty": {
+      "heading": "Aggregation in progress",
+      "description": "Shown here once the server aggregates are ready"
+    },
+    "empty": "No data",
+    "charts": {
+      "growth": "Growth",
+      "gender": "Gender distribution",
+      "attendanceRate": "Attendance rate",
+      "trainingStages": "Training stages",
+      "services": "Services · this week",
+      "groupShare": "Attendance by group",
+      "ministries": "Members per ministry"
+    }
+  },
+  "archive": {
+    "eyebrow": "Archive",
+    "title": "Archive",
+    "subtitle": "Past training graduates and ministry members",
+    "tabs": {
+      "training": "Training",
+      "ministry": "Ministry"
+    },
+    "columns": {
+      "name": "Name",
+      "group": "Group",
+      "status": "Status",
+      "role": "Role",
+      "startDate": "Start",
+      "endDate": "End"
+    },
+    "status": {
+      "active": "Active",
+      "graduated": "Graduated"
+    },
+    "trainingHeading": "{{name}} · {{count}} completed",
+    "ministryHeading": "{{name}} · {{count}} former members",
+    "empty": {
+      "training": "No one has completed a training yet",
+      "ministry": "No former ministry members yet"
+    },
+    "error": "Could not load the archive"
   }
 }

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Route } from '@angular/router';
 import { APP_ROUTES } from '../../app.routes';
+import { FEATURE_ACCESS, FeatureId } from '../navigation/feature-access';
 import { HOME_BLOCKS } from '../navigation/home-blocks';
 import { NAV_GROUPS } from '../navigation/nav-config';
 import { AuthService } from './auth.service';
@@ -45,14 +46,73 @@ describe('RoleService', () => {
     });
   });
 
+  describe('canAccess', () => {
+    const ALL = Object.keys(FEATURE_ACCESS) as FeatureId[];
+
+    it('opens every screen to an admin', () => {
+      const roles = withRoles(['ADMIN']);
+      ALL.forEach(feature => expect(roles.canAccess(feature)).withContext(feature).toBeTrue());
+    });
+
+    it('opens every screen to a pastor once the realm role exists', () => {
+      const roles = withRoles(['pastor']);
+      ALL.forEach(feature => expect(roles.canAccess(feature)).withContext(feature).toBeTrue());
+    });
+
+    it('gives a plain member only 홈', () => {
+      const roles = withRoles(['member']);
+      expect(ALL.filter(feature => roles.canAccess(feature))).toEqual(['home']);
+    });
+
+    it('gives a user without any role only 홈', () => {
+      const roles = withRoles([]);
+      expect(ALL.filter(feature => roles.canAccess(feature))).toEqual(['home']);
+    });
+
+    it('gives the 새가족 roles 홈 and 새가족, in any case', () => {
+      ['NEWCOMER_VIEWER', 'newcomer_editor'].forEach(role => {
+        const roles = withRoles([role]);
+        expect(ALL.filter(feature => roles.canAccess(feature))).toEqual(['home', 'newcomers']);
+      });
+    });
+
+    it('gives a 순장 their 순 but keeps admin-only screens closed', () => {
+      ['group_leader', 'LEADER'].forEach(role => {
+        const roles = withRoles([role]);
+        expect(roles.canAccess('churchGroups')).toBeTrue();
+        expect(roles.canAccess('members')).toBeFalse();
+        expect(roles.canAccess('attendance')).toBeFalse();
+      });
+    });
+
+    it('adds up several roles', () => {
+      const roles = withRoles(['group_leader', 'NEWCOMER_VIEWER']);
+      expect(roles.canAccess('churchGroups')).toBeTrue();
+      expect(roles.canAccess('newcomers')).toBeTrue();
+      expect(roles.canAccess('announcements')).toBeFalse();
+    });
+  });
+
   describe('navGroups', () => {
+    it('shows a plain member only 홈', () => {
+      const routes = withRoles(['member'])
+        .navGroups()
+        .flatMap(group => group.items.map(item => item.route));
+      expect(routes).toEqual(['/']);
+    });
+
+    it('shows a 순장 홈 and 순, and drops the empty groups', () => {
+      const groups = withRoles(['group_leader']).navGroups();
+      expect(groups.flatMap(group => group.items.map(item => item.route))).toEqual(['/', '/church-groups']);
+      expect(groups.map(group => group.labelKey)).toEqual(['nav.groups.people']);
+    });
+
     it('drops items whose screen is not routed yet', () => {
       const routes = withRoles(['ADMIN'])
         .navGroups()
         .flatMap(group => group.items.map(item => item.route));
       expect(routes).not.toContain('/newcomers');
-      expect(routes).not.toContain('/archive');
-      expect(routes).not.toContain('/analytics');
+      expect(routes).toContain('/archive');
     });
 
     it('renders every remaining item as a route the app declares', () => {

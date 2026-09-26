@@ -318,6 +318,33 @@ describe('MembersListComponent — 순/양육/사역 selects', () => {
     }
   });
 
+  it('writes the 최근 활동 range as local ISO days (#88)', () => {
+    const { component, service } = setup();
+    const setFrom = spyOn(service, 'setUpdatedFrom');
+    const setTo = spyOn(service, 'setUpdatedTo');
+
+    component.onUpdatedFromChange(new Date(2026, 8, 1));
+    component.onUpdatedToChange(null);
+
+    expect(setFrom).toHaveBeenCalledWith('2026-09-01');
+    expect(setTo).toHaveBeenCalledWith(null);
+  });
+
+  it('shows the range as Dates and counts it as a filter', () => {
+    const { component, service } = setup();
+    service.updatedTo.set('2026-09-26');
+
+    expect(component.updatedTo()).toEqual(new Date(2026, 8, 26));
+    expect(component.updatedFrom()).toBeNull();
+    expect(component.filtered()).toBeTrue();
+  });
+
+  it('renders the 최근 활동 range with two pickers', () => {
+    const { fixture } = setup();
+    fixture.detectChanges();
+    expect(fixture.debugElement.queryAll(By.css('[data-testid="updated-range"] p-datepicker')).length).toBe(2);
+  });
+
   it('renders five filter selects', () => {
     const { fixture } = setup();
     fixture.detectChanges();

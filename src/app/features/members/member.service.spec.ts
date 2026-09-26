@@ -216,6 +216,33 @@ describe('MemberService — 청년 list state (#53)', () => {
     expect(url).not.toContain('ministryPublicId=');
   });
 
+  it('sends the 최근 활동 range and resets to the first page (#88)', () => {
+    service.page.set(3);
+    service.setUpdatedFrom('2026-09-01');
+    flushList();
+    expect(service.page()).toBe(0);
+    service.setUpdatedTo('2026-09-26');
+    const url = flushList();
+
+    expect(url).toContain('updatedFrom=2026-09-01');
+    expect(url).toContain('updatedTo=2026-09-26');
+  });
+
+  it('clears the 최근 활동 range on reset', () => {
+    service.setUpdatedFrom('2026-09-01');
+    flushList();
+    service.setUpdatedTo('2026-09-26');
+    flushList();
+
+    service.resetFilters();
+    const url = flushList();
+
+    expect(service.updatedFrom()).toBeNull();
+    expect(service.updatedTo()).toBeNull();
+    expect(url).not.toContain('updatedFrom=');
+    expect(url).not.toContain('updatedTo=');
+  });
+
   it('empties the list and flags the failure when the request errors', () => {
     service.loadMembers();
     http

@@ -1,0 +1,103 @@
+<!-- Figma: 공지 작성 (222:11617) -->
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [dismissableMask]="true"
+  [style]="{ width: 'min(92vw, 480px)' }"
+  [draggable]="false"
+  [resizable]="false"
+  [pt]="dialogPt"
+>
+  <ng-template #header>
+    <h2 class="type-h3 text-ink-strong" data-testid="announcement-dialog-title">
+      {{ (isEdit() ? 'announcements.dialog.editHeader' : 'announcements.dialog.addHeader') | translate }}
+    </h2>
+  </ng-template>
+
+  <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)]" data-testid="announcement-form">
+    <p class="type-body text-ink-muted">{{ 'announcements.dialog.subtitle' | translate }}</p>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="announcement-title" class="type-caption text-ink-muted">
+        {{ 'announcements.dialog.title' | translate }}
+        <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+      </label>
+      <input id="announcement-title" pInputText formControlName="title" [maxlength]="titleMax" class="w-full" />
+      @if (hasError('title')) {
+        <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'announcements.dialog.required' | translate }}</small>
+      }
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="announcement-body" class="type-caption text-ink-muted">
+        {{ 'announcements.dialog.body' | translate }}
+        <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+      </label>
+      <textarea id="announcement-body" pTextarea rows="4" formControlName="body" class="w-full"></textarea>
+      @if (hasError('body')) {
+        <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'announcements.dialog.required' | translate }}</small>
+      }
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="announcement-category" class="type-caption text-ink-muted">{{ 'announcements.dialog.category' | translate }}</label>
+      <div class="flex items-center gap-[var(--space-12)]">
+        <p-select
+          inputId="announcement-category"
+          formControlName="category"
+          [options]="categoryOptions()"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+          class="min-w-0 flex-1"
+          data-testid="announcement-category" />
+        <span class="flex items-center gap-[var(--space-8)]">
+          <p-checkbox inputId="announcement-pinned" formControlName="isPinned" [binary]="true" />
+          <label for="announcement-pinned" class="type-body text-ink-strong whitespace-nowrap">{{ 'announcements.dialog.pinned' | translate }}</label>
+        </span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-[var(--space-16)]">
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="announcement-start" class="type-caption text-ink-muted">
+          {{ 'announcements.dialog.startAt' | translate }}
+          <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+        </label>
+        <p-datepicker
+          inputId="announcement-start"
+          formControlName="startAt"
+          dateFormat="yy-mm-dd"
+          [showIcon]="true"
+          [readonlyInput]="true"
+          appendTo="body"
+          styleClass="w-full" />
+      </div>
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="announcement-end" class="type-caption text-ink-muted">{{ 'announcements.dialog.endAt' | translate }}</label>
+        <p-datepicker
+          inputId="announcement-end"
+          formControlName="endAt"
+          dateFormat="yy-mm-dd"
+          [showIcon]="true"
+          [showClear]="true"
+          [readonlyInput]="true"
+          appendTo="body"
+          styleClass="w-full" />
+      </div>
+    </div>
+    @if (endBeforeStart()) {
+      <small class="type-caption text-[var(--color-badge-deleted-fg)]" data-testid="period-error">
+        {{ 'announcements.dialog.endBeforeStart' | translate }}
+      </small>
+    } @else if (hasError('startAt')) {
+      <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'announcements.dialog.required' | translate }}</small>
+    }
+  </form>
+
+  <ng-template #footer>
+    <p-button [label]="'announcements.dialog.cancel' | translate" severity="secondary" [outlined]="true" (onClick)="close()" />
+    <p-button [label]="'announcements.dialog.save' | translate" [loading]="saving()" (onClick)="submit()" data-testid="announcement-save" />
+  </ng-template>
+</p-dialog>

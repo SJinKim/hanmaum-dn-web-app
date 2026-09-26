@@ -1,249 +1,96 @@
-<div class="p-6">
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Announcements</h1>
+<!--
+  Figma: 공지사항 222:9396, 공지 작성 dialog 222:11617.
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'announcements.eyebrow' | translate"
+    [heading]="'announcements.title' | translate"
+    [subtitle]="'announcements.subtitle' | translate">
     <p-button
-      label="Add announcement"
+      appActions
+      size="small"
       icon="pi pi-plus"
-      (onClick)="showForm() ? cancelForm() : openCreate()"
-    />
+      [label]="'announcements.add' | translate"
+      data-testid="announcement-add"
+      (onClick)="openAdd()" />
+  </app-page-header>
+
+  <app-search-field
+    [value]="search()"
+    (valueChange)="search.set($event)"
+    (cleared)="search.set('')"
+    [label]="'announcements.search.aria' | translate"
+    [placeholder]="'announcements.search.placeholder' | translate" />
+
+  <div class="flex flex-wrap items-center gap-[var(--space-8)]" data-testid="category-filter">
+    @for (chip of chips(); track chip.category) {
+      <app-filter-chip
+        [label]="chip.label"
+        [count]="chip.count"
+        [selected]="category() === chip.category"
+        (toggled)="selectCategory(chip.category)" />
+    }
   </div>
 
-  <!-- Inline Create/Edit Form -->
-  @if (showForm()) {
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-      <h2 class="text-base font-semibold text-gray-700 mb-4">
-        {{ editingId() ? 'Edit announcement' : 'New announcement' }}
-      </h2>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-1 sm:col-span-2">
-          <label for="announcementTitle" class="text-sm text-gray-600">Title</label>
-          <input
-            id="announcementTitle"
-            pInputText
-            type="text"
-            placeholder="Announcement title"
-            [(ngModel)]="formTitle"
-            maxlength="200"
-          />
-        </div>
+  @if (loading()) {
+    <app-skeleton variant="card" />
+  } @else if (failed()) {
+    <app-empty-state
+      [heading]="'announcements.loadFailed' | translate"
+      [description]="'announcements.loadFailedHint' | translate" />
+  } @else {
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+      data-testid="announcements-card">
+      <app-section-header [heading]="'announcements.listHeading' | translate" />
 
-        <div class="flex flex-col gap-1 sm:col-span-2">
-          <label for="announcementContent" class="text-sm text-gray-600">Content</label>
-          <textarea
-            id="announcementContent"
-            pTextarea
-            rows="4"
-            placeholder="Announcement content"
-            [(ngModel)]="formBody"
-          ></textarea>
-        </div>
-
-        <div class="flex flex-col gap-1">
-          <label for="announcementCategory" class="text-sm text-gray-600">Category</label>
-          <p-select
-            inputId="announcementCategory"
-            [options]="categoryOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Select category"
-            [(ngModel)]="formCategory"
-            styleClass="w-full"
-          />
-        </div>
-
-        <div class="flex items-center gap-2 sm:mt-6">
-          <p-checkbox
-            [(ngModel)]="formIsPinned"
-            [binary]="true"
-            inputId="formIsPinned"
-          />
-          <label for="formIsPinned" class="text-sm text-gray-600">Pin to top</label>
-        </div>
-
-        <div class="flex flex-col gap-1">
-          <label for="announcementStartDate" class="text-sm text-gray-600">Start date</label>
-          <p-datepicker
-            inputId="announcementStartDate"
-            [(ngModel)]="formStartAt"
-            [showTime]="true"
-            [showIcon]="true"
-            dateFormat="yy-mm-dd"
-            styleClass="w-full"
-          />
-        </div>
-
-        <div class="flex flex-col gap-1">
-          <label for="announcementEndDate" class="text-sm text-gray-600">End date (optional)</label>
-          <p-datepicker
-            inputId="announcementEndDate"
-            [(ngModel)]="formEndAt"
-            [showTime]="true"
-            [showIcon]="true"
-            dateFormat="yy-mm-dd"
-            styleClass="w-full"
-          />
-        </div>
-      </div>
-
-      <div class="flex gap-2 mt-4">
-        <p-button
-          [label]="editingId() ? 'Update' : 'Save'"
-          icon="pi pi-check"
-          (onClick)="onFormSubmit()"
-        />
-        <p-button
-          label="Cancel"
-          icon="pi pi-times"
-          severity="secondary"
-          [text]="true"
-          (onClick)="cancelForm()"
-        />
-      </div>
-    </div>
-  }
-
-  @if (selected(); as item) {
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
-      <div class="flex items-start justify-between gap-4 mb-6 pb-4 border-b border-gray-50">
-        <div class="flex-1">
-          <div class="flex items-center gap-2 mb-2">
-            <p-tag
-              [value]="categoryLabel(item.category)"
-              [severity]="categoryTag(item.category).severity"
-              [style]="categoryTag(item.category).style ?? null"
-            />
-            @if (item.isPinned) {
-              <p-tag value="Pinned" severity="warn" icon="pi pi-thumbtack" />
-            }
-          </div>
-          <h2 class="text-[18px] font-extrabold text-primary tracking-tight">
-            {{ item.title }}
-          </h2>
-        </div>
-        <div class="flex gap-1">
-          <p-button
-            icon="pi pi-pencil"
-            severity="secondary"
-            [text]="true"
-            [rounded]="true"
-            pTooltip="Edit"
-            tooltipPosition="top"
-            (onClick)="openEdit(item, $event)"
-          />
-          <p-button
-            icon="pi pi-trash"
-            severity="danger"
-            [text]="true"
-            [rounded]="true"
-            pTooltip="Delete"
-            tooltipPosition="top"
-            (onClick)="confirmDelete(item, $event)"
-          />
-          <p-button
-            icon="pi pi-times"
-            severity="secondary"
-            [text]="true"
-            [rounded]="true"
-            pTooltip="Close"
-            tooltipPosition="top"
-            (onClick)="clearSelection()"
-          />
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-x-10 gap-y-4 text-[13px] mb-6">
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">Start</div>
-          <div class="font-medium text-gray-800">{{ formatDateTime(item.startAt) }}</div>
-        </div>
-        <div>
-          <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-1">End</div>
-          <div class="font-medium text-gray-800">{{ formatDateTime(item.endAt) }}</div>
-        </div>
-      </div>
-
-      <div>
-        <div class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-2">Content</div>
-        <div class="text-[13px] text-gray-800 whitespace-pre-wrap leading-relaxed">{{ item.body }}</div>
-      </div>
-    </div>
-  }
-
-  <!-- Announcements Table -->
-  <p-table
-    [value]="announcements()"
-    [loading]="loading()"
-    styleClass="p-datatable-sm"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th>Title</th>
-        <th>Category</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Status</th>
-        <th style="width: 8rem;">Actions</th>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="body" let-item>
-      <tr
-        (click)="selectRow(item)"
-        [class.bg-blue-50]="selected()?.id === item.id"
-        class="cursor-pointer hover:bg-gray-50"
-      >
-        <td class="font-medium">{{ item.title }}</td>
-        <td>
-          <p-tag
-            [value]="categoryLabel(item.category)"
-            [severity]="categoryTag(item.category).severity"
-            [style]="categoryTag(item.category).style ?? null"
-          />
-        </td>
-        <td class="text-gray-500">{{ formatDateTime(item.startAt) }}</td>
-        <td class="text-gray-500">{{ formatDateTime(item.endAt) }}</td>
-        <td>
-          @if (item.isPinned) {
-            <p-tag value="Pinned" severity="warn" icon="pi pi-thumbtack" />
-          } @else {
-            <p-tag value="Normal" severity="secondary" />
+      @if (rows().length === 0) {
+        <app-empty-state
+          [heading]="(announcements().length === 0 ? 'announcements.empty' : 'announcements.noMatch') | translate" />
+      } @else {
+        <ul class="flex flex-col">
+          @for (row of rows(); track row.id) {
+            <li
+              class="border-line-subtle flex items-start gap-[var(--space-12)] border-t py-[var(--space-12)] first:border-t-0 first:pt-0"
+              [attr.data-announcement]="row.id">
+              <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+                <div class="flex min-w-0 items-center gap-[var(--space-8)]">
+                  @if (row.isPinned) {
+                    <i
+                      class="pi pi-thumbtack text-primary shrink-0"
+                      data-testid="pinned-icon"
+                      [attr.aria-label]="'announcements.pinned' | translate"></i>
+                  }
+                  <span class="type-h3 text-ink-strong truncate">{{ row.title }}</span>
+                </div>
+                <p class="type-body-sm text-ink-muted line-clamp-1">{{ row.body }}</p>
+                <div class="flex flex-wrap items-center gap-[var(--space-8)]">
+                  <app-badge [variant]="row.badge.variant" [label]="row.badge.label" />
+                  <span class="type-caption text-ink-muted">{{ row.period }}</span>
+                </div>
+              </div>
+              <p-button
+                icon="pi pi-ellipsis-v"
+                severity="secondary"
+                [text]="true"
+                [rounded]="true"
+                [ariaLabel]="'announcements.more' | translate"
+                (onClick)="toggleRowMenu($event, row.id)" />
+            </li>
           }
-        </td>
-        <td>
-          <div class="flex gap-1">
-            <p-button
-              icon="pi pi-pencil"
-              severity="secondary"
-              [text]="true"
-              [rounded]="true"
-              pTooltip="Edit"
-              tooltipPosition="top"
-              (onClick)="openEdit(item, $event)"
-            />
-            <p-button
-              icon="pi pi-trash"
-              severity="danger"
-              [text]="true"
-              [rounded]="true"
-              pTooltip="Delete"
-              tooltipPosition="top"
-              (onClick)="confirmDelete(item, $event)"
-            />
-          </div>
-        </td>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="6" class="text-center py-8 text-gray-400">
-          No announcements.
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+        </ul>
+      }
+    </section>
+  }
 </div>
 
+<p-menu #rowMenu [model]="menuItems()" [popup]="true" appendTo="body" />
+
+<app-announcement-dialog
+  [(visible)]="dialogVisible"
+  [announcement]="editing()"
+  (saved)="onSaved()"
+  (failed)="onSaveFailed()" />
+
 <p-toast />
-<p-confirmdialog />
+<p-confirmDialog />
