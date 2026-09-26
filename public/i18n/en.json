@@ -734,5 +734,15 @@
       "counts": "Could not load attendance",
       "deactivate": "Could not deactivate"
     }
+  },
+  "forbidden": {
+    "eyebrow": "403",
+    "title": "No access",
+    "subtitle": "This screen is only open to accounts with permission.",
+    "empty": {
+      "heading": "You don't have access",
+      "description": "Your account has no role that can see this screen. Ask an administrator for access.",
+      "action": "Go to home"
+    }
   }
 }

@@ -47,8 +47,10 @@ export class EmptyStateComponent {
   readonly description = input<string>();
   readonly actionLabel = input<string>();
   readonly actionIcon = input<string>();
+  /** Replaces the variant's icon — the 403 screen (745:41755) shows `ban`. */
+  readonly iconClass = input<string>();
 
   readonly action = output<void>();
 
-  protected readonly icon = computed(() => VARIANT_ICONS[this.variant()]);
+  protected readonly icon = computed(() => this.iconClass() ?? VARIANT_ICONS[this.variant()]);
 }
