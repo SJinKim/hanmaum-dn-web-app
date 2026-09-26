@@ -28,8 +28,8 @@ export interface NavItem {
   /** Omitted = every authenticated user. Gated items are absent, not disabled. */
   readonly role?: NavRole;
   /**
-   * The screen behind this entry is not routed yet (#39 newcomers, #60
-   * analytics). The entry stays here so the structure is complete
+   * The screen behind this entry is not routed yet (#39 newcomers). The entry
+   * stays here so the structure is complete
    * and reviewable; it is filtered out of the rendered navigation until the
    * route exists, because a nav item that lands on the `**` redirect is worse
    * than a missing one.

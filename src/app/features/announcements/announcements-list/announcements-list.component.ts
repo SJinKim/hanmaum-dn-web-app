@@ -1,228 +1,217 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { TableModule } from 'primeng/table';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { SelectModule } from 'primeng/select';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DatePickerModule } from 'primeng/datepicker';
-import { ToastModule } from 'primeng/toast';
-import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { Menu, MenuModule } from 'primeng/menu';
+import { ToastModule } from 'primeng/toast';
 
-import { AnnouncementsService } from '../announcements.service';
+import { injectAppLang } from '../../../core/i18n/language';
+import { BadgeComponent } from '../../../core/ui/badge/badge.component';
+import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
+import { FilterChipComponent } from '../../../core/ui/filter-chip/filter-chip.component';
+import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
+import { SearchFieldComponent } from '../../../core/ui/search-field/search-field.component';
+import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
+import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
+import { BadgeVariant } from '../../../core/ui/variant-tokens';
+import { AnnouncementDialogComponent } from '../announcement-dialog/announcement-dialog.component';
 import {
-  ANNOUNCEMENT_CATEGORY_LABELS,
-  ANNOUNCEMENT_CATEGORY_OPTIONS,
-  ANNOUNCEMENT_CATEGORY_TAGS,
+  ANNOUNCEMENT_CATEGORIES,
+  ANNOUNCEMENT_CATEGORY_BADGE,
   AnnouncementCategory,
-  AnnouncementCategoryTagConfig,
   AnnouncementDto,
+  formatAnnouncementDate,
+  sortAnnouncements,
 } from '../announcements.model';
+import { AnnouncementsService } from '../announcements.service';
 
+export interface CategoryChip {
+  category: AnnouncementCategory | null;
+  label: string;
+  count: number;
+}
+
+export interface AnnouncementRow {
+  id: string;
+  title: string;
+  body: string;
+  isPinned: boolean;
+  badge: { variant: BadgeVariant; label: string };
+  period: string;
+}
+
+/**
+ * 공지사항 (#59) — Figma: list 222:9396, 공지 작성 dialog 222:11617.
+ *
+ * One card with every 공지, 고정 first. Search and the category chips filter
+ * on the client; the admin endpoint returns all 공지 including expired ones.
+ */
 @Component({
   selector: 'app-announcements-list',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    TableModule,
-    ButtonModule,
-    TagModule,
-    InputTextModule,
-    TextareaModule,
-    SelectModule,
-    CheckboxModule,
-    DatePickerModule,
-    ToastModule,
-    TooltipModule,
-    ConfirmDialogModule,
+    TranslatePipe, ButtonModule, ConfirmDialogModule, MenuModule, ToastModule,
+    AnnouncementDialogComponent, BadgeComponent, EmptyStateComponent, FilterChipComponent,
+    PageHeaderComponent, SearchFieldComponent, SectionHeaderComponent, SkeletonComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './announcements-list.component.html',
 })
 export class AnnouncementsListComponent implements OnInit {
   private readonly service    = inject(AnnouncementsService);
-  private readonly messageSvc = inject(MessageService);
-  private readonly confirmSvc = inject(ConfirmationService);
+  private readonly messages   = inject(MessageService);
+  private readonly confirm    = inject(ConfirmationService);
+  private readonly translate  = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route      = inject(ActivatedRoute);
+  private readonly lang       = injectAppLang();
 
-  announcements = signal<AnnouncementDto[]>([]);
-  loading       = signal(false);
-  showForm      = signal(false);
-  editingId     = signal<string | null>(null);
-  selected      = signal<AnnouncementDto | null>(null);
+  private readonly rowMenu = viewChild<Menu>('rowMenu');
 
-  readonly categoryOptions = ANNOUNCEMENT_CATEGORY_OPTIONS;
+  readonly loading = signal(true);
+  readonly failed = signal(false);
+  readonly announcements = signal<AnnouncementDto[]>([]);
 
-  // form state (used for both create and edit)
-  formTitle    = '';
-  formBody     = '';
-  formCategory: AnnouncementCategory | null = null;
-  formStartAt: Date | null = null;
-  formEndAt:   Date | null = null;
-  formIsPinned = false;
+  readonly search = signal('');
+  readonly category = signal<AnnouncementCategory | null>(null);
+
+  readonly dialogVisible = signal(false);
+  readonly editing = signal<AnnouncementDto | null>(null);
+  readonly menuItems = signal<MenuItem[]>([]);
+
+  /** Search narrows the chip counts too, so each count matches what a click shows. */
+  private readonly searched = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    const all = sortAnnouncements(this.announcements());
+    return term
+      ? all.filter(a => a.title.toLowerCase().includes(term) || a.body.toLowerCase().includes(term))
+      : all;
+  });
+
+  readonly chips = computed<CategoryChip[]>(() => {
+    this.lang();
+    const items = this.searched();
+    return [
+      { category: null, label: this.translate.instant('announcements.all'), count: items.length },
+      ...ANNOUNCEMENT_CATEGORIES.map(category => ({
+        category,
+        label: this.categoryLabel(category),
+        count: items.filter(a => a.category === category).length,
+      })),
+    ];
+  });
+
+  readonly rows = computed<AnnouncementRow[]>(() => {
+    this.lang();
+    const category = this.category();
+    return this.searched()
+      .filter(a => !category || a.category === category)
+      .map(a => ({
+        id: a.id,
+        title: a.title,
+        body: a.body,
+        isPinned: a.isPinned,
+        badge: { variant: ANNOUNCEMENT_CATEGORY_BADGE[a.category], label: this.categoryLabel(a.category) },
+        period: this.translate.instant('announcements.period', {
+          start: formatAnnouncementDate(a.startAt),
+          end: a.endAt ? formatAnnouncementDate(a.endAt) : this.translate.instant('announcements.openEnd'),
+        }),
+      }));
+  });
 
   ngOnInit(): void {
-    this.load();
+    this.load(this.route.snapshot.queryParamMap.get('focus'));
   }
 
-  load(): void {
+  load(focusId: string | null = null): void {
     this.loading.set(true);
-    this.service.getAnnouncements().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: items => {
-        this.announcements.set(items);
-        const current = this.selected();
-        if (current) {
-          this.selected.set(items.find(i => i.id === current.id) ?? null);
-        } else {
-          this.applyFocusFromQuery(items);
-        }
-        this.loading.set(false);
-      },
-      error: () => {
-        this.messageSvc.add({ severity: 'error', summary: 'Error', detail: 'Failed to load announcements.' });
-        this.loading.set(false);
-      },
-    });
-  }
-
-  private applyFocusFromQuery(items: AnnouncementDto[]): void {
-    const focusId = this.route.snapshot.queryParamMap.get('focus');
-    if (!focusId) return;
-    const match = items.find(i => i.id === focusId);
-    if (match) this.selected.set(match);
-  }
-
-  categoryLabel(category: AnnouncementCategory): string {
-    return ANNOUNCEMENT_CATEGORY_LABELS[category];
-  }
-
-  categoryTag(category: AnnouncementCategory): AnnouncementCategoryTagConfig {
-    return ANNOUNCEMENT_CATEGORY_TAGS[category];
-  }
-
-  formatDateTime(value: string | null): string {
-    if (!value) return '-';
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? value : d.toLocaleString();
-  }
-
-  openCreate(): void {
-    this.resetForm();
-    this.editingId.set(null);
-    this.showForm.set(true);
-  }
-
-  selectRow(item: AnnouncementDto): void {
-    this.selected.set(this.selected()?.id === item.id ? null : item);
-  }
-
-  clearSelection(): void {
-    this.selected.set(null);
-  }
-
-  openEdit(item: AnnouncementDto, event?: Event): void {
-    event?.stopPropagation();
-    this.editingId.set(item.id);
-    this.formTitle    = item.title;
-    this.formBody     = item.body;
-    this.formCategory = item.category;
-    this.formStartAt  = new Date(item.startAt);
-    this.formEndAt    = item.endAt ? new Date(item.endAt) : null;
-    this.formIsPinned = item.isPinned;
-    this.showForm.set(true);
-  }
-
-  cancelForm(): void {
-    this.showForm.set(false);
-    this.editingId.set(null);
-    this.resetForm();
-  }
-
-  onFormSubmit(): void {
-    if (!this.formTitle.trim() || !this.formBody.trim() || !this.formCategory || !this.formStartAt) {
-      this.messageSvc.add({ severity: 'warn', summary: 'Validation error', detail: 'Title, content, category, and start date are required.' });
-      return;
-    }
-
-    const payload = {
-      title:    this.formTitle.trim(),
-      body:     this.formBody.trim(),
-      category: this.formCategory,
-      startAt:  this.formStartAt.toISOString(),
-      endAt:    this.formEndAt ? this.formEndAt.toISOString() : null,
-      isPinned: this.formIsPinned,
-    };
-
-    const id = this.editingId();
-    const obs$ = id
-      ? this.service.updateAnnouncement(id, payload)
-      : this.service.createAnnouncement(payload);
-
-    obs$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.messageSvc.add({
-          severity: 'success',
-          summary: 'Success',
-          detail: id ? 'Announcement updated.' : 'Announcement created.',
-        });
-        this.cancelForm();
-        this.load();
-      },
-      error: err => {
-        const detail = err?.message ?? (id ? 'Failed to update announcement.' : 'Failed to create announcement.');
-        this.messageSvc.add({ severity: 'error', summary: 'Error', detail });
-      },
-    });
-  }
-
-  confirmDelete(item: AnnouncementDto, event: Event): void {
-    event.stopPropagation();
-    this.confirmSvc.confirm({
-      target: event.target as EventTarget,
-      message: `Delete announcement "${item.title}"?`,
-      header: 'Delete Announcement',
-      icon: 'pi pi-exclamation-triangle',
-      acceptIcon: 'pi pi-trash',
-      acceptLabel: 'Delete',
-      rejectLabel: 'Cancel',
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: () => this.deleteAnnouncement(item),
-    });
-  }
-
-  private deleteAnnouncement(item: AnnouncementDto): void {
-    this.service.deleteAnnouncement(item.id)
+    this.failed.set(false);
+    this.service.getAnnouncements()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.messageSvc.add({ severity: 'success', summary: 'Deleted', detail: 'Announcement deleted.' });
-          if (this.editingId() === item.id) this.cancelForm();
-          if (this.selected()?.id === item.id) this.selected.set(null);
-          this.load();
+        next: items => {
+          this.announcements.set(items);
+          this.loading.set(false);
+          // 최근 활동 links here with ?focus=<id>: open that 공지 for editing.
+          if (focusId) this.openEdit(focusId);
         },
-        error: err => {
-          const detail = err?.message ?? 'Failed to delete announcement.';
-          this.messageSvc.add({ severity: 'error', summary: 'Error', detail });
+        error: () => {
+          this.loading.set(false);
+          this.failed.set(true);
         },
       });
   }
 
-  private resetForm(): void {
-    this.formTitle    = '';
-    this.formBody     = '';
-    this.formCategory = null;
-    this.formStartAt  = null;
-    this.formEndAt    = null;
-    this.formIsPinned = false;
+  /** The active chip again, or 전체, clears the filter. */
+  selectCategory(category: AnnouncementCategory | null): void {
+    this.category.set(category === this.category() ? null : category);
+  }
+
+  openAdd(): void {
+    this.editing.set(null);
+    this.dialogVisible.set(true);
+  }
+
+  openEdit(id: string): void {
+    const item = this.announcements().find(a => a.id === id);
+    if (!item) return;
+    this.editing.set(item);
+    this.dialogVisible.set(true);
+  }
+
+  toggleRowMenu(event: Event, id: string): void {
+    this.menuItems.set([
+      { label: this.translate.instant('announcements.edit'), icon: 'pi pi-pencil', command: () => this.openEdit(id) },
+      { label: this.translate.instant('announcements.delete.action'), icon: 'pi pi-trash', command: () => this.confirmDelete(id) },
+    ]);
+    this.rowMenu()?.toggle(event);
+  }
+
+  confirmDelete(id: string): void {
+    const item = this.announcements().find(a => a.id === id);
+    if (!item) return;
+    this.confirm.confirm({
+      header: this.translate.instant('announcements.delete.header'),
+      message: this.translate.instant('announcements.delete.message', { title: item.title }),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translate.instant('announcements.delete.action'),
+      rejectLabel: this.translate.instant('announcements.dialog.cancel'),
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
+      accept: () => this.delete(id),
+    });
+  }
+
+  onSaved(): void {
+    this.toast('success', this.editing() ? 'announcements.toast.updated' : 'announcements.toast.created');
+    this.load();
+  }
+
+  onSaveFailed(): void {
+    this.toast('error', 'announcements.toast.saveFailed');
+  }
+
+  private delete(id: string): void {
+    this.service.deleteAnnouncement(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast('success', 'announcements.toast.deleted');
+          this.load();
+        },
+        error: () => this.toast('error', 'announcements.toast.deleteFailed'),
+      });
+  }
+
+  private toast(severity: 'success' | 'error', key: string): void {
+    this.messages.add({ severity, summary: this.translate.instant(key) });
+  }
+
+  private categoryLabel(category: AnnouncementCategory): string {
+    return this.translate.instant(`announcements.category.${category}`);
   }
 }

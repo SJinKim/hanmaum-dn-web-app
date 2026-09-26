@@ -148,7 +148,10 @@ export class AttendanceDefinitionsComponent implements OnInit {
     const t = (key: string) => this.translate.instant(`attendance.columns.${key}`) as string;
     return [
       { type: 'text', key: 'group', header: t('group'), tone: 'strong' },
-      { type: 'text', key: 'count', header: t('count'), align: 'end', width: '140px', sortKey: 'cells.countValue' },
+      { type: 'text', key: 'count', header: t('count'), align: 'end', width: '120px', sortKey: 'cells.countValue' },
+      { type: 'text', key: 'inPlace', header: t('inPlace'), align: 'end', width: '120px', sortKey: 'cells.inPlaceValue' },
+      { type: 'text', key: 'outside', header: t('outside'), align: 'end', width: '120px', sortKey: 'cells.outsideValue' },
+      { type: 'text', key: 'unconfirmed', header: t('unconfirmed'), align: 'end', width: '120px', sortKey: 'cells.unconfirmedValue' },
       { type: 'progress', key: 'share', header: t('share') },
     ];
   });
@@ -159,20 +162,34 @@ export class AttendanceDefinitionsComponent implements OnInit {
     return this.visibleGroups().map(g => {
       const name = this.groupDisplayName(g);
       const share = total === 0 ? 0 : Math.round((g.attendanceCount / total) * 100);
-      const count = this.translate.instant('attendance.people', { count: g.attendanceCount }) as string;
+      const count = this.people(g.attendanceCount);
+      const location = this.locationSummary(g.inPlaceCount, g.outsideCount, g.unconfirmedCount);
       return {
         id: groupKey(g),
         title: name,
-        subtitle: count,
+        subtitle: location ? `${count} · ${location}` : count,
         meta: `${share}%`,
         cells: {
           group: name,
           count,
           countValue: g.attendanceCount,
+          inPlace: this.people(g.inPlaceCount),
+          inPlaceValue: g.inPlaceCount ?? -1,
+          outside: this.people(g.outsideCount),
+          outsideValue: g.outsideCount ?? -1,
+          unconfirmed: this.people(g.unconfirmedCount),
+          unconfirmedValue: g.unconfirmedCount ?? -1,
           share: { value: share, label: `${share}%` },
         },
       };
     });
+  });
+
+  /** 교회 안 · 교회 밖 · 미확인 totals below the table; null on servers before #35. */
+  readonly locationTotals = computed<string | null>(() => {
+    this.lang();
+    const c = this.groupCounts();
+    return c ? this.locationSummary(c.totalInPlaceCount, c.totalOutsideCount, c.totalUnconfirmedCount) : null;
   });
 
   ngOnInit(): void {
@@ -247,6 +264,21 @@ export class AttendanceDefinitionsComponent implements OnInit {
 
   groupKey(group: ChurchGroupAttendanceCountResponse): string {
     return groupKey(group);
+  }
+
+  /** `n명`, or a dash when the server did not send the number. */
+  private people(count: number | undefined): string {
+    return count === undefined ? '–' : this.translate.instant('attendance.people', { count }) as string;
+  }
+
+  private locationSummary(inPlace?: number, outside?: number, unconfirmed?: number): string | null {
+    if (inPlace === undefined && outside === undefined && unconfirmed === undefined) return null;
+    const t = (key: string) => this.translate.instant(`attendance.columns.${key}`) as string;
+    return [
+      `${t('inPlace')} ${this.people(inPlace)}`,
+      `${t('outside')} ${this.people(outside)}`,
+      `${t('unconfirmed')} ${this.people(unconfirmed)}`,
+    ].join(' · ');
   }
 
   groupDisplayName(group: ChurchGroupAttendanceCountResponse): string {
