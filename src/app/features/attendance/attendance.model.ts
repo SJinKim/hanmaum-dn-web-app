@@ -14,6 +14,8 @@ export interface DefinitionDto {
   windowStart: string; // "HH:mm:ss"
   windowEnd: string;
   isActive: boolean;
+  /** 설명; absent on servers before HDN-223. */
+  description?: string | null;
 }
 
 export interface AttendanceCheckInResponse {
@@ -42,10 +44,15 @@ export interface CreateDefinitionRequest {
   dayOfWeek: DayOfWeek;
   windowStart: string; // "HH:mm:ss"
   windowEnd: string;
+  description?: string | null;
+  /** Defaults to true on the server. */
+  isActive?: boolean;
 }
 
 export interface UpdateDefinitionRequest {
   title?: string;
+  /** Blank clears it, absent keeps it. */
+  description?: string;
   dayOfWeek?: DayOfWeek;
   windowStart?: string;
   windowEnd?: string;
