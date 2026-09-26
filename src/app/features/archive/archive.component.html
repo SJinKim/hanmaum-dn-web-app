@@ -1,0 +1,50 @@
+<!--
+  Figma: 기록 · 양육 (741:39767) and 기록 · 사역 (741:41125). One card per course
+  or ministry; on Phone the tables become stacks of list cards.
+-->
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'archive.eyebrow' | translate"
+    [heading]="'archive.title' | translate"
+    [subtitle]="'archive.subtitle' | translate" />
+
+  <app-segmented-control
+    class="max-w-[320px]"
+    [options]="tabOptions()"
+    [(value)]="tab"
+    [ariaLabel]="'archive.title' | translate" />
+
+  @if (loading()) {
+    <app-skeleton variant="card" />
+  } @else if (sections().length === 0) {
+    <app-empty-state
+      [variant]="failed() ? 'error' : 'no-data'"
+      [heading]="(failed() ? 'archive.error' : 'archive.empty.' + tab()) | translate" />
+  } @else {
+    @for (section of sections(); track section.id) {
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+        data-testid="archive-card">
+        <app-section-header [heading]="section.heading" />
+
+        @if (isPhone()) {
+          <div class="flex flex-col gap-[var(--space-8)]">
+            @for (r of section.records; track r.id) {
+              @if (tab() === 'ministry') {
+                <app-list-card [record]="{ id: r.id, title: r.title, subtitle: r.subtitle, meta: period(r) }" selectable="false" />
+              } @else {
+                <app-list-card [record]="r" selectable="false" />
+              }
+            }
+          </div>
+        } @else {
+          <app-data-table
+            [rows]="section.records"
+            [columns]="columns()"
+            [caption]="section.heading"
+            selectable="false" />
+        }
+      </section>
+    }
+  }
+</div>

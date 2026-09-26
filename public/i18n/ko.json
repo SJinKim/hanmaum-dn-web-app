@@ -279,7 +279,9 @@
       "ministry": "사역",
       "ministryAll": "사역 전체",
       "baptism": "세례",
-      "baptismAll": "세례 전체"
+      "baptismAll": "세례 전체",
+      "updatedFrom": "최근 활동 시작",
+      "updatedTo": "최근 활동 종료"
     },
     "empty": {
       "heading": "등록된 청년이 없습니다",
@@ -680,7 +682,10 @@
       "actions": "관리",
       "group": "순",
       "count": "출석 수",
-      "share": "비율"
+      "share": "비율",
+      "inPlace": "교회 안",
+      "outside": "교회 밖",
+      "unconfirmed": "미확인"
     },
     "status": {
       "active": "활성",
@@ -733,7 +738,9 @@
       "save": "저장하지 못했습니다",
       "counts": "출석 기록을 불러오지 못했습니다",
       "deactivate": "비활성화하지 못했습니다"
-    }
+    },
+    "locationTotals": "합계 · {{totals}}.",
+    "unconfirmedHint": "미확인은 체크인 시 위치를 확인하지 못한 인원이며 결석이 아닙니다."
   },
   "forbidden": {
     "eyebrow": "403",
@@ -744,5 +751,112 @@
       "description": "이 화면을 볼 수 있는 역할이 계정에 없습니다. 관리자에게 권한을 요청해 주세요.",
       "action": "홈으로 이동"
     }
+  },
+  "announcements": {
+    "eyebrow": "관리",
+    "title": "공지사항",
+    "subtitle": "교회 공지와 사역·행사 소식을 작성하고 상단 고정 여부를 관리합니다.",
+    "add": "공지 추가",
+    "all": "전체",
+    "listHeading": "공지 목록",
+    "search": {
+      "aria": "공지 검색",
+      "placeholder": "제목 또는 내용으로 검색"
+    },
+    "category": {
+      "NOTICE": "공지",
+      "MINISTRY": "사역",
+      "EVENT": "행사"
+    },
+    "period": "게시 기간 {{start}} - {{end}}",
+    "openEnd": "종료일 없음",
+    "pinned": "상단 고정",
+    "more": "더보기",
+    "edit": "수정",
+    "empty": "등록된 공지가 없습니다",
+    "noMatch": "조건에 맞는 공지가 없습니다",
+    "loadFailed": "공지를 불러오지 못했습니다",
+    "loadFailedHint": "잠시 후 다시 시도해 주세요.",
+    "delete": {
+      "action": "삭제",
+      "header": "공지 삭제",
+      "message": "\"{{title}}\" 공지를 삭제할까요? 되돌릴 수 없습니다."
+    },
+    "dialog": {
+      "addHeader": "공지 작성",
+      "editHeader": "공지 수정",
+      "subtitle": "게시 기간 동안 청년 앱의 공지 탭과 홈 화면에 표시됩니다.",
+      "title": "제목",
+      "body": "내용",
+      "category": "카테고리",
+      "pinned": "상단 고정",
+      "startAt": "시작일",
+      "endAt": "종료일",
+      "required": "필수 입력 항목입니다.",
+      "endBeforeStart": "종료일은 시작일보다 빠를 수 없습니다.",
+      "cancel": "취소",
+      "save": "저장"
+    },
+    "toast": {
+      "created": "공지를 추가했습니다",
+      "updated": "공지를 수정했습니다",
+      "deleted": "공지를 삭제했습니다",
+      "saveFailed": "공지를 저장하지 못했습니다",
+      "deleteFailed": "공지를 삭제하지 못했습니다"
+    }
+  },
+  "statistics": {
+    "eyebrow": "관리",
+    "title": "통계",
+    "subtitle": "데이터 기반 분석 — 집계 로직 준비 중",
+    "period": {
+      "label": "기간",
+      "last30Days": "최근 30일",
+      "quarter": "분기",
+      "year": "연간"
+    },
+    "pendingBanner": "일부 집계는 서버에서 준비 중입니다 — 준비된 차트만 실제 데이터를 보여줍니다",
+    "pendingEmpty": {
+      "heading": "집계 준비 중",
+      "description": "서버 집계가 준비되면 여기에 표시됩니다"
+    },
+    "empty": "데이터가 없습니다",
+    "charts": {
+      "growth": "성장 추이",
+      "gender": "성별 분포",
+      "attendanceRate": "출석률",
+      "trainingStages": "양육 단계 분포",
+      "services": "예배별 집계 · 이번 주",
+      "groupShare": "그룹별 출석 비율",
+      "ministries": "사역별 인원"
+    }
+  },
+  "archive": {
+    "eyebrow": "기록",
+    "title": "기록",
+    "subtitle": "지난 양육 수료자와 사역 팀원",
+    "tabs": {
+      "training": "양육",
+      "ministry": "사역"
+    },
+    "columns": {
+      "name": "이름",
+      "group": "순",
+      "status": "상태",
+      "role": "역할",
+      "startDate": "시작일",
+      "endDate": "종료일"
+    },
+    "status": {
+      "active": "활동",
+      "graduated": "졸업"
+    },
+    "trainingHeading": "{{name}} · 수료 {{count}}명",
+    "ministryHeading": "{{name}} · 지난 팀원 {{count}}명",
+    "empty": {
+      "training": "아직 수료한 청년이 없습니다",
+      "ministry": "아직 지난 팀원이 없습니다"
+    },
+    "error": "기록을 불러오지 못했습니다"
   }
 }

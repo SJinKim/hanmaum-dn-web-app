@@ -62,10 +62,22 @@ export const APP_ROUTES: Routes = [
             .then(m => m.DataSandboxComponent),
       },
       {
+        path: 'analytics',
+        loadChildren: () =>
+          import('./features/statistics/statistics.routes')
+            .then(m => m.STATISTICS_ROUTES),
+      },
+      {
         path: 'church-groups',
         loadChildren: () =>
           import('./features/church-groups/church-groups.routes')
             .then(m => m.CHURCH_GROUPS_ROUTES),
+      },
+      {
+        path: 'archive',
+        loadChildren: () =>
+          import('./features/archive/archive.routes')
+            .then(m => m.ARCHIVE_ROUTES),
       },
       {
         // Figma 745:41755 — where `featureGuard` sends a URL the role matrix denies.

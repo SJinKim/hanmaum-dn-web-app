@@ -129,6 +129,13 @@
               selectable="false" />
           }
 
+          <!-- Figma 739:39837 (#35): 미확인 is an unknown location, never "absent". -->
+          @if (locationTotals(); as totals) {
+            <p class="type-caption text-ink-muted" data-testid="location-totals">
+              {{ 'attendance.locationTotals' | translate: { totals } }}
+              {{ 'attendance.unconfirmedHint' | translate }}
+            </p>
+          }
           <p class="type-caption text-ink-muted" data-testid="privacy-note">
             <i class="pi pi-info-circle" aria-hidden="true"></i>
             {{ 'attendance.privacyNote' | translate }}

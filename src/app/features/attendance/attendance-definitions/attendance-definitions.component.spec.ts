@@ -14,11 +14,13 @@ const KO = {
   attendance: {
     subtitle: '출석 정의 {{count}}개 · 활성 {{active}}개',
     definitions: '출석 정의',
-    columns: { title: '제목', day: '요일', window: '체크인 시간', status: '상태', actions: '관리', group: '순', count: '출석 수', share: '비율' },
+    columns: { title: '제목', day: '요일', window: '체크인 시간', status: '상태', actions: '관리', group: '순', count: '출석 수', share: '비율', inPlace: '교회 안', outside: '교회 밖', unconfirmed: '미확인' },
     status: { active: '활성', inactive: '비활성' },
     days: { SUNDAY: '주일', WEDNESDAY: '수요일' },
     people: '{{count}}명',
     noGroup: '소속 순 없음',
+    locationTotals: '합계 · {{totals}}.',
+    unconfirmedHint: '미확인은 결석이 아닙니다.',
     deactivate: { accept: '비활성화' },
   },
 };
@@ -125,6 +127,34 @@ describe('AttendanceDefinitionsComponent', () => {
     expect(records.map(r => r.title)).toEqual(['느헤미야 · 1순', '다니엘 · 2순', '소속 순 없음']);
     expect(records[0].cells?.['count']).toBe('6명');
     expect(records[0].cells?.['share']).toEqual({ value: 60, label: '60%' });
+  });
+
+  it('shows a dash for 교회 안/밖/미확인 when the server does not send them', () => {
+    const c = render().componentInstance;
+    const [first] = c.groupRecords();
+    expect(first.cells?.['inPlace']).toBe('–');
+    expect(first.subtitle).toBe('6명');
+    expect(c.locationTotals()).toBeNull();
+    expect(c.groupColumns().map(col => col.key)).toEqual(['group', 'count', 'inPlace', 'outside', 'unconfirmed', 'share']);
+  });
+
+  it('splits counts into 교회 안, 교회 밖 and 미확인 (never "absent")', () => {
+    service.getGroupCounts.and.returnValue(of({
+      ...COUNTS,
+      totalInPlaceCount: 7, totalOutsideCount: 1, totalUnconfirmedCount: 2,
+      groups: [{ ...COUNTS.groups[2], inPlaceCount: 4, outsideCount: 0, unconfirmedCount: 2 }],
+    }));
+    const fixture = render();
+    const [g1] = fixture.componentInstance.groupRecords();
+    expect(g1.cells?.['inPlace']).toBe('4명');
+    expect(g1.cells?.['outside']).toBe('0명');
+    expect(g1.cells?.['unconfirmed']).toBe('2명');
+    expect(g1.cells?.['unconfirmedValue']).toBe(2);
+    expect(g1.subtitle).toBe('6명 · 교회 안 4명 · 교회 밖 0명 · 미확인 2명');
+    fixture.detectChanges();
+    const note: HTMLElement = fixture.nativeElement.querySelector('[data-testid="location-totals"]');
+    expect(note.textContent).toContain('합계 · 교회 안 7명 · 교회 밖 1명 · 미확인 2명.');
+    expect(note.textContent).not.toContain('결석 2');
   });
 
   it('filters the list by the chosen chip and back to 전체', () => {
