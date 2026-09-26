@@ -1,0 +1,97 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 560px)' }"
+  [draggable]="false"
+  [resizable]="false"
+  [pt]="dialogPt"
+>
+  <ng-template #header>
+    <h2 class="type-h3 text-ink-strong" data-testid="definition-dialog-title">
+      {{ (isEdit() ? 'attendance.dialog.editHeader' : 'attendance.dialog.addHeader') | translate }}
+    </h2>
+  </ng-template>
+
+  <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)]" data-testid="definition-form">
+    <p class="type-body text-ink-muted">{{ 'attendance.dialog.subtitle' | translate }}</p>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="definition-title" class="type-caption text-ink-muted">
+        {{ 'attendance.dialog.title' | translate }}
+        <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+      </label>
+      <input id="definition-title" pInputText formControlName="title" [maxlength]="titleMax" class="w-full" />
+      @if (hasError('title')) {
+        <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'attendance.dialog.required' | translate }}</small>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 gap-[var(--space-16)] sm:grid-cols-2">
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="definition-description" class="type-caption text-ink-muted">{{ 'attendance.dialog.description' | translate }}</label>
+        <textarea
+          id="definition-description"
+          pTextarea
+          rows="3"
+          formControlName="description"
+          [maxlength]="descriptionMax"
+          class="w-full"></textarea>
+      </div>
+
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="definition-day" class="type-caption text-ink-muted">
+          {{ 'attendance.dialog.dayOfWeek' | translate }}
+          <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+        </label>
+        <div class="flex items-center gap-[var(--space-12)]">
+          <p-select
+            inputId="definition-day"
+            formControlName="dayOfWeek"
+            [options]="dayOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [placeholder]="'attendance.dialog.dayPlaceholder' | translate"
+            appendTo="body"
+            class="min-w-0 flex-1" />
+          <span class="flex items-center gap-[var(--space-8)]">
+            <p-checkbox inputId="definition-active" formControlName="isActive" [binary]="true" />
+            <label for="definition-active" class="type-body text-ink-strong">{{ 'attendance.status.active' | translate }}</label>
+          </span>
+        </div>
+        @if (hasError('dayOfWeek')) {
+          <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'attendance.dialog.required' | translate }}</small>
+        }
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-[var(--space-16)]">
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="definition-start" class="type-caption text-ink-muted">
+          {{ 'attendance.dialog.windowStart' | translate }}
+          <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+        </label>
+        <input id="definition-start" pInputText type="time" formControlName="windowStart" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="definition-end" class="type-caption text-ink-muted">
+          {{ 'attendance.dialog.windowEnd' | translate }}
+          <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+        </label>
+        <input id="definition-end" pInputText type="time" formControlName="windowEnd" class="w-full" />
+      </div>
+    </div>
+    @if (endNotAfterStart()) {
+      <small class="type-caption text-[var(--color-badge-deleted-fg)]" data-testid="window-error">
+        {{ 'attendance.dialog.endNotAfterStart' | translate }}
+      </small>
+    } @else if (hasError('windowStart') || hasError('windowEnd')) {
+      <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'attendance.dialog.required' | translate }}</small>
+    }
+  </form>
+
+  <ng-template #footer>
+    <p-button [label]="'attendance.dialog.cancel' | translate" severity="secondary" [outlined]="true" (onClick)="close()" />
+    <p-button [label]="'attendance.dialog.save' | translate" [loading]="saving()" (onClick)="submit()" data-testid="definition-save" />
+  </ng-template>
+</p-dialog>

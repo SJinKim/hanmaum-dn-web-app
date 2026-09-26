@@ -59,7 +59,7 @@
         } @else {
           <div class="flex flex-col gap-[var(--space-8)]">
             @for (r of records(); track r.id) {
-              <app-list-card [record]="r" (selected)="openEditMember($event.id)" />
+              <app-list-card [record]="r" (selected)="openMember($event.id)" />
             }
           </div>
         }
@@ -71,11 +71,7 @@
           [caption]="'ministry.detail.members' | translate"
           [emptyHeading]="'ministry.detail.membersEmpty.heading' | translate"
           [emptyDescription]="'ministry.detail.membersEmpty.description' | translate"
-          [editLabel]="'ministry.detail.editMember' | translate"
-          [deleteLabel]="'ministry.detail.removeMember' | translate"
-          selectable="false"
-          (edit)="openEditMember($event.id)"
-          (remove)="confirmRemoveMember($event.id)">
+          selectable="false">
           <ng-template appDataCell="note" let-record>
             @let note = noteOf(record);
             <span
@@ -83,6 +79,36 @@
               [pTooltip]="note"
               [tooltipDisabled]="!note"
               tooltipPosition="top">{{ note || '—' }}</span>
+          </ng-template>
+          <!-- 대기: 검토. 활동: ✎ and 🗑 exactly like the table's own actions cell. -->
+          <ng-template appDataCell="manage" let-record>
+            @if (isPending(record.id)) {
+              <p-button
+                size="small"
+                icon="pi pi-inbox"
+                [label]="'ministry.detail.review' | translate"
+                [attr.data-testid]="'review-' + record.id"
+                (onClick)="openReview(record.id)" />
+            } @else {
+              <span class="flex items-center gap-[var(--space-8)]">
+                <button
+                  class="text-ink-muted hover:bg-surface-subtle flex size-[28px] items-center justify-center rounded-[var(--radius-md)] focus-visible:[outline:2px_solid_var(--color-focus)]"
+                  type="button"
+                  [pTooltip]="'ministry.detail.editMember' | translate"
+                  [attr.aria-label]="'ministry.detail.editMember' | translate"
+                  (click)="openEditMember(record.id)">
+                  <i class="pi pi-pencil text-[16px]" aria-hidden="true"></i>
+                </button>
+                <button
+                  class="text-ink-muted hover:bg-surface-subtle flex size-[28px] items-center justify-center rounded-[var(--radius-md)] focus-visible:[outline:2px_solid_var(--color-focus)]"
+                  type="button"
+                  [pTooltip]="'ministry.detail.removeMember' | translate"
+                  [attr.aria-label]="'ministry.detail.removeMember' | translate"
+                  (click)="confirmRemoveMember(record.id)">
+                  <i class="pi pi-trash text-[16px]" aria-hidden="true"></i>
+                </button>
+              </span>
+            }
           </ng-template>
         </app-data-table>
       }
@@ -136,6 +162,13 @@
       [member]="editingMember()"
       (saved)="onMemberEdited()"
       (failed)="onMemberEditFailed()" />
+
+    <app-ministry-application-review-dialog
+      [(visible)]="reviewDialogVisible"
+      [ministryPublicId]="ministry()!.publicId"
+      [applicant]="reviewingApplicant()"
+      (reviewed)="onApplicationReviewed($event)"
+      (failed)="onApplicationReviewFailed()" />
   } @else {
     <app-empty-state
       variant="error"
