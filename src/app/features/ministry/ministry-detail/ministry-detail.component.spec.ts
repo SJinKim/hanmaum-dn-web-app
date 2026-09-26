@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 
 import { localDateToIso } from '../../../core/models/member-activity.model';
@@ -21,6 +22,8 @@ const KO = {
       members: '팀원',
       addMember: '팀원 추가',
       statusActive: '활동',
+      statusPending: '대기',
+      review: '검토',
       deactivate: '비활성화',
       history: '팀원 히스토리',
       roles: { LEADER: '리더', SUB_LEADER: '부리더', MEMBER: '팀원' },
@@ -42,6 +45,13 @@ const MEMBERS = [
   { publicId: 'm2', fullName: '이영희', startDate: null, note: '반주', gender: 'F' },
 ] as unknown as ActiveMinistryMemberDto[];
 
+const PENDING = [
+  {
+    publicId: 'p1', fullName: '최지원', startDate: '2026-09-20', note: null, gender: 'F', role: 'MEMBER',
+    status: 'PENDING', selfIntroduction: '찬양을 좋아합니다', appliedAt: '2026-09-20T10:00:00Z',
+  },
+] as unknown as ActiveMinistryMemberDto[];
+
 const HISTORY = [
   MEMBERS[0],
   { publicId: 'm3', fullName: '박민수', startDate: '2021-01-01', endDate: '2022-06-01', note: '군 입대', gender: 'M', role: 'MEMBER' },
@@ -56,11 +66,13 @@ describe('MinistryDetailComponent', () => {
   beforeEach(() => {
     service = jasmine.createSpyObj<MinistryService>('MinistryService', [
       'getMinistry', 'getActiveMembers', 'getMemberHistory', 'deactivateMinistry', 'getMemberNames', 'addMember',
+      'getPendingApplications', 'reviewApplication',
     ]);
     service.getMinistry.and.returnValue(of(MINISTRY));
     service.getActiveMembers.and.returnValue(of(MEMBERS));
     service.getMemberHistory.and.returnValue(of(HISTORY));
     service.getMemberNames.and.returnValue(of([]));
+    service.getPendingApplications.and.returnValue(of([]));
     assignments = jasmine.createSpyObj<MinistryAssignmentService>('MinistryAssignmentService', [
       'updateAssignment', 'endAssignment',
     ]);
@@ -251,5 +263,70 @@ describe('MinistryDetailComponent', () => {
 
     expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'error' }));
     expect(service.getActiveMembers).not.toHaveBeenCalled();
+  });
+  describe('팀별 상태', () => {
+    beforeEach(() => service.getPendingApplications.and.returnValue(of(PENDING)));
+
+    it('lists applications first as 대기 and counts only 활동 in the subtitle', () => {
+      const c = render().componentInstance;
+      expect(service.getPendingApplications).toHaveBeenCalledWith('min-1');
+      expect(c.records().map(r => [r.id, r.badge])).toEqual([
+        ['p1', { variant: 'pending', label: '대기' }],
+        ['m1', { variant: 'active', label: '활동' }],
+        ['m2', { variant: 'active', label: '활동' }],
+      ]);
+      expect(c.records()[0].meta).toBe('26.09');
+      expect(c.subtitle()).toBe('주일 예배 찬양 · 팀원 2명');
+    });
+
+    it('shows 검토 for 대기 and ✎/🗑 for 활동 in 관리', () => {
+      const el: HTMLElement = render().nativeElement;
+      const rows = el.querySelectorAll('[data-testid="members-card"] tbody tr');
+      expect(rows[0].querySelector('[data-testid="review-p1"]')).not.toBeNull();
+      expect(rows[0].querySelector('.pi-pencil')).toBeNull();
+      expect(rows[1].querySelector('.pi-pencil')).not.toBeNull();
+      expect(rows[1].querySelector('.pi-trash')).not.toBeNull();
+      expect(rows[1].querySelector('[data-testid^="review-"]')).toBeNull();
+    });
+
+    it('opens 검토 from a pending card on phone and 수정 from an active one', () => {
+      isPhone.set(true);
+      const c = render().componentInstance;
+      c.openMember('p1');
+      expect(c.reviewingApplicant()).toBe(PENDING[0]);
+      expect(c.reviewDialogVisible()).toBeTrue();
+      expect(c.editDialogVisible()).toBeFalse();
+      c.openMember('m1');
+      expect(c.editingMember()).toBe(MEMBERS[0]);
+      expect(c.editDialogVisible()).toBeTrue();
+    });
+
+    it('reloads 팀원, 히스토리 and 대기 after a review', () => {
+      const fixture = render();
+      const c = fixture.componentInstance;
+      const messages = fixture.debugElement.injector.get(MessageService);
+      spyOn(messages, 'add');
+      service.getActiveMembers.calls.reset();
+      service.getMemberHistory.calls.reset();
+      service.getPendingApplications.calls.reset();
+
+      c.onApplicationReviewed('APPROVE');
+
+      expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'success' }));
+      expect(service.getActiveMembers).toHaveBeenCalledOnceWith('min-1');
+      expect(service.getMemberHistory).toHaveBeenCalledOnceWith('min-1');
+      expect(service.getPendingApplications).toHaveBeenCalledOnceWith('min-1');
+    });
+
+    it('shows no 대기 and no error when the viewer may not review (403)', () => {
+      service.getPendingApplications.and.returnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+      const fixture = TestBed.createComponent(MinistryDetailComponent);
+      const messages = fixture.debugElement.injector.get(MessageService);
+      spyOn(messages, 'add');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.records().map(r => r.id)).toEqual(['m1', 'm2']);
+      expect(messages.add).not.toHaveBeenCalled();
+    });
   });
 });

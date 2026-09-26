@@ -374,6 +374,8 @@
       "history": "Member history",
       "historyEmpty": "No history yet",
       "statusActive": "Active",
+      "statusPending": "Pending",
+      "review": "Review",
       "roles": {
         "LEADER": "Leader",
         "SUB_LEADER": "Sub-leader",
@@ -414,7 +416,10 @@
         "memberUpdateFailed": "Could not save the team member.",
         "memberRemoved": "Membership ended.",
         "memberRemoveFailed": "Could not end the membership.",
-        "historyFailed": "Could not load the member history."
+        "historyFailed": "Could not load the member history.",
+        "approved": "Application approved.",
+        "rejected": "Application rejected.",
+        "reviewFailed": "Could not process the application."
       },
       "addDialog": {
         "header": "Add member",
@@ -456,6 +461,19 @@
         "message": "End {{name}}'s membership? Today is recorded as the end date.",
         "accept": "End",
         "cancel": "Cancel"
+      },
+      "reviewDialog": {
+        "header": "Review application",
+        "applicant": "Applicant",
+        "appliedAt": "Applied on",
+        "selfIntroduction": "Introduction",
+        "message": "Message",
+        "messagePlaceholder": "A message for the applicant",
+        "messageHint": "A message is required to reject.",
+        "messageRequired": "Enter a reason for rejecting.",
+        "cancel": "Cancel",
+        "reject": "Reject",
+        "approve": "Approve"
       }
     },
     "form": {
