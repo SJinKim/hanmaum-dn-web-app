@@ -139,7 +139,7 @@ export class TokenSandboxComponent {
   ];
 
   readonly badges = [
-    'active', 'inactive', 'pending', 'deleted', 'admin', 'member',
+    'active', 'inactive', 'pending', 'deleted', 'rejected', 'admin', 'member',
     'training-completed', 'training-progress',
     'ministry-active', 'group-leader',
   ] as const;

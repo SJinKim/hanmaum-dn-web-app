@@ -3,8 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { Subject, debounceTime, firstValueFrom, take } from 'rxjs';
@@ -37,7 +38,7 @@ import { BadgeVariant, MemberPillStage, resolveBadgeVariant } from '../../../cor
 import { MemberService, MemberSortProperty, UNASSIGNED_GROUP } from '../member.service';
 
 /** 상태 select options, in the Figma order — not the enum's declaration order. */
-const STATUS_FILTERS: readonly MemberStatus[] = ['PENDING', 'ACTIVE', 'INACTIVE', 'DELETED'];
+const STATUS_FILTERS: readonly MemberStatus[] = ['PENDING', 'ACTIVE', 'INACTIVE', 'REJECTED', 'DELETED'];
 
 /** 세례 select options, in the catechetical order the church uses. */
 const BAPTISM_FILTERS: readonly Baptism[] = [
@@ -86,6 +87,7 @@ interface TrainingTag {
     FormsModule,
     TranslatePipe,
     ButtonModule,
+    ConfirmDialogModule,
     SelectModule,
     ToastModule,
     PageHeaderComponent,
@@ -98,7 +100,7 @@ interface TrainingTag {
     EmptyStateComponent,
     SkeletonComponent,
   ],
-  providers: [MessageService],
+  providers: [ConfirmationService, MessageService],
   // The host is what `<router-outlet>` inserts into `<main>`; without a height
   // of its own it is an auto-sized inline box and the `h-full` inside resolves
   // to nothing. The list has to fill the main area so the table can scroll in
@@ -113,6 +115,7 @@ export class MembersListComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly lang = injectAppLang();
   private readonly messageService = inject(MessageService);
+  private readonly confirmService = inject(ConfirmationService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -459,6 +462,47 @@ export class MembersListComponent implements OnInit {
       severity: 'success',
       summary: this.translate.instant('members.toast.done'),
       detail: this.translate.instant('members.toast.approveSuccess'),
+    });
+    this.approvingId.set(null);
+    this.memberService.loadMembers();
+    this.memberService.refreshPendingCount();
+  }
+
+  /**
+   * Figma 748:42429: a destructive confirm that names the member, then
+   * `POST /reject`. The row stays in the list as 거절됨 (747:44583).
+   */
+  confirmReject(member: MemberSummary, event: Event): void {
+    event.stopPropagation();
+    const name = this.memberName(member);
+    this.confirmService.confirm({
+      header: this.translate.instant('members.reject.title'),
+      message: this.translate.instant('members.reject.message', { name }),
+      acceptLabel: this.translate.instant('members.reject.accept'),
+      rejectLabel: this.translate.instant('members.actions.cancel'),
+      icon: 'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => void this.reject(member),
+    });
+  }
+
+  private async reject(member: MemberSummary): Promise<void> {
+    this.approvingId.set(member.publicId);
+    try {
+      await firstValueFrom(this.memberService.rejectMember(member.publicId));
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: this.translate.instant('members.toast.error'),
+        detail: this.translate.instant('members.toast.rejectFailed'),
+      });
+      this.approvingId.set(null);
+      return;
+    }
+    this.messageService.add({
+      severity: 'success',
+      summary: this.translate.instant('members.toast.done'),
+      detail: this.translate.instant('members.toast.rejectSuccess', { name: this.memberName(member) }),
     });
     this.approvingId.set(null);
     this.memberService.loadMembers();

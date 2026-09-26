@@ -185,6 +185,13 @@
                     icon="pi pi-check"
                     [label]="'members.actions.approve' | translate"
                     (onClick)="startApprove(member, $event)" />
+                  <!-- Figma 747:44583: Danger Small 거절 next to 승인. -->
+                  <p-button
+                    size="small"
+                    severity="danger"
+                    [label]="'members.actions.reject' | translate"
+                    [attr.data-testid]="'reject-' + member.publicId"
+                    (onClick)="confirmReject(member, $event)" />
                 }
               }
             </span>
@@ -225,4 +232,5 @@
   </section>
 </div>
 
+<p-confirmDialog />
 <p-toast />
