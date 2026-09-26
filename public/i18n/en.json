@@ -279,7 +279,9 @@
       "ministry": "Ministry",
       "ministryAll": "All ministries",
       "baptism": "Baptism",
-      "baptismAll": "All baptisms"
+      "baptismAll": "All baptisms",
+      "updatedFrom": "Last activity from",
+      "updatedTo": "Last activity to"
     },
     "empty": {
       "heading": "No members yet",

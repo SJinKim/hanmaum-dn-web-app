@@ -279,7 +279,9 @@
       "ministry": "사역",
       "ministryAll": "사역 전체",
       "baptism": "세례",
-      "baptismAll": "세례 전체"
+      "baptismAll": "세례 전체",
+      "updatedFrom": "최근 활동 시작",
+      "updatedTo": "최근 활동 종료"
     },
     "empty": {
       "heading": "등록된 청년이 없습니다",

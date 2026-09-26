@@ -28,8 +28,8 @@
     <!--
       One select per column, in column order; 이름 is the search field. Every
       one is a server-side query parameter (hanmaum-dn-server#196) — nothing is
-      filtered in the client. 최근 활동 has none: the endpoint takes no
-      `updatedAt` range yet. The filter row wraps rather than scrolls.
+      filtered in the client. 최근 활동 is a from ~ to day range on `updatedAt`
+      (#88, Figma 737:39215). The filter row wraps rather than scrolls.
     -->
     <p-select
       appFilters
@@ -76,6 +76,31 @@
       [ngModel]="baptism()"
       (ngModelChange)="onBaptismChange($event)"
       [ariaLabel]="'members.filters.baptism' | translate" />
+    <div appFilters class="flex items-center gap-[var(--space-8)]" data-testid="updated-range">
+      <p-datepicker
+        size="small"
+        dateFormat="yy-mm-dd"
+        styleClass="w-40"
+        [readonlyInput]="true"
+        [showClear]="true"
+        [maxDate]="updatedTo()"
+        [ngModel]="updatedFrom()"
+        (ngModelChange)="onUpdatedFromChange($event)"
+        [placeholder]="'members.filters.updatedFrom' | translate"
+        [ariaLabel]="'members.filters.updatedFrom' | translate" />
+      <span class="type-body-sm text-ink-muted" aria-hidden="true">~</span>
+      <p-datepicker
+        size="small"
+        dateFormat="yy-mm-dd"
+        styleClass="w-40"
+        [readonlyInput]="true"
+        [showClear]="true"
+        [minDate]="updatedFrom()"
+        [ngModel]="updatedTo()"
+        (ngModelChange)="onUpdatedToChange($event)"
+        [placeholder]="'members.filters.updatedTo' | translate"
+        [ariaLabel]="'members.filters.updatedTo' | translate" />
+    </div>
   </app-toolbar>
 
   <!--
