@@ -29,6 +29,13 @@ export interface ChurchGroupAttendanceCountResponse {
   groupDivision: string | null;
   groupName: string | null;
   attendanceCount: number;
+  /**
+   * Split of `attendanceCount` by check-in location (#35); absent on older servers.
+   * `unconfirmedCount` means the location is unknown, never "absent".
+   */
+  inPlaceCount?: number;
+  outsideCount?: number;
+  unconfirmedCount?: number;
 }
 
 export interface AttendanceGroupCountsResponse {
@@ -36,6 +43,10 @@ export interface AttendanceGroupCountsResponse {
   definitionTitle: string;
   attendanceDate: string; // ISO date "YYYY-MM-DD"
   totalCount: number;
+  /** Totals of the location split (#35); absent on older servers. */
+  totalInPlaceCount?: number;
+  totalOutsideCount?: number;
+  totalUnconfirmedCount?: number;
   groups: ChurchGroupAttendanceCountResponse[];
 }
 
