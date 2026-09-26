@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from '../../core/guards/auth.guard';
+import { featureGuard } from '../../core/guards/feature.guard';
 
 export const ATTENDANCE_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [adminGuard],
+    canActivate: [featureGuard('attendance')],
     loadComponent: () =>
       import('./attendance-definitions/attendance-definitions.component').then(
         m => m.AttendanceDefinitionsComponent,
@@ -12,7 +12,7 @@ export const ATTENDANCE_ROUTES: Routes = [
   },
   {
     path: ':id/group-counts',
-    canActivate: [adminGuard],
+    canActivate: [featureGuard('attendance')],
     loadComponent: () =>
       import('./attendance-logs/attendance-logs.component').then(
         m => m.AttendanceLogsComponent,
@@ -20,7 +20,7 @@ export const ATTENDANCE_ROUTES: Routes = [
   },
   {
     path: ':id/logs',
-    canActivate: [adminGuard],
+    canActivate: [featureGuard('attendance')],
     loadComponent: () =>
       import('./attendance-logs/attendance-logs.component').then(
         m => m.AttendanceLogsComponent,

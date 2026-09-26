@@ -742,6 +742,16 @@
     "locationTotals": "Total · {{totals}}.",
     "unconfirmedHint": "Unconfirmed means the check-in location is unknown, not that the person was absent."
   },
+  "forbidden": {
+    "eyebrow": "403",
+    "title": "No access",
+    "subtitle": "This screen is only open to accounts with permission.",
+    "empty": {
+      "heading": "You don't have access",
+      "description": "Your account has no role that can see this screen. Ask an administrator for access.",
+      "action": "Go to home"
+    }
+  },
   "announcements": {
     "eyebrow": "Admin",
     "title": "Announcements",

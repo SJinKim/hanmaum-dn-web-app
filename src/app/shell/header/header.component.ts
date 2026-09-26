@@ -14,6 +14,7 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
+import { RoleService } from '../../core/services/role.service';
 import { MemberService } from '../../features/members/member.service';
 import { AppLang, DEFAULT_LANG, LANG_STORAGE_KEY } from '../../core/i18n/language';
 import { AvatarComponent } from '../../core/ui/avatar/avatar.component';
@@ -38,6 +39,7 @@ const THEME_KEY = 'app-theme';
 })
 export class HeaderComponent implements OnInit {
   readonly auth = inject(AuthService);
+  private readonly roles = inject(RoleService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly memberSvc = inject(MemberService);
@@ -53,7 +55,7 @@ export class HeaderComponent implements OnInit {
   readonly isDark = signal(this.readInitialTheme());
   readonly lang = signal<AppLang>(this.readInitialLang());
   readonly pendingCount = this.memberSvc.pendingCount;
-  readonly showPending = computed(() => this.auth.isAdmin() && this.pendingCount() > 0);
+  readonly showPending = computed(() => this.roles.canAccess('members') && this.pendingCount() > 0);
 
   readonly accountName = computed(() => this.auth.username() || 'Account');
 
@@ -88,7 +90,7 @@ export class HeaderComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.auth.isAdmin()) {
+    if (this.roles.canAccess('members')) {
       this.memberSvc.refreshPendingCount();
     }
   }

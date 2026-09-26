@@ -12,6 +12,8 @@
  * SVG is exported.
  */
 
+import { FeatureId } from './feature-access';
+
 /**
  * Roles as the Figma role matrix (254:3) names them. Only `admin` exists in the
  * Keycloak realm today — see `RoleService` for how the other two resolve.
@@ -25,8 +27,11 @@ export interface NavItem {
   readonly route: string;
   /** `routerLinkActiveOptions.exact` — only the root route needs it. */
   readonly exact?: boolean;
-  /** Omitted = every authenticated user. Gated items are absent, not disabled. */
-  readonly role?: NavRole;
+  /**
+   * The role-matrix row (`feature-access.ts`) that decides visibility — the
+   * same row the route guard checks. Gated items are absent, not disabled.
+   */
+  readonly feature: FeatureId;
   /**
    * The screen behind this entry is not routed yet (#39 newcomers). The entry
    * stays here so the structure is complete
@@ -47,30 +52,30 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     labelKey: 'nav.groups.people',
     items: [
-      { labelKey: 'nav.items.home', icon: 'pi pi-home', route: '/', exact: true },
-      { labelKey: 'nav.items.members', icon: 'pi pi-users', route: '/members' },
-      { labelKey: 'nav.items.newcomers', icon: 'pi pi-user-plus', route: '/newcomers', pending: true },
-      { labelKey: 'nav.items.churchGroups', icon: 'pi pi-th-large', route: '/church-groups' },
+      { labelKey: 'nav.items.home', feature: 'home', icon: 'pi pi-home', route: '/', exact: true },
+      { labelKey: 'nav.items.members', feature: 'members', icon: 'pi pi-users', route: '/members' },
+      { labelKey: 'nav.items.newcomers', feature: 'newcomers', icon: 'pi pi-user-plus', route: '/newcomers', pending: true },
+      { labelKey: 'nav.items.churchGroups', feature: 'churchGroups', icon: 'pi pi-th-large', route: '/church-groups' },
     ],
   },
   {
     labelKey: 'nav.groups.activity',
     items: [
-      { labelKey: 'nav.items.attendance', icon: 'pi pi-check-square', route: '/attendance' },
-      { labelKey: 'nav.items.eventRsvps', icon: 'pi pi-calendar-plus', route: '/event-rsvps' },
-      { labelKey: 'nav.items.ministry', icon: 'pi pi-sitemap', route: '/ministry' },
+      { labelKey: 'nav.items.attendance', feature: 'attendance', icon: 'pi pi-check-square', route: '/attendance' },
+      { labelKey: 'nav.items.eventRsvps', feature: 'eventRsvps', icon: 'pi pi-calendar-plus', route: '/event-rsvps' },
+      { labelKey: 'nav.items.ministry', feature: 'ministry', icon: 'pi pi-sitemap', route: '/ministry' },
     ],
   },
   {
     labelKey: 'nav.groups.admin',
     items: [
-      { labelKey: 'nav.items.announcements', icon: 'pi pi-megaphone', route: '/announcements' },
-      { labelKey: 'nav.items.archive', icon: 'pi pi-clock', route: '/archive' },
+      { labelKey: 'nav.items.announcements', feature: 'announcements', icon: 'pi pi-megaphone', route: '/announcements' },
+      { labelKey: 'nav.items.archive', feature: 'archive', icon: 'pi pi-clock', route: '/archive' },
       {
         labelKey: 'nav.items.analytics',
         icon: 'pi pi-chart-bar',
         route: '/analytics',
-        role: 'pastor',
+        feature: 'analytics',
         pending: true,
       },
     ],

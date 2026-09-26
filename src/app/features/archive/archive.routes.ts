@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from '../../core/guards/auth.guard';
+import { featureGuard } from '../../core/guards/feature.guard';
 
 export const ARCHIVE_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () => import('./archive.component').then(m => m.ArchiveComponent),
-    canActivate: [adminGuard],
+    canActivate: [featureGuard('archive')],
   },
 ];

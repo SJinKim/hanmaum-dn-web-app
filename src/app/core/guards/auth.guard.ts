@@ -6,8 +6,3 @@ export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   return auth.isAuthenticated();
 };
-
-export const adminGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  return auth.isAdmin();
-};

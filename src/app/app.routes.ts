@@ -79,6 +79,12 @@ export const APP_ROUTES: Routes = [
           import('./features/archive/archive.routes')
             .then(m => m.ARCHIVE_ROUTES),
       },
+      {
+        // Figma 745:41755 — where `featureGuard` sends a URL the role matrix denies.
+        path: 'forbidden',
+        loadComponent: () =>
+          import('./features/forbidden/forbidden.component').then(m => m.ForbiddenComponent),
+      },
     ],
   },
   {
