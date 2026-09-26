@@ -734,5 +734,58 @@
       "counts": "출석 기록을 불러오지 못했습니다",
       "deactivate": "비활성화하지 못했습니다"
     }
+  },
+  "announcements": {
+    "eyebrow": "관리",
+    "title": "공지사항",
+    "subtitle": "교회 공지와 사역·행사 소식을 작성하고 상단 고정 여부를 관리합니다.",
+    "add": "공지 추가",
+    "all": "전체",
+    "listHeading": "공지 목록",
+    "search": {
+      "aria": "공지 검색",
+      "placeholder": "제목 또는 내용으로 검색"
+    },
+    "category": {
+      "NOTICE": "공지",
+      "MINISTRY": "사역",
+      "EVENT": "행사"
+    },
+    "period": "게시 기간 {{start}} - {{end}}",
+    "openEnd": "종료일 없음",
+    "pinned": "상단 고정",
+    "more": "더보기",
+    "edit": "수정",
+    "empty": "등록된 공지가 없습니다",
+    "noMatch": "조건에 맞는 공지가 없습니다",
+    "loadFailed": "공지를 불러오지 못했습니다",
+    "loadFailedHint": "잠시 후 다시 시도해 주세요.",
+    "delete": {
+      "action": "삭제",
+      "header": "공지 삭제",
+      "message": "\"{{title}}\" 공지를 삭제할까요? 되돌릴 수 없습니다."
+    },
+    "dialog": {
+      "addHeader": "공지 작성",
+      "editHeader": "공지 수정",
+      "subtitle": "게시 기간 동안 청년 앱의 공지 탭과 홈 화면에 표시됩니다.",
+      "title": "제목",
+      "body": "내용",
+      "category": "카테고리",
+      "pinned": "상단 고정",
+      "startAt": "시작일",
+      "endAt": "종료일",
+      "required": "필수 입력 항목입니다.",
+      "endBeforeStart": "종료일은 시작일보다 빠를 수 없습니다.",
+      "cancel": "취소",
+      "save": "저장"
+    },
+    "toast": {
+      "created": "공지를 추가했습니다",
+      "updated": "공지를 수정했습니다",
+      "deleted": "공지를 삭제했습니다",
+      "saveFailed": "공지를 저장하지 못했습니다",
+      "deleteFailed": "공지를 삭제하지 못했습니다"
+    }
   }
 }

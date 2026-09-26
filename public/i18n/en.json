@@ -734,5 +734,58 @@
       "counts": "Could not load attendance",
       "deactivate": "Could not deactivate"
     }
+  },
+  "announcements": {
+    "eyebrow": "Admin",
+    "title": "Announcements",
+    "subtitle": "Write church notices and ministry or event news, and choose which stay pinned on top.",
+    "add": "Add announcement",
+    "all": "All",
+    "listHeading": "Announcements",
+    "search": {
+      "aria": "Search announcements",
+      "placeholder": "Search title or content"
+    },
+    "category": {
+      "NOTICE": "Notice",
+      "MINISTRY": "Ministry",
+      "EVENT": "Event"
+    },
+    "period": "Published {{start}} - {{end}}",
+    "openEnd": "no end date",
+    "pinned": "Pinned",
+    "more": "More",
+    "edit": "Edit",
+    "empty": "No announcements yet",
+    "noMatch": "No announcements match",
+    "loadFailed": "Could not load announcements",
+    "loadFailedHint": "Please try again in a moment.",
+    "delete": {
+      "action": "Delete",
+      "header": "Delete announcement",
+      "message": "Delete \"{{title}}\"? This cannot be undone."
+    },
+    "dialog": {
+      "addHeader": "New announcement",
+      "editHeader": "Edit announcement",
+      "subtitle": "Shown in the youth app's announcements tab and on its home screen during the publishing period.",
+      "title": "Title",
+      "body": "Content",
+      "category": "Category",
+      "pinned": "Pin to top",
+      "startAt": "Start date",
+      "endAt": "End date",
+      "required": "This field is required.",
+      "endBeforeStart": "The end date cannot be before the start date.",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "toast": {
+      "created": "Announcement added",
+      "updated": "Announcement updated",
+      "deleted": "Announcement deleted",
+      "saveFailed": "Could not save the announcement",
+      "deleteFailed": "Could not delete the announcement"
+    }
   }
 }
