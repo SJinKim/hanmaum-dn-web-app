@@ -682,7 +682,10 @@
       "actions": "Actions",
       "group": "Group",
       "count": "Attendance",
-      "share": "Share"
+      "share": "Share",
+      "inPlace": "In church",
+      "outside": "Outside",
+      "unconfirmed": "Unconfirmed"
     },
     "status": {
       "active": "Active",
@@ -735,6 +738,8 @@
       "save": "Could not save",
       "counts": "Could not load attendance",
       "deactivate": "Could not deactivate"
-    }
+    },
+    "locationTotals": "Total · {{totals}}.",
+    "unconfirmedHint": "Unconfirmed means the check-in location is unknown, not that the person was absent."
   }
 }

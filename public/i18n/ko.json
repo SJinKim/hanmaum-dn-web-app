@@ -682,7 +682,10 @@
       "actions": "관리",
       "group": "순",
       "count": "출석 수",
-      "share": "비율"
+      "share": "비율",
+      "inPlace": "교회 안",
+      "outside": "교회 밖",
+      "unconfirmed": "미확인"
     },
     "status": {
       "active": "활성",
@@ -735,6 +738,8 @@
       "save": "저장하지 못했습니다",
       "counts": "출석 기록을 불러오지 못했습니다",
       "deactivate": "비활성화하지 못했습니다"
-    }
+    },
+    "locationTotals": "합계 · {{totals}}.",
+    "unconfirmedHint": "미확인은 체크인 시 위치를 확인하지 못한 인원이며 결석이 아닙니다."
   }
 }
