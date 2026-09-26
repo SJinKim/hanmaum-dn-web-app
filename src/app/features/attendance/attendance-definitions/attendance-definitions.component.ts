@@ -1,144 +1,179 @@
-import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DatePickerModule } from 'primeng/datepicker';
-import { DialogModule } from 'primeng/dialog';
-import { InputTextModule } from 'primeng/inputtext';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { ProgressBarModule } from 'primeng/progressbar';
 import { SelectModule } from 'primeng/select';
-import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
+import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
-import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { localDateToIso } from '../../../core/models/member-activity.model';
+import { injectAppLang } from '../../../core/i18n/language';
+import { BreakpointService } from '../../../core/ui/breakpoint.service';
+import { DataColumn, DataRecord } from '../../../core/ui/data-record.model';
+import { DataTableComponent } from '../../../core/ui/data-table/data-table.component';
+import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
+import { FilterChipComponent } from '../../../core/ui/filter-chip/filter-chip.component';
+import { ListCardComponent } from '../../../core/ui/list-card/list-card.component';
+import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
+import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
+import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 import { AttendanceService } from '../attendance.service';
 import {
-  ATTENDANCE_COLUMN_LABELS,
-  DIVISION_LABELS,
   AttendanceGroupCountsResponse,
   ChurchGroupAttendanceCountResponse,
-  DAY_OF_WEEK_LABELS,
-  DAY_OF_WEEK_OPTIONS,
+  DIVISION_LABELS,
   DayOfWeek,
   DefinitionDto,
 } from '../attendance.model';
+import { AttendanceDefinitionDialogComponent } from './attendance-definition-dialog.component';
 
+/** Sunday first, as `Date.getDay()` counts. */
+const DAYS_BY_INDEX: DayOfWeek[] = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+
+/**
+ * Figma: 출석 · Desktop (210:6726), 기록 tab (211:6948). Tab 정의 lists the
+ * 출석 정의 with 요일, 체크인 시간 and 상태; ✎ opens the dialog (279:18000),
+ * 🗑 deactivates.
+ *
+ * Tab 기록 shows per 순 counts only. Figma lists people there, but until #224
+ * decides who may see names, the web shows the aggregate `group-counts`.
+ */
 @Component({
   selector: 'app-attendance-definitions',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
-    TableModule,
+    TranslatePipe,
     ButtonModule,
-    CheckboxModule,
-    TagModule,
-    InputTextModule,
-    SelectModule,
-    MultiSelectModule,
-    DatePickerModule,
-    ProgressBarModule,
-    DialogModule,
     ConfirmDialogModule,
+    DatePickerModule,
+    SelectModule,
+    TabsModule,
     ToastModule,
-    TooltipModule,
+    DataTableComponent,
+    EmptyStateComponent,
+    FilterChipComponent,
+    ListCardComponent,
+    PageHeaderComponent,
+    SectionHeaderComponent,
+    SkeletonComponent,
+    AttendanceDefinitionDialogComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './attendance-definitions.component.html',
 })
 export class AttendanceDefinitionsComponent implements OnInit {
-  private readonly service      = inject(AttendanceService);
-  private readonly router       = inject(Router);
-  private readonly confirmSvc   = inject(ConfirmationService);
-  private readonly messageSvc   = inject(MessageService);
-  private readonly destroyRef   = inject(DestroyRef);
+  private readonly service        = inject(AttendanceService);
+  private readonly translate      = inject(TranslateService);
+  private readonly confirmService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
+  private readonly destroyRef     = inject(DestroyRef);
+  private readonly lang           = injectAppLang();
 
-  definitions    = signal<DefinitionDto[]>([]);
-  loading        = signal(false);
-  countsLoading  = signal(false);
-  groupCounts    = signal<AttendanceGroupCountsResponse | null>(null);
-  showCreate     = signal(false);
-  showEditDialog = false;
+  readonly isPhone = inject(BreakpointService).isPhone;
 
-  // distribution table filter + sort state
-  groupFilter = signal<string[]>([]);
-  activeOnly  = signal(true);
-  sortField   = signal<'attendanceCount' | 'share'>('attendanceCount');
-  sortOrder   = signal<1 | -1>(-1);
+  readonly definitions   = signal<DefinitionDto[]>([]);
+  readonly loading       = signal(true);
+  readonly countsLoading = signal(false);
+  readonly groupCounts   = signal<AttendanceGroupCountsResponse | null>(null);
+  readonly activeTab     = signal<number>(0);
 
-  readonly dayOptions = DAY_OF_WEEK_OPTIONS;
-  readonly columnLabels = ATTENDANCE_COLUMN_LABELS;
+  readonly dialogVisible = signal(false);
+  readonly editing       = signal<DefinitionDto | null>(null);
 
-  selectedDefinitionId = '';
-  selectedDate: Date | null = new Date();
+  readonly selectedDefinitionId = signal('');
+  readonly selectedDate         = signal<Date | null>(new Date());
+  /** `null` is 전체; otherwise the chip's group key. */
+  readonly selectedGroup        = signal<string | null>(null);
 
-  readonly selectedDefinition = computed(() =>
-    this.definitions().find(def => def.publicId === this.selectedDefinitionId) ?? null,
+  /** "출석 정의 N개 · 활성 M개". */
+  readonly subtitle = computed(() => {
+    this.lang();
+    const defs = this.definitions();
+    return this.translate.instant('attendance.subtitle', {
+      count: defs.length,
+      active: defs.filter(d => d.isActive).length,
+    }) as string;
+  });
+
+  readonly columns = computed<DataColumn[]>(() => {
+    this.lang();
+    const t = (key: string) => this.translate.instant(`attendance.columns.${key}`) as string;
+    return [
+      { type: 'text', key: 'title', header: t('title'), tone: 'strong' },
+      { type: 'text', key: 'day', header: t('day'), width: '140px' },
+      { type: 'text', key: 'window', header: t('window'), width: '180px' },
+      { type: 'badge', header: t('status') },
+      { type: 'actions', header: t('actions') },
+    ];
+  });
+
+  readonly records = computed<DataRecord[]>(() => {
+    this.lang();
+    return this.definitions().map(d => ({
+      id: d.publicId,
+      title: d.title,
+      subtitle: `${this.dayLabel(d.dayOfWeek)} · ${this.windowLabel(d)}`,
+      badge: this.statusBadge(d.isActive),
+      cells: { title: d.title, day: this.dayLabel(d.dayOfWeek), window: this.windowLabel(d) },
+    }));
+  });
+
+  readonly definitionOptions = computed(() =>
+    this.definitions().map(d => ({ value: d.publicId, label: d.title })),
   );
 
+  /** Groups by count, most first; ties by name. */
   readonly sortedGroups = computed(() => {
-    const groups = this.groupCounts()?.groups ?? [];
-    return [...groups].sort((a, b) => {
-      if (b.attendanceCount !== a.attendanceCount) return b.attendanceCount - a.attendanceCount;
-      return this.groupDisplayName(a).localeCompare(this.groupDisplayName(b), 'ko');
-    });
+    this.lang();
+    return [...(this.groupCounts()?.groups ?? [])].sort((a, b) =>
+      b.attendanceCount - a.attendanceCount
+      || this.groupDisplayName(a).localeCompare(this.groupDisplayName(b), 'ko'));
   });
 
-  readonly attendingGroupCount = computed(() =>
-    this.sortedGroups().filter(group => group.attendanceCount > 0).length,
-  );
-
-  readonly activeGroupCount = computed(() => this.sortedGroups().length);
-
-  // church-group options for the distribution filter (exact values)
-  readonly groupFilterOptions = computed(() =>
-    (this.groupCounts()?.groups ?? []).map(group => ({
-      label: this.groupDisplayName(group),
-      value: group.groupPublicId ?? '',
-    })),
-  );
-
-  // rows actually rendered: filtered by selected groups, then sorted by the active column
-  readonly displayedGroups = computed(() => {
-    const groups = this.groupCounts()?.groups ?? [];
-    const selected = this.groupFilter();
-    let filtered = selected.length === 0
-      ? groups
-      : groups.filter(group => selected.includes(group.groupPublicId ?? ''));
-
-    if (this.activeOnly()) {
-      filtered = filtered.filter(group => group.attendanceCount > 0);
-    }
-
-    const order = this.sortOrder();
-    return [...filtered].sort((a, b) => {
-      // 비중 is monotonic with attendanceCount (total is constant), so both columns sort identically
-      if (a.attendanceCount !== b.attendanceCount) return order * (a.attendanceCount - b.attendanceCount);
-      return this.groupDisplayName(a).localeCompare(this.groupDisplayName(b), 'ko');
-    });
+  readonly visibleGroups = computed(() => {
+    const selected = this.selectedGroup();
+    return selected === null
+      ? this.sortedGroups()
+      : this.sortedGroups().filter(g => groupKey(g) === selected);
   });
 
-  // create form state
-  createTitle       = '';
-  createDayOfWeek: DayOfWeek | null = null;
-  createWindowStart = '';
-  createWindowEnd   = '';
+  readonly groupColumns = computed<DataColumn[]>(() => {
+    this.lang();
+    const t = (key: string) => this.translate.instant(`attendance.columns.${key}`) as string;
+    return [
+      { type: 'text', key: 'group', header: t('group'), tone: 'strong' },
+      { type: 'text', key: 'count', header: t('count'), align: 'end', width: '140px', sortKey: 'cells.countValue' },
+      { type: 'progress', key: 'share', header: t('share') },
+    ];
+  });
 
-  // edit form state
-  editTarget: DefinitionDto | null = null;
-  editTitle       = '';
-  editDayOfWeek: DayOfWeek | null = null;
-  editWindowStart = '';
-  editWindowEnd   = '';
-  editIsActive    = true;
+  readonly groupRecords = computed<DataRecord[]>(() => {
+    this.lang();
+    const total = this.groupCounts()?.totalCount ?? 0;
+    return this.visibleGroups().map(g => {
+      const name = this.groupDisplayName(g);
+      const share = total === 0 ? 0 : Math.round((g.attendanceCount / total) * 100);
+      const count = this.translate.instant('attendance.people', { count: g.attendanceCount }) as string;
+      return {
+        id: groupKey(g),
+        title: name,
+        subtitle: count,
+        meta: `${share}%`,
+        cells: {
+          group: name,
+          count,
+          countValue: g.attendanceCount,
+          share: { value: share, label: `${share}%` },
+        },
+      };
+    });
+  });
 
   ngOnInit(): void {
     this.load();
@@ -154,223 +189,144 @@ export class AttendanceDefinitionsComponent implements OnInit {
         this.loadGroupCounts();
       },
       error: () => {
-        this.messageSvc.add({ severity: 'error', summary: '오류', detail: '출석 정의를 불러올 수 없습니다.' });
         this.loading.set(false);
+        this.toastError('attendance.errors.load');
       },
     });
   }
 
-  dayLabel(day: DayOfWeek): string {
-    return DAY_OF_WEEK_LABELS[day];
+  openAdd(): void {
+    this.editing.set(null);
+    this.dialogVisible.set(true);
   }
 
-  formatTime(time: string): string {
-    return time?.slice(0, 5) ?? '';
+  openEdit(publicId: string): void {
+    this.editing.set(this.definitions().find(d => d.publicId === publicId) ?? null);
+    this.dialogVisible.set(true);
   }
 
-  onDefinitionChange(): void {
+  onSaved(def: DefinitionDto): void {
+    this.messageService.add({ severity: 'success', summary: this.translate.instant('attendance.saved') as string });
+    if (!this.selectedDefinitionId()) this.selectedDefinitionId.set(def.publicId);
+    this.load();
+  }
+
+  onSaveFailed(): void {
+    this.toastError('attendance.errors.save');
+  }
+
+  confirmDeactivate(publicId: string): void {
+    const def = this.definitions().find(d => d.publicId === publicId);
+    if (!def) return;
+    this.confirmService.confirm({
+      header: this.translate.instant('attendance.deactivate.header') as string,
+      message: this.translate.instant('attendance.deactivate.message', { title: def.title }) as string,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translate.instant('attendance.deactivate.accept') as string,
+      rejectLabel: this.translate.instant('attendance.dialog.cancel') as string,
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
+      accept: () => this.deactivate(def),
+    });
+  }
+
+  onDefinitionChange(publicId: string): void {
+    this.selectedDefinitionId.set(publicId);
     this.loadGroupCounts();
   }
 
-  onDateChange(): void {
+  onDateChange(date: Date | null): void {
+    this.selectedDate.set(date);
     this.ensureSelectedDefinition(this.definitions(), true);
     this.loadGroupCounts();
   }
 
+  selectGroup(key: string | null): void {
+    this.selectedGroup.set(this.selectedGroup() === key ? null : key);
+  }
+
+  groupKey(group: ChurchGroupAttendanceCountResponse): string {
+    return groupKey(group);
+  }
+
+  groupDisplayName(group: ChurchGroupAttendanceCountResponse): string {
+    if (!group.groupName) return this.translate.instant('attendance.noGroup') as string;
+    return group.groupDivision
+      ? `${DIVISION_LABELS[group.groupDivision.toUpperCase()] ?? group.groupDivision} · ${group.groupName}`
+      : group.groupName;
+  }
+
   loadGroupCounts(): void {
-    const date = this.selectedDateIso();
-    if (!this.selectedDefinitionId || !date) {
+    const definitionId = this.selectedDefinitionId();
+    const date = localDateToIso(this.selectedDate());
+    this.selectedGroup.set(null);
+    if (!definitionId || !date) {
       this.groupCounts.set(null);
       return;
     }
 
     this.countsLoading.set(true);
-    this.service.getGroupCounts({
-      definitionId: this.selectedDefinitionId,
-      date,
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: counts => {
-        this.groupCounts.set(counts);
-        this.groupFilter.set([]);
-        this.countsLoading.set(false);
-      },
-      error: err => {
-        const detail = err?.message ?? '출석 집계를 불러올 수 없습니다.';
-        this.messageSvc.add({ severity: 'error', summary: '오류', detail });
-        this.groupCounts.set(null);
-        this.countsLoading.set(false);
-      },
-    });
-  }
-
-  groupDisplayName(group: ChurchGroupAttendanceCountResponse): string {
-    if (!group.groupName) return this.columnLabels.noGroup;
-    return group.groupDivision
-      ? `${this.divisionLabel(group.groupDivision)} · ${group.groupName}`
-      : group.groupName;
-  }
-
-  /** Korean display label for a division, mapping legacy codes (NEHEMIA/DANIEL). */
-  divisionLabel(division: string | null): string {
-    if (!division) return '';
-    return DIVISION_LABELS[division.toUpperCase()] ?? division;
-  }
-
-  /** Division tag color: 느헤미야 → blue (info), 다니엘 → green (success). */
-  divisionSeverity(division: string | null): 'info' | 'success' | 'secondary' {
-    const key = (division ?? '').toUpperCase();
-    if (key.startsWith('NEHEMIA') || division === '느헤미야') return 'info';
-    if (key.startsWith('DANIEL') || division === '다니엘') return 'success';
-    return 'secondary';
-  }
-
-  groupShare(group: ChurchGroupAttendanceCountResponse): number {
-    const total = this.groupCounts()?.totalCount ?? 0;
-    if (total === 0) return 0;
-    return Math.round((group.attendanceCount / total) * 100);
-  }
-
-  toggleSort(field: 'attendanceCount' | 'share'): void {
-    if (this.sortField() === field) {
-      this.sortOrder.set(this.sortOrder() === 1 ? -1 : 1);
-    } else {
-      this.sortField.set(field);
-      this.sortOrder.set(-1);
-    }
-  }
-
-  sortIcon(field: 'attendanceCount' | 'share'): string {
-    if (this.sortField() !== field) return 'pi pi-sort-alt';
-    return this.sortOrder() === 1 ? 'pi pi-sort-amount-up' : 'pi pi-sort-amount-down';
-  }
-
-  onCreateSubmit(): void {
-    if (!this.createTitle.trim() || !this.createDayOfWeek || !this.createWindowStart || !this.createWindowEnd) {
-      this.messageSvc.add({ severity: 'warn', summary: '입력 오류', detail: '모든 항목을 입력해주세요.' });
-      return;
-    }
-    this.service.createDefinition({
-      title: this.createTitle.trim(),
-      dayOfWeek: this.createDayOfWeek,
-      windowStart: this.createWindowStart,
-      windowEnd: this.createWindowEnd,
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: created => {
-        this.messageSvc.add({ severity: 'success', summary: '완료', detail: '출석 정의가 생성되었습니다.' });
-        this.resetCreateForm();
-        this.showCreate.set(false);
-        this.selectedDefinitionId = created.publicId;
-        this.load();
-      },
-      error: err => {
-        const detail = err?.message ?? '생성에 실패했습니다.';
-        this.messageSvc.add({ severity: 'error', summary: '오류', detail });
-      },
-    });
-  }
-
-  openEdit(def: DefinitionDto): void {
-    this.editTarget      = def;
-    this.editTitle       = def.title;
-    this.editDayOfWeek   = def.dayOfWeek;
-    this.editWindowStart = def.windowStart.slice(0, 5);
-    this.editWindowEnd   = def.windowEnd.slice(0, 5);
-    this.editIsActive    = def.isActive;
-    this.showEditDialog  = true;
-  }
-
-  onEditSave(): void {
-    if (!this.editTarget) return;
-    this.service.updateDefinition(this.editTarget.publicId, {
-      title:       this.editTitle.trim() || undefined,
-      dayOfWeek:   this.editDayOfWeek ?? undefined,
-      windowStart: this.editWindowStart || undefined,
-      windowEnd:   this.editWindowEnd || undefined,
-      isActive:    this.editIsActive,
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.messageSvc.add({ severity: 'success', summary: '완료', detail: '수정되었습니다.' });
-        this.showEditDialog = false;
-        this.load();
-      },
-      error: err => {
-        const detail = err?.message ?? '수정에 실패했습니다.';
-        this.messageSvc.add({ severity: 'error', summary: '오류', detail });
-      },
-    });
-  }
-
-  confirmDeactivate(def: DefinitionDto, event: Event): void {
-    this.confirmSvc.confirm({
-      target: event.target as EventTarget,
-      message: `"${def.title}" 출석 정의를 비활성화하시겠습니까?`,
-      header: '비활성화 확인',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: '비활성화',
-      rejectLabel: '취소',
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: () => this.deactivate(def),
-    });
+    this.service.getGroupCounts({ definitionId, date })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: counts => {
+          this.groupCounts.set(counts);
+          this.countsLoading.set(false);
+        },
+        error: () => {
+          this.groupCounts.set(null);
+          this.countsLoading.set(false);
+          this.toastError('attendance.errors.counts');
+        },
+      });
   }
 
   private deactivate(def: DefinitionDto): void {
     this.service.deactivateDefinition(def.publicId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.messageSvc.add({ severity: 'success', summary: '완료', detail: '비활성화되었습니다.' });
-        this.load();
-      },
-      error: () => {
-        this.messageSvc.add({ severity: 'error', summary: '오류', detail: '비활성화에 실패했습니다.' });
-      },
+      next: () => this.load(),
+      error: () => this.toastError('attendance.errors.deactivate'),
     });
   }
 
-  viewLogs(def: DefinitionDto): void {
-    this.router.navigate(['/attendance', def.publicId, 'group-counts']);
+  private dayLabel(day: DayOfWeek): string {
+    return this.translate.instant(`attendance.days.${day}`) as string;
   }
 
-  private ensureSelectedDefinition(
-    definitions: DefinitionDto[],
-    preferSelectedDate = false,
-  ): void {
-    const selected = definitions.find(def => def.publicId === this.selectedDefinitionId);
-    const selectedDateDay = this.selectedDate ? this.dayOfWeekForDate(this.selectedDate) : null;
-
-    if (selected && (!preferSelectedDate || selected.dayOfWeek === selectedDateDay)) return;
-
-    const matchingDefinition = selectedDateDay
-      ? definitions.find(def => def.isActive && def.dayOfWeek === selectedDateDay)
-        ?? definitions.find(def => def.dayOfWeek === selectedDateDay)
-      : null;
-    const defaultDefinition = matchingDefinition ?? definitions.find(def => def.isActive) ?? definitions[0];
-    this.selectedDefinitionId = defaultDefinition?.publicId ?? '';
+  /** "09:00 – 10:30". */
+  private windowLabel(d: DefinitionDto): string {
+    return `${d.windowStart.slice(0, 5)} – ${d.windowEnd.slice(0, 5)}`;
   }
 
-  private dayOfWeekForDate(date: Date): DayOfWeek {
-    const days: DayOfWeek[] = [
-      'SUNDAY',
-      'MONDAY',
-      'TUESDAY',
-      'WEDNESDAY',
-      'THURSDAY',
-      'FRIDAY',
-      'SATURDAY',
-    ];
-    return days[date.getDay()];
+  /** Figma: 활성 = active (green), 비활성 = pending (orange). */
+  private statusBadge(active: boolean): DataRecord['badge'] {
+    return active
+      ? { variant: 'active', label: this.translate.instant('attendance.status.active') as string }
+      : { variant: 'pending', label: this.translate.instant('attendance.status.inactive') as string };
   }
 
-  private selectedDateIso(): string | null {
-    if (!this.selectedDate) return null;
-    const y = this.selectedDate.getFullYear();
-    const m = String(this.selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(this.selectedDate.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+  /** Keeps the chosen definition, else takes an active one on the date's weekday. */
+  private ensureSelectedDefinition(defs: DefinitionDto[], preferSelectedDate = false): void {
+    const date = this.selectedDate();
+    const day = date ? DAYS_BY_INDEX[date.getDay()] : null;
+    const selected = defs.find(d => d.publicId === this.selectedDefinitionId());
+    if (selected && (!preferSelectedDate || selected.dayOfWeek === day)) return;
+
+    const fallback = (day
+      ? defs.find(d => d.isActive && d.dayOfWeek === day) ?? defs.find(d => d.dayOfWeek === day)
+      : undefined) ?? defs.find(d => d.isActive) ?? defs[0];
+    this.selectedDefinitionId.set(fallback?.publicId ?? '');
   }
 
-  private resetCreateForm(): void {
-    this.createTitle       = '';
-    this.createDayOfWeek   = null;
-    this.createWindowStart = '';
-    this.createWindowEnd   = '';
+  private toastError(key: string): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: this.translate.instant('attendance.errors.summary') as string,
+      detail: this.translate.instant(key) as string,
+    });
   }
+}
+
+/** Chip and row key; groups without a 순 share one. */
+function groupKey(group: ChurchGroupAttendanceCountResponse): string {
+  return group.groupPublicId ?? 'none';
 }
