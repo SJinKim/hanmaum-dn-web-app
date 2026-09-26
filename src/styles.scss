@@ -134,6 +134,8 @@
   --color-badge-inactive-bg: var(--amber-50);   --color-badge-inactive-fg: var(--amber-700);
   --color-badge-pending-bg:  var(--violet-50);  --color-badge-pending-fg:  var(--violet-700);
   --color-badge-deleted-bg:  var(--red-50);     --color-badge-deleted-fg:  var(--red-700);
+  // REJECTED (#29): same primitives as deleted — both terminal — but its own pair so they can diverge.
+  --color-badge-rejected-bg: var(--red-50);     --color-badge-rejected-fg: var(--red-700);
   --color-badge-admin-bg:    var(--slate-800);  --color-badge-admin-fg:    var(--neutral-0);
   --color-badge-member-bg:   var(--slate-100);  --color-badge-member-fg:   var(--slate-600);
   --color-badge-training-completed-bg: var(--green-50);   --color-badge-training-completed-fg: var(--green-700);
@@ -205,6 +207,7 @@
   --color-badge-inactive-bg: var(--amber-950);  --color-badge-inactive-fg: var(--amber-400);
   --color-badge-pending-bg:  var(--violet-950); --color-badge-pending-fg:  var(--violet-300);
   --color-badge-deleted-bg:  var(--red-950);    --color-badge-deleted-fg:  var(--red-300);
+  --color-badge-rejected-bg: var(--red-950);    --color-badge-rejected-fg: var(--red-300);
   --color-badge-admin-bg:    var(--slate-100);  --color-badge-admin-fg:    var(--slate-950);
   --color-badge-member-bg:   var(--ink-675);    --color-badge-member-fg:   var(--ink-200);
   --color-badge-training-completed-bg: var(--green-950);  --color-badge-training-completed-fg: var(--green-400);
@@ -382,6 +385,7 @@ html, body {
   &.badge-inactive { background: var(--color-badge-inactive-bg); color: var(--color-badge-inactive-fg); }
   &.badge-pending  { background: var(--color-badge-pending-bg);  color: var(--color-badge-pending-fg); }
   &.badge-deleted  { background: var(--color-badge-deleted-bg);  color: var(--color-badge-deleted-fg); }
+  &.badge-rejected { background: var(--color-badge-rejected-bg); color: var(--color-badge-rejected-fg); }
   &.badge-admin    { background: var(--color-badge-admin-bg);    color: var(--color-badge-admin-fg); }
   &.badge-member   { background: var(--color-badge-member-bg);   color: var(--color-badge-member-fg); }
 

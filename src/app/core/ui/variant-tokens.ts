@@ -32,6 +32,7 @@ export const BADGE_VARIANTS = [
   'inactive',
   'pending',
   'deleted',
+  'rejected',
   'admin',
   'member',
   'training-completed',

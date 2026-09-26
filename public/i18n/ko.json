@@ -125,7 +125,8 @@
       "PENDING": "대기중",
       "ACTIVE": "활성",
       "INACTIVE": "비활성",
-      "DELETED": "삭제됨"
+      "DELETED": "삭제됨",
+      "REJECTED": "거절됨"
     },
     "baptism": {
       "UNBAPTIZED": "미세례",
@@ -147,7 +148,8 @@
       "selectGroupPlaceholder": "순 선택…",
       "cancel": "취소",
       "approve": "승인",
-      "edit": "청년 정보 수정"
+      "edit": "청년 정보 수정",
+      "reject": "거절"
     },
     "edit": {
       "churchGroupLeader": "순장",
@@ -252,7 +254,9 @@
       "approveFailed": "승인에 실패했습니다.",
       "approveSuccess": "청년이 승인되었습니다.",
       "leaderAssignFailed": "순장 지정에 실패했습니다.",
-      "leaderClearFailed": "순장 해제에 실패했습니다."
+      "leaderClearFailed": "순장 해제에 실패했습니다.",
+      "rejectFailed": "거절에 실패했습니다.",
+      "rejectSuccess": "{{name}} 청년의 가입이 거절되었습니다."
     },
     "stage": {
       "next-leader": "예비순장",
@@ -340,6 +344,11 @@
         "deleted": "삭제되었습니다.",
         "deleteFailed": "삭제에 실패했습니다."
       }
+    },
+    "reject": {
+      "title": "가입 거절",
+      "message": "{{name}} 청년의 가입을 거절하시겠습니까? 거절된 청년은 목록에 거절됨으로 남습니다.",
+      "accept": "거절"
     }
   },
   "ministry": {

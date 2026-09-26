@@ -253,6 +253,14 @@ export class MemberService {
     });
   }
 
+  /**
+   * Rejects a pending member (#29). Its own endpoint, not a PATCH: the server
+   * refuses `memberStatus: 'REJECTED'` on PATCH so the transition stays PENDING-only.
+   */
+  rejectMember(publicId: string): Observable<Member> {
+    return this.api.post<Member>(`/v1/members/${publicId}/reject`, {});
+  }
+
   getMember(publicId: string): Observable<Member> {
     return this.api.get<Member>(`/v1/members/${publicId}`);
   }

@@ -4,13 +4,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, provideRouter, convertToParamMap } from '@angular/router';
 import { By } from '@angular/platform-browser';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 
 import { MembersListComponent } from './members-list.component';
 import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
 import { TrainingCatalogEntry } from '../../../core/models/member-activity.model';
-import { MemberSummary } from '../../../core/models/member.model';
+import { Member, MemberSummary } from '../../../core/models/member.model';
 import { MemberService, UNASSIGNED_GROUP } from '../member.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 
@@ -147,7 +148,7 @@ describe('MembersListComponent — 상태 select', () => {
     translate.setTranslation('en', {
       members: {
         filters: { status: 'Status', statusAll: 'All statuses', baptismAll: 'All baptisms' },
-        status: { PENDING: 'Pending', ACTIVE: 'Active', INACTIVE: 'Inactive', DELETED: 'Deleted' },
+        status: { PENDING: 'Pending', ACTIVE: 'Active', INACTIVE: 'Inactive', REJECTED: 'Rejected', DELETED: 'Deleted' },
       },
     }, true);
     translate.use('en');
@@ -165,6 +166,7 @@ describe('MembersListComponent — 상태 select', () => {
       { label: 'Pending (3)', value: 'PENDING' },
       { label: 'Active', value: 'ACTIVE' },
       { label: 'Inactive', value: 'INACTIVE' },
+      { label: 'Rejected', value: 'REJECTED' },
       { label: 'Deleted', value: 'DELETED' },
     ]);
   });
@@ -417,5 +419,59 @@ describe('MembersListComponent — sortable headers', () => {
     service.sort.set({ property: 'groupName', direction: 'asc' });
     fixture.detectChanges();
     expect(ths[2].attributes['aria-sort']).toBe('ascending');
+  });
+});
+
+// #29: 거절 asks first (Figma 748:42429), then POST /reject; the row stays as 거절됨.
+describe('MembersListComponent — 거절', () => {
+  function setup() {
+    TestBed.configureTestingModule({
+      imports: [MembersListComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap({})) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MembersListComponent);
+    const service = TestBed.inject(MemberService);
+    const confirm = fixture.debugElement.injector.get(ConfirmationService);
+    const messages = fixture.debugElement.injector.get(MessageService);
+    spyOn(confirm, 'confirm').and.callFake(opts => { opts.accept?.(); return confirm; });
+    spyOn(messages, 'add');
+    spyOn(service, 'loadMembers');
+    spyOn(service, 'refreshPendingCount');
+    return { component: fixture.componentInstance, service, confirm, messages };
+  }
+
+  const pending: MemberSummary = { ...member(undefined), publicId: 'p-1', memberStatus: 'PENDING' };
+
+  it('confirms, rejects, then reloads the list and the 대기 count', async () => {
+    const { component, service, confirm, messages } = setup();
+    const reject = spyOn(service, 'rejectMember').and.returnValue(of({} as Member));
+
+    component.confirmReject(pending, new Event('click'));
+    await Promise.resolve();
+
+    expect(confirm.confirm).toHaveBeenCalled();
+    expect(reject).toHaveBeenCalledWith('p-1');
+    expect(service.loadMembers).toHaveBeenCalled();
+    expect(service.refreshPendingCount).toHaveBeenCalled();
+    expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'success' }));
+    expect(component.approvingId()).toBeNull();
+  });
+
+  it('shows an error toast and keeps the list when rejecting fails', async () => {
+    const { component, service, messages } = setup();
+    spyOn(service, 'rejectMember').and.returnValue(throwError(() => new Error('409')));
+
+    component.confirmReject(pending, new Event('click'));
+    await Promise.resolve();
+
+    expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'error' }));
+    expect(service.loadMembers).not.toHaveBeenCalled();
+    expect(component.approvingId()).toBeNull();
   });
 });

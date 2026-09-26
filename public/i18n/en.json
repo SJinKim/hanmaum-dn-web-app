@@ -125,7 +125,8 @@
       "PENDING": "Pending",
       "ACTIVE": "Active",
       "INACTIVE": "Inactive",
-      "DELETED": "Deleted"
+      "DELETED": "Deleted",
+      "REJECTED": "Rejected"
     },
     "baptism": {
       "UNBAPTIZED": "Unbaptized",
@@ -147,7 +148,8 @@
       "selectGroupPlaceholder": "Select group…",
       "cancel": "Cancel",
       "approve": "Approve",
-      "edit": "Edit member"
+      "edit": "Edit member",
+      "reject": "Reject"
     },
     "edit": {
       "churchGroupLeader": "Church Group Leader",
@@ -252,7 +254,9 @@
       "approveFailed": "Approval failed.",
       "approveSuccess": "Member approved.",
       "leaderAssignFailed": "Could not assign the church group leader.",
-      "leaderClearFailed": "Could not clear the church group leader."
+      "leaderClearFailed": "Could not clear the church group leader.",
+      "rejectFailed": "Rejecting failed.",
+      "rejectSuccess": "The registration of {{name}} was rejected."
     },
     "stage": {
       "next-leader": "Next Leader",
@@ -340,6 +344,11 @@
         "deleted": "Deleted.",
         "deleteFailed": "Delete failed."
       }
+    },
+    "reject": {
+      "title": "Reject registration",
+      "message": "Reject the registration of {{name}}? Rejected members stay in the list as Rejected.",
+      "accept": "Reject"
     }
   },
   "ministry": {

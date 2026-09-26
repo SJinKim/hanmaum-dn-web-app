@@ -138,7 +138,7 @@ export interface ChurchGroupSummary {
   leaderSince?: string | null;
 }
 
-export type MemberStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'DELETED';
+export type MemberStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'REJECTED';
 export type Gender      = 'M' | 'F';
 export type Baptism     = 'UNBAPTIZED' | 'INFANT_BAPTIZED' | 'CONFIRMATION' | 'GENERAL_BAPTIZED';
 
@@ -147,6 +147,7 @@ export const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
   ACTIVE:   '활성',
   INACTIVE: '비활성',
   DELETED:  '삭제됨',
+  REJECTED: '거절됨',
 };
 
 export const GENDER_LABELS: Record<Gender, string> = {
@@ -163,6 +164,7 @@ export const BAPTISM_LABELS: Record<Baptism, string> = {
 
 export const MEMBER_STATUS_OPTIONS = Object.entries(MEMBER_STATUS_LABELS)
   .filter(([k]) => k !== 'DELETED')            // DELETED only via delete endpoint
+  .filter(([k]) => k !== 'REJECTED')           // REJECTED only via POST /reject (#29)
   .map(([value, label]) => ({ value, label }));
 
 export const GENDER_OPTIONS = Object.entries(GENDER_LABELS)

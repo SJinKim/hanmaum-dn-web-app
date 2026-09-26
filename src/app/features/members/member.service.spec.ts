@@ -269,4 +269,12 @@ describe('MemberService — 청년 list state (#53)', () => {
 
     expect(service.pendingCount()).toBe(7);
   });
+
+  it('rejectMember POSTs to /reject — never a PATCH to REJECTED (#29)', () => {
+    service.rejectMember('p-1').subscribe();
+    const req = http.expectOne(r => r.url.endsWith('/v1/members/p-1/reject'));
+
+    expect(req.request.method).toBe('POST');
+    req.flush({ success: true, message: null, data: { ...summary('p-1'), memberStatus: 'REJECTED' } });
+  });
 });
