@@ -508,8 +508,9 @@ export class MembersListComponent implements OnInit {
       message: this.translate.instant('members.reject.message', { name }),
       acceptLabel: this.translate.instant('members.reject.accept'),
       rejectLabel: this.translate.instant('members.actions.cancel'),
-      icon: 'pi pi-exclamation-triangle',
-      acceptButtonStyleClass: 'p-button-danger',
+      closable: false,
+      rejectButtonProps: { severity: 'secondary', outlined: true },
+      acceptButtonProps: { severity: 'danger' },
       accept: () => void this.reject(member),
     });
   }
