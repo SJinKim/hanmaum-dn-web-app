@@ -12,7 +12,7 @@ export const MINISTRY_ROUTES: Routes = [
     path: 'new',
     loadComponent: () =>
       import('./ministry-edit/ministry-edit.component').then(m => m.MinistryEditComponent),
-    canActivate: [featureGuard('ministry')],
+    canActivate: [featureGuard('ministry', 'write')],
   },
   {
     path: ':publicId',
@@ -24,6 +24,6 @@ export const MINISTRY_ROUTES: Routes = [
     path: ':publicId/edit',
     loadComponent: () =>
       import('./ministry-edit/ministry-edit.component').then(m => m.MinistryEditComponent),
-    canActivate: [featureGuard('ministry')],
+    canActivate: [featureGuard('ministry', 'write')],
   },
 ];

@@ -10,6 +10,7 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
 
 import { injectAppLang } from '../../../core/i18n/language';
+import { RoleService } from '../../../core/services/role.service';
 import { BadgeComponent } from '../../../core/ui/badge/badge.component';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
 import { FilterChipComponent } from '../../../core/ui/filter-chip/filter-chip.component';
@@ -68,6 +69,10 @@ export class AnnouncementsListComponent implements OnInit {
   private readonly translate  = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route      = inject(ActivatedRoute);
+  private readonly roles      = inject(RoleService);
+
+  /** DESIGN.md §9: add and the row menu are absent for read-only roles. */
+  protected readonly canWrite = computed(() => this.roles.canWrite('announcements'));
   private readonly lang       = injectAppLang();
 
   private readonly rowMenu = viewChild<Menu>('rowMenu');

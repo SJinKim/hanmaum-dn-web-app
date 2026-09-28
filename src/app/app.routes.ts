@@ -1,6 +1,7 @@
 // src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { webAccessGuard } from './core/guards/web-access.guard';
 import { ShellComponent } from './shell/shell.component';
 
 export const APP_ROUTES: Routes = [
@@ -8,6 +9,7 @@ export const APP_ROUTES: Routes = [
     path: '',
     component: ShellComponent,
     canActivate: [authGuard],
+    canActivateChild: [webAccessGuard],
     children: [
       {
         path: '',

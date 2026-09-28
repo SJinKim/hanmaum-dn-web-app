@@ -25,6 +25,7 @@ import {
   MemberStatus,
   MemberSummary,
 } from '../../../core/models/member.model';
+import { RoleService } from '../../../core/services/role.service';
 import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { DataColumn, DataRecord } from '../../../core/ui/data-record.model';
@@ -114,6 +115,7 @@ interface TrainingTag {
 })
 export class MembersListComponent implements OnInit {
   private readonly memberService = inject(MemberService);
+  private readonly roles = inject(RoleService);
   private readonly trainingCatalog = inject(TrainingCatalogService);
   private readonly breakpoints = inject(BreakpointService);
   private readonly translate = inject(TranslateService);
@@ -324,7 +326,12 @@ export class MembersListComponent implements OnInit {
    * The 승인 column exists only while the page actually holds a PENDING row —
    * an always-present empty column would be a Figma deviation for nothing.
    */
-  readonly showsApprove = computed(() => this.members().some(m => m.memberStatus === 'PENDING'));
+  readonly showsApprove = computed(
+    () => this.canWrite() && this.members().some(m => m.memberStatus === 'PENDING'),
+  );
+
+  /** DESIGN.md §9: write actions are absent for read-only roles, not disabled. */
+  readonly canWrite = computed(() => this.roles.canWrite('members'));
 
   readonly hasPages = computed(() => this.total() > this.size());
   readonly lastPage = computed(() => Math.max(0, Math.ceil(this.total() / this.size()) - 1));

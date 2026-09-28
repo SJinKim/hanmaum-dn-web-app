@@ -10,11 +10,8 @@ import { AuthService } from './auth.service';
  * `design-specs/DESIGN.md` §9: role-restricted blocks are *absent*, not
  * disabled — the role matrix (254:3) has no greyed-out state and no lock icon.
  *
- * Only `ADMIN` exists in the Keycloak realm today; `leader` and `pastor` are
- * designed (and already carried by `nav-config.ts`) but not yet realm roles, so
- * an admin sees their entries until #32/#47 create them. When they do exist the
- * `roles()` check below starts answering on its own and this comment is the only
- * thing that needs deleting.
+ * Screen access is read/write per feature (`feature-access.ts`, #137): read
+ * opens route and navigation, write shows the create, edit and delete actions.
  */
 @Injectable({ providedIn: 'root' })
 export class RoleService {
@@ -43,13 +40,33 @@ export class RoleService {
    * The role matrix (`feature-access.ts`) answered for the current user. Guards,
    * sidebar and header all ask this — nothing checks a role name on its own.
    */
-  canAccess(feature: FeatureId): boolean {
-    const allowed = FEATURE_ACCESS[feature];
+  canRead(feature: FeatureId): boolean {
+    const allowed = FEATURE_ACCESS[feature].read;
     if (allowed === 'all') {
       return true;
     }
     return this.hasAnyRole([...SUPER_ROLES, ...allowed]);
   }
+
+  /** Whether create, edit and delete actions of `feature` are rendered at all. */
+  canWrite(feature: FeatureId): boolean {
+    return this.hasAnyRole([...SUPER_ROLES, ...FEATURE_ACCESS[feature].write]);
+  }
+
+  /** Alias of `canRead`, kept for the route and nav callers. */
+  canAccess(feature: FeatureId): boolean {
+    return this.canRead(feature);
+  }
+
+  /**
+   * Whether the user gets into the web app at all: some screen other than home
+   * must be readable. Everyone else sees the 403 "화면 준비 중" variant.
+   */
+  readonly hasWebAccess = computed(() =>
+    (Object.keys(FEATURE_ACCESS) as FeatureId[]).some(
+      feature => feature !== 'home' && this.canRead(feature),
+    ),
+  );
 
   /**
    * `NAV_GROUPS` filtered to what this user may see and what is routed today.
@@ -63,7 +80,7 @@ export class RoleService {
   );
 
   private isVisible(item: NavItem): boolean {
-    return !item.pending && this.canAccess(item.feature);
+    return !item.pending && this.hasWebAccess() && this.canRead(item.feature);
   }
 
   /**
