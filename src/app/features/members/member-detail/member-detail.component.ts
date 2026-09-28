@@ -11,6 +11,7 @@ import { ToastModule } from 'primeng/toast';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MemberService } from '../member.service';
+import { RoleService } from '../../../core/services/role.service';
 import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
 import {
   Member,
@@ -76,6 +77,10 @@ export class MemberDetailComponent implements OnInit {
   private readonly destroyRef     = inject(DestroyRef);
   private readonly trainingCatalog = inject(TrainingCatalogService);
   private readonly translate      = inject(TranslateService);
+  private readonly roles          = inject(RoleService);
+
+  /** DESIGN.md §9: edit and the more-menu are absent for read-only roles. */
+  protected readonly canWrite = computed(() => this.roles.canWrite('members'));
   private readonly lang           = injectAppLang();
 
   member  = signal<Member | null>(null);

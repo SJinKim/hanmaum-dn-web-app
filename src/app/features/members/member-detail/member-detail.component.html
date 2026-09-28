@@ -11,7 +11,7 @@
     [heading]="fullName() || ('members.detail.breadcrumb' | translate)"
     [subtitle]="subtitle()"
     (back)="goBack()">
-    @if (member()) {
+    @if (member() && canWrite()) {
       <div appActions class="flex items-center gap-[var(--space-8)]">
         <p-button
           icon="pi pi-pencil"

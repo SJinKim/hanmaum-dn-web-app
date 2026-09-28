@@ -759,6 +759,13 @@
       "heading": "You don't have access",
       "description": "Your account has no role that can see this screen. Ask an administrator for access.",
       "action": "Go to home"
+    },
+    "noPage": {
+      "title": "No page yet",
+      "subtitle": "Your role has no page yet.",
+      "heading": "There is no page for your role yet",
+      "description": "Your role: {{roles}}. Once a page for this role is ready, it opens right after your next login. For urgent matters, contact an admin.",
+      "action": "Log out"
     }
   },
   "announcements": {

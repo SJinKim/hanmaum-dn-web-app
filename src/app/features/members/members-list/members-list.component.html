@@ -8,12 +8,14 @@
     [eyebrow]="'members.eyebrow' | translate"
     [heading]="'members.title' | translate"
     [subtitle]="'members.subtitle' | translate: { total: total() }">
-    <p-button
-      appActions
-      size="small"
-      icon="pi pi-plus"
-      [label]="'members.addButton' | translate"
-      (onClick)="goToCreate()" />
+    @if (canWrite()) {
+      <p-button
+        appActions
+        size="small"
+        icon="pi pi-plus"
+        [label]="'members.addButton' | translate"
+        (onClick)="goToCreate()" />
+    }
   </app-page-header>
 
   <app-toolbar hasFilters>
@@ -144,7 +146,7 @@
           variant="no-data"
           [heading]="'members.empty.heading' | translate"
           [description]="'members.empty.description' | translate"
-          [actionLabel]="'members.addButton' | translate"
+          [actionLabel]="canWrite() ? ('members.addButton' | translate) : undefined"
           actionIcon="pi pi-plus"
           (action)="goToCreate()" />
       } @else if (isPhone()) {

@@ -6,13 +6,15 @@
     [eyebrow]="'announcements.eyebrow' | translate"
     [heading]="'announcements.title' | translate"
     [subtitle]="'announcements.subtitle' | translate">
-    <p-button
-      appActions
-      size="small"
-      icon="pi pi-plus"
-      [label]="'announcements.add' | translate"
-      data-testid="announcement-add"
-      (onClick)="openAdd()" />
+    @if (canWrite()) {
+      <p-button
+        appActions
+        size="small"
+        icon="pi pi-plus"
+        [label]="'announcements.add' | translate"
+        data-testid="announcement-add"
+        (onClick)="openAdd()" />
+    }
   </app-page-header>
 
   <app-search-field
@@ -69,13 +71,15 @@
                   <span class="type-caption text-ink-muted">{{ row.period }}</span>
                 </div>
               </div>
-              <p-button
-                icon="pi pi-ellipsis-v"
-                severity="secondary"
-                [text]="true"
-                [rounded]="true"
-                [ariaLabel]="'announcements.more' | translate"
-                (onClick)="toggleRowMenu($event, row.id)" />
+              @if (canWrite()) {
+                <p-button
+                  icon="pi pi-ellipsis-v"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  [ariaLabel]="'announcements.more' | translate"
+                  (onClick)="toggleRowMenu($event, row.id)" />
+              }
             </li>
           }
         </ul>

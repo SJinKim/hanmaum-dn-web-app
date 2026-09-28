@@ -11,7 +11,7 @@ export const MEMBERS_ROUTES: Routes = [
   },
   {
     path: 'new',
-    canActivate: [featureGuard('members')],
+    canActivate: [featureGuard('members', 'write')],
     loadComponent: () =>
       import('./member-edit/member-edit.component').then(m => m.MemberEditComponent),
     canDeactivate: [unsavedChangesGuard],
@@ -24,7 +24,7 @@ export const MEMBERS_ROUTES: Routes = [
   },
   {
     path: ':publicId/edit',
-    canActivate: [featureGuard('members')],
+    canActivate: [featureGuard('members', 'write')],
     loadComponent: () =>
       import('./member-edit/member-edit.component').then(m => m.MemberEditComponent),
     canDeactivate: [unsavedChangesGuard],

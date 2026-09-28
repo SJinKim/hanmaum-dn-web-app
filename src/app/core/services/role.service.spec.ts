@@ -93,12 +93,82 @@ describe('RoleService', () => {
     });
   });
 
+  describe('note_taker', () => {
+    it('reads 홈, 청년, 순 and 공지사항, in any case', () => {
+      const ALL = Object.keys(FEATURE_ACCESS) as FeatureId[];
+      ['note_taker', 'NOTE_TAKER'].forEach(role => {
+        const roles = withRoles([role]);
+        expect(ALL.filter(feature => roles.canRead(feature))).toEqual([
+          'home',
+          'members',
+          'churchGroups',
+          'announcements',
+        ]);
+      });
+    });
+
+    it('writes only 공지사항', () => {
+      const roles = withRoles(['note_taker']);
+      expect(roles.canWrite('announcements')).toBeTrue();
+      expect(roles.canWrite('members')).toBeFalse();
+      expect(roles.canWrite('churchGroups')).toBeFalse();
+    });
+  });
+
+  describe('canWrite', () => {
+    const ALL = Object.keys(FEATURE_ACCESS) as FeatureId[];
+
+    it('lets admin and pastor write every screen', () => {
+      ['ADMIN', 'pastor'].forEach(role => {
+        const roles = withRoles([role]);
+        ALL.forEach(feature => expect(roles.canWrite(feature)).withContext(feature).toBeTrue());
+      });
+    });
+
+    it('lets only the 새가족 editor write 새가족', () => {
+      expect(withRoles(['NEWCOMER_EDITOR']).canWrite('newcomers')).toBeTrue();
+      expect(withRoles(['NEWCOMER_VIEWER']).canWrite('newcomers')).toBeFalse();
+    });
+
+    it('never lets a 순장 write, not even 순', () => {
+      const roles = withRoles(['group_leader']);
+      ALL.forEach(feature => expect(roles.canWrite(feature)).withContext(feature).toBeFalse());
+    });
+
+    it('keeps every write role a read role', () => {
+      ALL.forEach(feature => {
+        const { read, write } = FEATURE_ACCESS[feature];
+        write.forEach(role =>
+          expect(read === 'all' || read.includes(role)).withContext(`${feature}: ${role}`).toBeTrue(),
+        );
+      });
+    });
+  });
+
+  describe('hasWebAccess', () => {
+    it('admits admin, pastor, note_taker, 순장 and the 새가족 roles', () => {
+      ['ADMIN', 'pastor', 'note_taker', 'group_leader', 'NEWCOMER_VIEWER'].forEach(role =>
+        expect(withRoles([role]).hasWebAccess()).withContext(role).toBeTrue(),
+      );
+    });
+
+    it('keeps out a member, an unknown ministry role and a user without roles', () => {
+      [['member'], ['worship_viewer'], ['default-roles-hanmaum'], []].forEach(roles =>
+        expect(withRoles(roles).hasWebAccess()).withContext(roles.join()).toBeFalse(),
+      );
+    });
+  });
+
   describe('navGroups', () => {
-    it('shows a plain member only 홈', () => {
-      const routes = withRoles(['member'])
+    it('shows a member without web access no navigation at all', () => {
+      expect(withRoles(['member']).navGroups()).toEqual([]);
+    });
+
+    it('shows a note_taker 홈, 청년, 순 and 공지사항', () => {
+      const routes = withRoles(['note_taker'])
         .navGroups()
         .flatMap(group => group.items.map(item => item.route));
-      expect(routes).toEqual(['/']);
+      expect(routes).toEqual(jasmine.arrayWithExactContents(['/', '/members', '/church-groups', '/announcements']));
     });
 
     it('shows a 순장 홈 and 순, and drops the empty groups', () => {

@@ -55,7 +55,7 @@ export class HeaderComponent implements OnInit {
   readonly isDark = signal(this.readInitialTheme());
   readonly lang = signal<AppLang>(this.readInitialLang());
   readonly pendingCount = this.memberSvc.pendingCount;
-  readonly showPending = computed(() => this.roles.canAccess('members') && this.pendingCount() > 0);
+  readonly showPending = computed(() => this.roles.canWrite('members') && this.pendingCount() > 0);
 
   readonly accountName = computed(() => this.auth.username() || 'Account');
 
@@ -90,7 +90,7 @@ export class HeaderComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.roles.canAccess('members')) {
+    if (this.roles.canWrite('members')) {
       this.memberSvc.refreshPendingCount();
     }
   }
