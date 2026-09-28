@@ -463,6 +463,20 @@ describe('MembersListComponent — 거절', () => {
     expect(component.approvingId()).toBeNull();
   });
 
+  // #128: no X, no icon, 취소 as white outline, 거절 as the soft danger button.
+  it('builds the dialog like Figma', () => {
+    const { component, confirm } = setup();
+    (confirm.confirm as jasmine.Spy).and.returnValue(confirm);
+
+    component.confirmReject(pending, new Event('click'));
+
+    const opts = (confirm.confirm as jasmine.Spy).calls.mostRecent().args[0];
+    expect(opts.closable).toBeFalse();
+    expect(opts.icon).toBeUndefined();
+    expect(opts.rejectButtonProps).toEqual(jasmine.objectContaining({ severity: 'secondary', outlined: true }));
+    expect(opts.acceptButtonProps).toEqual(jasmine.objectContaining({ severity: 'danger' }));
+  });
+
   it('shows an error toast and keeps the list when rejecting fails', async () => {
     const { component, service, messages } = setup();
     spyOn(service, 'rejectMember').and.returnValue(throwError(() => new Error('409')));

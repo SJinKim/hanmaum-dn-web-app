@@ -259,5 +259,6 @@
   </section>
 </div>
 
-<p-confirmDialog />
+<!-- Figma 748:42429 / 780:86768: 400px panel, 16px gutter on Phone. -->
+<p-confirmDialog [style]="{ width: '400px', maxWidth: 'calc(100vw - 32px)' }" />
 <p-toast />
