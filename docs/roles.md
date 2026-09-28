@@ -43,8 +43,24 @@ Teammitglieder nichts.
 
 ## Keycloak-Voraussetzungen
 
-1. **`pastor` und `note_taker` fehlen im Realm** (server#240). Bis dahin hat
-   nur `admin` Vollzugriff.
-2. **순장 ist `group_leader`.** Die Matrix nennt die Rolle `leader`; beide
+Rollen werden über Gruppen vergeben, nie direkt am User (server#240,
+`KEYCLOAK_RUNBOOK.md` im Server):
+
+| Gruppe | Realm-Rollen |
+|---|---|
+| `/staff/admins` | `admin` |
+| `/staff/pastors` | `pastor` |
+| `/staff/note-takers` | `note_taker` |
+| `/leaders/groups` | `group_leader` |
+| `/ministries/newcomer/viewers` | `NEWCOMER_VIEWER` |
+| `/ministries/newcomer/editors` | `NEWCOMER_VIEWER`, `NEWCOMER_EDITOR` |
+| `/ministries/<slug>/members` | `<SLUG>_VIEWER` |
+| `/ministries/<slug>/leaders` | `<SLUG>_VIEWER`, `<SLUG>_EDITOR`, `ministry_leader` |
+
+1. **`pastor` ist serverseitig `admin` gleichgestellt** (RoleHierarchy
+   `ROLE_PASTOR > ROLE_ADMIN`). Das Web bildet das über `SUPER_ROLES` ab.
+2. **`note_taker`** darf laut Server dasselbe wie in der Matrix oben: 청년 und
+   순 lesen, 공지사항 lesen und schreiben.
+3. **순장 ist `group_leader`.** Die Matrix nennt die Rolle `leader`; beide
    Namen werden akzeptiert.
-3. **새가족-Rollen** heißen im Realm `NEWCOMER_VIEWER` und `NEWCOMER_EDITOR`.
+4. **새가족-Rollen** heißen im Realm `NEWCOMER_VIEWER` und `NEWCOMER_EDITOR`.
