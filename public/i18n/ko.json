@@ -37,7 +37,7 @@
       "collapse": "사이드바 접기"
     },
     "pending": {
-      "label": "승인 대기 {{count}}",
+      "label": "대기 {{count}}명",
       "aria": "승인 대기 중인 청년 {{count}}명 — 대기 목록 보기"
     },
     "theme": {

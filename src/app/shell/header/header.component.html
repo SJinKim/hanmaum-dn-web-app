@@ -1,8 +1,9 @@
 <header
-  class="flex h-[var(--size-topbar)] shrink-0 items-center justify-between overflow-clip border-b border-line-subtle bg-surface p-[var(--space-20)]"
+  class="flex h-[var(--size-topbar)] shrink-0 items-center justify-between gap-[var(--space-10)] overflow-clip border-b border-line-subtle bg-surface p-[var(--space-20)]"
 >
-  <!-- Figma: Topbar > left cluster — the Drawer button replaces the brand block on Phone -->
-  <div class="flex items-center gap-[var(--space-10)]">
+  <!-- Figma: Topbar > left cluster — the Drawer button replaces the brand block on Phone.
+       min-w-0 lets the brand give way to the right cluster instead of sliding under it (#132). -->
+  <div class="flex min-w-0 items-center gap-[var(--space-10)]">
     @if (isPhone()) {
       <button
         type="button"
@@ -12,7 +13,7 @@
       >
         <i class="pi pi-th-large text-[16px]"></i>
       </button>
-      <span class="type-h3 whitespace-nowrap tracking-brand text-ink-strong">한마음 D+N</span>
+      <span class="type-h3 min-w-0 truncate tracking-brand text-ink-strong">한마음 D+N</span>
     } @else {
       <div class="flex flex-col">
         <span class="type-h3 whitespace-nowrap tracking-brand text-ink-strong">한마음 D+N</span>
@@ -22,7 +23,7 @@
   </div>
 
   <!-- Figma: Topbar > right cluster — pending chip, theme, language, avatar -->
-  <div class="flex items-center gap-[var(--space-10)]">
+  <div class="flex shrink-0 items-center gap-[var(--space-10)]">
     @if (showPending()) {
       <button
         type="button"
@@ -56,21 +57,24 @@
       <i class="pi pi-globe text-[16px]"></i>
     </button>
 
-    <button
-      type="button"
-      (click)="toggleMenu($event)"
-      [attr.aria-label]="'shell.menu.aria' | translate"
-      [attr.title]="accountName()"
-      aria-haspopup="true"
-      class="flex shrink-0 items-center rounded-[var(--radius-full)] focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
-    >
-      <app-avatar [name]="accountName()" [size]="32" decorative />
-    </button>
+    <!-- The popup menu renders into body; beside the avatar it no longer takes a gap slot of its own (#132). -->
+    <div class="flex shrink-0">
+      <button
+        type="button"
+        (click)="toggleMenu($event)"
+        [attr.aria-label]="'shell.menu.aria' | translate"
+        [attr.title]="accountName()"
+        aria-haspopup="true"
+        class="flex shrink-0 items-center rounded-[var(--radius-full)] focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
+      >
+        <app-avatar [name]="accountName()" [size]="32" decorative />
+      </button>
 
-    <p-menu #userMenu [model]="menuItems()" [popup]="true" appendTo="body">
-      <ng-template pTemplate="submenuheader" let-item>
-        <span class="type-body font-bold text-ink-strong">{{ item.label }}</span>
-      </ng-template>
-    </p-menu>
+      <p-menu #userMenu [model]="menuItems()" [popup]="true" appendTo="body">
+        <ng-template pTemplate="submenuheader" let-item>
+          <span class="type-body font-bold text-ink-strong">{{ item.label }}</span>
+        </ng-template>
+      </p-menu>
+    </div>
   </div>
 </header>
