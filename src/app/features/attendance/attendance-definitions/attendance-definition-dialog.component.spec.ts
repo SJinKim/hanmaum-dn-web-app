@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { Select } from 'primeng/select';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 
@@ -84,5 +86,38 @@ describe('AttendanceDefinitionDialogComponent', () => {
     expect(failed).toBe(1);
     expect(c.visible()).toBeTrue();
     expect(c.saving()).toBeFalse();
+  });
+  // #145: picking a 요일 used to clear everything typed so far, because the
+  // reset effect also tracked the select's own model signal.
+  it('keeps typed fields when a 요일 is picked', async () => {
+    const fixture = TestBed.createComponent(AttendanceDefinitionDialogComponent);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const c = fixture.componentInstance;
+    c.form.patchValue({ title: '수요 예배', description: '본당', isActive: false, windowStart: '19:30', windowEnd: '21:00' });
+    fixture.detectChanges();
+
+    const select = fixture.debugElement.query(By.directive(Select)).componentInstance as Select;
+    select.updateModel('WEDNESDAY', new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(c.form.getRawValue()).toEqual({
+      title: '수요 예배', description: '본당', dayOfWeek: 'WEDNESDAY',
+      isActive: false, windowStart: '19:30', windowEnd: '21:00',
+    });
+  });
+
+  it('starts empty again when reopened for 추가', () => {
+    const fixture = make();
+    const c = fixture.componentInstance;
+    c.form.patchValue({ title: 'x' });
+    fixture.componentRef.setInput('visible', false);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    expect(c.form.controls.title.value).toBe('');
   });
 });
