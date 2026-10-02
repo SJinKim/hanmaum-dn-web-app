@@ -277,6 +277,22 @@ export class MemberService {
     return this.api.delete(`/v1/members/${publicId}`);
   }
 
+  /**
+   * Restores a soft-deleted member (#144). The server answers 409 when an active
+   * member already uses the same email, and 400 when the member is not deleted.
+   */
+  restoreMember(publicId: string): Observable<Member> {
+    return this.api.post<Member>(`/v1/members/${publicId}/restore`, {});
+  }
+
+  /**
+   * Hard-deletes a soft-deleted member together with the Keycloak account (#144).
+   * Admin only; the email is free for a new registration afterwards.
+   */
+  purgeMember(publicId: string): Observable<void> {
+    return this.api.delete(`/v1/members/${publicId}/permanent`);
+  }
+
   /** All church groups — populates the "Church Group" select in the member edit form. */
   getChurchGroups(): Observable<ChurchGroupSummary[]> {
     return this.api.get<ChurchGroupSummary[]>('/v1/church-groups');

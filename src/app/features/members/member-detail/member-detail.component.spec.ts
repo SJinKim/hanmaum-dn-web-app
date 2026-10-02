@@ -1,13 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
+import { MessageService } from 'primeng/api';
 import { Observable, of, throwError } from 'rxjs';
 
 import { MemberDetailComponent } from './member-detail.component';
 import { MemberService } from '../member.service';
 import { Member } from '../../../core/models/member.model';
+import { RoleService } from '../../../core/services/role.service';
 
 describe('MemberDetailComponent — 교회 정보', () => {
   const base = {
@@ -97,5 +99,77 @@ describe('MemberDetailComponent — 교회 정보', () => {
     const { el, churchCard } = render({}, () => throwError(() => new Error('404')));
     expect(churchCard()).toBe('');
     expect(el.querySelector('app-empty-state')).not.toBeNull();
+  });
+});
+
+describe('MemberDetailComponent — 삭제됨 (#144)', () => {
+  const deleted = {
+    publicId: 'm1', lastName: '홍', firstName: '길동', discriminator: null, gender: null,
+    baptism: null, birthDate: null, phoneNumber: null, email: 'gildong.hong@example.com', street: null,
+    houseNumber: null, zipCode: null, city: null, registrationDate: '2023-02-01', memberStatus: 'DELETED',
+    churchRole: null, groupPublicId: null, groupName: null, profileImageUrl: null, trainings: [], ministries: [],
+    isGroupLeader: false,
+  } as unknown as Member;
+
+  function render(opts: { member?: Partial<Member>; admin?: boolean; restore?: () => Observable<Member> } = {}) {
+    const memberService = {
+      getMember: () => of({ ...deleted, ...opts.member }),
+      restoreMember: jasmine.createSpy('restoreMember').and.callFake(opts.restore ?? (() => of({ ...deleted, memberStatus: 'ACTIVE' } as Member))),
+      purgeMember: jasmine.createSpy('purgeMember').and.returnValue(of(undefined)),
+    };
+    const admin = opts.admin ?? true;
+    TestBed.configureTestingModule({
+      imports: [MemberDetailComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'ko' }),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
+        { provide: MemberService, useValue: memberService },
+        { provide: RoleService, useValue: { canWrite: () => true, hasAnyRole: () => admin, isAdmin: () => admin } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberDetailComponent);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const messages = fixture.debugElement.injector.get(MessageService);
+    return { fixture, el, memberService, messages, component: fixture.componentInstance };
+  }
+
+  it('shows 복원 and 영구 삭제 instead of edit for an admin', () => {
+    const { el } = render();
+    expect(el.querySelector('[data-testid="restore-button"]')).not.toBeNull();
+    expect(el.querySelector('[data-testid="purge-button"]')).not.toBeNull();
+    expect(el.querySelector('p-button[icon="pi pi-pencil"]')).toBeNull();
+  });
+
+  it('hides 영구 삭제 for a writer who is not admin', () => {
+    const { el } = render({ admin: false });
+    expect(el.querySelector('[data-testid="restore-button"]')).not.toBeNull();
+    expect(el.querySelector('[data-testid="purge-button"]')).toBeNull();
+  });
+
+  it('keeps edit and the more-menu for a member that is not deleted', () => {
+    const { el } = render({ member: { memberStatus: 'ACTIVE' } });
+    expect(el.querySelector('[data-testid="restore-button"]')).toBeNull();
+    expect(el.querySelector('p-button[icon="pi pi-pencil"]')).not.toBeNull();
+  });
+
+  it('restores the member and shows it as active again', () => {
+    const { component, memberService } = render();
+    component.restore();
+    expect(memberService.restoreMember).toHaveBeenCalledWith('m1');
+    expect(component.isDeleted()).toBe(false);
+  });
+
+  it('names the email conflict when restore answers 409', () => {
+    const { component, messages } = render({
+      restore: () => throwError(() => new HttpErrorResponse({ status: 409 })),
+    });
+    const add = spyOn(messages, 'add');
+    component.restore();
+    expect(add).toHaveBeenCalledWith(jasmine.objectContaining({ detail: 'members.detail.toast.restoreConflict' }));
+    expect(component.isDeleted()).toBe(true);
   });
 });

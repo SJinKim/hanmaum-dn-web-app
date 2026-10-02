@@ -347,8 +347,10 @@ export class MembersListComponent implements OnInit {
     this.route.queryParamMap
       .pipe(take(1), takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
-        if (params.get('status') === 'PENDING') {
-          this.memberService.setStatus('PENDING');
+        const status = params.get('status');
+        // PENDING from the 대기 badge, DELETED after a permanent delete (#144).
+        if (status === 'PENDING' || status === 'DELETED') {
+          this.memberService.setStatus(status);
         } else {
           this.memberService.loadMembers();
         }
