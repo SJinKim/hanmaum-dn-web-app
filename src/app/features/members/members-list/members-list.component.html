@@ -7,7 +7,7 @@
   <app-page-header
     [eyebrow]="'members.eyebrow' | translate"
     [heading]="'members.title' | translate"
-    [subtitle]="'members.subtitle' | translate: { total: total() }">
+    [subtitle]="(status() === 'DELETED' ? 'members.subtitleDeleted' : 'members.subtitle') | translate: { total: total() }">
     @if (canWrite()) {
       <p-button
         appActions
