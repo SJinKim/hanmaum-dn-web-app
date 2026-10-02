@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, input, model, output, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -73,17 +73,20 @@ export class AttendanceDefinitionDialogComponent {
   }, { validators: endAfterStart });
 
   constructor() {
+    // Reset on open and on a new definition only. form.reset writes into the
+    // controls, and PrimeNG's Select reads its own model signal while doing so;
+    // tracked, that made every 요일 pick clear the form (#145).
     effect(() => {
       const d = this.definition();
       this.visible();
-      this.form.reset({
+      untracked(() => this.form.reset({
         title: d?.title ?? '',
         description: d?.description ?? '',
         dayOfWeek: d?.dayOfWeek ?? null,
         isActive: d?.isActive ?? true,
         windowStart: d ? hhmm(d.windowStart) : '',
         windowEnd: d ? hhmm(d.windowEnd) : '',
-      });
+      }));
     });
   }
 
