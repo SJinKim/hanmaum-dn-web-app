@@ -1,5 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -12,6 +13,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MemberService } from '../member.service';
 import { RoleService } from '../../../core/services/role.service';
+import { MEMBER_PURGE_ROLES } from '../../../core/navigation/feature-access';
 import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
 import {
   Member,
@@ -81,6 +83,8 @@ export class MemberDetailComponent implements OnInit {
 
   /** DESIGN.md §9: edit and the more-menu are absent for read-only roles. */
   protected readonly canWrite = computed(() => this.roles.canWrite('members'));
+  /** #144: permanent delete is narrower than write, admin only like the server. */
+  protected readonly canPurge = computed(() => this.roles.hasAnyRole(MEMBER_PURGE_ROLES));
   private readonly lang           = injectAppLang();
 
   member  = signal<Member | null>(null);
@@ -89,6 +93,9 @@ export class MemberDetailComponent implements OnInit {
   readonly formatPhone = formatForDisplay;
 
   private readonly moreMenu = viewChild<Menu>('moreMenu');
+
+  /** A soft-deleted member gets 복원 and 영구 삭제 instead of edit and the more-menu (#144). */
+  readonly isDeleted = computed(() => this.member()?.memberStatus === 'DELETED');
 
   /** Full name as the list shows it, family name first. */
   readonly fullName = computed(() => {
@@ -185,7 +192,7 @@ export class MemberDetailComponent implements OnInit {
   confirmDelete(event: Event): void {
     this.confirmService.confirm({
       target: event.target as EventTarget,
-      message: this.translate.instant('members.detail.deleteDialog.message'),
+      message: this.translate.instant('members.detail.deleteDialog.message', { name: this.fullName() }),
       header: this.translate.instant('members.detail.deleteDialog.header'),
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: this.translate.instant('members.detail.deleteDialog.accept'),
@@ -208,6 +215,64 @@ export class MemberDetailComponent implements OnInit {
                 severity: 'error',
                 summary: this.translate.instant('members.toast.error'),
                 detail: this.translate.instant('members.detail.toast.deleteFailed'),
+              });
+            },
+          });
+      },
+    });
+  }
+
+  restore(): void {
+    this.memberService.restoreMember(this.member()!.publicId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: m => {
+          this.member.set(m);
+          this.messageService.add({
+            severity: 'success',
+            summary: this.translate.instant('members.toast.done'),
+            detail: this.translate.instant('members.detail.toast.restored'),
+          });
+        },
+        error: (err: unknown) => {
+          // 409: an active member already uses this email.
+          const conflict = err instanceof HttpErrorResponse && err.status === 409;
+          this.messageService.add({
+            severity: 'error',
+            summary: this.translate.instant('members.toast.error'),
+            detail: this.translate.instant(
+              conflict ? 'members.detail.toast.restoreConflict' : 'members.detail.toast.restoreFailed'),
+          });
+        },
+      });
+  }
+
+  confirmPurge(event: Event): void {
+    this.confirmService.confirm({
+      target: event.target as EventTarget,
+      message: this.translate.instant('members.detail.purgeDialog.message', { name: this.fullName() }),
+      header: this.translate.instant('members.detail.purgeDialog.header'),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translate.instant('members.detail.purgeDialog.accept'),
+      rejectLabel: this.translate.instant('members.detail.purgeDialog.cancel'),
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.memberService.purgeMember(this.member()!.publicId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.messageService.add({
+                severity: 'success',
+                summary: this.translate.instant('members.toast.done'),
+                detail: this.translate.instant('members.detail.toast.purged'),
+              });
+              setTimeout(() => this.router.navigate(['/members'], { queryParams: { status: 'DELETED' } }), 1000);
+            },
+            error: () => {
+              this.messageService.add({
+                severity: 'error',
+                summary: this.translate.instant('members.toast.error'),
+                detail: this.translate.instant('members.detail.toast.purgeFailed'),
               });
             },
           });

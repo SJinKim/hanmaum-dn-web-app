@@ -60,3 +60,9 @@ export const FEATURE_ACCESS: Readonly<Record<FeatureId, FeatureAccess>> = {
   archive: NONE,
   analytics: NONE,
 };
+
+/**
+ * Who may permanently delete a member (#144). Narrower than the members write row:
+ * the server allows `DELETE /v1/members/{publicId}/permanent` to ADMIN only.
+ */
+export const MEMBER_PURGE_ROLES: readonly string[] = ['admin'];

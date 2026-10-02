@@ -103,6 +103,7 @@
     "title": "청년 리스트",
     "eyebrow": "청년 관리",
     "subtitle": "등록된 청년 {{total}}명",
+    "subtitleDeleted": "삭제된 청년 {{total}}명 · 관리자는 복원하거나 영구 삭제할 수 있습니다",
     "caption": "청년 목록",
     "unassigned": "미배정",
     "search": {
@@ -335,14 +336,27 @@
       },
       "deleteDialog": {
         "header": "청년 삭제",
-        "message": "이 청년을 삭제할까요? 이 작업은 되돌릴 수 없습니다.",
+        "message": "{{name}} 청년을 삭제할까요? 삭제됨 상태로 이동하며, 관리자가 언제든 복원할 수 있습니다.",
         "accept": "삭제",
+        "cancel": "취소"
+      },
+      "restore": "복원",
+      "purge": "영구 삭제",
+      "purgeDialog": {
+        "header": "영구 삭제",
+        "message": "{{name}} 청년을 영구 삭제할까요? 되돌릴 수 없으며 앱 계정도 함께 삭제됩니다. 같은 이메일로 다시 등록할 수 있습니다.",
+        "accept": "영구 삭제",
         "cancel": "취소"
       },
       "toast": {
         "loadFailed": "청년 정보를 불러올 수 없습니다.",
         "deleted": "삭제되었습니다.",
-        "deleteFailed": "삭제에 실패했습니다."
+        "deleteFailed": "삭제에 실패했습니다.",
+        "restored": "복원되었습니다.",
+        "restoreConflict": "이메일 중복으로 복원할 수 없습니다.",
+        "restoreFailed": "복원에 실패했습니다.",
+        "purged": "영구 삭제되었습니다.",
+        "purgeFailed": "영구 삭제에 실패했습니다."
       }
     },
     "reject": {

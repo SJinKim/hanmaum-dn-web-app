@@ -103,6 +103,7 @@
     "title": "Members",
     "eyebrow": "Member management",
     "subtitle": "{{total}} members registered",
+    "subtitleDeleted": "{{total}} deleted members · admins can restore or permanently delete them",
     "caption": "Member list",
     "unassigned": "Unassigned",
     "search": {
@@ -335,14 +336,27 @@
       },
       "deleteDialog": {
         "header": "Delete member",
-        "message": "Delete this member? This cannot be undone.",
+        "message": "Delete {{name}}? The member moves to Deleted, and an admin can restore them at any time.",
         "accept": "Delete",
+        "cancel": "Cancel"
+      },
+      "restore": "Restore",
+      "purge": "Delete permanently",
+      "purgeDialog": {
+        "header": "Delete permanently",
+        "message": "Permanently delete {{name}}? This cannot be undone and also deletes the app account. The same email can be registered again.",
+        "accept": "Delete permanently",
         "cancel": "Cancel"
       },
       "toast": {
         "loadFailed": "Could not load the member.",
         "deleted": "Deleted.",
-        "deleteFailed": "Delete failed."
+        "deleteFailed": "Delete failed.",
+        "restored": "Restored.",
+        "restoreConflict": "Cannot restore: the email is already in use.",
+        "restoreFailed": "Restore failed.",
+        "purged": "Deleted permanently.",
+        "purgeFailed": "Permanent delete failed."
       }
     },
     "reject": {

@@ -147,6 +147,8 @@ describe('MembersListComponent — 상태 select', () => {
     const translate = TestBed.inject(TranslateService);
     translate.setTranslation('en', {
       members: {
+        subtitle: '{{total}} members registered',
+        subtitleDeleted: '{{total}} deleted members · admins can restore or permanently delete them',
         filters: { status: 'Status', statusAll: 'All statuses', baptismAll: 'All baptisms' },
         status: { PENDING: 'Pending', ACTIVE: 'Active', INACTIVE: 'Inactive', REJECTED: 'Rejected', DELETED: 'Deleted' },
       },
@@ -207,6 +209,22 @@ describe('MembersListComponent — 상태 select', () => {
       .queryAll(By.css('p-select'))
       .find(select => select.componentInstance.ariaLabel === 'Status')!;
     expect(statusSelect.nativeElement.textContent).toContain('Pending (0)');
+  });
+
+  it('switches the subtitle for the 삭제됨 filter like Figma (#144)', async () => {
+    const { fixture, service } = setup({ status: 'DELETED' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    service.total.set(12);
+    fixture.detectChanges();
+
+    const header = fixture.nativeElement.querySelector('app-page-header') as HTMLElement;
+    expect(header.textContent).toContain('12 deleted members · admins can restore or permanently delete them');
+
+    service.setStatus(null);
+    service.total.set(40);
+    fixture.detectChanges();
+    expect(header.textContent).toContain('40 members registered');
   });
 });
 

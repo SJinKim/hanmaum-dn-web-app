@@ -11,7 +11,26 @@
     [heading]="fullName() || ('members.detail.breadcrumb' | translate)"
     [subtitle]="subtitle()"
     (back)="goBack()">
-    @if (member() && canWrite()) {
+    @if (member() && canWrite() && isDeleted()) {
+      <!-- Figma 923:90141: 청년 상세 · 삭제됨 (Admin) -->
+      <div appActions class="flex items-center gap-[var(--space-8)]">
+        <p-button
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'members.detail.restore' | translate"
+          data-testid="restore-button"
+          (onClick)="restore()" />
+        @if (canPurge()) {
+          <p-button
+            icon="pi pi-trash"
+            severity="danger"
+            [label]="'members.detail.purge' | translate"
+            data-testid="purge-button"
+            (onClick)="confirmPurge($event)" />
+        }
+      </div>
+    } @else if (member() && canWrite()) {
       <div appActions class="flex items-center gap-[var(--space-8)]">
         <p-button
           icon="pi pi-pencil"
