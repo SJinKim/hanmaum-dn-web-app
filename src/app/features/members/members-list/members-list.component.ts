@@ -31,6 +31,7 @@ import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { DataColumn, DataRecord } from '../../../core/ui/data-record.model';
 import { DataCellDirective } from '../../../core/ui/data-table/data-cell.directive';
 import { DataTableComponent, DataTableSort } from '../../../core/ui/data-table/data-table.component';
+import { FilterSelectComponent } from '../../../core/ui/filter-select/filter-select.component';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
 import { ListCardComponent } from '../../../core/ui/list-card/list-card.component';
 import { MemberPillComponent } from '../../../core/ui/member-pill/member-pill.component';
@@ -94,6 +95,7 @@ interface TrainingTag {
     ConfirmDialogModule,
     DatePickerModule,
     SelectModule,
+    FilterSelectComponent,
     ToastModule,
     PageHeaderComponent,
     ToolbarComponent,

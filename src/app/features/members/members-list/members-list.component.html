@@ -28,56 +28,42 @@
       [placeholder]="'members.search.placeholder' | translate" />
 
     <!--
-      One select per column, in column order; 이름 is the search field. Every
-      one is a server-side query parameter (hanmaum-dn-server#196) — nothing is
-      filtered in the client. 최근 활동 is a from ~ to day range on `updatedAt`
-      (#88, Figma 737:39215). The filter row wraps rather than scrolls.
+      One chip per column, in column order; 이름 is the search field. Each chip
+      opens a single-select popover (#131, Figma 949:96712) — single because
+      every filter is one server-side query parameter (hanmaum-dn-server#196);
+      nothing is filtered in the client. 최근 활동 is a from ~ to day range on
+      `updatedAt` (#88, Figma 737:39215). The filter row wraps rather than scrolls.
     -->
-    <p-select
+    <app-filter-select
       appFilters
-      size="small"
-      optionLabel="label"
-      optionValue="value"
+      [label]="'members.filters.status' | translate"
       [options]="statusOptions()"
-      [ngModel]="status()"
-      (ngModelChange)="onStatusChange($event)"
-      [ariaLabel]="'members.filters.status' | translate" />
-    <p-select
+      [value]="status()"
+      (valueChange)="onStatusChange($event)" />
+    <app-filter-select
       appFilters
-      size="small"
-      optionLabel="label"
-      optionValue="value"
+      [label]="'members.filters.group' | translate"
       [options]="groupFilterOptions()"
-      [ngModel]="group()"
-      (ngModelChange)="onGroupChange($event)"
-      [ariaLabel]="'members.filters.group' | translate" />
-    <p-select
+      [value]="group()"
+      (valueChange)="onGroupChange($event)" />
+    <app-filter-select
       appFilters
-      size="small"
-      optionLabel="label"
-      optionValue="value"
+      [label]="'members.filters.training' | translate"
       [options]="trainingFilterOptions()"
-      [ngModel]="training()"
-      (ngModelChange)="onTrainingChange($event)"
-      [ariaLabel]="'members.filters.training' | translate" />
-    <p-select
+      [value]="training()"
+      (valueChange)="onTrainingChange($event)" />
+    <app-filter-select
       appFilters
-      size="small"
-      optionLabel="label"
-      optionValue="value"
+      [label]="'members.filters.ministry' | translate"
       [options]="ministryFilterOptions()"
-      [ngModel]="ministry()"
-      (ngModelChange)="onMinistryChange($event)"
-      [ariaLabel]="'members.filters.ministry' | translate" />
-    <p-select
+      [value]="ministry()"
+      (valueChange)="onMinistryChange($event)" />
+    <app-filter-select
       appFilters
-      size="small"
-      optionLabel="label"
-      optionValue="value"
+      [label]="'members.filters.baptism' | translate"
       [options]="baptismOptions()"
-      [ngModel]="baptism()"
-      (ngModelChange)="onBaptismChange($event)"
-      [ariaLabel]="'members.filters.baptism' | translate" />
+      [value]="baptism()"
+      (valueChange)="onBaptismChange($event)" />
     <!-- Figma DatePicker (605:147): 180px with its own calendar button, full width on phone. -->
     <div appFilters class="flex w-full items-center gap-[var(--space-4)] tablet:w-auto" data-testid="updated-range">
       <p-datepicker
