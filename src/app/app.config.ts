@@ -20,6 +20,7 @@ import { DnPreset } from './core/ui/dn-theme.preset';
 import { jwtInterceptor } from './core/interceptors/jwt.interceptor';
 import { AuthService } from './core/services/auth.service';
 import { LANG_STORAGE_KEY, DEFAULT_LANG, type AppLang } from './core/i18n/language';
+import { providePrimeNgLocale } from './core/i18n/primeng-locale';
 
 function initializeKeycloak(authService: AuthService) {
   return () => authService.init();
@@ -54,6 +55,7 @@ export const appConfig: ApplicationConfig = {
       fallbackLang: DEFAULT_LANG,
       loader: provideTranslateHttpLoader({ prefix: '/i18n/', suffix: '.json' }),
     }),
+    providePrimeNgLocale(),
     AuthService,
     // Root instance for route guards (see unsavedChangesGuard).
     ConfirmationService,

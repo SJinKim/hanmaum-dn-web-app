@@ -363,6 +363,17 @@ describe('MembersListComponent — 순/양육/사역 selects', () => {
     expect(fixture.debugElement.queryAll(By.css('[data-testid="updated-range"] p-datepicker')).length).toBe(2);
   });
 
+  it('gives both 최근 활동 pickers a calendar button and the YYYY-MM-DD hint (#129)', () => {
+    const { fixture } = setup();
+    fixture.detectChanges();
+    const pickers = fixture.debugElement.queryAll(By.css('[data-testid="updated-range"] p-datepicker'));
+    for (const picker of pickers) {
+      expect(picker.componentInstance.showIcon).toBeTrue();
+      expect(picker.componentInstance.showClear).toBeTrue();
+      expect(picker.componentInstance.placeholder).toBe('YYYY-MM-DD');
+    }
+  });
+
   it('renders five filter selects', () => {
     const { fixture } = setup();
     fixture.detectChanges();

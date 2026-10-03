@@ -78,29 +78,34 @@
       [ngModel]="baptism()"
       (ngModelChange)="onBaptismChange($event)"
       [ariaLabel]="'members.filters.baptism' | translate" />
-    <div appFilters class="flex items-center gap-[var(--space-8)]" data-testid="updated-range">
+    <!-- Figma DatePicker (605:147): 180px with its own calendar button, full width on phone. -->
+    <div appFilters class="flex w-full items-center gap-[var(--space-4)] tablet:w-auto" data-testid="updated-range">
       <p-datepicker
         size="small"
         dateFormat="yy-mm-dd"
-        styleClass="w-40"
+        class="min-w-0 flex-1 tablet:flex-none"
+        styleClass="w-full tablet:w-[180px]"
         [readonlyInput]="true"
+        [showIcon]="true"
         [showClear]="true"
         [maxDate]="updatedTo()"
         [ngModel]="updatedFrom()"
         (ngModelChange)="onUpdatedFromChange($event)"
-        [placeholder]="'members.filters.updatedFrom' | translate"
+        placeholder="YYYY-MM-DD"
         [ariaLabel]="'members.filters.updatedFrom' | translate" />
       <span class="type-body-sm text-ink-muted" aria-hidden="true">~</span>
       <p-datepicker
         size="small"
         dateFormat="yy-mm-dd"
-        styleClass="w-40"
+        class="min-w-0 flex-1 tablet:flex-none"
+        styleClass="w-full tablet:w-[180px]"
         [readonlyInput]="true"
+        [showIcon]="true"
         [showClear]="true"
         [minDate]="updatedFrom()"
         [ngModel]="updatedTo()"
         (ngModelChange)="onUpdatedToChange($event)"
-        [placeholder]="'members.filters.updatedTo' | translate"
+        placeholder="YYYY-MM-DD"
         [ariaLabel]="'members.filters.updatedTo' | translate" />
     </div>
   </app-toolbar>
