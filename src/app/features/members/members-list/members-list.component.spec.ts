@@ -128,6 +128,11 @@ describe('MembersListComponent — 양육 tags', () => {
 
     expect(tags).toEqual([{ label: '제자반', stage: 'discipleship' }]);
   });
+
+  it('formats 최근 활동 with hyphens as in Figma (#130)', () => {
+    expect(component.shortDate('2026-09-14T08:30:00Z')).toBe('2026-09-14');
+    expect(component.shortDate(null)).toBe('—');
+  });
 });
 
 // #78: 상태 is one select like 세례, and it keeps what the four chips did — the
