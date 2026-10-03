@@ -73,7 +73,8 @@ export class ArchiveComponent implements OnInit {
     return [
       { type: 'avatar-name', header: t('name') },
       { type: 'text', header: t('group') },
-      { type: 'badge', header: t('status') },
+      // Figma 741:39767: 상태 is muted text here, not a badge (#134).
+      { type: 'text', key: 'status', header: t('status'), tone: 'muted', width: '160px' },
     ];
   });
 
@@ -107,6 +108,7 @@ export class ArchiveComponent implements OnInit {
           badge: m.memberStatus === 'ACTIVE'
             ? { variant: 'active' as const, label: active }
             : { variant: 'inactive' as const, label: graduated },
+          cells: { status: m.memberStatus === 'ACTIVE' ? active : graduated },
         })),
       }));
   });
