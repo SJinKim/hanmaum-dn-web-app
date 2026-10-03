@@ -102,7 +102,7 @@
   "members": {
     "title": "Members",
     "eyebrow": "Member management",
-    "subtitle": "{{total}} members registered",
+    "subtitle": "{{total}} members registered · {{active}} active",
     "subtitleDeleted": "{{total}} deleted members · admins can restore or permanently delete them",
     "caption": "Member list",
     "unassigned": "Unassigned",

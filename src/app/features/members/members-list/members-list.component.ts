@@ -143,6 +143,7 @@ export class MembersListComponent implements OnInit {
   readonly updatedTo   = computed(() => this.toDate(this.memberService.updatedTo()));
   readonly sort = this.memberService.sort;
   readonly pendingCount = this.memberService.pendingCount;
+  readonly activeCount = this.memberService.activeCount;
 
   readonly isPhone = this.breakpoints.isPhone;
 
@@ -357,6 +358,7 @@ export class MembersListComponent implements OnInit {
       });
 
     this.memberService.refreshPendingCount();
+    this.memberService.refreshActiveCount();
 
     // The approve select and the 순 filter need every group, not just those the
     // page happens to show.
@@ -496,6 +498,7 @@ export class MembersListComponent implements OnInit {
     this.approvingId.set(null);
     this.memberService.loadMembers();
     this.memberService.refreshPendingCount();
+    this.memberService.refreshActiveCount();
   }
 
   /**
@@ -538,6 +541,7 @@ export class MembersListComponent implements OnInit {
     this.approvingId.set(null);
     this.memberService.loadMembers();
     this.memberService.refreshPendingCount();
+    this.memberService.refreshActiveCount();
   }
 
   // ── Cell helpers ──────────────────────────────────────────────────────────

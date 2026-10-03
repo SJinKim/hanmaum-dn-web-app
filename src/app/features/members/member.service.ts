@@ -45,6 +45,8 @@ export class MemberService {
 
   /** Shared, real-time count of members in PENDING status. */
   readonly pendingCount = signal(0);
+  /** 활성 count for the 청년 subtitle (#131), independent of the list's filters. */
+  readonly activeCount = signal(0);
 
   // ── 청년-Listen-State (#53) ────────────────────────────────────────────────
   // Filter, Seite und Ergebnis liegen im Service, nicht in der Liste: der
@@ -204,6 +206,12 @@ export class MemberService {
   refreshPendingCount(): void {
     this.getMembers({ status: 'PENDING', size: 1 }).subscribe({
       next: res => this.pendingCount.set(res.totalElements),
+    });
+  }
+
+  refreshActiveCount(): void {
+    this.getMembers({ status: 'ACTIVE', size: 1 }).subscribe({
+      next: res => this.activeCount.set(res.totalElements),
     });
   }
 
