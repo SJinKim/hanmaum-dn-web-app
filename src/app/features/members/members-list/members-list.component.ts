@@ -606,9 +606,9 @@ export class MembersListComponent implements OnInit {
     return value ? this.translate.instant(`members.baptism.${value}`) : '—';
   }
 
-  /** `2026-09-18T…` → `2026.09.18`; the app registers no ko locale data. */
+  /** `2026-09-18T…` → `2026-09-18`, as in Figma 201:4937 / 244:2693 (#130). */
   shortDate(iso: string | null | undefined): string {
-    return iso ? iso.slice(0, 10).replace(/-/g, '.') : '—';
+    return iso ? iso.slice(0, 10) : '—';
   }
 
   goToDetail(publicId: string): void {
