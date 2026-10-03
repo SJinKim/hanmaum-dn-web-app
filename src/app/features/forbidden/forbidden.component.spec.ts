@@ -41,6 +41,15 @@ describe('ForbiddenComponent', () => {
     expect(el.querySelector('i.pi-ban')).not.toBeNull();
   });
 
+  it('shows 홈으로 이동 without an icon and lets the empty state fill the page (#136)', () => {
+    const fixture = TestBed.createComponent(ForbiddenComponent);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('.pi-home')).toBeNull();
+    expect(el.classList).toContain('h-full');
+    expect(el.querySelector('app-empty-state')!.classList).toContain('flex-1');
+  });
+
   it('goes home from 홈으로 이동', () => {
     const fixture = TestBed.createComponent(ForbiddenComponent);
     const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
