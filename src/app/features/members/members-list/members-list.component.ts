@@ -148,6 +148,8 @@ export class MembersListComponent implements OnInit {
   readonly activeCount = this.memberService.activeCount;
 
   readonly isPhone = this.breakpoints.isPhone;
+  /** Phone only: the chip row sits behind the funnel button (#133, Figma 951:97625). */
+  readonly filtersOpen = signal(false);
 
   /** Church groups for the approve select; empty until the request lands. */
   private readonly churchGroups = signal<readonly ChurchGroupSummary[]>([]);
@@ -253,7 +255,7 @@ export class MembersListComponent implements OnInit {
     this.members().map(member => ({
       id: member.publicId,
       title: this.memberName(member),
-      subtitle: member.groupName ?? this.translate.instant('members.unassigned'),
+      subtitle: `${member.groupName ?? this.translate.instant('members.unassigned')} · ${this.latestTrainingLabel(member)}`,
       badge: {
         variant: this.statusVariant(member),
         label: this.translate.instant(`members.status.${member.memberStatus}`),
@@ -568,6 +570,17 @@ export class MembersListComponent implements OnInit {
    * 큐베세 *and* 제자반 only read as 제자반 (#82). The stage rule itself stays
    * where it is: the 순 matrix and its legend are built on it.
    */
+  /** The card's 양육 half (#133): the latest completed course, or 양육 없음. */
+  private latestTrainingLabel(member: MemberSummary): string {
+    return member.latestTraining
+      ? trainingLabelForName(this.trainingCatalog.entries(), member.latestTraining, this.lang())
+      : this.translate.instant('members.noTraining');
+  }
+
+  toggleFilters(): void {
+    this.filtersOpen.update(open => !open);
+  }
+
   trainingTags(member: MemberSummary): readonly TrainingTag[] {
     const catalog = this.trainingCatalog.entries();
     const lang = this.lang();
