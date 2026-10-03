@@ -106,6 +106,7 @@
     "subtitleDeleted": "{{total}} deleted members · admins can restore or permanently delete them",
     "caption": "Member list",
     "unassigned": "Unassigned",
+    "noTraining": "No training",
     "search": {
       "placeholder": "Search all fields...",
       "aria": "Search members"
@@ -285,6 +286,7 @@
       "ministryAll": "All",
       "baptism": "Baptism",
       "baptismAll": "All",
+      "toggle": "Filters",
       "updatedFrom": "Last activity from",
       "updatedTo": "Last activity to"
     },

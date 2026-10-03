@@ -8,7 +8,7 @@
     [eyebrow]="'members.eyebrow' | translate"
     [heading]="'members.title' | translate"
     [subtitle]="(status() === 'DELETED' ? 'members.subtitleDeleted' : 'members.subtitle') | translate: { total: total(), active: activeCount() }">
-    @if (canWrite()) {
+    @if (canWrite() && !isPhone()) {
       <p-button
         appActions
         size="small"
@@ -18,7 +18,18 @@
     }
   </app-page-header>
 
-  <app-toolbar hasFilters>
+  <!-- Figma 244:2693: on phone the primary action spans the full width below the header. -->
+  @if (canWrite() && isPhone()) {
+    <p-button
+      size="small"
+      icon="pi pi-plus"
+      styleClass="w-full"
+      data-testid="add-member-phone"
+      [label]="'members.addButton' | translate"
+      (onClick)="goToCreate()" />
+  }
+
+  <app-toolbar [hasFilters]="!isPhone() || filtersOpen()">
     <app-search-field
       appSearch
       [value]="searchText()"
@@ -26,6 +37,23 @@
       (cleared)="onSearchCleared()"
       [label]="'members.search.aria' | translate"
       [placeholder]="'members.search.placeholder' | translate" />
+
+    <!--
+      Phone (#133, Figma 951:97625 / 951:97733): the filters collapse behind a
+      funnel button; open, it carries the subtle background like a hovered IconButton.
+    -->
+    @if (isPhone()) {
+      <p-button
+        appActions
+        severity="secondary"
+        icon="pi pi-filter"
+        [text]="true"
+        [styleClass]="filtersOpen() ? 'bg-surface-subtle' : ''"
+        data-testid="filter-toggle"
+        [ariaLabel]="'members.filters.toggle' | translate"
+        [pt]="{ root: { 'aria-expanded': filtersOpen() } }"
+        (onClick)="toggleFilters()" />
+    }
 
     <!--
       One chip per column, in column order; 이름 is the search field. Each chip

@@ -106,6 +106,7 @@
     "subtitleDeleted": "삭제된 청년 {{total}}명 · 관리자는 복원하거나 영구 삭제할 수 있습니다",
     "caption": "청년 목록",
     "unassigned": "미배정",
+    "noTraining": "양육 없음",
     "search": {
       "placeholder": "전체 항목 검색...",
       "aria": "청년 검색"
@@ -285,6 +286,7 @@
       "ministryAll": "전체",
       "baptism": "세례",
       "baptismAll": "전체",
+      "toggle": "필터",
       "updatedFrom": "최근 활동 시작",
       "updatedTo": "최근 활동 종료"
     },

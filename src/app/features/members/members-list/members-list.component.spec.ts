@@ -14,6 +14,7 @@ import { TrainingCatalogEntry } from '../../../core/models/member-activity.model
 import { Member, MemberSummary } from '../../../core/models/member.model';
 import { MemberService, UNASSIGNED_GROUP } from '../member.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
+import { RoleService } from '../../../core/services/role.service';
 
 /** Three coded courses in catalog order plus one the stage rule knows nothing about. */
 function catalogEntry(
@@ -140,6 +141,8 @@ describe('MembersListComponent — 상태 select', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        // ChromeHeadless opens at 800px; the chips are only always visible from 834px (#133).
+        { provide: BreakpointService, useValue: { isPhone: signal(false) } },
         { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap(queryParams)) } },
       ],
     });
@@ -239,6 +242,8 @@ describe('MembersListComponent — 순/양육/사역 selects', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        // ChromeHeadless opens at 800px; the chips are only always visible from 834px (#133).
+        { provide: BreakpointService, useValue: { isPhone: signal(false) } },
       ],
     });
 
@@ -518,5 +523,74 @@ describe('MembersListComponent — 거절', () => {
     expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'error' }));
     expect(service.loadMembers).not.toHaveBeenCalled();
     expect(component.approvingId()).toBeNull();
+  });
+});
+
+// #133: Phone (Figma 244:2693, 951:97625 / 951:97733).
+describe('MembersListComponent — phone', () => {
+  function setup(content: MemberSummary[] = [member(undefined)]) {
+    TestBed.configureTestingModule({
+      imports: [MembersListComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        { provide: BreakpointService, useValue: { isPhone: signal(true) } },
+        { provide: RoleService, useValue: { canWrite: () => true, hasAnyRole: () => true, isAdmin: () => true } },
+      ],
+    });
+
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', { members: { unassigned: 'Unassigned', noTraining: 'No training' } }, true);
+    translate.use('en');
+    TestBed.inject(TrainingCatalogService).entries.set(CATALOG);
+
+    const fixture = TestBed.createComponent(MembersListComponent);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    http.match(r => r.url.endsWith('/v1/members')).forEach(req =>
+      req.flush({
+        success: true,
+        message: null,
+        data: { content, totalElements: content.length, totalPages: 1, number: 0, size: 20 },
+      }),
+    );
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance };
+  }
+
+  it('puts 청년 추가 full width below the header, not inside it', () => {
+    const { fixture } = setup();
+
+    expect(fixture.debugElement.query(By.css('[data-testid="add-member-phone"]'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('app-page-header p-button'))).toBeNull();
+  });
+
+  it('hides the filter chips until the funnel button opens them', () => {
+    const { fixture } = setup();
+    const chips = () => fixture.debugElement.queryAll(By.css('app-filter-select')).length;
+    const toggle = fixture.debugElement.query(By.css('[data-testid="filter-toggle"] button'));
+
+    expect(chips()).toBe(0);
+    expect(toggle.attributes['aria-expanded']).toBe('false');
+
+    toggle.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(chips()).toBe(5);
+    expect(toggle.attributes['aria-expanded']).toBe('true');
+  });
+
+  it('subtitles each card with 순 · 양육', () => {
+    const { component } = setup([
+      { ...member(undefined), publicId: 'a', groupName: '1순', latestTraining: 'One-to-One Discipleship Training' },
+      { ...member(undefined), publicId: 'b' },
+    ]);
+
+    expect(component.records().map(r => r.subtitle)).toEqual([
+      '1순 · One-to-One Discipleship Training',
+      'Unassigned · No training',
+    ]);
   });
 });
