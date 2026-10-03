@@ -83,9 +83,9 @@ describe('ArchiveComponent', () => {
   it('maps 순 and 활동/졸업 onto the 양육 rows', () => {
     const [a, b] = render().componentInstance.trainingSections()[0].records;
     expect(a.subtitle).toBe('1순');
-    expect(a.badge).toEqual({ variant: 'active', label: '활동' });
+    expect(a.cells?.['status']).toBe('활동');
     expect(b.subtitle).toBe('—');
-    expect(b.badge).toEqual({ variant: 'inactive', label: '졸업' });
+    expect(b.cells?.['status']).toBe('졸업');
   });
 
   it('shows 상태 on desktop as muted text, not a badge (#134)', () => {
@@ -120,11 +120,27 @@ describe('ArchiveComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('기록을 불러오지 못했습니다');
   });
 
-  it('renders list cards instead of the table on phone', () => {
+  it('renders list cards without a surrounding card on phone (#135)', () => {
     isPhone.set(true);
     const el: HTMLElement = render().nativeElement;
-    expect(el.querySelector('[data-testid="archive-card"] app-data-table')).toBeNull();
-    expect(el.querySelectorAll('[data-testid="archive-card"] app-list-card').length).toBe(2);
+    expect(el.querySelector('app-data-table')).toBeNull();
+    expect(el.querySelector('[data-testid="archive-card"]')).toBeNull();
+    expect(el.querySelectorAll('[data-testid="archive-list"] app-list-card').length).toBe(2);
+  });
+
+  it('reads `순 · 상태` on the phone 양육 card, without a badge (#135)', () => {
+    const c = render().componentInstance;
+    const [a, b] = c.trainingSections()[0].records.map(r => c.phoneRecord(r));
+    expect(a).toEqual({ id: jasmine.any(String), title: jasmine.any(String), subtitle: '1순 · 활동' });
+    expect(b.subtitle).toBe('졸업');
+    expect(a.badge).toBeUndefined();
+  });
+
+  it('shows the 사역 period as meta on the phone card', () => {
+    const c = render().componentInstance;
+    c.tab.set('ministry');
+    const record = c.phoneRecord(c.sections()[0].records[0]);
+    expect(record).toEqual(jasmine.objectContaining({ subtitle: '팀장', meta: '23.03 – 25.12' }));
   });
 
   it('formats dates as YY.MM', () => {

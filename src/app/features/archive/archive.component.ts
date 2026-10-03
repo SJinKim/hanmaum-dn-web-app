@@ -101,15 +101,16 @@ export class ArchiveComponent implements OnInit {
         heading: this.translate.instant('archive.trainingHeading', {
           name: trainingLabel(entry, lang), count: members.length,
         }) as string,
-        records: members.map(m => ({
-          id: m.publicId,
-          title: m.lastName + m.firstName,
-          subtitle: m.groupName ?? '—',
-          badge: m.memberStatus === 'ACTIVE'
-            ? { variant: 'active' as const, label: active }
-            : { variant: 'inactive' as const, label: graduated },
-          cells: { status: m.memberStatus === 'ACTIVE' ? active : graduated },
-        })),
+        records: members.map(m => {
+          const status = m.memberStatus === 'ACTIVE' ? active : graduated;
+          return {
+            id: m.publicId,
+            title: m.lastName + m.firstName,
+            subtitle: m.groupName ?? '—',
+            // Figma 781:91274: the Phone card reads `1순 · 활동`, or just the status.
+            cells: { status, phoneSubtitle: m.groupName ? `${m.groupName} · ${status}` : status },
+          };
+        }),
       }));
   });
 
@@ -152,9 +153,15 @@ export class ArchiveComponent implements OnInit {
       .subscribe({ next: m => { this.ministries.set(m); done(); }, error: fail });
   }
 
-  /** The ListCard meta on Phone: `23.03 – 25.12`. */
-  period(record: DataRecord): string {
-    return `${record.meta} – ${record.cells?.['endDate'] ?? '—'}`;
+  /**
+   * The ListCard on Phone (Figma 781:91274). 양육: `1순 · 활동` as subtitle and
+   * nothing on the right. 사역: the role and `23.03 – 25.12` as meta.
+   */
+  phoneRecord(record: DataRecord): DataRecord {
+    const { id, title } = record;
+    return this.tab() === 'ministry'
+      ? { id, title, subtitle: record.subtitle, meta: `${record.meta} – ${record.cells?.['endDate'] ?? '—'}` }
+      : { id, title, subtitle: String(record.cells?.['phoneSubtitle'] ?? '—') };
   }
 }
 

@@ -9,7 +9,7 @@
     [subtitle]="'archive.subtitle' | translate" />
 
   <app-segmented-control
-    class="w-full max-w-[360px]"
+    [class]="isPhone() ? 'w-full' : 'w-full max-w-[360px]'"
     [options]="tabOptions()"
     [(value)]="tab"
     [ariaLabel]="'archive.title' | translate" />
@@ -22,29 +22,20 @@
       [heading]="(failed() ? 'archive.error' : 'archive.empty.' + tab()) | translate" />
   } @else {
     @for (section of sections(); track section.id) {
-      <section
-        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
-        data-testid="archive-card">
-        <app-section-header [heading]="section.heading" />
-
-        @if (isPhone()) {
-          <div class="flex flex-col gap-[var(--space-8)]">
-            @for (r of section.records; track r.id) {
-              @if (tab() === 'ministry') {
-                <app-list-card [record]="{ id: r.id, title: r.title, subtitle: r.subtitle, meta: period(r) }" selectable="false" />
-              } @else {
-                <app-list-card [record]="r" selectable="false" />
-              }
-            }
-          </div>
-        } @else {
-          <app-data-table
-            [rows]="section.records"
-            [columns]="columns()"
-            [caption]="section.heading"
-            selectable="false" />
-        }
-      </section>
+      @if (isPhone()) {
+        <!-- Figma 781:91274: on Phone the heading and the cards stand on the page, no card around them. -->
+        <section class="flex flex-col gap-[var(--space-8)]" data-testid="archive-list">
+          <app-section-header [heading]="section.heading" />
+          @for (r of section.records; track r.id) {
+            <app-list-card [record]="phoneRecord(r)" selectable="false" />
+          }
+        </section>
+      } @else {
+        <section class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card" data-testid="archive-card">
+          <app-section-header [heading]="section.heading" />
+          <app-data-table [rows]="section.records" [columns]="columns()" [caption]="section.heading" selectable="false" />
+        </section>
+      }
     }
   }
 </div>
