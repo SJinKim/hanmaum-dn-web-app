@@ -270,6 +270,21 @@ describe('MemberService — 청년 list state (#53)', () => {
     expect(service.pendingCount()).toBe(7);
   });
 
+  it('refreshActiveCount asks for one ACTIVE row only (#131)', () => {
+    service.refreshActiveCount();
+    const req = http.expectOne(r => r.url.endsWith('/v1/members'));
+
+    expect(req.request.urlWithParams).toContain('status=ACTIVE');
+    expect(req.request.urlWithParams).toContain('size=1');
+    req.flush({
+      success: true,
+      message: null,
+      data: { content: [], totalElements: 184, totalPages: 184, number: 0, size: 1 },
+    });
+
+    expect(service.activeCount()).toBe(184);
+  });
+
   it('rejectMember POSTs to /reject — never a PATCH to REJECTED (#29)', () => {
     service.rejectMember('p-1').subscribe();
     const req = http.expectOne(r => r.url.endsWith('/v1/members/p-1/reject'));

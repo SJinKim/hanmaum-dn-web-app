@@ -31,6 +31,7 @@ import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { DataColumn, DataRecord } from '../../../core/ui/data-record.model';
 import { DataCellDirective } from '../../../core/ui/data-table/data-cell.directive';
 import { DataTableComponent, DataTableSort } from '../../../core/ui/data-table/data-table.component';
+import { FilterSelectComponent } from '../../../core/ui/filter-select/filter-select.component';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
 import { ListCardComponent } from '../../../core/ui/list-card/list-card.component';
 import { MemberPillComponent } from '../../../core/ui/member-pill/member-pill.component';
@@ -94,6 +95,7 @@ interface TrainingTag {
     ConfirmDialogModule,
     DatePickerModule,
     SelectModule,
+    FilterSelectComponent,
     ToastModule,
     PageHeaderComponent,
     ToolbarComponent,
@@ -143,6 +145,7 @@ export class MembersListComponent implements OnInit {
   readonly updatedTo   = computed(() => this.toDate(this.memberService.updatedTo()));
   readonly sort = this.memberService.sort;
   readonly pendingCount = this.memberService.pendingCount;
+  readonly activeCount = this.memberService.activeCount;
 
   readonly isPhone = this.breakpoints.isPhone;
 
@@ -357,6 +360,7 @@ export class MembersListComponent implements OnInit {
       });
 
     this.memberService.refreshPendingCount();
+    this.memberService.refreshActiveCount();
 
     // The approve select and the 순 filter need every group, not just those the
     // page happens to show.
@@ -496,6 +500,7 @@ export class MembersListComponent implements OnInit {
     this.approvingId.set(null);
     this.memberService.loadMembers();
     this.memberService.refreshPendingCount();
+    this.memberService.refreshActiveCount();
   }
 
   /**
@@ -538,6 +543,7 @@ export class MembersListComponent implements OnInit {
     this.approvingId.set(null);
     this.memberService.loadMembers();
     this.memberService.refreshPendingCount();
+    this.memberService.refreshActiveCount();
   }
 
   // ── Cell helpers ──────────────────────────────────────────────────────────

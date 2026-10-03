@@ -192,10 +192,12 @@ describe('MembersListComponent — 상태 select', () => {
     expect(setStatus.calls.allArgs()).toEqual([['INACTIVE'], [null]]);
   });
 
-  it('renders no 상태 chips any more', () => {
+  it('renders 상태 as a filter chip, unselected while 전체 is chosen (#131)', () => {
     const { fixture } = setup();
     fixture.detectChanges();
-    expect(fixture.debugElement.query(By.css('app-filter-chip'))).toBeNull();
+    const chip = fixture.debugElement.query(By.css('app-filter-select app-filter-chip'));
+    expect(chip.componentInstance.label()).toBe('Status');
+    expect(chip.componentInstance.selected()).toBeFalse();
   });
 
   it('shows 대기중 selected after the Home deep link', async () => {
@@ -205,10 +207,9 @@ describe('MembersListComponent — 상태 select', () => {
     fixture.detectChanges();
 
     expect(service.status()).toBe('PENDING');
-    const statusSelect = fixture.debugElement
-      .queryAll(By.css('p-select'))
-      .find(select => select.componentInstance.ariaLabel === 'Status')!;
-    expect(statusSelect.nativeElement.textContent).toContain('Pending (0)');
+    const chip = fixture.debugElement.query(By.css('app-filter-select app-filter-chip'));
+    expect(chip.componentInstance.label()).toBe('Status · Pending (0)');
+    expect(chip.componentInstance.selected()).toBeTrue();
   });
 
   it('switches the subtitle for the 삭제됨 filter like Figma (#144)', async () => {
@@ -374,10 +375,11 @@ describe('MembersListComponent — 순/양육/사역 selects', () => {
     }
   });
 
-  it('renders five filter selects', () => {
+  it('renders five filter chips — 상태, 순, 양육, 사역, 세례 (#131)', () => {
     const { fixture } = setup();
     fixture.detectChanges();
-    expect(fixture.debugElement.queryAll(By.css('p-select[appFilters]')).length).toBe(5);
+    expect(fixture.debugElement.queryAll(By.css('p-select[appFilters]')).length).toBe(0);
+    expect(fixture.debugElement.queryAll(By.css('app-filter-select[appFilters]')).length).toBe(5);
   });
 });
 

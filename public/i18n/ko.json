@@ -100,9 +100,9 @@
     }
   },
   "members": {
-    "title": "청년 리스트",
+    "title": "청년",
     "eyebrow": "청년 관리",
-    "subtitle": "등록된 청년 {{total}}명",
+    "subtitle": "등록된 청년 {{total}}명 · 활성 {{active}}명",
     "subtitleDeleted": "삭제된 청년 {{total}}명 · 관리자는 복원하거나 영구 삭제할 수 있습니다",
     "caption": "청년 목록",
     "unassigned": "미배정",
@@ -276,15 +276,15 @@
     },
     "filters": {
       "status": "상태",
-      "statusAll": "상태 전체",
+      "statusAll": "전체",
       "group": "순",
-      "groupAll": "순 전체",
+      "groupAll": "전체",
       "training": "양육",
-      "trainingAll": "양육 전체",
+      "trainingAll": "전체",
       "ministry": "사역",
-      "ministryAll": "사역 전체",
+      "ministryAll": "전체",
       "baptism": "세례",
-      "baptismAll": "세례 전체",
+      "baptismAll": "전체",
       "updatedFrom": "최근 활동 시작",
       "updatedTo": "최근 활동 종료"
     },
