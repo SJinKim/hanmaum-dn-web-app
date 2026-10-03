@@ -18,14 +18,18 @@ const TECHNICAL_ROLE = /^(default-roles-.*|offline_access|uma_authorization)$/i;
   selector: 'app-forbidden',
   standalone: true,
   imports: [TranslatePipe, EmptyStateComponent, PageHeaderComponent],
+  // Fills `<main>` so the empty state can take the rest of the height and sit
+  // vertically centred, as in Figma (745:41755, Phone 781:96125; #136).
+  host: { class: 'flex h-full flex-col' },
   template: `
-    <div class="flex flex-col gap-gutter">
+    <div class="flex flex-1 flex-col gap-gutter">
       @if (noPage()) {
         <app-page-header
           [eyebrow]="'forbidden.eyebrow' | translate"
           [heading]="'forbidden.noPage.title' | translate"
           [subtitle]="'forbidden.noPage.subtitle' | translate" />
         <app-empty-state
+          class="flex flex-1"
           variant="no-data"
           iconClass="pi pi-clock"
           [heading]="'forbidden.noPage.heading' | translate"
@@ -39,12 +43,12 @@ const TECHNICAL_ROLE = /^(default-roles-.*|offline_access|uma_authorization)$/i;
           [heading]="'forbidden.title' | translate"
           [subtitle]="'forbidden.subtitle' | translate" />
         <app-empty-state
+          class="flex flex-1"
           variant="error"
           iconClass="pi pi-ban"
           [heading]="'forbidden.empty.heading' | translate"
           [description]="'forbidden.empty.description' | translate"
           [actionLabel]="'forbidden.empty.action' | translate"
-          actionIcon="pi pi-home"
           (action)="goHome()" />
       }
     </div>
