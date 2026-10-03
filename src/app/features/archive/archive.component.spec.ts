@@ -88,6 +88,13 @@ describe('ArchiveComponent', () => {
     expect(b.badge).toEqual({ variant: 'inactive', label: '졸업' });
   });
 
+  it('shows 상태 on desktop as muted text, not a badge (#134)', () => {
+    const c = render().componentInstance;
+    const status = c.columns().find(col => col.key === 'status');
+    expect(status).toEqual(jasmine.objectContaining({ type: 'text', tone: 'muted' }));
+    expect(c.trainingSections()[0].records.map(r => r.cells?.['status'])).toEqual(['활동', '졸업']);
+  });
+
   it('switches to 사역 with 역할, 시작일 and 종료일 as YY.MM', () => {
     const c = render().componentInstance;
     c.tab.set('ministry');
