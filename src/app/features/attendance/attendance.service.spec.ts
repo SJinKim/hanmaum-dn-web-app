@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { AttendanceService } from './attendance.service';
-import { AttendanceGroupCountsResponse } from './attendance.model';
+import { AttendanceGroupCountsResponse, AttendanceLogResponse } from './attendance.model';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
@@ -42,6 +42,17 @@ describe('AttendanceService', () => {
         definitionId: 'def-1',
         date: '2026-06-16',
       });
+      done();
+    });
+  });
+
+  it('requests the 체크인 명단 for a date and definition', done => {
+    const rows: AttendanceLogResponse[] = [];
+    api.get.and.returnValue(of(rows));
+
+    service.getLogs({ date: '2026-06-14', definitionId: 'def-1' }).subscribe(result => {
+      expect(result).toBe(rows);
+      expect(api.get).toHaveBeenCalledOnceWith('/v1/attendance/logs', { date: '2026-06-14', definitionId: 'def-1' });
       done();
     });
   });

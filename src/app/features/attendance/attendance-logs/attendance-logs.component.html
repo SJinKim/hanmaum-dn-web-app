@@ -6,49 +6,50 @@
         icon="pi pi-arrow-left"
         [text]="true"
         severity="secondary"
+        [ariaLabel]="'attendance.logs.back' | translate"
         (onClick)="goBack()"
       />
       <div>
-        <div class="text-[10px] font-bold uppercase tracking-widest text-tertiary">Attendance Group Counts</div>
+        <div class="text-[10px] font-bold uppercase tracking-widest text-tertiary">{{ 'attendance.logs.eyebrow' | translate }}</div>
         <h1 class="mt-1 text-[26px] font-extrabold tracking-tight text-primary">
-          {{ groupCounts()?.definitionTitle ?? '출석 집계' }}
+          {{ groupCounts()?.definitionTitle ?? ('attendance.logs.title' | translate) }}
         </h1>
-        <p class="mt-1 text-[13px] text-tertiary">개인 출석 로그 대신 Church Group별 참석 수만 표시합니다.</p>
+        <p class="mt-1 text-[13px] text-tertiary">{{ 'attendance.logs.subtitle' | translate }}</p>
       </div>
     </div>
 
     <div class="flex items-end gap-3">
       <div class="flex flex-col gap-1">
-        <label for="attendanceCountsDate" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">Date</label>
+        <label for="attendanceCountsDate" class="text-[11px] font-semibold uppercase tracking-widest text-secondary">{{ 'attendance.date' | translate }}</label>
         <p-datepicker
           inputId="attendanceCountsDate"
           [(ngModel)]="selectedDate"
           [readonlyInput]="true"
           dateFormat="yy-mm-dd"
-          placeholder="날짜 선택"
+          [placeholder]="'attendance.logs.datePlaceholder' | translate"
           (onSelect)="loadGroupCounts()"
           styleClass="w-48"
         />
       </div>
-      <p-button icon="pi pi-refresh" severity="secondary" [outlined]="true" (onClick)="loadGroupCounts()" />
+      <p-button icon="pi pi-refresh" severity="secondary" [outlined]="true" [ariaLabel]="'attendance.logs.refresh' | translate" (onClick)="loadGroupCounts()" />
     </div>
   </div>
 
   @if (groupCounts(); as counts) {
     <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">Total Attendance</div>
+      <div class="rounded-xl border border-line-subtle bg-surface p-4 shadow-sm">
+        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">{{ 'attendance.logs.total' | translate }}</div>
         <div class="mt-1 text-[32px] font-extrabold leading-none tracking-tighter text-primary">{{ counts.totalCount }}</div>
         <div class="mt-2 text-[10px] text-tertiary">{{ counts.attendanceDate }}</div>
       </div>
-      <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm md:col-span-2">
-        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">Definition</div>
+      <div class="rounded-xl border border-line-subtle bg-surface p-4 shadow-sm md:col-span-2">
+        <div class="text-[9px] font-bold uppercase tracking-widest text-tertiary">{{ 'attendance.definition' | translate }}</div>
         <div class="mt-1 text-[18px] font-extrabold tracking-tight text-primary">{{ counts.definitionTitle }}</div>
       </div>
     </div>
   }
 
-  <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+  <div class="overflow-hidden rounded-xl border border-line-subtle bg-surface shadow-sm">
     <p-table
       [value]="sortedGroups()"
       [loading]="loading()"
@@ -57,18 +58,18 @@
     >
       <ng-template pTemplate="header">
         <tr>
-          <th>Church Group</th>
-          <th class="w-28 text-right">출석 수</th>
-          <th class="w-32 text-right">비중</th>
-          <th class="w-56">분포</th>
+          <th>{{ 'attendance.logs.group' | translate }}</th>
+          <th class="w-28 text-right">{{ 'attendance.columns.count' | translate }}</th>
+          <th class="w-32 text-right">{{ 'attendance.columns.share' | translate }}</th>
+          <th class="w-56">{{ 'attendance.logs.distribution' | translate }}</th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-group>
         <tr>
           <td>
-            <div class="font-semibold tracking-tight text-gray-800">{{ groupDisplayName(group) }}</div>
-            <div class="text-[11px] text-tertiary">{{ group.groupPublicId ?? 'ungrouped' }}</div>
+            <div class="font-semibold tracking-tight text-ink-strong">{{ groupDisplayName(group) }}</div>
+            <div class="text-[11px] text-tertiary">{{ group.groupPublicId ?? '' }}</div>
           </td>
           <td class="text-right text-[15px] font-extrabold text-primary">{{ group.attendanceCount }}</td>
           <td class="text-right text-[12px] font-semibold text-secondary">{{ groupShare(group) }}%</td>
@@ -80,8 +81,8 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="4" class="py-8 text-center text-gray-400">
-            선택한 날짜의 그룹 집계가 없습니다.
+          <td colspan="4" class="py-8 text-center text-ink-muted">
+            {{ 'attendance.logs.empty' | translate }}
           </td>
         </tr>
       </ng-template>

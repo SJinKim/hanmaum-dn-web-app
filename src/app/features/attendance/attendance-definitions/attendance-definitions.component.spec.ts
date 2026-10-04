@@ -7,14 +7,16 @@ import { of, throwError } from 'rxjs';
 
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { AttendanceService } from '../attendance.service';
-import { AttendanceGroupCountsResponse, DefinitionDto } from '../attendance.model';
+import { AttendanceGroupCountsResponse, AttendanceLogResponse, DefinitionDto } from '../attendance.model';
 import { AttendanceDefinitionsComponent } from './attendance-definitions.component';
 
 const KO = {
   attendance: {
     subtitle: '출석 정의 {{count}}개 · 활성 {{active}}개',
     definitions: '출석 정의',
-    columns: { title: '제목', day: '요일', window: '체크인 시간', status: '상태', actions: '관리', group: '순', count: '출석 수', share: '비율', inPlace: '교회 안', outside: '교회 밖', unconfirmed: '미확인' },
+    columns: { title: '제목', day: '요일', window: '체크인 시간', status: '상태', actions: '관리', group: '순', count: '출석 수', share: '비율', inPlace: '교회 안', outside: '교회 밖', unconfirmed: '미확인', name: '이름', worship: '예배', checkedInAt: '체크인 시간', location: '위치' },
+    presence: { IN_PLACE: '교회 안', OUTSIDE: '교회 밖', UNCONFIRMED: '미확인' },
+    unknownMember: '알 수 없는 교인',
     status: { active: '활성', inactive: '비활성' },
     days: { SUNDAY: '주일', WEDNESDAY: '수요일' },
     people: '{{count}}명',
@@ -39,16 +41,31 @@ const COUNTS: AttendanceGroupCountsResponse = {
   ],
 } as AttendanceGroupCountsResponse;
 
+function logOf(over: Partial<AttendanceLogResponse>): AttendanceLogResponse {
+  return {
+    logPublicId: 'l1', memberPublicId: 'm1', fullName: '홍길동', groupPublicId: 'g1', groupName: '1순',
+    definitionPublicId: 'd1', definitionTitle: '주일 예배', checkedInAt: '2026-09-27T09:05:00', presence: 'IN_PLACE',
+    ...over,
+  };
+}
+
+const LOGS: AttendanceLogResponse[] = [
+  logOf({}),
+  logOf({ logPublicId: 'l2', fullName: 'Max Mustermann', groupPublicId: 'g2', groupName: '2순', presence: 'OUTSIDE' }),
+  logOf({ logPublicId: 'l3', memberPublicId: null, fullName: null, groupPublicId: null, groupName: null, presence: 'UNCONFIRMED' }),
+];
+
 describe('AttendanceDefinitionsComponent', () => {
   let service: jasmine.SpyObj<AttendanceService>;
   let isPhone: ReturnType<typeof signal<boolean>>;
 
   beforeEach(() => {
     service = jasmine.createSpyObj<AttendanceService>('AttendanceService', [
-      'getDefinitions', 'getGroupCounts', 'deactivateDefinition', 'createDefinition', 'updateDefinition',
+      'getDefinitions', 'getGroupCounts', 'deactivateDefinition', 'createDefinition', 'updateDefinition', 'getLogs',
     ]);
     service.getDefinitions.and.returnValue(of(DEFS));
     service.getGroupCounts.and.returnValue(of(COUNTS));
+    service.getLogs.and.returnValue(of([]));
     isPhone = signal(false);
 
     TestBed.configureTestingModule({
@@ -170,6 +187,51 @@ describe('AttendanceDefinitionsComponent', () => {
     service.getGroupCounts.calls.reset();
     c.onDefinitionChange('d2');
     expect(service.getGroupCounts).toHaveBeenCalledWith(jasmine.objectContaining({ definitionId: 'd2' }));
+  });
+
+  it('maps the 체크인 명단 with 순 · time, 위치 badge and 알 수 없는 교인 for purged members', () => {
+    service.getLogs.and.returnValue(of(LOGS));
+    const [first, second, purged] = render().componentInstance.rosterRecords();
+    expect(first.title).toBe('홍길동');
+    expect(first.subtitle).toBe('1순 · 09:05');
+    expect(first.meta).toBe('09:05');
+    expect(first.cells).toEqual({ group: '1순', worship: '주일 예배' });
+    expect(first.badge).toEqual({ variant: 'active', label: '교회 안' });
+    expect(second.badge).toEqual({ variant: 'pending', label: '교회 밖' });
+    expect(purged.title).toBe('알 수 없는 교인');
+    expect(purged.cells?.['group']).toBe('소속 순 없음');
+    expect(purged.badge).toEqual({ variant: 'neutral', label: '미확인' });
+  });
+
+  it('uses the roster columns 이름, 순, 예배, 체크인 시간, 위치', () => {
+    expect(render().componentInstance.rosterColumns().map(c => c.header))
+      .toEqual(['이름', '순', '예배', '체크인 시간', '위치']);
+  });
+
+  it('filters the roster by the same chip as the counts', () => {
+    service.getLogs.and.returnValue(of(LOGS));
+    const c = render().componentInstance;
+    c.selectGroup('g2');
+    expect(c.rosterRecords().map(r => r.title)).toEqual(['Max Mustermann']);
+    c.selectGroup('none');
+    expect(c.rosterRecords().map(r => r.title)).toEqual(['알 수 없는 교인']);
+  });
+
+  it('asks the roster for the selected definition and date', () => {
+    const c = render().componentInstance;
+    service.getLogs.calls.reset();
+    c.onDefinitionChange('d2');
+    expect(service.getLogs).toHaveBeenCalledWith(jasmine.objectContaining({ definitionId: 'd2' }));
+  });
+
+  it('shows an error toast and an empty roster when the roster fails', () => {
+    service.getLogs.and.returnValue(throwError(() => new Error('403')));
+    const fixture = TestBed.createComponent(AttendanceDefinitionsComponent);
+    const messages = fixture.debugElement.injector.get(MessageService);
+    spyOn(messages, 'add');
+    fixture.detectChanges();
+    expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'error' }));
+    expect(fixture.componentInstance.rosterRecords()).toEqual([]);
   });
 
   it('renders list cards instead of the table on phone', () => {

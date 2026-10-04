@@ -136,10 +136,35 @@
               {{ 'attendance.unconfirmedHint' | translate }}
             </p>
           }
-          <p class="type-caption text-ink-muted" data-testid="privacy-note">
-            <i class="pi pi-info-circle" aria-hidden="true"></i>
-            {{ 'attendance.privacyNote' | translate }}
-          </p>
+        </section>
+
+        <!-- Figma 211:6948: 체크인 명단 (#146), filtered by the 순 chips above. ADMIN only (server #224). -->
+        <section
+          class="bg-surface border-line-subtle shadow-elevation-sm mt-gutter flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+          data-testid="roster-card">
+          <app-section-header [heading]="'attendance.roster' | translate" />
+
+          @if (isPhone()) {
+            @if (rosterLoading()) {
+              <app-skeleton variant="card" />
+            } @else if (rosterRecords().length === 0) {
+              <app-empty-state [heading]="'attendance.rosterEmpty' | translate" />
+            } @else {
+              <div class="flex flex-col gap-[var(--space-8)]">
+                @for (r of rosterRecords(); track r.id) {
+                  <app-list-card [record]="r" selectable="false" />
+                }
+              </div>
+            }
+          } @else {
+            <app-data-table
+              [rows]="rosterRecords()"
+              [columns]="rosterColumns()"
+              [loading]="rosterLoading()"
+              [caption]="'attendance.roster' | translate"
+              [emptyHeading]="'attendance.rosterEmpty' | translate"
+              selectable="false" />
+          }
         </section>
       </p-tabpanel>
     </p-tabpanels>

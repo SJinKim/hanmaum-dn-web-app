@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import {
   AttendanceGroupCountsResponse,
+  AttendanceLogResponse,
   CreateDefinitionRequest,
   DefinitionDto,
   UpdateDefinitionRequest,
@@ -33,5 +34,10 @@ export class AttendanceService {
     date: string;
   }): Observable<AttendanceGroupCountsResponse> {
     return this.api.get<AttendanceGroupCountsResponse>('/v1/attendance/group-counts', params);
+  }
+
+  /** The 체크인 명단, oldest check-in first. Without `definitionId` it covers the whole day. */
+  getLogs(params: { date: string; definitionId?: string }): Observable<AttendanceLogResponse[]> {
+    return this.api.get<AttendanceLogResponse[]>('/v1/attendance/logs', params);
   }
 }
