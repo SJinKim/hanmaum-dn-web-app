@@ -1,0 +1,141 @@
+<!--
+  Figma: 새가족 상세 · Desktop (324:21514). 기본 정보 spans the full width;
+  배정 및 등반, 출석 현황 and 메모 sit in a two-column grid below it.
+-->
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    hasBack
+    [breadcrumb]="breadcrumb()"
+    [eyebrow]="'newcomers.eyebrow' | translate"
+    [heading]="fullName() || ('newcomers.title' | translate)"
+    [subtitle]="subtitle()"
+    (back)="goBack()">
+    @if (newcomer() && canWrite()) {
+      <div appActions class="flex items-center gap-[var(--space-8)]">
+        <p-button
+          icon="pi pi-pencil"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'newcomers.detail.edit' | translate"
+          data-testid="edit-button"
+          (onClick)="goToEdit()" />
+        <p-button
+          icon="pi pi-ellipsis-v"
+          severity="secondary"
+          [text]="true"
+          [rounded]="true"
+          [ariaLabel]="'newcomers.detail.more' | translate"
+          data-testid="more-button"
+          (onClick)="toggleMore($event)" />
+        <p-menu #moreMenu [model]="moreItems()" [popup]="true" appendTo="body" />
+      </div>
+    }
+  </app-page-header>
+
+  @if (loading()) {
+    <app-skeleton variant="card" />
+    <div class="grid grid-cols-1 gap-gutter tablet:grid-cols-2">
+      <app-skeleton variant="card" />
+      <app-skeleton variant="card" />
+    </div>
+  } @else if (newcomer(); as m) {
+    <div class="grid grid-cols-1 items-start gap-gutter tablet:grid-cols-2">
+
+      <!-- 기본 정보 -->
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card tablet:col-span-2"
+        data-testid="basic-card">
+        <app-section-header [heading]="'newcomers.detail.cards.basic' | translate" />
+        <div class="grid grid-cols-1 gap-x-[var(--space-32)] gap-y-[var(--space-8)] tablet:grid-cols-2">
+          <dl class="m-0 flex flex-col gap-[var(--space-8)]">
+            <app-definition-row layout="inline" [term]="'newcomers.fields.name' | translate" [value]="fullName()" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.englishName' | translate" [value]="m.englishName || '—'" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.gender' | translate" [value]="label('newcomers.gender', m.gender)" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.birthDate' | translate" [value]="m.birthDate ?? '—'" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.identity' | translate" [value]="label('newcomers.identity', m.identityStatus)" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.workOrSchool' | translate" [value]="m.workOrSchool || '—'" />
+          </dl>
+          <dl class="m-0 flex flex-col gap-[var(--space-8)]">
+            <app-definition-row layout="inline" [term]="'newcomers.fields.phone' | translate" [value]="formatPhone(m.phoneNumber)" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.email' | translate" [value]="m.email || '—'" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.kakaoId' | translate" [value]="m.kakaoId || '—'" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.address' | translate" [value]="address()" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.baptism' | translate" [value]="label('members.baptism', m.baptism)" />
+            <app-definition-row layout="inline" [term]="'newcomers.fields.churchExperience' | translate" [value]="label('newcomers.churchExperience', m.churchExperience)" />
+          </dl>
+        </div>
+      </section>
+
+      <!-- 배정 및 등반 -->
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+        data-testid="assignment-card">
+        <app-section-header [heading]="'newcomers.detail.cards.assignment' | translate" />
+        <dl class="m-0 flex flex-col gap-[var(--space-8)]">
+          <app-definition-row layout="inline" [term]="'newcomers.fields.registrationDate' | translate" [value]="m.registrationDate ?? '—'" />
+          <app-definition-row layout="inline" [term]="'newcomers.fields.intakeRound' | translate" [value]="intakeRound(m)" />
+          <app-definition-row layout="inline" [term]="'newcomers.fields.caregiver' | translate" [value]="m.caregiver?.label ?? '—'" />
+          <app-definition-row layout="inline" [term]="'newcomers.fields.group' | translate" [value]="m.assignedGroup?.label ?? ('newcomers.unassigned' | translate)" />
+          <app-definition-row layout="inline" [term]="'newcomers.fields.assignmentReason' | translate" [value]="m.assignmentReason || '—'" />
+          <app-definition-row layout="inline" [term]="'newcomers.fields.lifecycle' | translate">
+            <app-badge
+              data-testid="lifecycle-badge"
+              [variant]="isGraduated() ? 'active' : 'neutral'"
+              [label]="label('newcomers.lifecycle', m.lifecycleStatus)" />
+          </app-definition-row>
+        </dl>
+      </section>
+
+      <!-- 출석 현황 -->
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+        data-testid="attendance-card">
+        <app-section-header [heading]="'newcomers.detail.cards.attendance' | translate" />
+        <dl class="m-0 flex flex-col gap-[var(--space-8)]">
+          <app-definition-row layout="inline" [term]="'newcomers.fields.attendance' | translate">
+            @if (attendance(); as a) {
+              <app-badge [variant]="a.variant" [label]="a.label" />
+            } @else {
+              —
+            }
+          </app-definition-row>
+          <app-definition-row layout="inline" [term]="'newcomers.fields.firstVisitDate' | translate" [value]="m.firstVisitDate ?? '—'" />
+          <app-definition-row layout="inline" [term]="'newcomers.fields.previousChurch' | translate" [value]="m.previousChurch || '—'" />
+        </dl>
+      </section>
+
+      <!-- 메모 -->
+      <section
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card tablet:col-span-2"
+        data-testid="notes-card">
+        <app-section-header [heading]="'newcomers.detail.cards.notes' | translate" />
+        @if (m.overallNotes) {
+          <p class="type-body text-ink m-0 whitespace-pre-line">{{ m.overallNotes }}</p>
+        } @else {
+          <p class="type-body text-ink-muted m-0">{{ 'newcomers.detail.notesEmpty' | translate }}</p>
+        }
+      </section>
+
+    </div>
+
+    @if (canWrite()) {
+      <app-newcomer-graduate-dialog
+        [(visible)]="graduateOpen"
+        [publicId]="m.publicId"
+        [groups]="groups()"
+        [initialGroup]="m.assignedGroup?.publicId ?? null"
+        (graduated)="onGraduated()" />
+    }
+  } @else {
+    <app-empty-state
+      variant="error"
+      [heading]="'newcomers.detail.notFound.heading' | translate"
+      [description]="'newcomers.detail.notFound.description' | translate"
+      [actionLabel]="'newcomers.detail.notFound.action' | translate"
+      actionIcon="pi pi-arrow-left"
+      (action)="goBack()" />
+  }
+</div>
+
+<p-confirmDialog />
+<p-toast />

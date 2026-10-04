@@ -912,5 +912,200 @@
       "ministry": "아직 지난 팀원이 없습니다"
     },
     "error": "기록을 불러오지 못했습니다"
+  },
+  "newcomers": {
+    "eyebrow": "새가족팀",
+    "title": "새가족",
+    "subtitle": "관리 중 {{inCare}}명 · 등반 {{graduated}}명 · 이번 주 신규 {{newThisWeek}}명",
+    "addButton": "새가족 추가",
+    "caption": "새가족 명단",
+    "unassigned": "미배정",
+    "intakeRound": "{{n}}기",
+    "search": {
+      "aria": "새가족 검색",
+      "placeholder": "이름, 전화번호로 검색"
+    },
+    "filters": {
+      "toggle": "필터",
+      "attendance": "출석",
+      "attendanceAll": "전체 출석",
+      "caregiver": "담당자",
+      "caregiverAll": "전체 담당자",
+      "identity": "신분",
+      "identityAll": "전체 신분"
+    },
+    "columns": {
+      "registrationDate": "등록일",
+      "name": "이름",
+      "gender": "성별",
+      "caregiver": "담당자",
+      "group": "순",
+      "attendance": "배정 후 출석",
+      "intakeRound": "기수",
+      "birthDate": "생년월일",
+      "baptism": "세례",
+      "identity": "신분",
+      "workOrSchool": "직장 / 학교"
+    },
+    "error": {
+      "heading": "새가족 명단을 불러오지 못했습니다",
+      "description": "잠시 후 다시 시도해 주세요.",
+      "retry": "다시 시도"
+    },
+    "noResults": {
+      "heading": "조건에 맞는 새가족이 없습니다",
+      "description": "검색어나 필터를 바꿔 보세요.",
+      "action": "필터 초기화"
+    },
+    "empty": {
+      "heading": "아직 등록된 새가족이 없습니다",
+      "description": "새가족이 등록되면 여기에 표시됩니다."
+    },
+    "pagination": {
+      "range": "{{from}}–{{to}} / {{total}}명",
+      "prev": "이전",
+      "next": "다음"
+    },
+    "fields": {
+      "name": "이름",
+      "englishName": "영어 이름",
+      "gender": "성별",
+      "birthDate": "생년월일",
+      "identity": "신분",
+      "workOrSchool": "직장 / 학교",
+      "phone": "전화번호",
+      "email": "이메일",
+      "kakaoId": "카카오톡 ID",
+      "address": "주소",
+      "baptism": "세례",
+      "churchExperience": "교회 경험",
+      "previousChurch": "이전 교회",
+      "firstVisitDate": "첫 방문일",
+      "registrationDate": "등록일",
+      "intakeRound": "기수",
+      "caregiver": "담당자",
+      "group": "배정 순",
+      "assignmentReason": "배정 사유",
+      "attendance": "배정 후 출석",
+      "lifecycle": "상태",
+      "notes": "특이사항"
+    },
+    "gender": {
+      "M": "남",
+      "F": "여"
+    },
+    "identity": {
+      "EMPLOYEE": "직장인",
+      "UNIVERSITY_STUDENT": "대학생",
+      "EXAM_PREPARATION": "입시 준비",
+      "WORKING_HOLIDAY": "워킹홀리데이",
+      "EXCHANGE_STUDENT": "교환학생",
+      "SELF_EMPLOYED": "자영업",
+      "EXPATRIATE": "주재원",
+      "JOB_SEEKING": "구직 중"
+    },
+    "attendance": {
+      "REGULAR": "정기 출석",
+      "OCCASIONAL": "가끔 출석",
+      "WORSHIP_ONLY": "예배만 출석",
+      "ABSENT_OVER_MONTH": "한 달 이상 결석",
+      "CHANGED_CHURCH": "교회 옮김",
+      "RETURNED_OR_MOVED": "귀국 / 이사"
+    },
+    "lifecycle": {
+      "SUBMITTED": "접수",
+      "IN_CARE": "관리 중",
+      "GRADUATED": "등반",
+      "ARCHIVED": "보관"
+    },
+    "churchExperience": {
+      "FIRST_TIME": "처음",
+      "CHILDHOOD_FEW_TIMES": "어릴 때 몇 번",
+      "IRREGULAR": "불규칙하게",
+      "REGULAR": "꾸준히"
+    },
+    "detail": {
+      "edit": "수정",
+      "more": "더 보기",
+      "graduate": "등반",
+      "delete": "삭제",
+      "registeredOn": "{{date}} 등록",
+      "caredBy": "담당 {{name}}",
+      "notesEmpty": "기록된 특이사항이 없습니다",
+      "cards": {
+        "basic": "기본 정보",
+        "assignment": "배정",
+        "attendance": "출석",
+        "notes": "특이사항"
+      },
+      "deleteDialog": {
+        "header": "새가족 삭제",
+        "message": "{{name}} 님의 기록을 삭제할까요? 되돌릴 수 없습니다.",
+        "accept": "삭제"
+      },
+      "toast": {
+        "deleted": "새가족을 삭제했습니다",
+        "deleteFailed": "삭제하지 못했습니다"
+      },
+      "notFound": {
+        "heading": "새가족을 찾을 수 없습니다",
+        "description": "삭제되었거나 주소가 잘못되었습니다.",
+        "action": "목록으로"
+      }
+    },
+    "form": {
+      "eyebrow": "새가족팀",
+      "createHeading": "새가족 추가",
+      "editHeading": "새가족 수정",
+      "createSubtitle": "새가족 정보를 입력하세요. * 표시는 필수입니다.",
+      "editSubtitle": "정보를 수정한 뒤 저장하세요.",
+      "cardTitle": "새가족 정보",
+      "lastName": "성",
+      "firstName": "이름",
+      "phoneCountry": "국가 번호",
+      "select": "선택",
+      "selectPlaceholder": "선택하세요",
+      "cancel": "취소",
+      "save": "저장",
+      "create": "추가",
+      "hints": {
+        "identity": "현재 직업 또는 체류 신분",
+        "baptism": "유아세례 · 세례 · 입교 · 받지않음",
+        "churchExperience": "이전에 교회를 다녀 본 경험",
+        "caregiver": "서버의 현재 새가족팀 명단에서 불러옵니다",
+        "group": "모든 순에서 선택할 수 있습니다",
+        "attendance": "순 배정 이후의 출석 상태",
+        "notes": "리스트의 특이사항 열과 같은 값입니다"
+      },
+      "errors": {
+        "required": "필수 항목입니다",
+        "email": "이메일 형식이 아닙니다",
+        "phone": "전화번호 형식이 아닙니다"
+      },
+      "toast": {
+        "created": "새가족을 추가했습니다",
+        "updated": "변경 사항을 저장했습니다",
+        "conflict": "다른 사람이 먼저 수정했습니다. 새로고침 후 다시 시도하세요.",
+        "saveFailed": "저장하지 못했습니다"
+      }
+    },
+    "graduate": {
+      "header": "등반 처리",
+      "subtitle": "등반 정보를 입력하면 청년으로 전환됩니다.",
+      "cohort": "기수",
+      "date": "등반일",
+      "group": "배정 순",
+      "groupRequired": "순을 선택하세요",
+      "note": "메모",
+      "submit": "등반",
+      "toast": {
+        "done": "등반 처리했습니다",
+        "failed": "등반 처리하지 못했습니다"
+      }
+    },
+    "toast": {
+      "done": "완료",
+      "error": "오류"
+    }
   }
 }

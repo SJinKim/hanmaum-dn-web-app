@@ -181,8 +181,8 @@ describe('RoleService', () => {
       const routes = withRoles(['ADMIN'])
         .navGroups()
         .flatMap(group => group.items.map(item => item.route));
-      expect(routes).not.toContain('/newcomers');
-      expect(routes).toContain('/archive');
+      expect(routes).not.toContain('/analytics');
+      expect(routes).toContain('/newcomers');
     });
 
     it('renders every remaining item as a route the app declares', () => {

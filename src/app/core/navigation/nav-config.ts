@@ -33,7 +33,7 @@ export interface NavItem {
    */
   readonly feature: FeatureId;
   /**
-   * The screen behind this entry is not routed yet (#39 newcomers). The entry
+   * The screen behind this entry is not routed yet (e.g. analytics). The entry
    * stays here so the structure is complete
    * and reviewable; it is filtered out of the rendered navigation until the
    * route exists, because a nav item that lands on the `**` redirect is worse
@@ -54,7 +54,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { labelKey: 'nav.items.home', feature: 'home', icon: 'pi pi-home', route: '/', exact: true },
       { labelKey: 'nav.items.members', feature: 'members', icon: 'pi pi-users', route: '/members' },
-      { labelKey: 'nav.items.newcomers', feature: 'newcomers', icon: 'pi pi-user-plus', route: '/newcomers', pending: true },
+      { labelKey: 'nav.items.newcomers', feature: 'newcomers', icon: 'pi pi-user-plus', route: '/newcomers' },
       { labelKey: 'nav.items.churchGroups', feature: 'churchGroups', icon: 'pi pi-th-large', route: '/church-groups' },
     ],
   },

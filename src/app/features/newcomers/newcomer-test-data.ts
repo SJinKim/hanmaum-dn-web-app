@@ -1,0 +1,43 @@
+import { Newcomer } from '../../core/models/newcomer.model';
+
+/** A full `NewcomerResponse` for specs; placeholder name per the project rule. */
+export function newcomerFixture(overrides: Partial<Newcomer> = {}): Newcomer {
+  return {
+    publicId: 'n-1',
+    memberPublicId: null,
+    lastName: '홍',
+    firstName: '길동',
+    englishName: null,
+    gender: 'M',
+    birthDate: '2000-05-17',
+    email: null,
+    phoneNumber: '+4915112345678',
+    street: null,
+    houseNumber: null,
+    zipCode: null,
+    city: null,
+    baptism: null,
+    profileImageUrl: null,
+    registrationDate: '2026-09-27',
+    intakeRound: 3,
+    hasVisited: null,
+    lifecycleStatus: 'IN_CARE',
+    caregiver: { publicId: 'c-1', label: 'John Doe' },
+    identityStatus: 'UNIVERSITY_STUDENT',
+    workOrSchool: null,
+    firstVisitDate: null,
+    assignedGroup: null,
+    assignmentReason: null,
+    overallNotes: null,
+    postAssignmentAttendance: null,
+    kakaoId: null,
+    previousChurch: null,
+    churchExperience: null,
+    visitMotives: null,
+    additionalNotes: null,
+    version: 4,
+    createdAt: null,
+    updatedAt: null,
+    ...overrides,
+  };
+}

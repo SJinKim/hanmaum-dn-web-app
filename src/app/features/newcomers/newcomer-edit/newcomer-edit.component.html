@@ -1,0 +1,365 @@
+<!--
+  Figma: 새가족 수정 / 추가 324:23444. Both routes share this component.
+
+  Deviations from the frame, forced by the contract (`CreateNewcomerRequest`):
+  - 이름 is two inputs (성 / 이름) — the server keeps lastName and firstName apart.
+  - 주소 is one line bound to `street`; houseNumber, zipCode and city stay as they are.
+  - 등반일 is not here: `NewcomerResponse` carries no graduation date, it is set in the 등반 dialog.
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  <app-page-header
+    hasBack
+    [breadcrumb]="breadcrumb()"
+    [eyebrow]="'newcomers.form.eyebrow' | translate"
+    [heading]="heading()"
+    [subtitle]="subtitle()"
+    (back)="goBack()" />
+
+  @if (loading()) {
+    <app-skeleton variant="card" />
+  } @else if (notFound()) {
+    <app-empty-state
+      variant="error"
+      [heading]="'newcomers.detail.notFound.heading' | translate"
+      [description]="'newcomers.detail.notFound.description' | translate"
+      [actionLabel]="'newcomers.detail.notFound.action' | translate"
+      (action)="goBack()" />
+  } @else {
+    <form
+      id="newcomer-edit-form"
+      [formGroup]="form"
+      (ngSubmit)="save()"
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card">
+      <h2 class="type-h3 text-ink-strong">{{ 'newcomers.form.cardTitle' | translate }}</h2>
+
+      <div class="flex flex-col gap-gutter tablet:flex-row">
+        <!-- 1 · 인적 사항 -->
+        <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-16)]">
+          <div class="flex gap-[var(--space-12)]">
+            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+              <label for="newcomerLastName" class="type-caption text-ink-muted">
+                {{ 'newcomers.form.lastName' | translate }}
+                <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+              </label>
+              <input
+                id="newcomerLastName"
+                pInputText
+                formControlName="lastName"
+                class="w-full"
+                [class.ng-invalid]="isInvalid('lastName')" />
+              @if (isInvalid('lastName')) {
+                <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                  {{ 'newcomers.form.errors.required' | translate }}
+                </small>
+              }
+            </div>
+            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+              <label for="newcomerFirstName" class="type-caption text-ink-muted">
+                {{ 'newcomers.form.firstName' | translate }}
+                <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+              </label>
+              <input
+                id="newcomerFirstName"
+                pInputText
+                formControlName="firstName"
+                class="w-full"
+                [class.ng-invalid]="isInvalid('firstName')" />
+              @if (isInvalid('firstName')) {
+                <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                  {{ 'newcomers.form.errors.required' | translate }}
+                </small>
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerEnglishName" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.englishName' | translate }}
+            </label>
+            <input id="newcomerEnglishName" pInputText formControlName="englishName" class="w-full" />
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <span class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.gender' | translate }}
+              <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+            </span>
+            <app-segmented-control
+              data-testid="gender-control"
+              [options]="genderOptions()"
+              [value]="gender()"
+              [ariaLabel]="'newcomers.fields.gender' | translate"
+              (valueChange)="onGenderChange($event)" />
+            @if (isInvalid('gender')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                {{ 'newcomers.form.errors.required' | translate }}
+              </small>
+            }
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerBirthDate" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.birthDate' | translate }}
+              <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+            </label>
+            <p-datepicker
+              inputId="newcomerBirthDate"
+              formControlName="birthDate"
+              dateFormat="yy-mm-dd"
+              placeholder="YYYY-MM-DD"
+              [showIcon]="true"
+              styleClass="w-full"
+              [class.ng-invalid]="isInvalid('birthDate')" />
+            @if (isInvalid('birthDate')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                {{ 'newcomers.form.errors.required' | translate }}
+              </small>
+            }
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerIdentity" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.identity' | translate }}
+            </label>
+            <p-select
+              inputId="newcomerIdentity"
+              formControlName="identityStatus"
+              [options]="identityOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              [placeholder]="'newcomers.form.select' | translate"
+              styleClass="w-full" />
+            <small class="type-caption text-ink-disabled">{{ 'newcomers.form.hints.identity' | translate }}</small>
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerWorkOrSchool" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.workOrSchool' | translate }}
+            </label>
+            <input id="newcomerWorkOrSchool" pInputText formControlName="workOrSchool" class="w-full" />
+          </div>
+        </div>
+
+        <!-- 2 · 연락처와 신앙 -->
+        <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-16)]">
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerPhone" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.phone' | translate }}
+              <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+            </label>
+            <div class="flex gap-[var(--space-8)]">
+              <p-select
+                formControlName="phoneCountry"
+                [options]="phoneCountryOptions"
+                optionLabel="label"
+                optionValue="value"
+                class="min-w-0 flex-[3]"
+                styleClass="w-full"
+                [ariaLabel]="'newcomers.form.phoneCountry' | translate" />
+              <div class="min-w-0 flex-[7]">
+                <input
+                  id="newcomerPhone"
+                  pInputText
+                  type="tel"
+                  formControlName="phoneLocal"
+                  [placeholder]="phonePlaceholder"
+                  class="w-full"
+                  [class.ng-invalid]="isInvalid('phoneLocal')" />
+              </div>
+            </div>
+            @if (isInvalid('phoneLocal')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                {{ (form.get('phoneLocal')!.hasError('required') ? 'newcomers.form.errors.required' : 'newcomers.form.errors.phone') | translate }}
+              </small>
+            }
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerEmail" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.email' | translate }}
+            </label>
+            <input
+              id="newcomerEmail"
+              pInputText
+              type="email"
+              formControlName="email"
+              class="w-full"
+              [class.ng-invalid]="isInvalid('email')" />
+            @if (isInvalid('email')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                {{ 'newcomers.form.errors.email' | translate }}
+              </small>
+            }
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerKakao" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.kakaoId' | translate }}
+            </label>
+            <input id="newcomerKakao" pInputText formControlName="kakaoId" class="w-full" />
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerAddress" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.address' | translate }}
+            </label>
+            <input id="newcomerAddress" pInputText formControlName="street" class="w-full" />
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerBaptism" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.baptism' | translate }}
+            </label>
+            <p-select
+              inputId="newcomerBaptism"
+              formControlName="baptism"
+              [options]="baptismOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              [placeholder]="'newcomers.form.select' | translate"
+              styleClass="w-full" />
+            <small class="type-caption text-ink-disabled">{{ 'newcomers.form.hints.baptism' | translate }}</small>
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerChurchExperience" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.churchExperience' | translate }}
+            </label>
+            <p-select
+              inputId="newcomerChurchExperience"
+              formControlName="churchExperience"
+              [options]="churchExperienceOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              [placeholder]="'newcomers.form.select' | translate"
+              styleClass="w-full" />
+            <small class="type-caption text-ink-disabled">{{ 'newcomers.form.hints.churchExperience' | translate }}</small>
+          </div>
+        </div>
+
+        <!-- 3 · 관리 -->
+        <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-16)]">
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerRegistrationDate" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.registrationDate' | translate }}
+            </label>
+            <p-datepicker
+              inputId="newcomerRegistrationDate"
+              formControlName="registrationDate"
+              dateFormat="yy-mm-dd"
+              placeholder="YYYY-MM-DD"
+              [showIcon]="true"
+              styleClass="w-full" />
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerIntakeRound" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.intakeRound' | translate }}
+            </label>
+            <p-select
+              inputId="newcomerIntakeRound"
+              formControlName="intakeRound"
+              [options]="intakeRoundOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              [placeholder]="'newcomers.form.select' | translate"
+              styleClass="w-full" />
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerCaregiver" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.caregiver' | translate }}
+            </label>
+            <p-select
+              inputId="newcomerCaregiver"
+              formControlName="caregiverPublicId"
+              [options]="caregiverOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [filter]="true"
+              [showClear]="true"
+              [placeholder]="'newcomers.form.select' | translate"
+              styleClass="w-full" />
+            <small class="type-caption text-ink-disabled">{{ 'newcomers.form.hints.caregiver' | translate }}</small>
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerGroup" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.group' | translate }}
+            </label>
+            <p-select
+              inputId="newcomerGroup"
+              formControlName="assignedGroupPublicId"
+              [options]="groupOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [filter]="true"
+              [showClear]="true"
+              [placeholder]="'newcomers.form.select' | translate"
+              styleClass="w-full" />
+            <small class="type-caption text-ink-disabled">{{ 'newcomers.form.hints.group' | translate }}</small>
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerAssignmentReason" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.assignmentReason' | translate }}
+            </label>
+            <input id="newcomerAssignmentReason" pInputText formControlName="assignmentReason" class="w-full" />
+          </div>
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <label for="newcomerAttendance" class="type-caption text-ink-muted">
+              {{ 'newcomers.fields.attendance' | translate }}
+            </label>
+            <p-select
+              inputId="newcomerAttendance"
+              formControlName="postAssignmentAttendance"
+              [options]="attendanceOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              [placeholder]="'newcomers.form.select' | translate"
+              styleClass="w-full" />
+            <small class="type-caption text-ink-disabled">{{ 'newcomers.form.hints.attendance' | translate }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="newcomerNotes" class="type-caption text-ink-muted">
+          {{ 'newcomers.fields.notes' | translate }}
+        </label>
+        <textarea
+          id="newcomerNotes"
+          pTextarea
+          rows="3"
+          [autoResize]="true"
+          formControlName="overallNotes"
+          class="w-full"></textarea>
+        <small class="type-caption text-ink-disabled">{{ 'newcomers.form.hints.notes' | translate }}</small>
+      </div>
+
+      <footer class="border-line-subtle flex items-center justify-end gap-[var(--space-8)] border-t pt-[var(--space-16)]">
+        <p-button
+          type="button"
+          severity="secondary"
+          [text]="true"
+          [label]="'newcomers.form.cancel' | translate"
+          (onClick)="goBack()" />
+        <p-button
+          type="submit"
+          icon="pi pi-check"
+          data-testid="save-button"
+          [loading]="saving()"
+          [label]="(isEdit() ? 'newcomers.form.save' : 'newcomers.form.create') | translate" />
+      </footer>
+    </form>
+  }
+</div>
+
+<p-toast />
+<p-confirmdialog [key]="unsavedChangesDialogKey" />
