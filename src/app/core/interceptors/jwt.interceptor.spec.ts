@@ -69,6 +69,19 @@ describe('jwtInterceptor', () => {
     expect(auth.freshToken).not.toHaveBeenCalled();
   });
 
+  it('sends no token to the public newcomer form, but keeps it on the admin links', async () => {
+    http.get('/api/v1/newcomer-forms/abc').subscribe();
+    await settle();
+    expect(backend.expectOne('/api/v1/newcomer-forms/abc').request.headers.has('Authorization')).toBeFalse();
+    expect(auth.freshToken).not.toHaveBeenCalled();
+
+    http.get('/api/v1/newcomer-form-links').subscribe();
+    await settle();
+    const req = backend.expectOne('/api/v1/newcomer-form-links');
+    expect(req.request.headers.get('Authorization')).toBe('Bearer fresh-token');
+    req.flush({});
+  });
+
   it('fails the call instead of sending it without a token when the session has expired', async () => {
     auth.freshToken.and.rejectWith(new Error('session expired'));
     const error = jasmine.createSpy('error');

@@ -1271,5 +1271,87 @@
         "qrFailed": "Could not create the QR code"
       }
     }
+  },
+  "publicRegister": {
+    "eyebrow": "Hanmaum D+N Young Adults",
+    "heading": "Newcomer registration",
+    "subtitle": "New here? Please fill in this form. Our team will get in touch after reviewing it.",
+    "cardTitle": "Registration request",
+    "fields": {
+      "lastName": "Last name",
+      "firstName": "First name",
+      "englishName": "Name (English)",
+      "gender": "Gender",
+      "birthDate": "Date of birth",
+      "phone": "Mobile",
+      "phoneCountry": "Country code",
+      "kakaoId": "KakaoTalk ID",
+      "email": "Email",
+      "address": "Address",
+      "churchExperience": "Church experience",
+      "baptism": "Baptism",
+      "previousChurch": "Previous church",
+      "visitMotives": "Why you came",
+      "otherMotive": "Other reason",
+      "honeypot": "Leave this field empty"
+    },
+    "placeholders": {
+      "address": "Street, number, postcode, city",
+      "select": "Please select",
+      "otherMotive": "Tell us more (optional)"
+    },
+    "gender": {
+      "M": "Male",
+      "F": "Female"
+    },
+    "churchExperience": {
+      "FIRST_TIME": "First time ever",
+      "CHILDHOOD_FEW_TIMES": "A few times as a child",
+      "IRREGULAR": "Occasional attender",
+      "REGULAR": "Regular attender"
+    },
+    "baptism": {
+      "GENERAL_BAPTIZED": "Baptized",
+      "CONFIRMATION": "Confirmed",
+      "INFANT_BAPTIZED": "Infant baptism",
+      "UNBAPTIZED": "Not baptized"
+    },
+    "motives": {
+      "REFERRAL": "Invited by someone I know",
+      "MOVED": "Moved near the church",
+      "ANSWER": "I want God to answer me soon",
+      "COMMUNITY": "Looking forward to a close community",
+      "RECOVERY": "Hoping to restore my faith",
+      "OTHER": "Other"
+    },
+    "motivesHint": "Choose at least one",
+    "consent": "Your details are used only to register you as a newcomer and to contact you, and are kept for one year. I agree.",
+    "consentVersion": "Consent version {{version}}",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "footer": "Only the newcomer team can see what you enter.",
+    "errors": {
+      "required": "This field is required",
+      "email": "Enter a valid email address",
+      "phone": "Enter a valid mobile number",
+      "motives": "Choose at least one reason",
+      "consent": "Please agree to the use of your details",
+      "rateLimited": "Too many requests. Please try again in a moment.",
+      "invalid": "Please check your entries.",
+      "generic": "Could not submit. Please try again."
+    },
+    "unavailable": {
+      "heading": "This link is not available",
+      "description": "The link has expired or was revoked. Ask the newcomer team for a new QR code."
+    },
+    "loadError": {
+      "heading": "Could not load the form",
+      "description": "Check your connection and try again.",
+      "action": "Try again"
+    },
+    "done": {
+      "heading": "Your request was received",
+      "description": "Our team will contact you using the details you gave. Service times and location will follow by text message."
+    }
   }
 }

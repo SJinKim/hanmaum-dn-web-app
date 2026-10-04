@@ -50,4 +50,26 @@ describe('AuthService', () => {
     kc.onAuthRefreshSuccess?.();
     expect(auth.roles()).toEqual(['member']);
   });
+
+  it('starts without Keycloak on the public newcomer form', async () => {
+    const auth = TestBed.inject(AuthService);
+    expect(await auth.init('/register/abc')).toBeFalse();
+    expect(auth.isAuthenticated()).toBeFalse();
+    await expectAsync(auth.freshToken()).toBeRejected();
+  });
+
+  it('sends a public-page session to login when it navigates inward', async () => {
+    const kc = fakeKeycloak(['admin']);
+    const auth = withKeycloak(kc);
+    expect(await auth.ensureLogin()).toBeFalse();
+    expect(kc.login).toHaveBeenCalled();
+  });
+
+  it('lets an authenticated session through ensureLogin without a redirect', async () => {
+    const kc = fakeKeycloak(['admin']);
+    const auth = withKeycloak(kc);
+    auth.isAuthenticated.set(true);
+    expect(await auth.ensureLogin()).toBeTrue();
+    expect(kc.login).not.toHaveBeenCalled();
+  });
 });
