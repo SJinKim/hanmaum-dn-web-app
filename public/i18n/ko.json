@@ -1204,6 +1204,72 @@
         "accept": "삭제",
         "cancel": "취소"
       }
+    },
+    "qrLinks": {
+      "button": "QR 등록 링크",
+      "eyebrow": "새가족",
+      "title": "QR 등록 링크",
+      "subtitle": "안내 데스크용 임시 등록 링크를 만들고 관리합니다.",
+      "listButton": "새가족 목록",
+      "createButton": "새 QR 링크",
+      "timeZone": "독일 시간",
+      "remaining": "{{hours}}시간 {{minutes}}분 남음",
+      "status": {
+        "active": "활성",
+        "expired": "만료",
+        "revoked": "취소"
+      },
+      "list": {
+        "title": "등록 링크",
+        "activeCount": "활성 {{count}}개",
+        "hint": "QR 코드는 만들 때 한 번만 표시됩니다. 제출된 등록 내용은 이 화면에 나오지 않습니다.",
+        "expires": "만료: {{time}}",
+        "uses": "사용 {{count}}회",
+        "empty": {
+          "heading": "등록 링크가 없습니다",
+          "description": "예배 전에 새 QR 링크를 만들어 안내 데스크에 두세요."
+        },
+        "error": {
+          "heading": "링크를 불러오지 못했습니다",
+          "description": "잠시 후 다시 시도해 주세요."
+        }
+      },
+      "create": {
+        "title": "새 QR 링크",
+        "duration": "유효 기간",
+        "hours": "{{hours}}시간",
+        "durationHint": "기본 12시간, 최대 24시간. 만료되면 링크로 더 이상 등록할 수 없습니다.",
+        "submit": "링크 만들기",
+        "cancel": "취소",
+        "error": "링크를 만들지 못했습니다. 다시 시도해 주세요."
+      },
+      "result": {
+        "title": "QR 링크가 생성되었습니다",
+        "onceWarning": "이 QR 코드와 주소는 지금 한 번만 표시됩니다. 창을 닫기 전에 인쇄하거나 저장하세요.",
+        "qrAlt": "새가족 등록 QR 코드",
+        "url": "등록 주소",
+        "copy": "주소 복사",
+        "download": "PNG 저장",
+        "print": "인쇄"
+      },
+      "print": {
+        "title": "새가족 등록",
+        "expires": "유효 기간: {{time}}까지"
+      },
+      "revoke": {
+        "button": "취소",
+        "header": "링크 취소",
+        "message": "{{time}}에 만료되는 링크를 지금 취소할까요? 이 QR 코드로는 더 이상 등록할 수 없습니다.",
+        "accept": "링크 취소",
+        "cancel": "닫기"
+      },
+      "toast": {
+        "copied": "주소를 복사했습니다",
+        "copyFailed": "주소를 복사하지 못했습니다",
+        "revoked": "링크를 취소했습니다",
+        "revokeFailed": "링크를 취소하지 못했습니다",
+        "qrFailed": "QR 코드를 만들지 못했습니다"
+      }
     }
   }
 }
