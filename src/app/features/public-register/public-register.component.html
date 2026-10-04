@@ -1,0 +1,315 @@
+<div class="bg-surface-base flex min-h-screen flex-col">
+  <header
+    class="border-line-subtle bg-surface flex h-[var(--size-topbar)] shrink-0 items-center justify-between gap-[var(--space-10)] border-b p-[var(--space-20)]">
+    <div class="flex items-baseline gap-[var(--space-8)]">
+      <span class="type-h3 tracking-brand text-ink-strong whitespace-nowrap">한마음 D+N</span>
+      <span class="type-overline text-ink-muted">Church Management</span>
+    </div>
+    <div class="flex items-center gap-[var(--space-4)]">
+      <button
+        type="button"
+        class="text-ink-muted hover:bg-surface-subtle hover:text-ink-strong flex size-[var(--size-icon-button)] shrink-0 items-center justify-center rounded-[var(--radius-md)] focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
+        [attr.aria-label]="(isDark() ? 'shell.theme.light' : 'shell.theme.dark') | translate"
+        (click)="toggleTheme()">
+        <i class="pi text-[16px]" [class]="isDark() ? 'pi-sun' : 'pi-moon'" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="text-ink-muted hover:bg-surface-subtle hover:text-ink-strong flex size-[var(--size-icon-button)] shrink-0 items-center justify-center rounded-[var(--radius-md)] focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
+        [attr.aria-label]="'shell.lang.aria' | translate"
+        (click)="toggleLang()">
+        <i class="pi pi-globe text-[16px]" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="p-page gap-gutter mx-auto flex w-full max-w-[600px] flex-1 flex-col">
+    @switch (state()) {
+      @case ('loading') {
+        <div class="flex flex-col gap-[var(--space-12)]" aria-busy="true">
+          <app-skeleton width="40%" />
+          <app-skeleton variant="card" />
+        </div>
+      }
+
+      @case ('unavailable') {
+        <div class="bg-surface border-line-subtle shadow-elevation-sm rounded-[var(--radius-lg)] border">
+          <app-empty-state
+            variant="error"
+            [heading]="'publicRegister.unavailable.heading' | translate"
+            [description]="'publicRegister.unavailable.description' | translate" />
+        </div>
+      }
+
+      @case ('error') {
+        <div class="bg-surface border-line-subtle shadow-elevation-sm rounded-[var(--radius-lg)] border">
+          <app-empty-state
+            variant="error"
+            [heading]="'publicRegister.loadError.heading' | translate"
+            [description]="'publicRegister.loadError.description' | translate"
+            [actionLabel]="'publicRegister.loadError.action' | translate"
+            actionIcon="pi pi-refresh"
+            (action)="load()" />
+        </div>
+      }
+
+      @case ('done') {
+        <div
+          class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col items-center gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-[var(--space-48)] text-center"
+          role="status">
+          <i class="pi pi-check-circle text-action text-[40px]" aria-hidden="true"></i>
+          <h1 class="type-h2 text-ink-strong">{{ 'publicRegister.done.heading' | translate }}</h1>
+          <p class="type-body text-ink-muted">{{ 'publicRegister.done.description' | translate }}</p>
+        </div>
+      }
+
+      @case ('form') {
+        <div class="flex flex-col gap-[var(--space-4)]">
+          <p class="type-overline text-ink-muted">{{ 'publicRegister.eyebrow' | translate }}</p>
+          <h1 class="type-h1 text-ink-strong">{{ 'publicRegister.heading' | translate }}</h1>
+          <p class="type-body text-ink-muted">{{ 'publicRegister.subtitle' | translate }}</p>
+        </div>
+
+        <form
+          class="bg-surface border-line-subtle shadow-elevation-sm p-card flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border"
+          [formGroup]="form"
+          novalidate
+          (ngSubmit)="submit()">
+          <h2 class="type-h3 text-ink-strong">{{ 'publicRegister.cardTitle' | translate }}</h2>
+
+          <div class="gap-gutter tablet:flex-row flex flex-col">
+            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-16)]">
+              <div class="flex gap-[var(--space-8)]">
+                <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+                  <label for="pr-lastName" class="type-caption text-ink-muted">
+                    {{ 'publicRegister.fields.lastName' | translate }}
+                    <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                  </label>
+                  <input pInputText id="pr-lastName" formControlName="lastName" autocomplete="family-name"
+                         class="w-full" />
+                  @if (isInvalid('lastName')) {
+                    <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.required' | translate }}</small>
+                  }
+                </div>
+                <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+                  <label for="pr-firstName" class="type-caption text-ink-muted">
+                    {{ 'publicRegister.fields.firstName' | translate }}
+                    <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                  </label>
+                  <input pInputText id="pr-firstName" formControlName="firstName" autocomplete="given-name"
+                         class="w-full" />
+                  @if (isInvalid('firstName')) {
+                    <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.required' | translate }}</small>
+                  }
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <label for="pr-englishName" class="type-caption text-ink-muted">
+                  {{ 'publicRegister.fields.englishName' | translate }}
+                  <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                </label>
+                <input pInputText id="pr-englishName" formControlName="englishName" autocomplete="name" class="w-full" />
+                @if (isInvalid('englishName')) {
+                  <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.required' | translate }}</small>
+                }
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <span class="type-caption text-ink-muted">
+                  {{ 'publicRegister.fields.gender' | translate }}
+                  <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                </span>
+                <app-segmented-control
+                  [options]="genderOptions()"
+                  [value]="gender()"
+                  [ariaLabel]="'publicRegister.fields.gender' | translate"
+                  (valueChange)="onGenderChange($event)" />
+                @if (isInvalid('gender')) {
+                  <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.required' | translate }}</small>
+                }
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <label for="pr-birthDate" class="type-caption text-ink-muted">
+                  {{ 'publicRegister.fields.birthDate' | translate }}
+                  <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                </label>
+                <p-datepicker
+                  inputId="pr-birthDate"
+                  formControlName="birthDate"
+                  dateFormat="yy-mm-dd"
+                  placeholder="YYYY-MM-DD"
+                  [showIcon]="true"
+                  styleClass="w-full" />
+                @if (isInvalid('birthDate')) {
+                  <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.required' | translate }}</small>
+                }
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <label for="pr-phone" class="type-caption text-ink-muted">
+                  {{ 'publicRegister.fields.phone' | translate }}
+                  <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                </label>
+                <div class="flex gap-[var(--space-8)]">
+                  <p-select
+                    formControlName="phoneCountry"
+                    class="min-w-0 flex-[3]"
+                    styleClass="w-full"
+                    [options]="phoneCountryOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    [ariaLabel]="'publicRegister.fields.phoneCountry' | translate" />
+                  <div class="min-w-0 flex-[7]">
+                    <input pInputText id="pr-phone" type="tel" formControlName="phoneLocal" autocomplete="tel-national"
+                           class="w-full" [placeholder]="phonePlaceholder" />
+                  </div>
+                </div>
+                @if (isInvalid('phoneLocal')) {
+                  <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                    {{ (form.get('phoneLocal')?.hasError('required') ? 'publicRegister.errors.required' : 'publicRegister.errors.phone') | translate }}
+                  </small>
+                }
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <label for="pr-kakaoId" class="type-caption text-ink-muted">{{ 'publicRegister.fields.kakaoId' | translate }}</label>
+                <input pInputText id="pr-kakaoId" formControlName="kakaoId" class="w-full" />
+              </div>
+            </div>
+
+            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-16)]">
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <label for="pr-email" class="type-caption text-ink-muted">{{ 'publicRegister.fields.email' | translate }}</label>
+                <input pInputText id="pr-email" type="email" formControlName="email" autocomplete="email" class="w-full" />
+                @if (isInvalid('email')) {
+                  <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.email' | translate }}</small>
+                }
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <label for="pr-street" class="type-caption text-ink-muted">{{ 'publicRegister.fields.address' | translate }}</label>
+                <input pInputText id="pr-street" formControlName="street" autocomplete="street-address" class="w-full"
+                       [placeholder]="'publicRegister.placeholders.address' | translate" />
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <label for="pr-churchExperience" class="type-caption text-ink-muted">
+                  {{ 'publicRegister.fields.churchExperience' | translate }}
+                  <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                </label>
+                <p-select
+                  inputId="pr-churchExperience"
+                  formControlName="churchExperience"
+                  [options]="churchExperienceOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [placeholder]="'publicRegister.placeholders.select' | translate"
+                  styleClass="w-full" />
+                @if (isInvalid('churchExperience')) {
+                  <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.required' | translate }}</small>
+                }
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <label for="pr-baptism" class="type-caption text-ink-muted">
+                  {{ 'publicRegister.fields.baptism' | translate }}
+                  <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                </label>
+                <p-select
+                  inputId="pr-baptism"
+                  formControlName="baptism"
+                  [options]="baptismOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [placeholder]="'publicRegister.placeholders.select' | translate"
+                  styleClass="w-full" />
+                @if (isInvalid('baptism')) {
+                  <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.required' | translate }}</small>
+                }
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-4)]">
+                <label for="pr-previousChurch" class="type-caption text-ink-muted">{{ 'publicRegister.fields.previousChurch' | translate }}</label>
+                <input pInputText id="pr-previousChurch" formControlName="previousChurch" class="w-full" />
+              </div>
+            </div>
+          </div>
+
+          <fieldset class="flex flex-col gap-[var(--space-8)]" formGroupName="motives">
+            <legend class="type-caption text-ink-muted mb-[var(--space-4)]">
+              {{ 'publicRegister.fields.visitMotives' | translate }}
+              <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+            </legend>
+            <div class="tablet:grid-cols-2 grid grid-cols-1 gap-[var(--space-8)]">
+              @for (motive of motives; track motive.id) {
+                <div class="flex items-center gap-[var(--space-8)]">
+                  <p-checkbox [inputId]="'pr-motive-' + motive.id" [formControlName]="motive.id" [binary]="true" />
+                  <label class="type-body-sm text-ink-strong" [for]="'pr-motive-' + motive.id">
+                    {{ 'publicRegister.motives.' + motive.id | translate }}
+                  </label>
+                </div>
+              }
+            </div>
+            @if (isInvalid('motives')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.motives' | translate }}</small>
+            } @else {
+              <small class="type-caption text-ink-disabled">{{ 'publicRegister.motivesHint' | translate }}</small>
+            }
+          </fieldset>
+
+          @if (otherChecked) {
+            <div class="flex flex-col gap-[var(--space-4)]">
+              <label for="pr-otherMotive" class="type-caption text-ink-muted">{{ 'publicRegister.fields.otherMotive' | translate }}</label>
+              <input pInputText id="pr-otherMotive" formControlName="otherMotive" class="w-full"
+                     [placeholder]="'publicRegister.placeholders.otherMotive' | translate" />
+            </div>
+          }
+
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <div class="flex items-start gap-[var(--space-8)]">
+              <p-checkbox inputId="pr-consent" formControlName="consentAccepted" [binary]="true" />
+              <label for="pr-consent" class="type-body-sm text-ink-strong">
+                {{ 'publicRegister.consent' | translate }}
+                <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                @if (consentVersion()) {
+                  <span class="type-caption text-ink-disabled block">
+                    {{ 'publicRegister.consentVersion' | translate: { version: consentVersion() } }}
+                  </span>
+                }
+              </label>
+            </div>
+            @if (isInvalid('consentAccepted')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.consent' | translate }}</small>
+            }
+          </div>
+
+          <!-- Honeypot: invisible to people, filled in by naive bots. -->
+          <div class="absolute -left-[10000px] h-px w-px overflow-hidden" aria-hidden="true">
+            <label for="pr-website">{{ 'publicRegister.fields.honeypot' | translate }}</label>
+            <input id="pr-website" type="text" formControlName="honeypot" tabindex="-1" autocomplete="off" />
+          </div>
+
+          @if (submitError(); as error) {
+            <p class="type-body-sm text-[var(--color-badge-deleted-fg)]" role="alert">
+              {{ 'publicRegister.errors.' + error | translate }}
+            </p>
+          }
+
+          <div class="flex justify-end">
+            <p-button
+              type="submit"
+              styleClass="w-full desktop:w-auto"
+              class="desktop:w-auto w-full"
+              [label]="(submitting() ? 'publicRegister.submitting' : 'publicRegister.submit') | translate"
+              [loading]="submitting()"
+              [disabled]="submitting()" />
+          </div>
+        </form>
+
+        <p class="type-caption text-ink-disabled text-center">{{ 'publicRegister.footer' | translate }}</p>
+      }
+    }
+  </main>
+</div>

@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../services/auth.service';
+import { isPublicApiUrl } from '../auth/public-routes';
 
 /**
  * True if `url` points at the own API (`apiBaseUrl`): same origin and a path
@@ -18,7 +19,11 @@ export function isApiUrl(url: string, apiBaseUrl: string, pageOrigin: string): b
 }
 
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!isApiUrl(req.url, environment.apiBaseUrl, window.location.origin)) {
+  const origin = window.location.origin;
+  // Public endpoints (#42) go out bare: the QR form has no session to refresh,
+  // and a 401 there must not bounce a visitor to the staff login.
+  if (!isApiUrl(req.url, environment.apiBaseUrl, origin)
+      || isPublicApiUrl(req.url, environment.apiBaseUrl, origin)) {
     return next(req);
   }
 

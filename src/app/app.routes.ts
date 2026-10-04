@@ -6,6 +6,12 @@ import { featureGuard } from './core/guards/feature.guard';
 import { ShellComponent } from './shell/shell.component';
 
 export const APP_ROUTES: Routes = [
+  // QR 등록 링크 (#42): public, outside the shell and without login.
+  {
+    path: 'register/:token',
+    loadComponent: () =>
+      import('./features/public-register/public-register.component').then(m => m.PublicRegisterComponent),
+  },
   {
     path: '',
     component: ShellComponent,

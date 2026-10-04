@@ -38,9 +38,9 @@ export class ApiService {
     );
   }
 
-  post<T>(path: string, body: unknown): Observable<T> {
+  post<T>(path: string, body: unknown, headers?: Record<string, string>): Observable<T> {
     return this.unwrap(
-      this.http.post<ApiResponse<T>>(`${this.base}${path}`, body)
+      this.http.post<ApiResponse<T>>(`${this.base}${path}`, body, headers ? { headers } : {})
     );
   }
 

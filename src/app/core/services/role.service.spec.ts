@@ -15,7 +15,8 @@ function withRoles(roles: string[]): RoleService {
 
 /** The paths the shell route actually declares, `/`-prefixed like nav-config. */
 function declaredRoutes(): string[] {
-  const shell = APP_ROUTES[0];
+  // The shell is the route with children; public pages like `register/:token` sit beside it.
+  const shell = APP_ROUTES.find(route => route.path === '' && route.children)!;
   return (shell.children ?? []).map((child: Route) => `/${child.path ?? ''}`);
 }
 
