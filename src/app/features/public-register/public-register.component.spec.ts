@@ -50,7 +50,6 @@ describe('PublicRegisterComponent — 새가족 등록 (공개) (#42)', () => {
     component.form.patchValue({
       lastName: ' 홍 ',
       firstName: '길동',
-      englishName: 'John Doe',
       gender: 'M',
       birthDate: new Date(1990, 0, 15),
       phoneCountry: 'DE',
@@ -112,7 +111,6 @@ describe('PublicRegisterComponent — 새가족 등록 (공개) (#42)', () => {
     expect(body).toEqual(jasmine.objectContaining({
       lastName: '홍',
       firstName: '길동',
-      englishName: 'John Doe',
       gender: 'M',
       birthDate: '1990-01-15',
       phoneNumber: '+491512345678',

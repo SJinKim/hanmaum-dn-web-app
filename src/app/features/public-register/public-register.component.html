@@ -105,17 +105,6 @@
               </div>
 
               <div class="flex flex-col gap-[var(--space-4)]">
-                <label for="pr-englishName" class="type-caption text-ink-muted">
-                  {{ 'publicRegister.fields.englishName' | translate }}
-                  <span class="text-[var(--color-badge-deleted-fg)]">*</span>
-                </label>
-                <input pInputText id="pr-englishName" formControlName="englishName" autocomplete="name" class="w-full" />
-                @if (isInvalid('englishName')) {
-                  <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.required' | translate }}</small>
-                }
-              </div>
-
-              <div class="flex flex-col gap-[var(--space-4)]">
                 <span class="type-caption text-ink-muted">
                   {{ 'publicRegister.fields.gender' | translate }}
                   <span class="text-[var(--color-badge-deleted-fg)]">*</span>

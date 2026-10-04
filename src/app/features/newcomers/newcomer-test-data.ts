@@ -7,7 +7,6 @@ export function newcomerFixture(overrides: Partial<Newcomer> = {}): Newcomer {
     memberPublicId: null,
     lastName: '홍',
     firstName: '길동',
-    englishName: null,
     gender: 'M',
     birthDate: '2000-05-17',
     email: null,

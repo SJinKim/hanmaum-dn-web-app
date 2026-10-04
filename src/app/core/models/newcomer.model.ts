@@ -57,7 +57,6 @@ export interface Newcomer {
   memberPublicId: string | null;
   lastName: string;
   firstName: string;
-  englishName: string | null;
   gender: Gender | null;
   birthDate: string | null;
   email: string | null;
@@ -94,7 +93,6 @@ export interface Newcomer {
 export interface CreateNewcomerRequest {
   lastName: string;
   firstName: string;
-  englishName?: string;
   gender?: Gender;
   birthDate?: string;
   email?: string;

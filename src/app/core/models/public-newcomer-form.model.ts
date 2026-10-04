@@ -11,7 +11,6 @@ export interface PublicNewcomerFormMetadata {
 export interface PublicNewcomerSubmissionRequest {
   lastName: string;
   firstName: string;
-  englishName: string;
   gender?: Gender;
   birthDate?: string;
   phoneNumber?: string;

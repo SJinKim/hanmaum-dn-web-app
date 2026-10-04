@@ -49,7 +49,6 @@
         <div class="grid grid-cols-1 gap-x-[var(--space-32)] gap-y-[var(--space-8)] tablet:grid-cols-2">
           <dl class="m-0 flex flex-col gap-[var(--space-8)]">
             <app-definition-row layout="inline" [term]="'newcomers.fields.name' | translate" [value]="fullName()" />
-            <app-definition-row layout="inline" [term]="'newcomers.fields.englishName' | translate" [value]="m.englishName || '—'" />
             <app-definition-row layout="inline" [term]="'newcomers.fields.gender' | translate" [value]="label('newcomers.gender', m.gender)" />
             <app-definition-row layout="inline" [term]="'newcomers.fields.birthDate' | translate" [value]="m.birthDate ?? '—'" />
             <app-definition-row layout="inline" [term]="'newcomers.fields.identity' | translate" [value]="label('newcomers.identity', m.identityStatus)" />
