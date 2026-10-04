@@ -16,6 +16,12 @@ export const NEWCOMERS_ROUTES: Routes = [
       import('./newcomer-edit/newcomer-edit.component').then(m => m.NewcomerEditComponent),
     canDeactivate: [unsavedChangesGuard],
   },
+  {
+    path: 'qr-links',
+    canActivate: [featureGuard('newcomers')],
+    loadComponent: () =>
+      import('./newcomer-qr-links/newcomer-qr-links.component').then(m => m.NewcomerQrLinksComponent),
+  },
   // 빠른 기록 moved to its own sidebar entry; old links still land there.
   { path: 'visits', redirectTo: '/quick-records', pathMatch: 'full' },
   {

@@ -281,6 +281,10 @@ export class NewcomersListComponent implements OnInit {
     void this.router.navigate(['/quick-records']);
   }
 
+  goToQrLinks(): void {
+    void this.router.navigate(['/newcomers', 'qr-links']);
+  }
+
   private fullName(n: Newcomer): string {
     return `${n.lastName}${n.firstName}`;
   }

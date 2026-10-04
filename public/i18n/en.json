@@ -1204,6 +1204,72 @@
         "accept": "Delete",
         "cancel": "Cancel"
       }
+    },
+    "qrLinks": {
+      "button": "QR sign-up links",
+      "eyebrow": "Newcomers",
+      "title": "QR sign-up links",
+      "subtitle": "Create and manage short-lived sign-up links for the welcome desk.",
+      "listButton": "Newcomer list",
+      "createButton": "New QR link",
+      "timeZone": "German time",
+      "remaining": "{{hours}} h {{minutes}} min left",
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "list": {
+        "title": "Sign-up links",
+        "activeCount": "{{count}} active",
+        "hint": "The QR code is shown only once, when it is created. Submitted sign-ups do not appear here.",
+        "expires": "Expires: {{time}}",
+        "uses": "Used {{count}}×",
+        "empty": {
+          "heading": "No sign-up links",
+          "description": "Create a QR link before the service and place it at the welcome desk."
+        },
+        "error": {
+          "heading": "Could not load the links",
+          "description": "Please try again in a moment."
+        }
+      },
+      "create": {
+        "title": "New QR link",
+        "duration": "Valid for",
+        "hours": "{{hours}} h",
+        "durationHint": "12 hours by default, 24 hours at most. Once expired, the link no longer accepts sign-ups.",
+        "submit": "Create link",
+        "cancel": "Cancel",
+        "error": "Could not create the link. Please try again."
+      },
+      "result": {
+        "title": "QR link created",
+        "onceWarning": "This QR code and address are shown only now. Print or save them before closing.",
+        "qrAlt": "Newcomer sign-up QR code",
+        "url": "Sign-up address",
+        "copy": "Copy address",
+        "download": "Save PNG",
+        "print": "Print"
+      },
+      "print": {
+        "title": "Newcomer sign-up",
+        "expires": "Valid until {{time}}"
+      },
+      "revoke": {
+        "button": "Revoke",
+        "header": "Revoke link",
+        "message": "Revoke the link expiring {{time}} now? This QR code will no longer accept sign-ups.",
+        "accept": "Revoke link",
+        "cancel": "Close"
+      },
+      "toast": {
+        "copied": "Address copied",
+        "copyFailed": "Could not copy the address",
+        "revoked": "Link revoked",
+        "revokeFailed": "Could not revoke the link",
+        "qrFailed": "Could not create the QR code"
+      }
     }
   }
 }

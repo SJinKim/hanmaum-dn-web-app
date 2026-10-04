@@ -17,6 +17,17 @@
         [label]="'newcomers.visits.button' | translate"
         (onClick)="goToVisits()" />
     }
+    @if (!isPhone()) {
+      <p-button
+        appActions
+        size="small"
+        severity="secondary"
+        icon="pi pi-qrcode"
+        [outlined]="true"
+        data-testid="qr-links-link"
+        [label]="'newcomers.qrLinks.button' | translate"
+        (onClick)="goToQrLinks()" />
+    }
     @if (canWrite() && !isPhone()) {
       <p-button
         appActions
@@ -37,6 +48,15 @@
       data-testid="visits-link-phone"
       [label]="'newcomers.visits.button' | translate"
       (onClick)="goToVisits()" />
+    <p-button
+      size="small"
+      severity="secondary"
+      icon="pi pi-qrcode"
+      styleClass="w-full"
+      [outlined]="true"
+      data-testid="qr-links-link-phone"
+      [label]="'newcomers.qrLinks.button' | translate"
+      (onClick)="goToQrLinks()" />
   }
 
   @if (canWrite() && isPhone()) {
