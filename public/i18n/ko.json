@@ -1106,6 +1106,80 @@
     "toast": {
       "done": "완료",
       "error": "오류"
+    },
+    "visits": {
+      "button": "방문 기록",
+      "eyebrow": "새가족 관리",
+      "title": "방문 기록",
+      "subtitle": "예배 당일 처음 온 분을 바로 기록합니다 · 기록은 통계용 히스토리로 보관됩니다",
+      "listButton": "새가족 목록",
+      "kpi": {
+        "today": "오늘 방문",
+        "registered": "이번 달 새가족 등록",
+        "graduated": "올해 등반",
+        "people": "{{n}}명",
+        "ratio": "{{part}} / {{whole}}명",
+        "todaySub": "처음 방문 {{first}} · 재방문 {{revisit}}",
+        "registeredSub": "방문 대비 {{pct}}%",
+        "graduatedSub": "등록 대비 {{pct}}%"
+      },
+      "form": {
+        "title": "빠른 기록",
+        "visitDate": "방문일",
+        "visitDateHint": "오늘 날짜가 자동으로 채워집니다",
+        "required": "필수 입력",
+        "birthYear": "출생연도",
+        "birthYearHint": "1월 1일로 저장 · 나중에 수정",
+        "birthYearInvalid": "1900–2100 사이의 연도를 입력하세요",
+        "visitType": "구분",
+        "source": "알게 된 경로",
+        "sourceHint": "광고 효과 분석에 사용",
+        "note": "기타사항",
+        "notePlaceholder": "소개자, 연락 가능 시간 등 메모",
+        "noteHint": "선택 입력 · 상세 화면에서 보완할 수 있습니다",
+        "reset": "초기화",
+        "save": "저장 후 계속 입력"
+      },
+      "type": {
+        "FIRST": "처음 방문",
+        "REVISIT": "재방문"
+      },
+      "source": {
+        "FRIEND_FAMILY": "지인 소개",
+        "ADVERTISEMENT": "광고",
+        "SOCIAL_MEDIA": "SNS",
+        "WEBSITE": "웹사이트",
+        "WALK_IN": "직접 방문",
+        "OTHER": "기타"
+      },
+      "status": {
+        "visited": "방문",
+        "registered": "새가족 등록"
+      },
+      "columns": {
+        "visitDate": "방문일",
+        "name": "이름",
+        "gender": "성별",
+        "birthYear": "출생연도",
+        "visitType": "구분",
+        "status": "상태"
+      },
+      "history": {
+        "title": "최근 30일 방문",
+        "caption": "최근 30일 방문 기록",
+        "error": {
+          "heading": "방문 기록을 불러오지 못했습니다",
+          "description": "잠시 후 다시 시도해 주세요."
+        },
+        "empty": {
+          "heading": "최근 30일 방문 기록이 없습니다",
+          "description": "빠른 기록에서 첫 방문자를 추가하세요."
+        }
+      },
+      "toast": {
+        "saved": "{{name}} 님의 방문을 기록했습니다",
+        "saveFailed": "방문을 기록하지 못했습니다. 다시 시도해 주세요."
+      }
     }
   }
 }

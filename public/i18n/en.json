@@ -1106,6 +1106,80 @@
     "toast": {
       "done": "Done",
       "error": "Error"
+    },
+    "visits": {
+      "button": "Visit log",
+      "eyebrow": "Newcomer care",
+      "title": "Visit log",
+      "subtitle": "Record first-time visitors on the day of the service · records are kept as history for statistics",
+      "listButton": "Newcomer list",
+      "kpi": {
+        "today": "Visits today",
+        "registered": "Registered this month",
+        "graduated": "Graduated this year",
+        "people": "{{n}}",
+        "ratio": "{{part}} / {{whole}}",
+        "todaySub": "First visit {{first}} · Revisit {{revisit}}",
+        "registeredSub": "{{pct}}% of visits",
+        "graduatedSub": "{{pct}}% of registrations"
+      },
+      "form": {
+        "title": "Quick entry",
+        "visitDate": "Visit date",
+        "visitDateHint": "Today's date is filled in automatically",
+        "required": "Required",
+        "birthYear": "Birth year",
+        "birthYearHint": "Saved as January 1 · edit later",
+        "birthYearInvalid": "Enter a year between 1900 and 2100",
+        "visitType": "Type",
+        "source": "How they heard of us",
+        "sourceHint": "Used to measure advertising",
+        "note": "Notes",
+        "notePlaceholder": "Who invited them, when to reach them, etc.",
+        "noteHint": "Optional · can be completed on the detail page",
+        "reset": "Reset",
+        "save": "Save and add another"
+      },
+      "type": {
+        "FIRST": "First visit",
+        "REVISIT": "Revisit"
+      },
+      "source": {
+        "FRIEND_FAMILY": "Friend or family",
+        "ADVERTISEMENT": "Advertisement",
+        "SOCIAL_MEDIA": "Social media",
+        "WEBSITE": "Website",
+        "WALK_IN": "Walk-in",
+        "OTHER": "Other"
+      },
+      "status": {
+        "visited": "Visited",
+        "registered": "Registered"
+      },
+      "columns": {
+        "visitDate": "Visit date",
+        "name": "Name",
+        "gender": "Gender",
+        "birthYear": "Birth year",
+        "visitType": "Type",
+        "status": "Status"
+      },
+      "history": {
+        "title": "Visits in the last 30 days",
+        "caption": "Visit records of the last 30 days",
+        "error": {
+          "heading": "Couldn't load visits",
+          "description": "Please try again in a moment."
+        },
+        "empty": {
+          "heading": "No visits in the last 30 days",
+          "description": "Add the first visitor in Quick entry."
+        }
+      },
+      "toast": {
+        "saved": "Recorded the visit of {{name}}",
+        "saveFailed": "Couldn't record the visit. Please try again."
+      }
     }
   }
 }

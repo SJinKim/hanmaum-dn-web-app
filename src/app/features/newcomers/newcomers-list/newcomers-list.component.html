@@ -7,6 +7,16 @@
     [eyebrow]="'newcomers.eyebrow' | translate"
     [heading]="'newcomers.title' | translate"
     [subtitle]="'newcomers.subtitle' | translate: subtitleParams()">
+    @if (!isPhone()) {
+      <p-button
+        appActions
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        data-testid="visits-link"
+        [label]="'newcomers.visits.button' | translate"
+        (onClick)="goToVisits()" />
+    }
     @if (canWrite() && !isPhone()) {
       <p-button
         appActions
@@ -17,6 +27,17 @@
         (onClick)="goToCreate()" />
     }
   </app-page-header>
+
+  @if (isPhone()) {
+    <p-button
+      size="small"
+      severity="secondary"
+      styleClass="w-full"
+      [outlined]="true"
+      data-testid="visits-link-phone"
+      [label]="'newcomers.visits.button' | translate"
+      (onClick)="goToVisits()" />
+  }
 
   @if (canWrite() && isPhone()) {
     <p-button
