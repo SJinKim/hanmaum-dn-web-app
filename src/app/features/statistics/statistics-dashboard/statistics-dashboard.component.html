@@ -1,0 +1,65 @@
+<!--
+  Figma: 통계 · Light 193:3961, Dark 197:2984.
+-->
+<div class="flex flex-col gap-gutter">
+  <div class="flex flex-col gap-[var(--space-12)] lg:flex-row lg:items-end lg:justify-between">
+    <app-page-header
+      [eyebrow]="'statistics.eyebrow' | translate"
+      [heading]="'statistics.title' | translate"
+      [subtitle]="'statistics.subtitle' | translate" />
+    <!-- The endpoint has no period yet: shown as in Figma, not operable. -->
+    <div class="w-full opacity-60 lg:w-[300px]" inert data-testid="period">
+      <app-segmented-control
+        [options]="periodOptions()"
+        [(value)]="period"
+        [ariaLabel]="'statistics.period.label' | translate" />
+    </div>
+  </div>
+
+  <div
+    class="bg-surface-subtle border-line-subtle text-ink-muted type-body-sm flex items-center gap-[var(--space-8)] rounded-[var(--radius-md)] border px-[var(--space-16)] py-[var(--space-12)]"
+    role="status"
+    data-testid="pending-banner">
+    <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+    <span>{{ 'statistics.pendingBanner' | translate }}</span>
+  </div>
+
+  <div class="grid grid-cols-1 gap-[var(--space-12)] lg:grid-cols-3 lg:gap-[var(--space-24)]">
+    <div class="lg:col-span-2" data-chart="growth">
+      <app-chart
+        type="line"
+        [heading]="'statistics.charts.growth' | translate"
+        [emptyHeading]="'statistics.pendingEmpty.heading' | translate"
+        [emptyDescription]="'statistics.pendingEmpty.description' | translate" />
+    </div>
+    <div data-chart="gender">
+      <app-chart
+        type="donut"
+        [heading]="'statistics.charts.gender' | translate"
+        [labels]="genderLabels()"
+        [series]="genderSeries()"
+        [loading]="loading()"
+        [emptyHeading]="'statistics.empty' | translate" />
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-[var(--space-12)] lg:grid-cols-2 lg:gap-[var(--space-24)]">
+    @for (chart of pairedCharts; track chart.key) {
+      <div [attr.data-chart]="chart.key">
+        <app-chart
+          [type]="chart.type"
+          [heading]="'statistics.charts.' + chart.key | translate"
+          [emptyHeading]="'statistics.pendingEmpty.heading' | translate"
+          [emptyDescription]="'statistics.pendingEmpty.description' | translate" />
+      </div>
+    }
+  </div>
+
+  <div data-chart="ministries">
+    <app-chart
+      type="bar"
+      [heading]="'statistics.charts.ministries' | translate"
+      [emptyHeading]="'statistics.pendingEmpty.heading' | translate"
+      [emptyDescription]="'statistics.pendingEmpty.description' | translate" />
+  </div>
+</div>

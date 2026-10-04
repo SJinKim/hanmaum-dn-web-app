@@ -1,0 +1,67 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 560px)' }"
+  [draggable]="false"
+  [resizable]="false"
+  [pt]="dialogPt"
+>
+  <ng-template #header>
+    <h2 class="type-h3 text-ink-strong" data-testid="review-title">{{ 'ministry.detail.reviewDialog.header' | translate }}</h2>
+  </ng-template>
+
+  <div class="flex flex-col gap-[var(--space-16)]" data-testid="review-body">
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <span class="type-caption text-ink-muted">{{ 'ministry.detail.reviewDialog.applicant' | translate }}</span>
+      <span class="type-body text-ink-strong" data-testid="review-applicant">{{ applicant()?.fullName }}</span>
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <span class="type-caption text-ink-muted">{{ 'ministry.detail.reviewDialog.appliedAt' | translate }}</span>
+      <span class="type-body text-ink-strong" data-testid="review-applied-at">
+        {{ applicant()?.appliedAt ? (applicant()!.appliedAt | date: 'yyyy-MM-dd') : '—' }}
+      </span>
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <span class="type-caption text-ink-muted">{{ 'ministry.detail.reviewDialog.selfIntroduction' | translate }}</span>
+      <p class="type-body text-ink-strong whitespace-pre-line" data-testid="review-self-introduction">{{ applicant()?.selfIntroduction || '—' }}</p>
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="review-message" class="type-caption text-ink-muted">{{ 'ministry.detail.reviewDialog.message' | translate }}</label>
+      <textarea
+        id="review-message"
+        pTextarea
+        rows="3"
+        [formControl]="message"
+        [maxlength]="messageMax"
+        [placeholder]="'ministry.detail.reviewDialog.messagePlaceholder' | translate"
+        class="w-full"></textarea>
+      @if (messageMissing()) {
+        <small class="type-caption text-[var(--color-badge-deleted-fg)]" data-testid="review-message-error">
+          {{ 'ministry.detail.reviewDialog.messageRequired' | translate }}
+        </small>
+      } @else {
+        <small class="type-caption text-ink-disabled">{{ 'ministry.detail.reviewDialog.messageHint' | translate }}</small>
+      }
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button [label]="'ministry.detail.reviewDialog.cancel' | translate" severity="secondary" [outlined]="true" (onClick)="close()" />
+    <p-button
+      [label]="'ministry.detail.reviewDialog.reject' | translate"
+      severity="danger"
+      [outlined]="true"
+      [loading]="sending() === 'REJECT'"
+      [disabled]="sending() === 'APPROVE'"
+      (onClick)="reject()" />
+    <p-button
+      [label]="'ministry.detail.reviewDialog.approve' | translate"
+      [loading]="sending() === 'APPROVE'"
+      [disabled]="sending() === 'REJECT'"
+      (onClick)="approve()" />
+  </ng-template>
+</p-dialog>

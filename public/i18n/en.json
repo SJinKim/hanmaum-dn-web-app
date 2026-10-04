@@ -1,9 +1,113 @@
 {
   "common": {
-    "none": "(None)"
+    "none": "(None)",
+    "unsavedChanges": {
+      "header": "Unsaved changes",
+      "message": "You have unsaved changes. Leaving this page will discard them.",
+      "leave": "Leave",
+      "stay": "Cancel"
+    }
+  },
+  "nav": {
+    "groups": {
+      "people": "People",
+      "activity": "Activity",
+      "admin": "Admin"
+    },
+    "items": {
+      "home": "Home",
+      "members": "Members",
+      "newcomers": "Newcomers",
+      "quickRecords": "Quick records",
+      "churchGroups": "Groups",
+      "attendance": "Attendance",
+      "eventRsvps": "Events",
+      "ministry": "Ministry",
+      "announcements": "Announcements",
+      "archive": "Archive",
+      "analytics": "Analytics"
+    }
+  },
+  "shell": {
+    "nav": {
+      "aria": "Main navigation",
+      "open": "Open navigation"
+    },
+    "sidebar": {
+      "expand": "Expand sidebar",
+      "collapse": "Collapse sidebar"
+    },
+    "pending": {
+      "label": "{{count}} pending",
+      "aria": "{{count}} members awaiting approval — show pending only"
+    },
+    "theme": {
+      "dark": "Dark theme",
+      "light": "Light theme"
+    },
+    "lang": {
+      "aria": "Switch language"
+    },
+    "menu": {
+      "aria": "Account menu",
+      "profile": "My Profile",
+      "settings": "Settings",
+      "logout": "Logout"
+    }
+  },
+  "home": {
+    "title": "Home",
+    "attention": {
+      "heading": "Needs your attention",
+      "pendingApprovals": "Pending approvals",
+      "approve": "Approve",
+      "awaitingRsvps": "Awaiting response",
+      "confirm": "Review"
+    },
+    "attendance": {
+      "heading": "Attendance by group",
+      "group": "Group",
+      "attended": "Attended",
+      "total": "Total",
+      "ratio": "Rate",
+      "totalRow": "Total",
+      "empty": "No attendance recorded",
+      "range": {
+        "last-sunday": "Last Sunday",
+        "last-4-weeks": "Last 4 weeks",
+        "last-3-months": "Last 3 months"
+      }
+    },
+    "overview": {
+      "heading": "Overview",
+      "totalMembers": "All members",
+      "activeMembers": "Active members",
+      "ministries": "Ministries"
+    },
+    "recent": {
+      "heading": "Recent activity",
+      "viewAll": "View all",
+      "name": "Name",
+      "role": "Role",
+      "status": "Status",
+      "updated": "Last updated",
+      "empty": "No recent activity",
+      "roleAdmin": "Admin",
+      "roleMember": "Member"
+    },
+    "events": {
+      "heading": "Upcoming events",
+      "empty": "No upcoming events"
+    }
   },
   "members": {
     "title": "Members",
+    "eyebrow": "Member management",
+    "subtitle": "{{total}} members registered · {{active}} active",
+    "subtitleDeleted": "{{total}} deleted members · admins can restore or permanently delete them",
+    "caption": "Member list",
+    "unassigned": "Unassigned",
+    "noTraining": "No training",
     "search": {
       "placeholder": "Search all fields...",
       "aria": "Search members"
@@ -24,7 +128,8 @@
       "PENDING": "Pending",
       "ACTIVE": "Active",
       "INACTIVE": "Inactive",
-      "DELETED": "Deleted"
+      "DELETED": "Deleted",
+      "REJECTED": "Rejected"
     },
     "baptism": {
       "UNBAPTIZED": "Unbaptized",
@@ -46,20 +151,101 @@
       "selectGroupPlaceholder": "Select group…",
       "cancel": "Cancel",
       "approve": "Approve",
-      "edit": "Edit member"
-    },
-    "filter": {
-      "searchPlaceholder": "Search…",
-      "searchAria": "Filter options",
-      "selectAll": "Select all",
-      "reset": "Reset",
-      "empty": "No options",
-      "trainingHint": "Click: In progress → Completed → Dropped → Clear",
-      "groupLeader": "Groupleader"
+      "edit": "Edit member",
+      "reject": "Reject"
     },
     "edit": {
       "churchGroupLeader": "Church Group Leader",
-      "leaderChangeHint": "This change will replace {{name}} as church group leader."
+      "leaderChangeHint": "Current leader: {{name}} · replaced on save",
+      "cardTitle": "Member details",
+      "createHeading": "Add member",
+      "editHeading": "Edit member",
+      "createSubtitle": "Enter the basic details of the new member.",
+      "editSubtitle": "Update this member's details.",
+      "submit": "Save",
+      "tabs": {
+        "basic": "Basic",
+        "church": "Church",
+        "training": "Training",
+        "ministry": "Ministry"
+      },
+      "training": {
+        "course": "Training course",
+        "status": "Status",
+        "completedAt": "Completed on",
+        "add": "Add training",
+        "remove": "Remove training",
+        "emptyHeading": "No trainings yet",
+        "emptyDescription": "Use the button below to add the first training course."
+      },
+      "ministry": {
+        "name": "Ministry",
+        "startDate": "Start date",
+        "endDate": "End date",
+        "add": "Add ministry",
+        "remove": "Remove ministry",
+        "emptyHeading": "No ministries yet",
+        "emptyDescription": "Use the button below to add the first ministry."
+      },
+      "fields": {
+        "lastName": "Last name",
+        "firstName": "First name",
+        "discriminator": "Discriminator",
+        "birthDate": "Date of birth",
+        "gender": "Gender",
+        "occupation": "Occupation",
+        "phone": "Phone number",
+        "phoneCountry": "Country code",
+        "email": "Email",
+        "street": "Street",
+        "houseNumber": "No.",
+        "zipCode": "ZIP code",
+        "city": "City",
+        "registrationDate": "Registration date"
+      },
+      "placeholders": {
+        "select": "Select",
+        "discriminator": "e.g. 1남",
+        "occupation": "Occupation",
+        "street": "Street name",
+        "houseNumber": "12a",
+        "city": "City"
+      },
+      "errors": {
+        "required": "This field is required.",
+        "email": "Invalid email format.",
+        "phone": "Not a valid mobile number."
+      },
+      "church": {
+        "group": "Cell group",
+        "leaderToggle": "This member is the cell leader",
+        "leaderStart": "Leader since",
+        "leaderEnd": "Leader until",
+        "baptism": "Baptism",
+        "status": "Status",
+        "hints": {
+          "start": "Recorded automatically on save",
+          "end": "Recorded when the leader role is removed and saved",
+          "pendingEnd": "Saving ends the term today",
+          "past": "Past term · turning it on starts a new term",
+          "pastInGroup": "Past term · {{group}} · turning it on starts a new term"
+        }
+      },
+      "leaderDialog": {
+        "assignHeader": "Assign cell leader",
+        "assign": "Make {{name}} the leader of {{group}}?",
+        "replace": "The current leader {{leader}} ({{since}}~) ends today.",
+        "assignAccept": "Yes, assign",
+        "endHeader": "End leader term",
+        "end": "End {{name}}'s term as leader of {{group}}? The end date will be today ({{today}}).",
+        "endAccept": "Yes, end it",
+        "moveHeader": "Move cell leader",
+        "move": "Move {{name}} to lead {{group}}?",
+        "moveEndsOld": "The term in {{group}} ends today.",
+        "moveReplace": "The current leader of {{group}}, {{leader}} ({{since}}~), also ends today.",
+        "moveAccept": "Yes, move",
+        "cancel": "Cancel"
+      }
     },
     "toast": {
       "error": "Error",
@@ -69,7 +255,1101 @@
       "approveFailed": "Approval failed.",
       "approveSuccess": "Member approved.",
       "leaderAssignFailed": "Could not assign the church group leader.",
-      "leaderClearFailed": "Could not clear the church group leader."
+      "leaderClearFailed": "Could not clear the church group leader.",
+      "rejectFailed": "Rejecting failed.",
+      "rejectSuccess": "The registration of {{name}} was rejected."
+    },
+    "stage": {
+      "next-leader": "Next Leader",
+      "discipleship": "Discipleship Done",
+      "one-on-one-completed": "One-to-One Done",
+      "one-on-one-progress": "One-to-One Ongoing",
+      "one-on-one-waiting": "One-to-One Waiting",
+      "qbs": "QBS Done",
+      "unbaptized": "Unbaptized / Check",
+      "none": "None"
+    },
+    "pagination": {
+      "range": "{{from}}–{{to}} of {{total}}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "filters": {
+      "status": "Status",
+      "statusAll": "All",
+      "group": "Group",
+      "groupAll": "All",
+      "training": "Training",
+      "trainingAll": "All",
+      "ministry": "Ministry",
+      "ministryAll": "All",
+      "baptism": "Baptism",
+      "baptismAll": "All",
+      "toggle": "Filters",
+      "updatedFrom": "Last activity from",
+      "updatedTo": "Last activity to"
+    },
+    "empty": {
+      "heading": "No members yet",
+      "description": "Add the first member to get started."
+    },
+    "noResults": {
+      "heading": "No results",
+      "description": "Try a different search term or filter.",
+      "action": "Reset filters"
+    },
+    "error": {
+      "heading": "Could not load the list",
+      "description": "Please try again in a moment.",
+      "retry": "Retry"
+    },
+    "detail": {
+      "breadcrumb": "Members",
+      "subtitle": "{{group}} · registered {{date}}",
+      "edit": "Edit",
+      "more": "More",
+      "delete": "Delete",
+      "cards": {
+        "basic": "Basic info",
+        "church": "Church",
+        "training": "Training",
+        "ministry": "Ministry"
+      },
+      "fields": {
+        "name": "Name",
+        "birthDate": "Date of birth",
+        "gender": "Gender",
+        "occupation": "Occupation",
+        "phone": "Phone",
+        "email": "Email",
+        "address": "Address",
+        "group": "Group",
+        "baptism": "Baptism",
+        "status": "Status",
+        "registrationDate": "Registered"
+      },
+      "trainingEmpty": "No training recorded",
+      "ministryEmpty": "No ministry recorded",
+      "notFound": {
+        "heading": "Could not load this member",
+        "description": "Go back to the list and try again.",
+        "action": "Back to members"
+      },
+      "deleteDialog": {
+        "header": "Delete member",
+        "message": "Delete {{name}}? The member moves to Deleted, and an admin can restore them at any time.",
+        "accept": "Delete",
+        "cancel": "Cancel"
+      },
+      "restore": "Restore",
+      "purge": "Delete permanently",
+      "purgeDialog": {
+        "header": "Delete permanently",
+        "message": "Permanently delete {{name}}? This cannot be undone and also deletes the app account. The same email can be registered again.",
+        "accept": "Delete permanently",
+        "cancel": "Cancel"
+      },
+      "toast": {
+        "loadFailed": "Could not load the member.",
+        "deleted": "Deleted.",
+        "deleteFailed": "Delete failed.",
+        "restored": "Restored.",
+        "restoreConflict": "Cannot restore: the email is already in use.",
+        "restoreFailed": "Restore failed.",
+        "purged": "Deleted permanently.",
+        "purgeFailed": "Permanent delete failed."
+      }
+    },
+    "reject": {
+      "title": "Reject registration",
+      "message": "Reject the registration of {{name}}? Rejected members stay in the list as Rejected.",
+      "accept": "Reject"
+    }
+  },
+  "ministry": {
+    "eyebrow": "Ministry management",
+    "title": "Ministries",
+    "subtitle": "{{total}} ministries · {{active}} active",
+    "addButton": "Add ministry",
+    "search": {
+      "placeholder": "Search ministries...",
+      "aria": "Search ministries"
+    },
+    "active": "Active",
+    "memberCount": "{{count}} members",
+    "empty": {
+      "heading": "No ministries yet",
+      "description": "Add the first ministry"
+    },
+    "noResults": {
+      "heading": "No results",
+      "description": "Try a different name"
+    },
+    "error": {
+      "heading": "Could not load ministries",
+      "description": "Please try again shortly",
+      "retry": "Retry"
+    },
+    "detail": {
+      "eyebrow": "Ministry",
+      "edit": "Edit",
+      "more": "More",
+      "deactivate": "Deactivate",
+      "members": "Members",
+      "addMember": "Add member",
+      "history": "Member history",
+      "historyEmpty": "No history yet",
+      "statusActive": "Active",
+      "statusPending": "Pending",
+      "review": "Review",
+      "roles": {
+        "LEADER": "Leader",
+        "SUB_LEADER": "Sub-leader",
+        "MEMBER": "Member"
+      },
+      "columns": {
+        "name": "Name",
+        "role": "Role",
+        "status": "Status",
+        "startDate": "Start",
+        "actions": "Manage",
+        "endDate": "End",
+        "note": "Note"
+      },
+      "membersEmpty": {
+        "heading": "No members yet",
+        "description": "Add a member"
+      },
+      "notFound": {
+        "heading": "Ministry not found",
+        "description": "It was removed or the link is wrong",
+        "action": "Back to ministries"
+      },
+      "deactivateDialog": {
+        "header": "Deactivate ministry",
+        "message": "Deactivate {{title}}? It will show as inactive in the list.",
+        "accept": "Deactivate",
+        "cancel": "Cancel"
+      },
+      "toast": {
+        "done": "Done",
+        "error": "Error",
+        "deactivated": "The ministry was deactivated.",
+        "deactivateFailed": "Could not deactivate.",
+        "loadFailed": "Could not load the ministry.",
+        "membersFailed": "Could not load members.",
+        "memberUpdated": "Team member saved.",
+        "memberUpdateFailed": "Could not save the team member.",
+        "memberRemoved": "Membership ended.",
+        "memberRemoveFailed": "Could not end the membership.",
+        "historyFailed": "Could not load the member history.",
+        "approved": "Application approved.",
+        "rejected": "Application rejected.",
+        "reviewFailed": "Could not process the application."
+      },
+      "addDialog": {
+        "header": "Add member",
+        "subtitle": "Register the selected member on this ministry team.",
+        "member": "Member",
+        "memberPlaceholder": "Select a member",
+        "startDate": "Start",
+        "startDateHint": "Pick a date from the calendar",
+        "note": "Note",
+        "cancel": "Cancel",
+        "submit": "Add",
+        "toast": {
+          "done": "Done",
+          "info": "Notice",
+          "error": "Error",
+          "added": "Added.",
+          "conflict": "This member is already active.",
+          "failed": "Could not add.",
+          "namesFailed": "Could not load members."
+        }
+      },
+      "editMember": "Edit",
+      "removeMember": "End",
+      "editDialog": {
+        "header": "Edit team member",
+        "subtitle": "Setting an end date removes the member from the team list; they stay in the team history.",
+        "member": "Member",
+        "startDate": "Start date",
+        "endDate": "End date (optional)",
+        "endDateHint": "Leave empty while still active",
+        "endBeforeStart": "The end date must not be before the start date",
+        "note": "Note",
+        "required": "This field is required",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "removeDialog": {
+        "header": "End membership",
+        "message": "End {{name}}'s membership? Today is recorded as the end date.",
+        "accept": "End",
+        "cancel": "Cancel"
+      },
+      "reviewDialog": {
+        "header": "Review application",
+        "applicant": "Applicant",
+        "appliedAt": "Applied on",
+        "selfIntroduction": "Introduction",
+        "message": "Message",
+        "messagePlaceholder": "A message for the applicant",
+        "messageHint": "A message is required to reject.",
+        "messageRequired": "Enter a reason for rejecting.",
+        "cancel": "Cancel",
+        "reject": "Reject",
+        "approve": "Approve"
+      }
+    },
+    "form": {
+      "card": "Ministry info",
+      "editTitle": "Edit ministry",
+      "newTitle": "New ministry",
+      "newSubtitle": "Register a new ministry team.",
+      "breadcrumbEdit": "Edit",
+      "breadcrumbNew": "New ministry",
+      "fields": {
+        "title": "Name",
+        "subtitle": "Short description",
+        "leader": "Leader",
+        "status": "Status",
+        "about": "Description"
+      },
+      "placeholders": {
+        "title": "e.g. Worship team",
+        "subtitle": "Describe the ministry in one line",
+        "leader": "Select a leader",
+        "about": "Describe the ministry in detail. The mobile app shows it under “Our heart”."
+      },
+      "hints": {
+        "subtitle": "Up to {{max}} characters",
+        "leader": "Shown as the leader in the mobile app",
+        "about": "Line breaks are kept"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "errors": {
+        "required": "This field is required."
+      },
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create",
+      "toast": {
+        "error": "Error",
+        "loadFailed": "Could not load the ministry.",
+        "saveFailed": "Could not save the changes.",
+        "createFailed": "Could not create the ministry."
+      },
+      "schedules": {
+        "title": "Place & time",
+        "add": "Add place & time",
+        "location": "Place",
+        "placeholder": "e.g. Main hall",
+        "start": "Start",
+        "end": "End",
+        "weekday": "Weekday",
+        "weekdays": {
+          "MONDAY": "Monday",
+          "TUESDAY": "Tuesday",
+          "WEDNESDAY": "Wednesday",
+          "THURSDAY": "Thursday",
+          "FRIDAY": "Friday",
+          "SATURDAY": "Saturday",
+          "SUNDAY": "Sunday"
+        },
+        "incomplete": "Enter a place, start and end."
+      },
+      "requirements": {
+        "title": "Requirements",
+        "add": "Add requirement",
+        "placeholder": "e.g. Completed discipleship"
+      },
+      "remove": "Remove"
+    }
+  },
+  "events": {
+    "eyebrow": "Activities",
+    "title": "Events",
+    "subtitle": "Manage each event's sign-up window and review who attended.",
+    "add": "New event",
+    "list": "Events",
+    "attendees": "View attendees",
+    "edit": "Edit",
+    "saved": "Event saved",
+    "stats": {
+      "total": "All events",
+      "totalSub": "Registered",
+      "open": "Open",
+      "openSub": "Accepting sign-ups",
+      "scheduled": "Scheduled",
+      "scheduledSub": "Not open yet",
+      "closed": "Closed · inactive",
+      "closedSub": "Sign-up ended"
+    },
+    "columns": {
+      "title": "Event",
+      "windowStart": "Opens",
+      "windowEnd": "Closes",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "OPEN": "Open",
+      "SCHEDULED": "Scheduled",
+      "CLOSED": "Closed",
+      "INACTIVE": "Inactive"
+    },
+    "empty": {
+      "heading": "No events yet",
+      "description": "Events you add will show up here."
+    },
+    "dialog": {
+      "addHeader": "New event",
+      "editHeader": "Edit event",
+      "subtitle": "The app accepts sign-ups during the window.",
+      "title": "Event name",
+      "description": "Description",
+      "status": "Status",
+      "statusPlaceholder": "Set by the window",
+      "publishNow": "Publish now",
+      "windowStart": "Opens",
+      "windowEnd": "Closes",
+      "endBeforeStart": "The window cannot close before it opens.",
+      "required": "Required.",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "breadcrumb": "Breadcrumb",
+    "back": "Back to events",
+    "attendeesEyebrow": "Event attendees",
+    "attendeesSubtitle": "Shows check-in order and each member's 순 at sign-up.",
+    "refresh": "Refresh",
+    "attendeeList": "Attendees",
+    "attendeeStats": {
+      "total": "Attendees",
+      "totalSub": "Checked in",
+      "groups": "순 attending",
+      "announcement": "Linked announcement",
+      "noAnnouncement": "No linked announcement"
+    },
+    "attendeeColumns": {
+      "order": "#",
+      "name": "Name",
+      "group": "순",
+      "checkedInAt": "Checked in"
+    },
+    "attendeeEmpty": {
+      "heading": "No attendees yet",
+      "description": "Members appear here once they check in."
+    },
+    "errors": {
+      "summary": "Error",
+      "load": "Could not load events.",
+      "save": "Could not save the event.",
+      "attendees": "Could not load the attendee list."
+    }
+  },
+  "groups": {
+    "eyebrow": "Small groups",
+    "title": "Small groups",
+    "subtitle": "{{groups}} groups · {{members}} young adults · stages are cumulative (next leader ⊃ discipleship ⊃ one-on-one ⊃ QBS)",
+    "all": "All",
+    "collapseAll": "Collapse all",
+    "expandAll": "Expand all",
+    "stage": {
+      "next-leader": "Next leader",
+      "discipleship": "Discipleship",
+      "one-on-one-completed": "1:1 completed",
+      "one-on-one-progress": "1:1 in progress",
+      "one-on-one-waiting": "1:1 waiting",
+      "qbs": "QBS completed",
+      "unbaptized": "Check baptism",
+      "none": "Not completed"
+    },
+    "hint": {
+      "filter": "{{count}} × {{stage}} highlighted",
+      "assign": "{{count}} × {{stage}} highlighted · dashed border = discipleship graduates who can be assigned · click a name to assign or unassign"
+    },
+    "division": {
+      "DANIEL": "Daniel",
+      "NEHEMIA": "Nehemiah",
+      "none": "Other"
+    },
+    "divisionHeading": "{{name}} group",
+    "divisionCaption": "{{groups}} groups · {{members}}",
+    "leaderTerm": "Leader",
+    "countSuffix": "",
+    "candidate": "+ Assign",
+    "empty": "No small groups yet",
+    "saveFailed": "Could not save. Please try again."
+  },
+  "attendance": {
+    "eyebrow": "Activity",
+    "title": "Attendance",
+    "subtitle": "{{count}} definitions · {{active}} active",
+    "add": "Add definition",
+    "tabs": {
+      "definitions": "Definitions",
+      "records": "Records"
+    },
+    "definitions": "Attendance definitions",
+    "records": "Attendance by group",
+    "edit": "Edit",
+    "columns": {
+      "title": "Title",
+      "day": "Day",
+      "window": "Check-in time",
+      "status": "Status",
+      "actions": "Actions",
+      "group": "Group",
+      "count": "Attendance",
+      "share": "Share",
+      "inPlace": "In church",
+      "outside": "Outside",
+      "unconfirmed": "Unconfirmed",
+      "name": "Name",
+      "worship": "Service",
+      "checkedInAt": "Checked in",
+      "location": "Location"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "days": {
+      "MONDAY": "Monday",
+      "TUESDAY": "Tuesday",
+      "WEDNESDAY": "Wednesday",
+      "THURSDAY": "Thursday",
+      "FRIDAY": "Friday",
+      "SATURDAY": "Saturday",
+      "SUNDAY": "Sunday"
+    },
+    "empty": {
+      "heading": "No attendance definitions",
+      "description": "Add a definition to start taking check-ins."
+    },
+    "date": "Date",
+    "definition": "Definition",
+    "all": "All",
+    "people": "{{count}}",
+    "noGroup": "No group",
+    "recordsEmpty": "No attendance on this date",
+    "saved": "Attendance definition saved",
+    "deactivate": {
+      "header": "Deactivate definition",
+      "message": "Deactivate '{{title}}'? Records are kept.",
+      "accept": "Deactivate"
+    },
+    "dialog": {
+      "addHeader": "Add attendance definition",
+      "editHeader": "Edit attendance definition",
+      "subtitle": "Pick a day and check-in window; members can check in during that time.",
+      "title": "Title",
+      "description": "Description",
+      "dayOfWeek": "Day",
+      "dayPlaceholder": "Select a day",
+      "windowStart": "Check-in start",
+      "windowEnd": "Check-in end",
+      "required": "Required",
+      "endNotAfterStart": "End must be later than start",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "errors": {
+      "summary": "Error",
+      "load": "Could not load definitions",
+      "save": "Could not save",
+      "counts": "Could not load attendance",
+      "deactivate": "Could not deactivate",
+      "roster": "Could not load the check-in roster"
+    },
+    "locationTotals": "Total · {{totals}}.",
+    "unconfirmedHint": "Unconfirmed means the check-in location is unknown, not that the person was absent.",
+    "roster": "Check-in roster",
+    "rosterEmpty": "Nobody checked in on this date",
+    "unknownMember": "Unknown member",
+    "presence": {
+      "IN_PLACE": "In church",
+      "OUTSIDE": "Outside",
+      "UNCONFIRMED": "Unconfirmed"
+    },
+    "logs": {
+      "eyebrow": "Attendance counts",
+      "title": "Attendance counts",
+      "subtitle": "Attendance per group.",
+      "datePlaceholder": "Select a date",
+      "total": "Total attendance",
+      "group": "Group",
+      "distribution": "Distribution",
+      "empty": "No group counts for this date",
+      "back": "Back",
+      "refresh": "Refresh"
+    }
+  },
+  "forbidden": {
+    "eyebrow": "403",
+    "title": "No access",
+    "subtitle": "This screen is only open to accounts with permission.",
+    "empty": {
+      "heading": "You don't have access",
+      "description": "Your account has no role that can see this screen. Ask an administrator for access.",
+      "action": "Go to home"
+    },
+    "noPage": {
+      "title": "No page yet",
+      "subtitle": "Your role has no page yet.",
+      "heading": "There is no page for your role yet",
+      "description": "Your role: {{roles}}. Once a page for this role is ready, it opens right after your next login. For urgent matters, contact an admin.",
+      "action": "Log out"
+    }
+  },
+  "announcements": {
+    "eyebrow": "Admin",
+    "title": "Announcements",
+    "subtitle": "Write church notices and ministry or event news, and choose which stay pinned on top.",
+    "add": "Add announcement",
+    "all": "All",
+    "listHeading": "Announcements",
+    "search": {
+      "aria": "Search announcements",
+      "placeholder": "Search title or content"
+    },
+    "category": {
+      "NOTICE": "Notice",
+      "MINISTRY": "Ministry",
+      "EVENT": "Event"
+    },
+    "period": "Published {{start}} - {{end}}",
+    "openEnd": "no end date",
+    "pinned": "Pinned",
+    "more": "More",
+    "edit": "Edit",
+    "empty": "No announcements yet",
+    "noMatch": "No announcements match",
+    "loadFailed": "Could not load announcements",
+    "loadFailedHint": "Please try again in a moment.",
+    "delete": {
+      "action": "Delete",
+      "header": "Delete announcement",
+      "message": "Delete \"{{title}}\"? This cannot be undone."
+    },
+    "dialog": {
+      "addHeader": "New announcement",
+      "editHeader": "Edit announcement",
+      "subtitle": "Shown in the youth app's announcements tab and on its home screen during the publishing period.",
+      "title": "Title",
+      "body": "Content",
+      "category": "Category",
+      "pinned": "Pin to top",
+      "startAt": "Start date",
+      "endAt": "End date",
+      "required": "This field is required.",
+      "endBeforeStart": "The end date cannot be before the start date.",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "toast": {
+      "created": "Announcement added",
+      "updated": "Announcement updated",
+      "deleted": "Announcement deleted",
+      "saveFailed": "Could not save the announcement",
+      "deleteFailed": "Could not delete the announcement"
+    }
+  },
+  "statistics": {
+    "eyebrow": "Admin",
+    "title": "Statistics",
+    "subtitle": "Data-driven analysis — aggregation in progress",
+    "period": {
+      "label": "Period",
+      "last30Days": "Last 30 days",
+      "quarter": "Quarter",
+      "year": "Year"
+    },
+    "pendingBanner": "Some aggregates are still being prepared on the server — only ready charts show real data",
+    "pendingEmpty": {
+      "heading": "Aggregation in progress",
+      "description": "Shown here once the server aggregates are ready"
+    },
+    "empty": "No data",
+    "charts": {
+      "growth": "Growth",
+      "gender": "Gender distribution",
+      "attendanceRate": "Attendance rate",
+      "trainingStages": "Training stages",
+      "services": "Services · this week",
+      "groupShare": "Attendance by group",
+      "ministries": "Members per ministry"
+    }
+  },
+  "archive": {
+    "eyebrow": "Archive",
+    "title": "Archive",
+    "subtitle": "Past training graduates and ministry members",
+    "tabs": {
+      "training": "Training",
+      "ministry": "Ministry"
+    },
+    "columns": {
+      "name": "Name",
+      "group": "Group",
+      "status": "Status",
+      "role": "Role",
+      "startDate": "Start",
+      "endDate": "End"
+    },
+    "status": {
+      "active": "Active",
+      "graduated": "Graduated"
+    },
+    "trainingHeading": "{{name}} · {{count}} completed",
+    "ministryHeading": "{{name}} · {{count}} former members",
+    "empty": {
+      "training": "No one has completed a training yet",
+      "ministry": "No former ministry members yet"
+    },
+    "error": "Could not load the archive"
+  },
+  "newcomers": {
+    "eyebrow": "Newcomer team",
+    "title": "Newcomers",
+    "subtitle": "{{inCare}} in care · {{graduated}} graduated · {{newThisWeek}} new this week",
+    "addButton": "Add newcomer",
+    "caption": "Newcomer list",
+    "unassigned": "Unassigned",
+    "intakeRound": "Round {{n}}",
+    "search": {
+      "aria": "Search newcomers",
+      "placeholder": "Search by name or phone"
+    },
+    "filters": {
+      "toggle": "Filters",
+      "attendance": "Attendance",
+      "attendanceAll": "All attendance",
+      "caregiver": "Caregiver",
+      "caregiverAll": "All caregivers",
+      "identity": "Status",
+      "identityAll": "All statuses"
+    },
+    "columns": {
+      "registrationDate": "Registered",
+      "name": "Name",
+      "gender": "Gender",
+      "caregiver": "Caregiver",
+      "group": "Group",
+      "attendance": "Attendance",
+      "intakeRound": "Round",
+      "birthDate": "Birth date",
+      "baptism": "Baptism",
+      "identity": "Status",
+      "workOrSchool": "Work / school"
+    },
+    "error": {
+      "heading": "Couldn't load newcomers",
+      "description": "Please try again in a moment.",
+      "retry": "Retry"
+    },
+    "noResults": {
+      "heading": "No newcomers match",
+      "description": "Try another search or filter.",
+      "action": "Reset filters"
+    },
+    "empty": {
+      "heading": "No newcomers yet",
+      "description": "Registered newcomers appear here."
+    },
+    "pagination": {
+      "range": "{{from}}–{{to}} of {{total}}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "fields": {
+      "name": "Name",
+      "gender": "Gender",
+      "birthDate": "Birth date",
+      "identity": "Status",
+      "workOrSchool": "Work / school",
+      "phone": "Phone",
+      "email": "Email",
+      "kakaoId": "KakaoTalk ID",
+      "address": "Address",
+      "baptism": "Baptism",
+      "churchExperience": "Church experience",
+      "previousChurch": "Previous church",
+      "firstVisitDate": "First visit",
+      "registrationDate": "Registered",
+      "intakeRound": "Round",
+      "caregiver": "Caregiver",
+      "group": "Assigned group",
+      "assignmentReason": "Assignment reason",
+      "attendance": "Attendance after assignment",
+      "lifecycle": "Status",
+      "notes": "Notes"
+    },
+    "gender": {
+      "M": "Male",
+      "F": "Female"
+    },
+    "identity": {
+      "EMPLOYEE": "Employee",
+      "UNIVERSITY_STUDENT": "University student",
+      "EXAM_PREPARATION": "Exam preparation",
+      "WORKING_HOLIDAY": "Working holiday",
+      "EXCHANGE_STUDENT": "Exchange student",
+      "SELF_EMPLOYED": "Self-employed",
+      "EXPATRIATE": "Expatriate",
+      "JOB_SEEKING": "Job seeking"
+    },
+    "attendance": {
+      "REGULAR": "Regular",
+      "OCCASIONAL": "Occasional",
+      "WORSHIP_ONLY": "Worship only",
+      "ABSENT_OVER_MONTH": "Absent over a month",
+      "CHANGED_CHURCH": "Changed church",
+      "RETURNED_OR_MOVED": "Returned or moved"
+    },
+    "lifecycle": {
+      "SUBMITTED": "Submitted",
+      "IN_CARE": "In care",
+      "GRADUATED": "Graduated",
+      "ARCHIVED": "Archived"
+    },
+    "churchExperience": {
+      "FIRST_TIME": "First time",
+      "CHILDHOOD_FEW_TIMES": "A few times as a child",
+      "IRREGULAR": "Irregularly",
+      "REGULAR": "Regularly"
+    },
+    "detail": {
+      "edit": "Edit",
+      "more": "More",
+      "graduate": "Graduate",
+      "delete": "Delete",
+      "registeredOn": "Registered {{date}}",
+      "caredBy": "Cared for by {{name}}",
+      "notesEmpty": "No notes yet",
+      "cards": {
+        "basic": "Basic info",
+        "assignment": "Assignment",
+        "attendance": "Attendance",
+        "notes": "Notes"
+      },
+      "deleteDialog": {
+        "header": "Delete newcomer",
+        "message": "Delete the record of {{name}}? This can't be undone.",
+        "accept": "Delete"
+      },
+      "toast": {
+        "deleted": "Newcomer deleted",
+        "deleteFailed": "Couldn't delete"
+      },
+      "notFound": {
+        "heading": "Newcomer not found",
+        "description": "It was deleted or the link is wrong.",
+        "action": "Back to list"
+      }
+    },
+    "form": {
+      "eyebrow": "Newcomer team",
+      "createHeading": "Add newcomer",
+      "editHeading": "Edit newcomer",
+      "createSubtitle": "Enter the newcomer's details. * marks required fields.",
+      "editSubtitle": "Change the details and save.",
+      "cardTitle": "Newcomer details",
+      "lastName": "Last name",
+      "firstName": "First name",
+      "phoneCountry": "Country code",
+      "select": "Select",
+      "selectPlaceholder": "Select…",
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Add",
+      "hints": {
+        "identity": "Current job or residence status",
+        "baptism": "Infant baptism · baptism · confirmation · none",
+        "churchExperience": "Prior church attendance",
+        "caregiver": "Loaded from the current newcomer team roster",
+        "group": "Any group can be chosen",
+        "attendance": "Attendance since the group assignment",
+        "notes": "Same value as the notes column in the list"
+      },
+      "errors": {
+        "required": "Required",
+        "email": "Not a valid email",
+        "phone": "Not a valid phone number"
+      },
+      "toast": {
+        "created": "Newcomer added",
+        "updated": "Changes saved",
+        "conflict": "Someone else changed this first. Reload and try again.",
+        "saveFailed": "Couldn't save"
+      }
+    },
+    "graduate": {
+      "header": "Graduate newcomer",
+      "subtitle": "Graduating turns the newcomer into a member.",
+      "cohort": "Cohort",
+      "date": "Graduation date",
+      "group": "Group",
+      "groupRequired": "Choose a group",
+      "note": "Note",
+      "submit": "Graduate",
+      "toast": {
+        "done": "Newcomer graduated",
+        "failed": "Couldn't graduate"
+      }
+    },
+    "toast": {
+      "done": "Done",
+      "error": "Error"
+    },
+    "visits": {
+      "button": "Quick records",
+      "eyebrow": "Newcomer care",
+      "title": "Quick records",
+      "subtitle": "Record first-time visitors on the day of the service · records are kept as history for statistics",
+      "listButton": "Newcomer list",
+      "kpi": {
+        "today": "Visits today",
+        "registered": "Registered this month",
+        "graduated": "Graduated this year",
+        "people": "{{n}}",
+        "ratio": "{{part}} / {{whole}}",
+        "todaySub": "First visit {{first}} · Revisit {{revisit}}",
+        "registeredSub": "{{pct}}% of visits",
+        "graduatedSub": "{{pct}}% of registrations"
+      },
+      "form": {
+        "title": "New record",
+        "visitDate": "Visit date",
+        "visitDateHint": "Today's date is filled in automatically",
+        "required": "Required",
+        "birthYear": "Birth year",
+        "birthYearHint": "Saved as January 1 · edit later",
+        "birthYearInvalid": "Enter a year between 1900 and 2100",
+        "visitType": "Type",
+        "source": "How they heard of us",
+        "sourceHint": "Used to measure advertising",
+        "note": "Notes",
+        "notePlaceholder": "Who invited them, when to reach them, etc.",
+        "noteHint": "Optional",
+        "reset": "Reset",
+        "save": "Save and add another",
+        "editTitle": "Edit record",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "update": "Save"
+      },
+      "type": {
+        "FIRST": "First visit",
+        "REVISIT": "Revisit"
+      },
+      "source": {
+        "FRIEND_FAMILY": "Friend or family",
+        "ADVERTISEMENT": "Advertisement",
+        "SOCIAL_MEDIA": "Social media",
+        "WEBSITE": "Website",
+        "WALK_IN": "Walk-in",
+        "OTHER": "Other"
+      },
+      "status": {
+        "visited": "Visited",
+        "registered": "Registered"
+      },
+      "columns": {
+        "visitDate": "Visit date",
+        "name": "Name",
+        "gender": "Gender",
+        "birthYear": "Birth year",
+        "visitType": "Type",
+        "source": "Source",
+        "note": "Notes",
+        "actions": "Actions"
+      },
+      "history": {
+        "title": "Visit log",
+        "caption": "Visits recorded as quick records",
+        "error": {
+          "heading": "Couldn't load visits",
+          "description": "Please try again in a moment."
+        },
+        "empty": {
+          "heading": "No visits yet",
+          "description": "Add the first visitor in Quick entry."
+        }
+      },
+      "toast": {
+        "saved": "Recorded the visit of {{name}}",
+        "saveFailed": "Couldn't record the visit. Please try again.",
+        "updated": "Updated the record of {{name}}",
+        "updateFailed": "Couldn't update the record. Please try again.",
+        "deleted": "Deleted the record of {{name}}",
+        "deleteFailed": "Couldn't delete the record. Please try again."
+      },
+      "period": {
+        "label": "Period",
+        "30d": "Last 30 days",
+        "3m": "Last 3 months",
+        "year": "This year",
+        "all": "All"
+      },
+      "delete": {
+        "header": "Delete record",
+        "message": "Delete the visit of {{name}} on {{date}}? It is also removed from the statistics.",
+        "accept": "Delete",
+        "cancel": "Cancel"
+      }
+    },
+    "qrLinks": {
+      "button": "QR sign-up links",
+      "eyebrow": "Newcomers",
+      "title": "QR sign-up links",
+      "subtitle": "Create and manage short-lived sign-up links for the welcome desk.",
+      "listButton": "Newcomer list",
+      "createButton": "New QR link",
+      "timeZone": "German time",
+      "remaining": "{{hours}} h {{minutes}} min left",
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "list": {
+        "title": "Sign-up links",
+        "activeCount": "{{count}} active",
+        "hint": "The QR code is shown only once, when it is created. Submitted sign-ups do not appear here.",
+        "expires": "Expires: {{time}}",
+        "uses": "Used {{count}}×",
+        "empty": {
+          "heading": "No sign-up links",
+          "description": "Create a QR link before the service and place it at the welcome desk."
+        },
+        "error": {
+          "heading": "Could not load the links",
+          "description": "Please try again in a moment."
+        }
+      },
+      "create": {
+        "title": "New QR link",
+        "duration": "Valid for",
+        "hours": "{{hours}} h",
+        "durationHint": "12 hours by default, 24 hours at most. Once expired, the link no longer accepts sign-ups.",
+        "submit": "Create link",
+        "cancel": "Cancel",
+        "error": "Could not create the link. Please try again."
+      },
+      "result": {
+        "title": "QR link created",
+        "onceWarning": "This QR code and address are shown only now. Print or save them before closing.",
+        "qrAlt": "Newcomer sign-up QR code",
+        "url": "Sign-up address",
+        "copy": "Copy address",
+        "download": "Save PNG",
+        "print": "Print"
+      },
+      "print": {
+        "title": "Newcomer sign-up",
+        "expires": "Valid until {{time}}"
+      },
+      "revoke": {
+        "button": "Revoke",
+        "header": "Revoke link",
+        "message": "Revoke the link expiring {{time}} now? This QR code will no longer accept sign-ups.",
+        "accept": "Revoke link",
+        "cancel": "Close"
+      },
+      "toast": {
+        "copied": "Address copied",
+        "copyFailed": "Could not copy the address",
+        "revoked": "Link revoked",
+        "revokeFailed": "Could not revoke the link",
+        "qrFailed": "Could not create the QR code"
+      }
+    }
+  },
+  "publicRegister": {
+    "eyebrow": "Hanmaum D+N Young Adults",
+    "heading": "Newcomer registration",
+    "subtitle": "New here? Please fill in this form. Our team will get in touch after reviewing it.",
+    "cardTitle": "Registration request",
+    "fields": {
+      "lastName": "Last name",
+      "firstName": "First name",
+      "gender": "Gender",
+      "birthDate": "Date of birth",
+      "phone": "Mobile",
+      "phoneCountry": "Country code",
+      "kakaoId": "KakaoTalk ID",
+      "email": "Email",
+      "address": "Address",
+      "churchExperience": "Church experience",
+      "baptism": "Baptism",
+      "previousChurch": "Previous church",
+      "visitMotives": "Why you came",
+      "otherMotive": "Other reason",
+      "honeypot": "Leave this field empty"
+    },
+    "placeholders": {
+      "address": "Street, number, postcode, city",
+      "select": "Please select",
+      "otherMotive": "Tell us more (optional)"
+    },
+    "gender": {
+      "M": "Male",
+      "F": "Female"
+    },
+    "churchExperience": {
+      "FIRST_TIME": "First time ever",
+      "CHILDHOOD_FEW_TIMES": "A few times as a child",
+      "IRREGULAR": "Occasional attender",
+      "REGULAR": "Regular attender"
+    },
+    "baptism": {
+      "GENERAL_BAPTIZED": "Baptized",
+      "CONFIRMATION": "Confirmed",
+      "INFANT_BAPTIZED": "Infant baptism",
+      "UNBAPTIZED": "Not baptized"
+    },
+    "motives": {
+      "REFERRAL": "Invited by someone I know",
+      "MOVED": "Moved near the church",
+      "ANSWER": "I want God to answer me soon",
+      "COMMUNITY": "Looking forward to a close community",
+      "RECOVERY": "Hoping to restore my faith",
+      "OTHER": "Other"
+    },
+    "motivesHint": "Choose at least one",
+    "consent": "Your details are used only to register you as a newcomer and to contact you, and are kept for one year. I agree.",
+    "consentVersion": "Consent version {{version}}",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "footer": "Only the newcomer team can see what you enter.",
+    "errors": {
+      "required": "This field is required",
+      "email": "Enter a valid email address",
+      "phone": "Enter a valid mobile number",
+      "motives": "Choose at least one reason",
+      "consent": "Please agree to the use of your details",
+      "rateLimited": "Too many requests. Please try again in a moment.",
+      "invalid": "Please check your entries.",
+      "generic": "Could not submit. Please try again."
+    },
+    "unavailable": {
+      "heading": "This link is not available",
+      "description": "The link has expired or was revoked. Ask the newcomer team for a new QR code."
+    },
+    "loadError": {
+      "heading": "Could not load the form",
+      "description": "Check your connection and try again.",
+      "action": "Try again"
+    },
+    "done": {
+      "heading": "Your request was received",
+      "description": "Our team will contact you using the details you gave. Service times and location will follow by text message."
     }
   }
 }

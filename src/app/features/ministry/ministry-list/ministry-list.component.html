@@ -1,97 +1,94 @@
-<div class="p-6">
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">사역팀 관리</h1>
-    <p-button label="사역 추가" icon="pi pi-plus" (onClick)="goToCreate()" />
-  </div>
+<!--
+  Figma: 사역 목록 · Desktop 204:4691, Tablet 235:1472, Phone 247:15919.
+  Cards on every breakpoint: 3 columns on desktop, 2 on tablet, 1 on phone.
+  On phone the add button leaves the header and spans the width above the search.
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'ministry.eyebrow' | translate"
+    [heading]="'ministry.title' | translate"
+    [subtitle]="'ministry.subtitle' | translate: { total: total(), active: activeCount() }">
+    <p-button
+      appActions
+      class="hidden tablet:block"
+      size="small"
+      icon="pi pi-plus"
+      [label]="'ministry.addButton' | translate"
+      (onClick)="goToCreate()" />
+  </app-page-header>
 
-  <!-- Filter tabs -->
-  <div class="flex gap-1 mb-4 border-b border-gray-200">
-    @for (tab of filterTabs; track tab.label) {
-      <button
-        (click)="onFilterTab(tab.value)"
-        class="px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px"
-        [class]="activeFilter() === tab.value
-          ? 'border-primary-500 text-primary-600'
-          : 'border-transparent text-gray-500 hover:text-gray-700'"
-      >
-        {{ tab.label }}
-      </button>
-    }
-  </div>
+  <p-button
+    class="tablet:hidden"
+    styleClass="w-full"
+    icon="pi pi-plus"
+    [label]="'ministry.addButton' | translate"
+    (onClick)="goToCreate()" />
 
-  <!-- Table -->
-  <p-table
-    [value]="ministries()"
-    [loading]="loading()"
-    rowHover
-    styleClass="p-datatable-sm"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th>사역 제목</th>
-        <th>부제목</th>
-        <th>연락처</th>
-        <th>상태</th>
-        <th class="w-28">관리</th>
-      </tr>
-    </ng-template>
+  <app-search-field
+    [value]="searchText()"
+    (valueChange)="searchText.set($event)"
+    (cleared)="searchText.set('')"
+    [label]="'ministry.search.aria' | translate"
+    [placeholder]="'ministry.search.placeholder' | translate" />
 
-    <ng-template pTemplate="body" let-ministry>
-      <tr class="cursor-pointer" (click)="goToDetail(ministry)">
-        <td class="font-medium">{{ ministry.title }}</td>
-        <td class="text-gray-500">{{ ministry.subtitle }}</td>
-        <td class="text-gray-500">
-          @if (ministry.contacts.length) {
-            <div class="flex flex-col gap-1">
-              @for (contact of ministry.contacts; track $index) {
-                <span>{{ contact.role }}: {{ contact.name }}</span>
-              }
-            </div>
-          } @else {
-            —
-          }
-        </td>
-        <td>
-          <p-tag
-            [value]="ministry.isActive ? '활성' : '비활성'"
-            [severity]="ministry.isActive ? 'success' : 'secondary'"
-          />
-        </td>
-        <td>
-          <div class="flex gap-1">
-            <p-button
-              icon="pi pi-pencil"
-              severity="info"
-              [text]="true"
-              size="small"
-              pTooltip="수정"
-              (onClick)="goToEdit(ministry, $event)"
-            />
-            @if (ministry.isActive) {
-              <p-button
-                icon="pi pi-ban"
-                severity="warn"
-                [text]="true"
-                size="small"
-                pTooltip="비활성화"
-                (onClick)="confirmDeactivate(ministry, $event)"
-              />
+  @if (loading()) {
+    <div class="grid grid-cols-1 gap-gutter tablet:grid-cols-2 desktop:grid-cols-3">
+      @for (i of [1, 2, 3]; track i) {
+        <app-skeleton variant="card" />
+      }
+    </div>
+  } @else if (failed()) {
+    <app-empty-state
+      variant="error"
+      [heading]="'ministry.error.heading' | translate"
+      [description]="'ministry.error.description' | translate"
+      [actionLabel]="'ministry.error.retry' | translate"
+      actionIcon="pi pi-refresh"
+      (action)="load()" />
+  } @else if (total() === 0) {
+    <app-empty-state
+      [heading]="'ministry.empty.heading' | translate"
+      [description]="'ministry.empty.description' | translate"
+      [actionLabel]="'ministry.addButton' | translate"
+      actionIcon="pi pi-plus"
+      (action)="goToCreate()" />
+  } @else if (cards().length === 0) {
+    <app-empty-state
+      variant="no-results"
+      [heading]="'ministry.noResults.heading' | translate"
+      [description]="'ministry.noResults.description' | translate" />
+  } @else {
+    <div class="grid grid-cols-1 gap-gutter tablet:grid-cols-2 desktop:grid-cols-3" data-testid="ministry-grid">
+      @for (card of cards(); track card.ministry.publicId) {
+        <a
+          class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card no-underline hover:border-line focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
+          data-testid="ministry-card"
+          [routerLink]="['/ministry', card.ministry.publicId]">
+          <span class="flex items-center gap-[var(--space-8)]">
+            <span class="type-h3 text-ink-strong min-w-px flex-1 truncate">{{ card.ministry.title }}</span>
+            @if (card.ministry.isActive) {
+              <app-badge variant="ministry-active" [label]="'ministry.active' | translate" />
             }
-          </div>
-        </td>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="5" class="text-center py-8 text-gray-400">
-          부서가 없습니다.
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+          </span>
+          @if (card.members; as members) {
+            <span class="type-body-sm text-ink-muted" data-testid="member-count">
+              {{ 'ministry.memberCount' | translate: { count: members.length } }}
+            </span>
+            @if (members.length > 0) {
+              <span class="flex items-center gap-[var(--space-4)]" data-testid="member-avatars">
+                @for (member of preview(members); track member.publicId) {
+                  <app-avatar [name]="member.fullName" [size]="24" />
+                }
+                @if (overflow(members) > 0) {
+                  <span class="type-caption text-ink-muted">+{{ overflow(members) }}</span>
+                }
+              </span>
+            }
+          } @else {
+            <app-skeleton width="80px" />
+          }
+        </a>
+      }
+    </div>
+  }
 </div>
-
-<p-confirmDialog />
-<p-toast />

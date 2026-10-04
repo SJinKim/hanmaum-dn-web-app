@@ -4,6 +4,10 @@ Web admin dashboard for **Hanmaum D+N** church management.
 
 Requires the backend (`../dn-app`) and Keycloak (`../dn-app/infrastructure/docker-compose.yml`) to be running.
 
+## Workflow
+
+How work is done in this repo (Figma first, issue-first, board, API contract, checks): see [`CLAUDE.md`](CLAUDE.md).
+
 ## Setup
 
 ```bash

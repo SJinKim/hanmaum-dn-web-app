@@ -27,6 +27,14 @@ export interface MemberSummary {
   groupLeaderSince?: string | null;
 }
 
+/** One 순장 tenure. `endDate` is null while it is still running. */
+export interface GroupLeaderTenure {
+  groupPublicId: string;
+  groupName: string;
+  startDate: string;
+  endDate: string | null;
+}
+
 /** Full detail DTO — used in detail + edit views */
 export interface Member {
   publicId: string;
@@ -36,6 +44,7 @@ export interface Member {
   gender: Gender | null;
   baptism: Baptism | null;
   birthDate: string | null;       // ISO date string
+  occupation?: string | null;
   phoneNumber: string | null;
   email: string | null;
   street: string | null;
@@ -56,6 +65,11 @@ export interface Member {
   isGroupLeader?: boolean;
   /** Day the member took over as group leader. Null/absent when isGroupLeader is false. */
   groupLeaderSince?: string | null;
+  /**
+   * Most recent 순장 tenure, running or ended — lets a former 순장 see when they served.
+   * Null when the member never led a group.
+   */
+  lastGroupLeaderTenure?: GroupLeaderTenure | null;
   /**
    * Training history — persisted, sent by `GET /members/{id}`. Edited via
    * `PUT /members/{id}/trainings`. See member-activity.model.ts.
@@ -78,6 +92,7 @@ export interface CreateMemberRequest {
   houseNumber?: string;
   zipCode?: string;
   city?: string;
+  occupation?: string;
   registrationDate?: string;
   churchRole?: string;
   /** publicId of the church group to assign. */
@@ -99,6 +114,7 @@ export interface UpdateMemberRequest {
   houseNumber?: string;
   zipCode?: string;
   city?: string;
+  occupation?: string;
   registrationDate?: string;
   memberStatus?: MemberStatus;
   churchRole?: string;
@@ -122,7 +138,7 @@ export interface ChurchGroupSummary {
   leaderSince?: string | null;
 }
 
-export type MemberStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'DELETED';
+export type MemberStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'REJECTED';
 export type Gender      = 'M' | 'F';
 export type Baptism     = 'UNBAPTIZED' | 'INFANT_BAPTIZED' | 'CONFIRMATION' | 'GENERAL_BAPTIZED';
 
@@ -131,6 +147,7 @@ export const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
   ACTIVE:   '활성',
   INACTIVE: '비활성',
   DELETED:  '삭제됨',
+  REJECTED: '거절됨',
 };
 
 export const GENDER_LABELS: Record<Gender, string> = {
@@ -147,6 +164,7 @@ export const BAPTISM_LABELS: Record<Baptism, string> = {
 
 export const MEMBER_STATUS_OPTIONS = Object.entries(MEMBER_STATUS_LABELS)
   .filter(([k]) => k !== 'DELETED')            // DELETED only via delete endpoint
+  .filter(([k]) => k !== 'REJECTED')           // REJECTED only via POST /reject (#29)
   .map(([value, label]) => ({ value, label }));
 
 export const GENDER_OPTIONS = Object.entries(GENDER_LABELS)

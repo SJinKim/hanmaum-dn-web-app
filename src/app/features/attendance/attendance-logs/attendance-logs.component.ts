@@ -11,6 +11,7 @@ import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AttendanceService } from '../attendance.service';
 import { AttendanceGroupCountsResponse, ChurchGroupAttendanceCountResponse } from '../attendance.model';
@@ -27,6 +28,7 @@ import { AttendanceGroupCountsResponse, ChurchGroupAttendanceCountResponse } fro
     ProgressBarModule,
     ToastModule,
     TooltipModule,
+    TranslatePipe,
   ],
   providers: [MessageService],
   templateUrl: './attendance-logs.component.html',
@@ -37,6 +39,7 @@ export class AttendanceLogsComponent implements OnInit {
   private readonly router     = inject(Router);
   private readonly messageSvc = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly translate  = inject(TranslateService);
 
   definitionPublicId = '';
   groupCounts        = signal<AttendanceGroupCountsResponse | null>(null);
@@ -73,9 +76,12 @@ export class AttendanceLogsComponent implements OnInit {
         this.groupCounts.set(counts);
         this.loading.set(false);
       },
-      error: err => {
-        const detail = err?.message ?? '그룹별 출석 집계를 불러올 수 없습니다.';
-        this.messageSvc.add({ severity: 'error', summary: '오류', detail });
+      error: () => {
+        this.messageSvc.add({
+          severity: 'error',
+          summary: this.translate.instant('attendance.errors.summary'),
+          detail: this.translate.instant('attendance.errors.counts'),
+        });
         this.groupCounts.set(null);
         this.loading.set(false);
       },
@@ -88,7 +94,7 @@ export class AttendanceLogsComponent implements OnInit {
   }
 
   groupDisplayName(group: ChurchGroupAttendanceCountResponse): string {
-    if (!group.groupName) return '소속 그룹 없음';
+    if (!group.groupName) return this.translate.instant('attendance.noGroup') as string;
     return group.groupDivision ? `${group.groupDivision} · ${group.groupName}` : group.groupName;
   }
 

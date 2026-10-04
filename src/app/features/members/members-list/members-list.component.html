@@ -1,48 +1,283 @@
-<div class="p-6">
+<!--
+  Figma: 청년 / Desktop 201:4937. Below 834px the table becomes a list of
+  `app-list-card` (Home precedent) — the Tablet/Phone node IDs in #53 point at
+  the wrong screen, see the issue comment.
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'members.eyebrow' | translate"
+    [heading]="'members.title' | translate"
+    [subtitle]="(status() === 'DELETED' ? 'members.subtitleDeleted' : 'members.subtitle') | translate: { total: total(), active: activeCount() }">
+    @if (canWrite() && !isPhone()) {
+      <p-button
+        appActions
+        size="small"
+        icon="pi pi-plus"
+        [label]="'members.addButton' | translate"
+        (onClick)="goToCreate()" />
+    }
+  </app-page-header>
 
-  <!-- Page title -->
-  <div class="mb-5">
-    <h1 class="text-[26px] font-extrabold text-primary tracking-tight">{{ 'members.title' | translate }}</h1>
-  </div>
+  <!-- Figma 244:2693: on phone the primary action spans the full width below the header. -->
+  @if (canWrite() && isPhone()) {
+    <p-button
+      size="small"
+      icon="pi pi-plus"
+      styleClass="w-full"
+      data-testid="add-member-phone"
+      [label]="'members.addButton' | translate"
+      (onClick)="goToCreate()" />
+  }
 
-  <!-- Top row: global search + Add Member -->
-  <div class="flex items-center gap-3 mb-5">
-    <div class="flex-1 flex items-center gap-2 h-9 bg-white border border-gray-200 rounded-lg px-3">
-      <i class="pi pi-search text-tertiary text-[12px]"></i>
-      <input
-        type="text"
-        class="flex-1 outline-none text-[12px] bg-transparent placeholder:text-tertiary"
-        [placeholder]="'members.search.placeholder' | translate"
-        [attr.aria-label]="'members.search.aria' | translate"
-        [ngModel]="searchTerm"
-        (ngModelChange)="onSearch($event)"
-      />
+  <app-toolbar [hasFilters]="!isPhone() || filtersOpen()">
+    <app-search-field
+      appSearch
+      [value]="searchText()"
+      (valueChange)="onSearchChange($event)"
+      (cleared)="onSearchCleared()"
+      [label]="'members.search.aria' | translate"
+      [placeholder]="'members.search.placeholder' | translate" />
+
+    <!--
+      Phone (#133, Figma 951:97625 / 951:97733): the filters collapse behind a
+      funnel button; open, it carries the subtle background like a hovered IconButton.
+    -->
+    @if (isPhone()) {
+      <p-button
+        appActions
+        severity="secondary"
+        icon="pi pi-filter"
+        [text]="true"
+        [styleClass]="filtersOpen() ? 'bg-surface-subtle' : ''"
+        data-testid="filter-toggle"
+        [ariaLabel]="'members.filters.toggle' | translate"
+        [pt]="{ root: { 'aria-expanded': filtersOpen() } }"
+        (onClick)="toggleFilters()" />
+    }
+
+    <!--
+      One chip per column, in column order; 이름 is the search field. Each chip
+      opens a single-select popover (#131, Figma 949:96712) — single because
+      every filter is one server-side query parameter (hanmaum-dn-server#196);
+      nothing is filtered in the client. 최근 활동 is a from ~ to day range on
+      `updatedAt` (#88, Figma 737:39215). The filter row wraps rather than scrolls.
+    -->
+    <app-filter-select
+      appFilters
+      [label]="'members.filters.status' | translate"
+      [options]="statusOptions()"
+      [value]="status()"
+      (valueChange)="onStatusChange($event)" />
+    <app-filter-select
+      appFilters
+      [label]="'members.filters.group' | translate"
+      [options]="groupFilterOptions()"
+      [value]="group()"
+      (valueChange)="onGroupChange($event)" />
+    <app-filter-select
+      appFilters
+      [label]="'members.filters.training' | translate"
+      [options]="trainingFilterOptions()"
+      [value]="training()"
+      (valueChange)="onTrainingChange($event)" />
+    <app-filter-select
+      appFilters
+      [label]="'members.filters.ministry' | translate"
+      [options]="ministryFilterOptions()"
+      [value]="ministry()"
+      (valueChange)="onMinistryChange($event)" />
+    <app-filter-select
+      appFilters
+      [label]="'members.filters.baptism' | translate"
+      [options]="baptismOptions()"
+      [value]="baptism()"
+      (valueChange)="onBaptismChange($event)" />
+    <!-- Figma DatePicker (605:147): 180px with its own calendar button, full width on phone. -->
+    <div appFilters class="flex w-full items-center gap-[var(--space-4)] tablet:w-auto" data-testid="updated-range">
+      <p-datepicker
+        size="small"
+        dateFormat="yy-mm-dd"
+        class="min-w-0 flex-1 tablet:flex-none"
+        styleClass="w-full tablet:w-[180px]"
+        [readonlyInput]="true"
+        [showIcon]="true"
+        [showClear]="true"
+        [maxDate]="updatedTo()"
+        [ngModel]="updatedFrom()"
+        (ngModelChange)="onUpdatedFromChange($event)"
+        placeholder="YYYY-MM-DD"
+        [ariaLabel]="'members.filters.updatedFrom' | translate" />
+      <span class="type-body-sm text-ink-muted" aria-hidden="true">~</span>
+      <p-datepicker
+        size="small"
+        dateFormat="yy-mm-dd"
+        class="min-w-0 flex-1 tablet:flex-none"
+        styleClass="w-full tablet:w-[180px]"
+        [readonlyInput]="true"
+        [showIcon]="true"
+        [showClear]="true"
+        [minDate]="updatedFrom()"
+        [ngModel]="updatedTo()"
+        (ngModelChange)="onUpdatedToChange($event)"
+        placeholder="YYYY-MM-DD"
+        [ariaLabel]="'members.filters.updatedTo' | translate" />
     </div>
-    <button
-      (click)="goToCreate()"
-      class="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[12px] font-bold hover:bg-primary-hover transition-colors tracking-tight whitespace-nowrap"
-    >
-      <i class="pi pi-plus text-[11px]"></i>
-      {{ 'members.addButton' | translate }}
-    </button>
-  </div>
+  </app-toolbar>
 
-  <!-- AG-Grid -->
-  <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-    <ag-grid-angular
-      style="height: calc(100vh - 240px); min-height: 480px;"
-      [rowData]="members()"
-      [theme]="theme"
-      [columnDefs]="columnDefs"
-      [defaultColDef]="defaultColDef"
-      [gridOptions]="gridOptions"
-      [quickFilterText]="searchTerm"
-      [animateRows]="true"
-      (gridReady)="onGridReady($event)"
-      (rowClicked)="onRowClicked($event)"
-    />
-  </div>
+  <!--
+    The card takes the height the header and the toolbar leave over and the
+    rows scroll inside it, so the page itself never scrolls. Otherwise the
+    paginator sits below the fold and you have to scroll past the last row to
+    reach it.
+  -->
+  <section
+    class="bg-surface border-line-subtle shadow-elevation-sm flex min-h-px flex-1 flex-col gap-[var(--space-12)] overflow-hidden rounded-[var(--radius-lg)] border p-card"
+    [attr.aria-busy]="loading()">
+    <!--
+      `relative`: the screen-reader labels inside (`<caption class="sr-only">`,
+      the MemberPill's `sr-only` span) are `position: absolute`. Without a
+      positioned ancestor their containing block is the initial one, so this
+      scroller cannot clip them — the last row's 1px label then sat below the
+      fold and made the *document* scroll past the shell. Measured on the page:
+      `documentElement.scrollHeight` 1265 vs. `clientHeight` 969, with the last
+      `.sr-only` ending at exactly 1265.
+    -->
+    <div class="relative flex min-h-px flex-1 flex-col overflow-auto">
+      @if (loading()) {
+        <app-skeleton variant="card" />
+      } @else if (failed()) {
+        <app-empty-state
+          variant="error"
+          [heading]="'members.error.heading' | translate"
+          [description]="'members.error.description' | translate"
+          [actionLabel]="'members.error.retry' | translate"
+          actionIcon="pi pi-refresh"
+          (action)="retry()" />
+      } @else if (members().length === 0 && filtered()) {
+        <app-empty-state
+          variant="no-results"
+          [heading]="'members.noResults.heading' | translate"
+          [description]="'members.noResults.description' | translate"
+          [actionLabel]="'members.noResults.action' | translate"
+          (action)="resetFilters()" />
+      } @else if (members().length === 0) {
+        <app-empty-state
+          variant="no-data"
+          [heading]="'members.empty.heading' | translate"
+          [description]="'members.empty.description' | translate"
+          [actionLabel]="canWrite() ? ('members.addButton' | translate) : undefined"
+          actionIcon="pi pi-plus"
+          (action)="goToCreate()" />
+      } @else if (isPhone()) {
+        <div class="flex flex-col gap-[var(--space-8)]">
+          @for (record of records(); track record.id) {
+            <app-list-card [record]="record" (selected)="goToDetail($event.id)" />
+          }
+        </div>
+      } @else {
+        <!--
+          Sortable headers (#68): 이름, 상태, 순 and 세례 only — the columns the
+          server sorts by. The table reports the click; the service sorts.
+        -->
+        <app-data-table
+          externalSort
+          stickyHeader
+          [rows]="tableRows()"
+          [columns]="columns()"
+          [sort]="tableSort()"
+          [caption]="'members.caption' | translate"
+          (sortChange)="onSort($event)"
+          (rowSelected)="goToDetail($event.id)">
+          <!--
+            One tag per completed course (#82). The column *is* the course, so
+            the course name carries both label and title.
+          -->
+          <ng-template appDataCell="training" let-record>
+            <span class="flex flex-wrap items-center gap-[var(--space-4)]">
+              @for (tag of trainingTags(memberFor(record)); track tag.label) {
+                <app-member-pill [stage]="tag.stage" [label]="tag.label" [stageLabel]="tag.label" />
+              }
+            </span>
+          </ng-template>
 
+          <ng-template appDataCell="approve" let-record>
+            @let member = memberFor(record);
+            <!-- A click in here must not also open the member's detail. -->
+            <span role="presentation" class="flex items-center gap-[var(--space-4)] whitespace-nowrap" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+              @if (member.memberStatus === 'PENDING') {
+                @if (approvingId() === member.publicId) {
+                  <i
+                    class="pi pi-spinner pi-spin text-ink-muted"
+                    [attr.aria-label]="'members.actions.approving' | translate"></i>
+                } @else if (selectingId() === member.publicId) {
+                  <p-select
+                    size="small"
+                    optionLabel="label"
+                    optionValue="value"
+                    [options]="groupOptions()"
+                    [placeholder]="'members.actions.selectGroupPlaceholder' | translate"
+                    [ariaLabel]="'members.actions.selectGroup' | translate"
+                    (onChange)="chooseGroup(member, $event.value)" />
+                  <p-button
+                    size="small"
+                    severity="secondary"
+                    icon="pi pi-times"
+                    [text]="true"
+                    [ariaLabel]="'members.actions.cancel' | translate"
+                    (onClick)="cancelApprove($event)" />
+                } @else {
+                  <p-button
+                    size="small"
+                    icon="pi pi-check"
+                    [label]="'members.actions.approve' | translate"
+                    (onClick)="startApprove(member, $event)" />
+                  <!-- Figma 747:44583: Danger Small 거절 next to 승인. -->
+                  <p-button
+                    size="small"
+                    severity="danger"
+                    [label]="'members.actions.reject' | translate"
+                    [attr.data-testid]="'reject-' + member.publicId"
+                    (onClick)="confirmReject(member, $event)" />
+                }
+              }
+            </span>
+          </ng-template>
+        </app-data-table>
+      }
+    </div>
+
+    <!--
+      Neither DESIGN.md nor 201:4937 specifies a paginator; this one is
+      feature-local and built from tokens. `p-paginator` would need `::ng-deep`
+      to be themed, which DESIGN.md §7.2 forbids.
+    -->
+    @if (!loading() && !failed() && hasPages()) {
+      <div class="flex items-center justify-end gap-[var(--space-8)]">
+        <span class="type-caption text-ink-muted tabular-nums">
+          {{ 'members.pagination.range' | translate: rangeParams() }}
+        </span>
+        <p-button
+          size="small"
+          severity="secondary"
+          icon="pi pi-chevron-left"
+          [text]="true"
+          [disabled]="page() === 0"
+          [label]="'members.pagination.prev' | translate"
+          (onClick)="prevPage()" />
+        <p-button
+          size="small"
+          severity="secondary"
+          icon="pi pi-chevron-right"
+          iconPos="right"
+          [text]="true"
+          [disabled]="page() >= lastPage()"
+          [label]="'members.pagination.next' | translate"
+          (onClick)="nextPage()" />
+      </div>
+    }
+  </section>
 </div>
 
+<!-- Figma 748:42429 / 780:86768: 400px panel, 16px gutter on Phone. -->
+<p-confirmDialog [style]="{ width: '400px', maxWidth: 'calc(100vw - 32px)' }" />
 <p-toast />

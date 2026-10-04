@@ -119,12 +119,17 @@ describe('phone.util', () => {
       expect(formatForDisplay('')).toBe('—');
     });
 
-    it('groups a German E.164 number', () => {
-      expect(formatForDisplay('+491512345678')).toBe('+49 151 2345678');
+    it('returns a German E.164 number unbroken', () => {
+      expect(formatForDisplay('+491512345678')).toBe('+491512345678');
     });
 
-    it('groups a Korean E.164 number', () => {
-      expect(formatForDisplay('+821012345678')).toBe('+82 10 12345678');
+    it('returns a Korean E.164 number unbroken', () => {
+      expect(formatForDisplay('+821012345678')).toBe('+821012345678');
+    });
+
+    it('never inserts separators, whatever the country', () => {
+      expect(formatForDisplay('+491512345678')).not.toContain(' ');
+      expect(formatForDisplay('+821012345678')).not.toContain(' ');
     });
 
     it('returns unrecognized values unchanged', () => {

@@ -164,11 +164,11 @@ describe('ChurchGroupsService', () => {
       expect(m.divisions[1].groups.map(g => g.name)).toEqual(['온유']);
     });
 
-    it('orders NEHEMIA before DANIEL regardless of input order', () => {
+    it('orders DANIEL before NEHEMIA regardless of input order', () => {
       const daniel: ChurchGroupSummary = { publicId: 'd1', division: 'DANIEL', name: '온유' };
       const nehemia: ChurchGroupSummary = { publicId: 'n1', division: 'NEHEMIA', name: '믿음' };
       const m = service.buildMatrix([], [daniel, nehemia]);
-      expect(m.divisions.map(d => d.division)).toEqual(['NEHEMIA', 'DANIEL']);
+      expect(m.divisions.map(d => d.division)).toEqual(['DANIEL', 'NEHEMIA']);
     });
 
     it('renders the 새가족 group as an ordinary table-driven column', () => {
@@ -186,7 +186,7 @@ describe('ChurchGroupsService', () => {
       const daniel: ChurchGroupSummary = { publicId: 'd1', division: 'DANIEL', name: '온유' };
       const nehemia: ChurchGroupSummary = { publicId: 'n1', division: 'NEHEMIA', name: '믿음' };
       const m = service.buildMatrix([], [newFamily, daniel, nehemia]);
-      expect(m.divisions.map(d => d.division)).toEqual(['NEHEMIA', 'DANIEL', '새가족']);
+      expect(m.divisions.map(d => d.division)).toEqual(['DANIEL', 'NEHEMIA', '새가족']);
     });
 
     it('places members in the correct group column', () => {

@@ -1,9 +1,113 @@
 {
   "common": {
-    "none": "(없음)"
+    "none": "(없음)",
+    "unsavedChanges": {
+      "header": "변경사항 저장 안 됨",
+      "message": "저장하지 않은 변경사항이 있습니다. 이 페이지를 나가면 변경사항이 사라집니다.",
+      "leave": "나가기",
+      "stay": "취소"
+    }
+  },
+  "nav": {
+    "groups": {
+      "people": "사람 · People",
+      "activity": "활동 · Activity",
+      "admin": "관리 · Admin"
+    },
+    "items": {
+      "home": "홈",
+      "members": "청년",
+      "newcomers": "새가족",
+      "quickRecords": "빠른 기록",
+      "churchGroups": "순",
+      "attendance": "출석",
+      "eventRsvps": "이벤트",
+      "ministry": "사역",
+      "announcements": "공지사항",
+      "archive": "기록",
+      "analytics": "통계"
+    }
+  },
+  "shell": {
+    "nav": {
+      "aria": "주요 메뉴",
+      "open": "메뉴 열기"
+    },
+    "sidebar": {
+      "expand": "사이드바 펼치기",
+      "collapse": "사이드바 접기"
+    },
+    "pending": {
+      "label": "대기 {{count}}명",
+      "aria": "승인 대기 중인 청년 {{count}}명 — 대기 목록 보기"
+    },
+    "theme": {
+      "dark": "다크 모드",
+      "light": "라이트 모드"
+    },
+    "lang": {
+      "aria": "언어 전환"
+    },
+    "menu": {
+      "aria": "계정 메뉴",
+      "profile": "내 정보",
+      "settings": "설정",
+      "logout": "로그아웃"
+    }
+  },
+  "home": {
+    "title": "홈",
+    "attention": {
+      "heading": "확인이 필요합니다",
+      "pendingApprovals": "승인 대기",
+      "approve": "승인하기",
+      "awaitingRsvps": "응답 대기",
+      "confirm": "확인"
+    },
+    "attendance": {
+      "heading": "순별 참석 현황",
+      "group": "순",
+      "attended": "참석",
+      "total": "전체",
+      "ratio": "비율",
+      "totalRow": "합계",
+      "empty": "참석 기록이 없습니다",
+      "range": {
+        "last-sunday": "지난 주일",
+        "last-4-weeks": "최근 4주",
+        "last-3-months": "최근 3개월"
+      }
+    },
+    "overview": {
+      "heading": "현황",
+      "totalMembers": "전체 청년",
+      "activeMembers": "활동 청년",
+      "ministries": "사역"
+    },
+    "recent": {
+      "heading": "최근 활동",
+      "viewAll": "전체 보기",
+      "name": "이름",
+      "role": "역할",
+      "status": "상태",
+      "updated": "최근 수정",
+      "empty": "최근 활동이 없습니다",
+      "roleAdmin": "관리자",
+      "roleMember": "청년"
+    },
+    "events": {
+      "heading": "다가오는 일정",
+      "empty": "예정된 일정이 없습니다"
+    }
   },
   "members": {
-    "title": "청년 리스트",
+    "title": "청년",
+    "eyebrow": "청년 관리",
+    "subtitle": "등록된 청년 {{total}}명 · 활성 {{active}}명",
+    "subtitleDeleted": "삭제된 청년 {{total}}명 · 관리자는 복원하거나 영구 삭제할 수 있습니다",
+    "caption": "청년 목록",
+    "unassigned": "미배정",
+    "noTraining": "양육 없음",
     "search": {
       "placeholder": "전체 항목 검색...",
       "aria": "청년 검색"
@@ -24,7 +128,8 @@
       "PENDING": "대기중",
       "ACTIVE": "활성",
       "INACTIVE": "비활성",
-      "DELETED": "삭제됨"
+      "DELETED": "삭제됨",
+      "REJECTED": "거절됨"
     },
     "baptism": {
       "UNBAPTIZED": "미세례",
@@ -46,20 +151,101 @@
       "selectGroupPlaceholder": "순 선택…",
       "cancel": "취소",
       "approve": "승인",
-      "edit": "청년 정보 수정"
-    },
-    "filter": {
-      "searchPlaceholder": "검색…",
-      "searchAria": "필터 옵션",
-      "selectAll": "전체 선택",
-      "reset": "초기화",
-      "empty": "옵션 없음",
-      "trainingHint": "클릭: 진행중 → 수료 → 중단 → 해제",
-      "groupLeader": "순장"
+      "edit": "청년 정보 수정",
+      "reject": "거절"
     },
     "edit": {
       "churchGroupLeader": "순장",
-      "leaderChangeHint": "이 변경으로 순장이 {{name}}에서 바뀝니다."
+      "leaderChangeHint": "현재 순장: {{name}} · 저장하면 교체됩니다",
+      "cardTitle": "청년 정보",
+      "createHeading": "청년 추가",
+      "editHeading": "청년 정보 수정",
+      "createSubtitle": "새 청년의 기본 정보를 입력하세요.",
+      "editSubtitle": "청년의 정보를 수정합니다.",
+      "submit": "저장",
+      "tabs": {
+        "basic": "기본 정보",
+        "church": "교회",
+        "training": "양육",
+        "ministry": "사역"
+      },
+      "training": {
+        "course": "양육 과정",
+        "status": "상태",
+        "completedAt": "수료일",
+        "add": "양육 추가",
+        "remove": "양육 삭제",
+        "emptyHeading": "등록된 양육이 없습니다",
+        "emptyDescription": "아래 버튼으로 첫 양육 과정을 추가하세요"
+      },
+      "ministry": {
+        "name": "사역",
+        "startDate": "시작일",
+        "endDate": "종료일",
+        "add": "사역 추가",
+        "remove": "사역 삭제",
+        "emptyHeading": "등록된 사역이 없습니다",
+        "emptyDescription": "아래 버튼으로 첫 사역을 추가하세요"
+      },
+      "fields": {
+        "lastName": "성",
+        "firstName": "이름",
+        "discriminator": "구분",
+        "birthDate": "생년월일",
+        "gender": "성별",
+        "occupation": "직업",
+        "phone": "전화번호",
+        "phoneCountry": "국가 번호",
+        "email": "이메일",
+        "street": "도로명",
+        "houseNumber": "번지",
+        "zipCode": "우편번호",
+        "city": "도시",
+        "registrationDate": "등록일"
+      },
+      "placeholders": {
+        "select": "선택",
+        "discriminator": "1남",
+        "occupation": "직업 입력",
+        "street": "도로명 입력",
+        "houseNumber": "12a",
+        "city": "도시 입력"
+      },
+      "errors": {
+        "required": "필수 입력 항목입니다.",
+        "email": "이메일 형식이 올바르지 않습니다.",
+        "phone": "휴대폰 번호 형식이 올바르지 않습니다."
+      },
+      "church": {
+        "group": "순",
+        "leaderToggle": "이 청년이 순장입니다",
+        "leaderStart": "순장 시작일",
+        "leaderEnd": "순장 종료일",
+        "baptism": "세례",
+        "status": "상태",
+        "hints": {
+          "start": "저장 시 자동으로 기록됩니다",
+          "end": "순장 해제 후 저장하면 기록됩니다",
+          "pendingEnd": "저장하면 오늘 날짜로 임기가 종료됩니다",
+          "past": "지난 임기 · 다시 켜면 새 임기가 시작됩니다",
+          "pastInGroup": "지난 임기 · {{group}} · 다시 켜면 새 임기가 시작됩니다"
+        }
+      },
+      "leaderDialog": {
+        "assignHeader": "순장 지정",
+        "assign": "{{name}}{{obj}} {{group}} 순장으로 지정할까요?",
+        "replace": "현재 순장 {{leader}} ({{since}}~){{topic}} 오늘 날짜로 종료됩니다.",
+        "assignAccept": "예, 지정합니다",
+        "endHeader": "순장 종료",
+        "end": "{{name}}의 {{group}} 순장 임기를 종료할까요? 종료일은 오늘({{today}})로 기록됩니다.",
+        "endAccept": "예, 종료합니다",
+        "moveHeader": "순장 이동",
+        "move": "{{name}}{{obj}} {{group}} 순장으로 옮길까요?",
+        "moveEndsOld": "{{group}} 순장 임기는 오늘 날짜로 종료됩니다.",
+        "moveReplace": "현재 {{group}} 순장 {{leader}} ({{since}}~)도 오늘 날짜로 종료됩니다.",
+        "moveAccept": "예, 옮깁니다",
+        "cancel": "취소"
+      }
     },
     "toast": {
       "error": "오류",
@@ -69,7 +255,1101 @@
       "approveFailed": "승인에 실패했습니다.",
       "approveSuccess": "청년이 승인되었습니다.",
       "leaderAssignFailed": "순장 지정에 실패했습니다.",
-      "leaderClearFailed": "순장 해제에 실패했습니다."
+      "leaderClearFailed": "순장 해제에 실패했습니다.",
+      "rejectFailed": "거절에 실패했습니다.",
+      "rejectSuccess": "{{name}} 청년의 가입이 거절되었습니다."
+    },
+    "stage": {
+      "next-leader": "예비순장",
+      "discipleship": "제자반수료",
+      "one-on-one-completed": "일대일수료",
+      "one-on-one-progress": "일대일진행",
+      "one-on-one-waiting": "일대일대기",
+      "qbs": "큐베세수료",
+      "unbaptized": "세례X / 확인대상",
+      "none": "없음"
+    },
+    "pagination": {
+      "range": "{{from}}–{{to}} / {{total}}",
+      "prev": "이전",
+      "next": "다음"
+    },
+    "filters": {
+      "status": "상태",
+      "statusAll": "전체",
+      "group": "순",
+      "groupAll": "전체",
+      "training": "양육",
+      "trainingAll": "전체",
+      "ministry": "사역",
+      "ministryAll": "전체",
+      "baptism": "세례",
+      "baptismAll": "전체",
+      "toggle": "필터",
+      "updatedFrom": "최근 활동 시작",
+      "updatedTo": "최근 활동 종료"
+    },
+    "empty": {
+      "heading": "등록된 청년이 없습니다",
+      "description": "첫 청년을 추가해 보세요."
+    },
+    "noResults": {
+      "heading": "검색 결과가 없습니다",
+      "description": "검색어나 필터를 바꿔 보세요.",
+      "action": "필터 초기화"
+    },
+    "error": {
+      "heading": "목록을 불러올 수 없습니다",
+      "description": "잠시 후 다시 시도해 주세요.",
+      "retry": "다시 시도"
+    },
+    "detail": {
+      "breadcrumb": "청년",
+      "subtitle": "{{group}} · {{date}} 등록",
+      "edit": "수정",
+      "more": "더 보기",
+      "delete": "삭제",
+      "cards": {
+        "basic": "기본 정보",
+        "church": "교회 정보",
+        "training": "양육",
+        "ministry": "사역"
+      },
+      "fields": {
+        "name": "이름",
+        "birthDate": "생년월일",
+        "gender": "성별",
+        "occupation": "직업",
+        "phone": "전화번호",
+        "email": "이메일",
+        "address": "주소",
+        "group": "순",
+        "baptism": "세례",
+        "status": "상태",
+        "registrationDate": "등록일"
+      },
+      "trainingEmpty": "등록된 양육이 없습니다",
+      "ministryEmpty": "등록된 사역이 없습니다",
+      "notFound": {
+        "heading": "청년 정보를 불러올 수 없습니다",
+        "description": "목록으로 돌아가 다시 시도하세요.",
+        "action": "청년 리스트로"
+      },
+      "deleteDialog": {
+        "header": "청년 삭제",
+        "message": "{{name}} 청년을 삭제할까요? 삭제됨 상태로 이동하며, 관리자가 언제든 복원할 수 있습니다.",
+        "accept": "삭제",
+        "cancel": "취소"
+      },
+      "restore": "복원",
+      "purge": "영구 삭제",
+      "purgeDialog": {
+        "header": "영구 삭제",
+        "message": "{{name}} 청년을 영구 삭제할까요? 되돌릴 수 없으며 앱 계정도 함께 삭제됩니다. 같은 이메일로 다시 등록할 수 있습니다.",
+        "accept": "영구 삭제",
+        "cancel": "취소"
+      },
+      "toast": {
+        "loadFailed": "청년 정보를 불러올 수 없습니다.",
+        "deleted": "삭제되었습니다.",
+        "deleteFailed": "삭제에 실패했습니다.",
+        "restored": "복원되었습니다.",
+        "restoreConflict": "이메일 중복으로 복원할 수 없습니다.",
+        "restoreFailed": "복원에 실패했습니다.",
+        "purged": "영구 삭제되었습니다.",
+        "purgeFailed": "영구 삭제에 실패했습니다."
+      }
+    },
+    "reject": {
+      "title": "가입 거절",
+      "message": "{{name}} 청년의 가입을 거절하시겠습니까? 거절된 청년은 목록에 거절됨으로 남습니다.",
+      "accept": "거절"
+    }
+  },
+  "ministry": {
+    "eyebrow": "사역 관리",
+    "title": "사역",
+    "subtitle": "사역 {{total}}개 · 운영 중 {{active}}개",
+    "addButton": "사역 추가",
+    "search": {
+      "placeholder": "사역 검색...",
+      "aria": "사역 검색"
+    },
+    "active": "운영 중",
+    "memberCount": "팀원 {{count}}명",
+    "empty": {
+      "heading": "등록된 사역이 없습니다",
+      "description": "첫 사역을 추가하세요"
+    },
+    "noResults": {
+      "heading": "검색 결과가 없습니다",
+      "description": "다른 이름으로 검색해 보세요"
+    },
+    "error": {
+      "heading": "사역 목록을 불러올 수 없습니다",
+      "description": "잠시 후 다시 시도하세요",
+      "retry": "다시 시도"
+    },
+    "detail": {
+      "eyebrow": "사역",
+      "edit": "수정",
+      "more": "더보기",
+      "deactivate": "비활성화",
+      "members": "팀원",
+      "addMember": "팀원 추가",
+      "history": "팀원 히스토리",
+      "historyEmpty": "아직 기록이 없습니다",
+      "statusActive": "활동",
+      "statusPending": "대기",
+      "review": "검토",
+      "roles": {
+        "LEADER": "리더",
+        "SUB_LEADER": "부리더",
+        "MEMBER": "팀원"
+      },
+      "columns": {
+        "name": "이름",
+        "role": "역할",
+        "status": "상태",
+        "startDate": "시작일",
+        "actions": "관리",
+        "endDate": "종료일",
+        "note": "메모"
+      },
+      "membersEmpty": {
+        "heading": "팀원이 없습니다",
+        "description": "팀원을 추가하세요"
+      },
+      "notFound": {
+        "heading": "사역을 찾을 수 없습니다",
+        "description": "삭제되었거나 주소가 잘못되었습니다",
+        "action": "사역 목록으로"
+      },
+      "deactivateDialog": {
+        "header": "사역 비활성화",
+        "message": "{{title}} 사역을 비활성화할까요? 목록에서 비활성으로 표시됩니다.",
+        "accept": "비활성화",
+        "cancel": "취소"
+      },
+      "toast": {
+        "done": "완료",
+        "error": "오류",
+        "deactivated": "사역이 비활성화되었습니다.",
+        "deactivateFailed": "비활성화에 실패했습니다.",
+        "loadFailed": "사역 정보를 불러올 수 없습니다.",
+        "membersFailed": "팀원 목록을 불러올 수 없습니다.",
+        "memberUpdated": "팀원 정보가 저장되었습니다.",
+        "memberUpdateFailed": "팀원 정보 저장에 실패했습니다.",
+        "memberRemoved": "팀원 활동이 종료되었습니다.",
+        "memberRemoveFailed": "팀원 활동 종료에 실패했습니다.",
+        "historyFailed": "팀원 히스토리를 불러올 수 없습니다.",
+        "approved": "신청을 승인했습니다.",
+        "rejected": "신청을 거절했습니다.",
+        "reviewFailed": "신청을 처리하지 못했습니다."
+      },
+      "addDialog": {
+        "header": "팀원 추가",
+        "subtitle": "선택한 청년을 이 사역의 팀원으로 등록합니다.",
+        "member": "팀원",
+        "memberPlaceholder": "팀원 선택",
+        "startDate": "시작일",
+        "startDateHint": "달력에서 날짜를 선택합니다",
+        "note": "메모",
+        "cancel": "취소",
+        "submit": "추가",
+        "toast": {
+          "done": "완료",
+          "info": "알림",
+          "error": "오류",
+          "added": "추가되었습니다.",
+          "conflict": "이미 활동 중인 팀원입니다.",
+          "failed": "추가에 실패했습니다.",
+          "namesFailed": "청년 목록을 불러올 수 없습니다."
+        }
+      },
+      "editMember": "수정",
+      "removeMember": "종료",
+      "editDialog": {
+        "header": "팀원 수정",
+        "subtitle": "종료일을 입력하면 팀원 목록에서 빠지고 팀원 히스토리에만 남습니다.",
+        "member": "팀원",
+        "startDate": "시작일",
+        "endDate": "종료일 (선택)",
+        "endDateHint": "비워 두면 계속 활동 중입니다",
+        "endBeforeStart": "종료일은 시작일 이후여야 합니다",
+        "note": "메모",
+        "required": "필수 항목입니다",
+        "cancel": "취소",
+        "save": "저장"
+      },
+      "removeDialog": {
+        "header": "팀원 활동 종료",
+        "message": "{{name}}님의 활동을 종료할까요? 종료일이 오늘로 기록됩니다.",
+        "accept": "종료",
+        "cancel": "취소"
+      },
+      "reviewDialog": {
+        "header": "신청 검토",
+        "applicant": "신청자",
+        "appliedAt": "신청일",
+        "selfIntroduction": "자기소개",
+        "message": "메시지",
+        "messagePlaceholder": "신청자에게 전할 메시지",
+        "messageHint": "거절할 때는 메시지가 필요합니다.",
+        "messageRequired": "거절 사유를 입력해 주세요.",
+        "cancel": "취소",
+        "reject": "거절",
+        "approve": "승인"
+      }
+    },
+    "form": {
+      "card": "사역 정보",
+      "editTitle": "사역 정보 수정",
+      "newTitle": "새 사역 추가",
+      "newSubtitle": "새로운 사역 팀을 등록합니다.",
+      "breadcrumbEdit": "수정",
+      "breadcrumbNew": "새 사역 등록",
+      "fields": {
+        "title": "사역명",
+        "subtitle": "한 줄 소개",
+        "leader": "리더",
+        "status": "상태",
+        "about": "설명"
+      },
+      "placeholders": {
+        "title": "예: 찬양팀",
+        "subtitle": "사역을 한 줄로 소개해 주세요",
+        "leader": "리더 선택",
+        "about": "사역을 자세히 소개해 주세요. 모바일 앱의 ‘우리의 마음’에 표시됩니다."
+      },
+      "hints": {
+        "subtitle": "최대 {{max}}자",
+        "leader": "모바일 앱에 리더로 표시됩니다",
+        "about": "줄바꿈은 그대로 표시됩니다"
+      },
+      "status": {
+        "active": "운영 중",
+        "inactive": "비활성"
+      },
+      "errors": {
+        "required": "필수 입력 항목입니다."
+      },
+      "cancel": "취소",
+      "save": "저장",
+      "create": "등록",
+      "toast": {
+        "error": "오류",
+        "loadFailed": "사역 정보를 불러올 수 없습니다.",
+        "saveFailed": "수정에 실패했습니다.",
+        "createFailed": "사역을 등록하지 못했습니다."
+      },
+      "schedules": {
+        "title": "장소 및 시간",
+        "add": "장소 및 시간 추가",
+        "location": "장소",
+        "placeholder": "예: 본당",
+        "start": "시작",
+        "end": "종료",
+        "weekday": "요일",
+        "weekdays": {
+          "MONDAY": "월요일",
+          "TUESDAY": "화요일",
+          "WEDNESDAY": "수요일",
+          "THURSDAY": "목요일",
+          "FRIDAY": "금요일",
+          "SATURDAY": "토요일",
+          "SUNDAY": "일요일"
+        },
+        "incomplete": "장소, 시작, 종료를 모두 입력해 주세요."
+      },
+      "requirements": {
+        "title": "참여 조건",
+        "add": "조건 추가",
+        "placeholder": "예: 양육 수료"
+      },
+      "remove": "삭제"
+    }
+  },
+  "events": {
+    "eyebrow": "활동",
+    "title": "이벤트",
+    "subtitle": "이벤트별 접수 기간을 관리하고 참석자 명단을 확인합니다.",
+    "add": "새 이벤트",
+    "list": "이벤트 목록",
+    "attendees": "참석자 보기",
+    "edit": "수정",
+    "saved": "이벤트를 저장했습니다",
+    "stats": {
+      "total": "전체 이벤트",
+      "totalSub": "등록된 이벤트",
+      "open": "접수 중",
+      "openSub": "지금 신청 가능",
+      "scheduled": "예정",
+      "scheduledSub": "접수 시작 전",
+      "closed": "종료·비활성",
+      "closedSub": "접수 마감됨"
+    },
+    "columns": {
+      "title": "이벤트",
+      "windowStart": "접수 시작",
+      "windowEnd": "접수 종료",
+      "status": "상태",
+      "actions": "작업"
+    },
+    "status": {
+      "OPEN": "접수 중",
+      "SCHEDULED": "예정",
+      "CLOSED": "종료",
+      "INACTIVE": "비활성"
+    },
+    "empty": {
+      "heading": "등록된 이벤트가 없습니다",
+      "description": "새 이벤트를 추가하면 여기에 표시됩니다."
+    },
+    "dialog": {
+      "addHeader": "새 이벤트",
+      "editHeader": "이벤트 수정",
+      "subtitle": "접수 기간 동안 앱에서 신청을 받습니다.",
+      "title": "이벤트 이름",
+      "description": "설명",
+      "status": "상태",
+      "statusPlaceholder": "기간에 따라 자동",
+      "publishNow": "바로 공개",
+      "windowStart": "접수 시작",
+      "windowEnd": "접수 종료",
+      "endBeforeStart": "접수 종료는 접수 시작보다 빠를 수 없습니다.",
+      "required": "필수 항목입니다.",
+      "cancel": "취소",
+      "save": "저장"
+    },
+    "breadcrumb": "이동 경로",
+    "back": "이벤트로 돌아가기",
+    "attendeesEyebrow": "이벤트 참석자",
+    "attendeesSubtitle": "체크인 순서와 신청 당시의 순을 표시합니다.",
+    "refresh": "새로고침",
+    "attendeeList": "참석자 명단",
+    "attendeeStats": {
+      "total": "전체 참석자",
+      "totalSub": "체크인 완료",
+      "groups": "참여 순",
+      "announcement": "연결된 공지",
+      "noAnnouncement": "연결된 공지 없음"
+    },
+    "attendeeColumns": {
+      "order": "#",
+      "name": "이름",
+      "group": "순",
+      "checkedInAt": "체크인 시간"
+    },
+    "attendeeEmpty": {
+      "heading": "아직 참석자가 없습니다",
+      "description": "앱에서 체크인하면 여기에 표시됩니다."
+    },
+    "errors": {
+      "summary": "오류",
+      "load": "이벤트를 불러올 수 없습니다.",
+      "save": "이벤트를 저장할 수 없습니다.",
+      "attendees": "참석자 명단을 불러올 수 없습니다."
+    }
+  },
+  "groups": {
+    "eyebrow": "순 관리",
+    "title": "순",
+    "subtitle": "{{groups}}개 순 · 청년 {{members}}명 · 단계는 누적 (예비순장 ⊃ 제자반수료 ⊃ 일대일 ⊃ 큐베세)",
+    "all": "전체",
+    "collapseAll": "모두 접기",
+    "expandAll": "모두 펼치기",
+    "stage": {
+      "next-leader": "예비순장",
+      "discipleship": "제자반수료",
+      "one-on-one-completed": "일대일수료",
+      "one-on-one-progress": "일대일진행",
+      "one-on-one-waiting": "일대일대기",
+      "qbs": "큐베세수료",
+      "unbaptized": "세례 확인대상",
+      "none": "미수료"
+    },
+    "hint": {
+      "filter": "{{stage}} {{count}}명 강조",
+      "assign": "{{stage}} {{count}}명 강조 · 점선 테두리 = 지정 가능한 제자반수료자 · 이름을 눌러 예비순장으로 지정하거나 해제"
+    },
+    "division": {
+      "DANIEL": "다니엘",
+      "NEHEMIA": "느헤미야",
+      "none": "기타"
+    },
+    "divisionHeading": "{{name}} 그룹",
+    "divisionCaption": "{{groups}}개 순 · {{members}}명",
+    "leaderTerm": "순장",
+    "countSuffix": "명",
+    "candidate": "+ 지정",
+    "empty": "등록된 순이 없습니다",
+    "saveFailed": "저장 실패. 다시 시도해주세요."
+  },
+  "attendance": {
+    "eyebrow": "활동",
+    "title": "출석",
+    "subtitle": "출석 정의 {{count}}개 · 활성 {{active}}개",
+    "add": "정의 추가",
+    "tabs": {
+      "definitions": "정의",
+      "records": "기록"
+    },
+    "definitions": "출석 정의",
+    "records": "순별 출석",
+    "edit": "수정",
+    "columns": {
+      "title": "제목",
+      "day": "요일",
+      "window": "체크인 시간",
+      "status": "상태",
+      "actions": "관리",
+      "group": "순",
+      "count": "출석 수",
+      "share": "비율",
+      "inPlace": "교회 안",
+      "outside": "교회 밖",
+      "unconfirmed": "미확인",
+      "name": "이름",
+      "worship": "예배",
+      "checkedInAt": "체크인 시간",
+      "location": "위치"
+    },
+    "status": {
+      "active": "활성",
+      "inactive": "비활성"
+    },
+    "days": {
+      "MONDAY": "월요일",
+      "TUESDAY": "화요일",
+      "WEDNESDAY": "수요일",
+      "THURSDAY": "목요일",
+      "FRIDAY": "금요일",
+      "SATURDAY": "토요일",
+      "SUNDAY": "주일"
+    },
+    "empty": {
+      "heading": "출석 정의가 없습니다",
+      "description": "정의를 추가하면 체크인을 받을 수 있습니다."
+    },
+    "date": "날짜",
+    "definition": "출석 정의",
+    "all": "전체",
+    "people": "{{count}}명",
+    "noGroup": "소속 순 없음",
+    "recordsEmpty": "이 날짜에 출석 기록이 없습니다",
+    "saved": "출석 정의를 저장했습니다",
+    "deactivate": {
+      "header": "출석 정의 비활성화",
+      "message": "'{{title}}'을(를) 비활성화할까요? 기록은 유지됩니다.",
+      "accept": "비활성화"
+    },
+    "dialog": {
+      "addHeader": "출석 정의 추가",
+      "editHeader": "출석 정의 수정",
+      "subtitle": "요일과 체크인 시간을 정하면 그 시간에 체크인할 수 있습니다.",
+      "title": "제목",
+      "description": "설명",
+      "dayOfWeek": "요일",
+      "dayPlaceholder": "요일 선택",
+      "windowStart": "체크인 시작",
+      "windowEnd": "체크인 종료",
+      "required": "필수 항목입니다",
+      "endNotAfterStart": "종료 시간은 시작 시간보다 늦어야 합니다",
+      "cancel": "취소",
+      "save": "저장"
+    },
+    "errors": {
+      "summary": "오류",
+      "load": "출석 정의를 불러오지 못했습니다",
+      "save": "저장하지 못했습니다",
+      "counts": "출석 기록을 불러오지 못했습니다",
+      "deactivate": "비활성화하지 못했습니다",
+      "roster": "체크인 명단을 불러오지 못했습니다"
+    },
+    "locationTotals": "합계 · {{totals}}.",
+    "unconfirmedHint": "미확인은 체크인 시 위치를 확인하지 못한 인원이며 결석이 아닙니다.",
+    "roster": "체크인 명단",
+    "rosterEmpty": "이 날짜에 체크인한 사람이 없습니다",
+    "unknownMember": "알 수 없는 교인",
+    "presence": {
+      "IN_PLACE": "교회 안",
+      "OUTSIDE": "교회 밖",
+      "UNCONFIRMED": "미확인"
+    },
+    "logs": {
+      "eyebrow": "출석 집계",
+      "title": "출석 집계",
+      "subtitle": "순별 참석 수를 표시합니다.",
+      "datePlaceholder": "날짜 선택",
+      "total": "총 출석",
+      "group": "순",
+      "distribution": "분포",
+      "empty": "선택한 날짜의 순별 집계가 없습니다",
+      "back": "뒤로",
+      "refresh": "새로고침"
+    }
+  },
+  "forbidden": {
+    "eyebrow": "403",
+    "title": "접근 권한 없음",
+    "subtitle": "이 화면은 권한이 있는 계정에게만 열려 있습니다.",
+    "empty": {
+      "heading": "접근 권한이 없습니다",
+      "description": "이 화면을 볼 수 있는 역할이 계정에 없습니다. 관리자에게 권한을 요청해 주세요.",
+      "action": "홈으로 이동"
+    },
+    "noPage": {
+      "title": "화면 준비 중",
+      "subtitle": "현재 역할에 연결된 화면이 아직 없습니다.",
+      "heading": "이 역할에 제공되는 화면이 아직 없습니다",
+      "description": "현재 역할: {{roles}}. 이 역할의 화면이 준비되면 다시 로그인했을 때 바로 열립니다. 급한 일은 관리자에게 문의해 주세요.",
+      "action": "로그아웃"
+    }
+  },
+  "announcements": {
+    "eyebrow": "관리",
+    "title": "공지사항",
+    "subtitle": "교회 공지와 사역·행사 소식을 작성하고 상단 고정 여부를 관리합니다.",
+    "add": "공지 추가",
+    "all": "전체",
+    "listHeading": "공지 목록",
+    "search": {
+      "aria": "공지 검색",
+      "placeholder": "제목 또는 내용으로 검색"
+    },
+    "category": {
+      "NOTICE": "공지",
+      "MINISTRY": "사역",
+      "EVENT": "행사"
+    },
+    "period": "게시 기간 {{start}} - {{end}}",
+    "openEnd": "종료일 없음",
+    "pinned": "상단 고정",
+    "more": "더보기",
+    "edit": "수정",
+    "empty": "등록된 공지가 없습니다",
+    "noMatch": "조건에 맞는 공지가 없습니다",
+    "loadFailed": "공지를 불러오지 못했습니다",
+    "loadFailedHint": "잠시 후 다시 시도해 주세요.",
+    "delete": {
+      "action": "삭제",
+      "header": "공지 삭제",
+      "message": "\"{{title}}\" 공지를 삭제할까요? 되돌릴 수 없습니다."
+    },
+    "dialog": {
+      "addHeader": "공지 작성",
+      "editHeader": "공지 수정",
+      "subtitle": "게시 기간 동안 청년 앱의 공지 탭과 홈 화면에 표시됩니다.",
+      "title": "제목",
+      "body": "내용",
+      "category": "카테고리",
+      "pinned": "상단 고정",
+      "startAt": "시작일",
+      "endAt": "종료일",
+      "required": "필수 입력 항목입니다.",
+      "endBeforeStart": "종료일은 시작일보다 빠를 수 없습니다.",
+      "cancel": "취소",
+      "save": "저장"
+    },
+    "toast": {
+      "created": "공지를 추가했습니다",
+      "updated": "공지를 수정했습니다",
+      "deleted": "공지를 삭제했습니다",
+      "saveFailed": "공지를 저장하지 못했습니다",
+      "deleteFailed": "공지를 삭제하지 못했습니다"
+    }
+  },
+  "statistics": {
+    "eyebrow": "관리",
+    "title": "통계",
+    "subtitle": "데이터 기반 분석 — 집계 로직 준비 중",
+    "period": {
+      "label": "기간",
+      "last30Days": "최근 30일",
+      "quarter": "분기",
+      "year": "연간"
+    },
+    "pendingBanner": "일부 집계는 서버에서 준비 중입니다 — 준비된 차트만 실제 데이터를 보여줍니다",
+    "pendingEmpty": {
+      "heading": "집계 준비 중",
+      "description": "서버 집계가 준비되면 여기에 표시됩니다"
+    },
+    "empty": "데이터가 없습니다",
+    "charts": {
+      "growth": "성장 추이",
+      "gender": "성별 분포",
+      "attendanceRate": "출석률",
+      "trainingStages": "양육 단계 분포",
+      "services": "예배별 집계 · 이번 주",
+      "groupShare": "그룹별 출석 비율",
+      "ministries": "사역별 인원"
+    }
+  },
+  "archive": {
+    "eyebrow": "기록",
+    "title": "기록",
+    "subtitle": "지난 양육 수료자와 사역 팀원",
+    "tabs": {
+      "training": "양육",
+      "ministry": "사역"
+    },
+    "columns": {
+      "name": "이름",
+      "group": "순",
+      "status": "상태",
+      "role": "역할",
+      "startDate": "시작일",
+      "endDate": "종료일"
+    },
+    "status": {
+      "active": "활동",
+      "graduated": "졸업"
+    },
+    "trainingHeading": "{{name}} · 수료 {{count}}명",
+    "ministryHeading": "{{name}} · 지난 팀원 {{count}}명",
+    "empty": {
+      "training": "아직 수료한 청년이 없습니다",
+      "ministry": "아직 지난 팀원이 없습니다"
+    },
+    "error": "기록을 불러오지 못했습니다"
+  },
+  "newcomers": {
+    "eyebrow": "새가족팀",
+    "title": "새가족",
+    "subtitle": "관리 중 {{inCare}}명 · 등반 {{graduated}}명 · 이번 주 신규 {{newThisWeek}}명",
+    "addButton": "새가족 추가",
+    "caption": "새가족 명단",
+    "unassigned": "미배정",
+    "intakeRound": "{{n}}기",
+    "search": {
+      "aria": "새가족 검색",
+      "placeholder": "이름, 전화번호로 검색"
+    },
+    "filters": {
+      "toggle": "필터",
+      "attendance": "출석",
+      "attendanceAll": "전체 출석",
+      "caregiver": "담당자",
+      "caregiverAll": "전체 담당자",
+      "identity": "신분",
+      "identityAll": "전체 신분"
+    },
+    "columns": {
+      "registrationDate": "등록일",
+      "name": "이름",
+      "gender": "성별",
+      "caregiver": "담당자",
+      "group": "순",
+      "attendance": "배정 후 출석",
+      "intakeRound": "기수",
+      "birthDate": "생년월일",
+      "baptism": "세례",
+      "identity": "신분",
+      "workOrSchool": "직장 / 학교"
+    },
+    "error": {
+      "heading": "새가족 명단을 불러오지 못했습니다",
+      "description": "잠시 후 다시 시도해 주세요.",
+      "retry": "다시 시도"
+    },
+    "noResults": {
+      "heading": "조건에 맞는 새가족이 없습니다",
+      "description": "검색어나 필터를 바꿔 보세요.",
+      "action": "필터 초기화"
+    },
+    "empty": {
+      "heading": "아직 등록된 새가족이 없습니다",
+      "description": "새가족이 등록되면 여기에 표시됩니다."
+    },
+    "pagination": {
+      "range": "{{from}}–{{to}} / {{total}}명",
+      "prev": "이전",
+      "next": "다음"
+    },
+    "fields": {
+      "name": "이름",
+      "gender": "성별",
+      "birthDate": "생년월일",
+      "identity": "신분",
+      "workOrSchool": "직장 / 학교",
+      "phone": "전화번호",
+      "email": "이메일",
+      "kakaoId": "카카오톡 ID",
+      "address": "주소",
+      "baptism": "세례",
+      "churchExperience": "교회 경험",
+      "previousChurch": "이전 교회",
+      "firstVisitDate": "첫 방문일",
+      "registrationDate": "등록일",
+      "intakeRound": "기수",
+      "caregiver": "담당자",
+      "group": "배정 순",
+      "assignmentReason": "배정 사유",
+      "attendance": "배정 후 출석",
+      "lifecycle": "상태",
+      "notes": "특이사항"
+    },
+    "gender": {
+      "M": "남",
+      "F": "여"
+    },
+    "identity": {
+      "EMPLOYEE": "직장인",
+      "UNIVERSITY_STUDENT": "대학생",
+      "EXAM_PREPARATION": "입시 준비",
+      "WORKING_HOLIDAY": "워킹홀리데이",
+      "EXCHANGE_STUDENT": "교환학생",
+      "SELF_EMPLOYED": "자영업",
+      "EXPATRIATE": "주재원",
+      "JOB_SEEKING": "구직 중"
+    },
+    "attendance": {
+      "REGULAR": "정기 출석",
+      "OCCASIONAL": "가끔 출석",
+      "WORSHIP_ONLY": "예배만 출석",
+      "ABSENT_OVER_MONTH": "한 달 이상 결석",
+      "CHANGED_CHURCH": "교회 옮김",
+      "RETURNED_OR_MOVED": "귀국 / 이사"
+    },
+    "lifecycle": {
+      "SUBMITTED": "접수",
+      "IN_CARE": "관리 중",
+      "GRADUATED": "등반",
+      "ARCHIVED": "보관"
+    },
+    "churchExperience": {
+      "FIRST_TIME": "처음",
+      "CHILDHOOD_FEW_TIMES": "어릴 때 몇 번",
+      "IRREGULAR": "불규칙하게",
+      "REGULAR": "꾸준히"
+    },
+    "detail": {
+      "edit": "수정",
+      "more": "더 보기",
+      "graduate": "등반",
+      "delete": "삭제",
+      "registeredOn": "{{date}} 등록",
+      "caredBy": "담당 {{name}}",
+      "notesEmpty": "기록된 특이사항이 없습니다",
+      "cards": {
+        "basic": "기본 정보",
+        "assignment": "배정",
+        "attendance": "출석",
+        "notes": "특이사항"
+      },
+      "deleteDialog": {
+        "header": "새가족 삭제",
+        "message": "{{name}} 님의 기록을 삭제할까요? 되돌릴 수 없습니다.",
+        "accept": "삭제"
+      },
+      "toast": {
+        "deleted": "새가족을 삭제했습니다",
+        "deleteFailed": "삭제하지 못했습니다"
+      },
+      "notFound": {
+        "heading": "새가족을 찾을 수 없습니다",
+        "description": "삭제되었거나 주소가 잘못되었습니다.",
+        "action": "목록으로"
+      }
+    },
+    "form": {
+      "eyebrow": "새가족팀",
+      "createHeading": "새가족 추가",
+      "editHeading": "새가족 수정",
+      "createSubtitle": "새가족 정보를 입력하세요. * 표시는 필수입니다.",
+      "editSubtitle": "정보를 수정한 뒤 저장하세요.",
+      "cardTitle": "새가족 정보",
+      "lastName": "성",
+      "firstName": "이름",
+      "phoneCountry": "국가 번호",
+      "select": "선택",
+      "selectPlaceholder": "선택하세요",
+      "cancel": "취소",
+      "save": "저장",
+      "create": "추가",
+      "hints": {
+        "identity": "현재 직업 또는 체류 신분",
+        "baptism": "유아세례 · 세례 · 입교 · 받지않음",
+        "churchExperience": "이전에 교회를 다녀 본 경험",
+        "caregiver": "서버의 현재 새가족팀 명단에서 불러옵니다",
+        "group": "모든 순에서 선택할 수 있습니다",
+        "attendance": "순 배정 이후의 출석 상태",
+        "notes": "리스트의 특이사항 열과 같은 값입니다"
+      },
+      "errors": {
+        "required": "필수 항목입니다",
+        "email": "이메일 형식이 아닙니다",
+        "phone": "전화번호 형식이 아닙니다"
+      },
+      "toast": {
+        "created": "새가족을 추가했습니다",
+        "updated": "변경 사항을 저장했습니다",
+        "conflict": "다른 사람이 먼저 수정했습니다. 새로고침 후 다시 시도하세요.",
+        "saveFailed": "저장하지 못했습니다"
+      }
+    },
+    "graduate": {
+      "header": "등반 처리",
+      "subtitle": "등반 정보를 입력하면 청년으로 전환됩니다.",
+      "cohort": "기수",
+      "date": "등반일",
+      "group": "배정 순",
+      "groupRequired": "순을 선택하세요",
+      "note": "메모",
+      "submit": "등반",
+      "toast": {
+        "done": "등반 처리했습니다",
+        "failed": "등반 처리하지 못했습니다"
+      }
+    },
+    "toast": {
+      "done": "완료",
+      "error": "오류"
+    },
+    "visits": {
+      "button": "빠른 기록",
+      "eyebrow": "새가족 관리",
+      "title": "빠른 기록",
+      "subtitle": "예배 당일 처음 온 분을 바로 기록합니다 · 기록은 통계용 히스토리로 보관됩니다",
+      "listButton": "새가족 목록",
+      "kpi": {
+        "today": "오늘 방문",
+        "registered": "이번 달 새가족 등록",
+        "graduated": "올해 등반",
+        "people": "{{n}}명",
+        "ratio": "{{part}} / {{whole}}명",
+        "todaySub": "처음 방문 {{first}} · 재방문 {{revisit}}",
+        "registeredSub": "방문 대비 {{pct}}%",
+        "graduatedSub": "등록 대비 {{pct}}%"
+      },
+      "form": {
+        "title": "새 기록",
+        "visitDate": "방문일",
+        "visitDateHint": "오늘 날짜가 자동으로 채워집니다",
+        "required": "필수 입력",
+        "birthYear": "출생연도",
+        "birthYearHint": "1월 1일로 저장 · 나중에 수정",
+        "birthYearInvalid": "1900–2100 사이의 연도를 입력하세요",
+        "visitType": "구분",
+        "source": "알게 된 경로",
+        "sourceHint": "광고 효과 분석에 사용",
+        "note": "기타사항",
+        "notePlaceholder": "소개자, 연락 가능 시간 등 메모",
+        "noteHint": "선택 입력",
+        "reset": "초기화",
+        "save": "저장 후 계속 입력",
+        "editTitle": "기록 수정",
+        "delete": "삭제",
+        "cancel": "취소",
+        "update": "저장"
+      },
+      "type": {
+        "FIRST": "처음 방문",
+        "REVISIT": "재방문"
+      },
+      "source": {
+        "FRIEND_FAMILY": "지인 소개",
+        "ADVERTISEMENT": "광고",
+        "SOCIAL_MEDIA": "SNS",
+        "WEBSITE": "웹사이트",
+        "WALK_IN": "직접 방문",
+        "OTHER": "기타"
+      },
+      "status": {
+        "visited": "방문",
+        "registered": "새가족 등록"
+      },
+      "columns": {
+        "visitDate": "방문일",
+        "name": "이름",
+        "gender": "성별",
+        "birthYear": "출생연도",
+        "visitType": "구분",
+        "source": "경로",
+        "note": "기타사항",
+        "actions": "관리"
+      },
+      "history": {
+        "title": "방문 기록",
+        "caption": "빠른 기록으로 남긴 방문 기록",
+        "error": {
+          "heading": "방문 기록을 불러오지 못했습니다",
+          "description": "잠시 후 다시 시도해 주세요."
+        },
+        "empty": {
+          "heading": "방문 기록이 없습니다",
+          "description": "빠른 기록에서 첫 방문자를 추가하세요."
+        }
+      },
+      "toast": {
+        "saved": "{{name}} 님의 방문을 기록했습니다",
+        "saveFailed": "방문을 기록하지 못했습니다. 다시 시도해 주세요.",
+        "updated": "{{name}} 님의 기록을 수정했습니다",
+        "updateFailed": "기록을 수정하지 못했습니다. 다시 시도해 주세요.",
+        "deleted": "{{name}} 님의 기록을 삭제했습니다",
+        "deleteFailed": "기록을 삭제하지 못했습니다. 다시 시도해 주세요."
+      },
+      "period": {
+        "label": "기간",
+        "30d": "최근 30일",
+        "3m": "최근 3개월",
+        "year": "올해",
+        "all": "전체"
+      },
+      "delete": {
+        "header": "기록 삭제",
+        "message": "{{date}} {{name}} 님의 방문 기록을 삭제할까요? 통계에서도 빠집니다.",
+        "accept": "삭제",
+        "cancel": "취소"
+      }
+    },
+    "qrLinks": {
+      "button": "QR 등록 링크",
+      "eyebrow": "새가족",
+      "title": "QR 등록 링크",
+      "subtitle": "안내 데스크용 임시 등록 링크를 만들고 관리합니다.",
+      "listButton": "새가족 목록",
+      "createButton": "새 QR 링크",
+      "timeZone": "독일 시간",
+      "remaining": "{{hours}}시간 {{minutes}}분 남음",
+      "status": {
+        "active": "활성",
+        "expired": "만료",
+        "revoked": "취소"
+      },
+      "list": {
+        "title": "등록 링크",
+        "activeCount": "활성 {{count}}개",
+        "hint": "QR 코드는 만들 때 한 번만 표시됩니다. 제출된 등록 내용은 이 화면에 나오지 않습니다.",
+        "expires": "만료: {{time}}",
+        "uses": "사용 {{count}}회",
+        "empty": {
+          "heading": "등록 링크가 없습니다",
+          "description": "예배 전에 새 QR 링크를 만들어 안내 데스크에 두세요."
+        },
+        "error": {
+          "heading": "링크를 불러오지 못했습니다",
+          "description": "잠시 후 다시 시도해 주세요."
+        }
+      },
+      "create": {
+        "title": "새 QR 링크",
+        "duration": "유효 기간",
+        "hours": "{{hours}}시간",
+        "durationHint": "기본 12시간, 최대 24시간. 만료되면 링크로 더 이상 등록할 수 없습니다.",
+        "submit": "링크 만들기",
+        "cancel": "취소",
+        "error": "링크를 만들지 못했습니다. 다시 시도해 주세요."
+      },
+      "result": {
+        "title": "QR 링크가 생성되었습니다",
+        "onceWarning": "이 QR 코드와 주소는 지금 한 번만 표시됩니다. 창을 닫기 전에 인쇄하거나 저장하세요.",
+        "qrAlt": "새가족 등록 QR 코드",
+        "url": "등록 주소",
+        "copy": "주소 복사",
+        "download": "PNG 저장",
+        "print": "인쇄"
+      },
+      "print": {
+        "title": "새가족 등록",
+        "expires": "유효 기간: {{time}}까지"
+      },
+      "revoke": {
+        "button": "취소",
+        "header": "링크 취소",
+        "message": "{{time}}에 만료되는 링크를 지금 취소할까요? 이 QR 코드로는 더 이상 등록할 수 없습니다.",
+        "accept": "링크 취소",
+        "cancel": "닫기"
+      },
+      "toast": {
+        "copied": "주소를 복사했습니다",
+        "copyFailed": "주소를 복사하지 못했습니다",
+        "revoked": "링크를 취소했습니다",
+        "revokeFailed": "링크를 취소하지 못했습니다",
+        "qrFailed": "QR 코드를 만들지 못했습니다"
+      }
+    }
+  },
+  "publicRegister": {
+    "eyebrow": "한마음 D+N 청년부",
+    "heading": "새가족 등록",
+    "subtitle": "처음 오신 분은 이 양식을 작성해 주세요. 담당자가 확인 후 연락드립니다.",
+    "cardTitle": "새가족 등록 신청",
+    "fields": {
+      "lastName": "성",
+      "firstName": "이름",
+      "gender": "성별",
+      "birthDate": "생년월일",
+      "phone": "핸드폰",
+      "phoneCountry": "국가 번호",
+      "kakaoId": "카카오톡ID",
+      "email": "이메일",
+      "address": "주소",
+      "churchExperience": "교회 방문",
+      "baptism": "세례",
+      "previousChurch": "출석하던 교회",
+      "visitMotives": "방문 동기",
+      "otherMotive": "기타 내용",
+      "honeypot": "이 칸은 비워 두세요"
+    },
+    "placeholders": {
+      "address": "도로명, 번지, 우편번호, 도시",
+      "select": "선택해 주세요",
+      "otherMotive": "직접 입력 (선택)"
+    },
+    "gender": {
+      "M": "남",
+      "F": "여"
+    },
+    "churchExperience": {
+      "FIRST_TIME": "난생 처음",
+      "CHILDHOOD_FEW_TIMES": "어릴적 몇번",
+      "IRREGULAR": "비정기 출석자",
+      "REGULAR": "정기 출석자"
+    },
+    "baptism": {
+      "GENERAL_BAPTIZED": "세례",
+      "CONFIRMATION": "입교",
+      "INFANT_BAPTIZED": "유아 세례",
+      "UNBAPTIZED": "받지 않음"
+    },
+    "motives": {
+      "REFERRAL": "지인의 소개로",
+      "MOVED": "교회 근처로 이사와서 찾아옴",
+      "ANSWER": "하나님께서 속히 나에게 답해 주고 싶어서",
+      "COMMUNITY": "친밀 공동체가 기대되어",
+      "RECOVERY": "신앙의 회복을 소망해서",
+      "OTHER": "기타"
+    },
+    "motivesHint": "하나 이상 선택해 주세요",
+    "consent": "입력하신 정보는 새가족 등록과 담당자 연락 목적으로만 사용되며, 등록 후 1년간 보관됩니다. 이에 동의합니다.",
+    "consentVersion": "동의서 버전 {{version}}",
+    "submit": "제출하기",
+    "submitting": "제출 중…",
+    "footer": "입력하신 내용은 새가족팀만 확인할 수 있습니다.",
+    "errors": {
+      "required": "필수 입력 항목입니다",
+      "email": "올바른 이메일 주소를 입력해 주세요",
+      "phone": "올바른 핸드폰 번호를 입력해 주세요",
+      "motives": "방문 동기를 하나 이상 선택해 주세요",
+      "consent": "개인정보 수집에 동의해 주세요",
+      "rateLimited": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+      "invalid": "입력 내용을 확인해 주세요.",
+      "generic": "제출하지 못했습니다. 다시 시도해 주세요."
+    },
+    "unavailable": {
+      "heading": "사용할 수 없는 링크입니다",
+      "description": "링크가 만료되었거나 취소되었습니다. 새가족팀에 새 QR 코드를 요청해 주세요."
+    },
+    "loadError": {
+      "heading": "양식을 불러오지 못했습니다",
+      "description": "인터넷 연결을 확인한 뒤 다시 시도해 주세요.",
+      "action": "다시 시도"
+    },
+    "done": {
+      "heading": "신청이 접수되었습니다",
+      "description": "담당자가 확인 후 알려주신 연락처로 연락드립니다. 예배 시간과 장소는 문자로 안내해 드립니다."
     }
   }
 }

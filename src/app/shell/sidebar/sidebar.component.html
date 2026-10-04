@@ -1,33 +1,69 @@
 <aside
-  class="relative flex flex-col h-full bg-white border-r border-gray-100 flex-shrink-0 transition-all duration-200"
-  [style.width]="sidebarWidth()"
+  class="flex h-full shrink-0 flex-col gap-[var(--space-8)] overflow-clip border-r border-line-subtle bg-surface py-[var(--space-16)]"
+  [style.width]="width()"
 >
-  <!-- Nav -->
-  <nav class="flex-1 pb-2 overflow-hidden">
-    @for (item of navItems; track item.route) {
-      <a
-        [routerLink]="item.route"
-        routerLinkActive="active-nav-item"
-        [routerLinkActiveOptions]="{ exact: item.route === '/' }"
-        [attr.aria-label]="item.label"
-        class="nav-item relative flex items-center gap-2.5 px-5 py-2.5 text-[13px] font-medium text-secondary hover:bg-neutral transition-colors overflow-hidden whitespace-nowrap"
-        [pTooltip]="collapsed() ? item.label : ''"
-        tooltipPosition="right"
+  @if (showToggle()) {
+    <!-- Figma: Sidebar > header — the collapse toggle, right-aligned, absent in Drawer mode -->
+    <header class="flex w-full shrink-0 items-center justify-end overflow-clip px-[var(--space-10)]">
+      <button
+        type="button"
+        (click)="modeToggle.emit()"
+        [attr.aria-label]="(isRail() ? 'shell.sidebar.expand' : 'shell.sidebar.collapse') | translate"
+        class="flex size-[32px] shrink-0 items-center justify-center rounded-[var(--radius-md)] text-ink-muted hover:bg-surface-subtle hover:text-ink-strong focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
       >
-        <i [class]="item.icon + ' text-sm w-4 flex-shrink-0'"></i>
-        @if (!collapsed()) {
-          <span class="tracking-tight">{{ item.label }}</span>
-        }
-      </a>
+        <i class="pi text-[16px]" [class]="isRail() ? 'pi-chevron-right' : 'pi-chevron-left'"></i>
+      </button>
+    </header>
+  }
+
+  <nav class="flex w-full flex-1 flex-col overflow-y-auto" [attr.aria-label]="'shell.nav.aria' | translate">
+    @for (group of groups(); track group.labelKey) {
+      @if (showLabels()) {
+        <!-- Figma: NavGroupLabel (156:57) — hidden in Rail mode -->
+        <div class="type-overline flex w-full shrink-0 items-start overflow-clip px-[var(--space-20)] py-[var(--space-8)] text-ink-muted">
+          {{ group.labelKey | translate }}
+        </div>
+      }
+
+      @for (item of group.items; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive
+          #link="routerLinkActive"
+          [routerLinkActiveOptions]="item.linkActiveOptions"
+          (click)="navigate.emit()"
+          [attr.aria-current]="link.isActive ? 'page' : null"
+          [attr.aria-label]="showLabels() ? null : (item.labelKey | translate)"
+          [pTooltip]="isRail() ? (item.labelKey | translate) : ''"
+          tooltipPosition="right"
+          class="relative flex w-full shrink-0 items-center gap-[var(--space-10)] overflow-clip whitespace-nowrap px-[var(--space-20)] py-[var(--space-10)] hover:bg-surface-subtle focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:-2px]"
+          [class]="isRail() ? 'h-[44px] justify-center' : 'h-[40px]'"
+          [class.bg-surface-subtle]="link.isActive"
+        >
+          <i
+            class="shrink-0 text-[16px]"
+            [class]="item.icon"
+            [class.text-action-text]="link.isActive"
+            [class.text-ink]="!link.isActive"
+          ></i>
+
+          @if (showLabels()) {
+            <span
+              class="type-body min-w-px flex-1"
+              [class.text-action-text]="link.isActive"
+              [class.text-ink]="!link.isActive"
+            >{{ item.labelKey | translate }}</span>
+          }
+
+          @if (link.isActive) {
+            <!-- Figma: NavItem > active bar — 3px on the right edge -->
+            <span
+              aria-hidden="true"
+              class="absolute bottom-0 right-0 top-0 w-[3px] rounded-bl-[var(--radius-sm)] rounded-tl-[var(--radius-sm)] bg-action"
+            ></span>
+          }
+        </a>
+      }
     }
   </nav>
-
-  <!-- Collapse toggle — vertically centered on right edge -->
-  <button
-    (click)="toggleCollapse()"
-    [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
-    class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-secondary hover:text-primary transition-colors z-10 text-[10px]"
-  >
-    <i [class]="collapsed() ? 'pi pi-chevron-right' : 'pi pi-chevron-left'"></i>
-  </button>
 </aside>

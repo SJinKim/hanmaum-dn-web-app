@@ -1,0 +1,305 @@
+<!--
+  Figma: 빠른 기록 — Light 981:99781 / 981:100077 / 981:100373, Dark 981:100669 /
+  981:100965 / 981:101021; 수정 984:104316, 984:105080, 984:105838, 984:106129;
+  삭제 확인 987:102961, 987:103340, 987:103689, 987:103790. Below 1440px the form
+  stacks above 방문 기록; below 834px the table becomes `app-list-card`s.
+  The page grows with its content and `main` scrolls: pinned to the viewport
+  height, the form and KPIs left 방문 기록 almost no room (#165).
+-->
+<p-toast />
+<p-confirmDialog />
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'newcomers.visits.eyebrow' | translate"
+    [heading]="'newcomers.visits.title' | translate"
+    [subtitle]="'newcomers.visits.subtitle' | translate">
+    @if (!isPhone()) {
+      <p-button
+        appActions
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        data-testid="newcomers-link"
+        [label]="'newcomers.visits.listButton' | translate"
+        (onClick)="goToList()" />
+    }
+  </app-page-header>
+
+  @if (isPhone()) {
+    <p-button
+      size="small"
+      severity="secondary"
+      styleClass="w-full"
+      [outlined]="true"
+      data-testid="newcomers-link-phone"
+      [label]="'newcomers.visits.listButton' | translate"
+      (onClick)="goToList()" />
+  }
+
+  <div class="grid grid-cols-1 gap-gutter tablet:grid-cols-3" data-testid="visit-kpis">
+    @for (card of statCards(); track card.label) {
+      <app-stat-card icon="pi pi-users" [label]="card.label" [value]="card.value" [subtext]="card.subtext" />
+    }
+  </div>
+
+  <div class="flex flex-col gap-gutter desktop:flex-row desktop:items-start">
+    @if (canWrite()) {
+      <form
+        [formGroup]="form"
+        (ngSubmit)="save()"
+        data-testid="visit-form"
+        class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] self-start rounded-[var(--radius-lg)] border p-card w-full desktop:w-[440px] desktop:shrink-0">
+        <h2 class="type-h3 text-ink-strong" data-testid="visit-form-title">
+          {{ (editing() ? 'newcomers.visits.form.editTitle' : 'newcomers.visits.form.title') | translate }}
+        </h2>
+
+        <div class="flex flex-col gap-[var(--space-4)]">
+          <label for="visitDate" class="type-caption text-ink-muted">
+            {{ 'newcomers.visits.form.visitDate' | translate }}
+            <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+          </label>
+          <p-datepicker
+            inputId="visitDate"
+            formControlName="visitDate"
+            dateFormat="yy-mm-dd"
+            [showIcon]="true"
+            styleClass="w-full" />
+          <small class="type-caption text-ink-disabled">{{ 'newcomers.visits.form.visitDateHint' | translate }}</small>
+        </div>
+
+        <div class="flex gap-[var(--space-12)]">
+          <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+            <label for="visitLastName" class="type-caption text-ink-muted">
+              {{ 'newcomers.form.lastName' | translate }}
+              <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+            </label>
+            <input
+              id="visitLastName"
+              pInputText
+              formControlName="lastName"
+              class="w-full"
+              [class.ng-invalid]="isInvalid('lastName')" />
+            @if (isInvalid('lastName')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                {{ 'newcomers.form.errors.required' | translate }}
+              </small>
+            } @else {
+              <small class="type-caption text-ink-disabled">{{ 'newcomers.visits.form.required' | translate }}</small>
+            }
+          </div>
+          <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+            <label for="visitFirstName" class="type-caption text-ink-muted">
+              {{ 'newcomers.form.firstName' | translate }}
+              <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+            </label>
+            <input
+              id="visitFirstName"
+              pInputText
+              formControlName="firstName"
+              class="w-full"
+              [class.ng-invalid]="isInvalid('firstName')" />
+            @if (isInvalid('firstName')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                {{ 'newcomers.form.errors.required' | translate }}
+              </small>
+            } @else {
+              <small class="type-caption text-ink-disabled">{{ 'newcomers.visits.form.required' | translate }}</small>
+            }
+          </div>
+        </div>
+
+        <div class="flex gap-[var(--space-12)]">
+          <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+            <label for="visitBirthYear" class="type-caption text-ink-muted">
+              {{ 'newcomers.visits.form.birthYear' | translate }}
+            </label>
+            <input
+              id="visitBirthYear"
+              pInputText
+              type="number"
+              inputmode="numeric"
+              placeholder="2001"
+              formControlName="birthYear"
+              class="w-full"
+              [class.ng-invalid]="isInvalid('birthYear')" />
+            @if (isInvalid('birthYear')) {
+              <small class="type-caption text-[var(--color-badge-deleted-fg)]">
+                {{ 'newcomers.visits.form.birthYearInvalid' | translate }}
+              </small>
+            } @else {
+              <small class="type-caption text-ink-disabled">{{ 'newcomers.visits.form.birthYearHint' | translate }}</small>
+            }
+          </div>
+          <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+            <span class="type-caption text-ink-muted">{{ 'newcomers.fields.gender' | translate }}</span>
+            <app-segmented-control
+              [options]="genderOptions()"
+              [value]="gender()"
+              [ariaLabel]="'newcomers.fields.gender' | translate"
+              (valueChange)="onGenderChange($event)" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[var(--space-8)]" role="radiogroup" [attr.aria-label]="'newcomers.visits.form.visitType' | translate">
+          <span class="type-caption text-ink-muted">{{ 'newcomers.visits.form.visitType' | translate }}</span>
+          <div class="flex gap-[var(--space-16)]">
+            @for (type of visitTypes; track type) {
+              <div class="flex items-center gap-[var(--space-8)]">
+                <p-radiobutton name="visitType" formControlName="visitType" [value]="type" [inputId]="'visitType-' + type" />
+                <label class="type-body-sm text-ink" [for]="'visitType-' + type">
+                  {{ 'newcomers.visits.type.' + type | translate }}
+                </label>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[var(--space-4)]">
+          <label for="visitSource" class="type-caption text-ink-muted">
+            {{ 'newcomers.visits.form.source' | translate }}
+          </label>
+          <p-select
+            inputId="visitSource"
+            formControlName="source"
+            optionLabel="label"
+            optionValue="value"
+            [options]="sourceOptions()"
+            [showClear]="true"
+            [placeholder]="'newcomers.visits.source.FRIEND_FAMILY' | translate"
+            styleClass="w-full" />
+          <small class="type-caption text-ink-disabled">{{ 'newcomers.visits.form.sourceHint' | translate }}</small>
+        </div>
+
+        <div class="flex flex-col gap-[var(--space-4)]">
+          <label for="visitNote" class="type-caption text-ink-muted">
+            {{ 'newcomers.visits.form.note' | translate }}
+          </label>
+          <textarea
+            id="visitNote"
+            pTextarea
+            rows="3"
+            formControlName="note"
+            class="w-full"
+            [placeholder]="'newcomers.visits.form.notePlaceholder' | translate"></textarea>
+          <small class="type-caption text-ink-disabled">{{ 'newcomers.visits.form.noteHint' | translate }}</small>
+        </div>
+
+        @if (editing(); as visit) {
+          <div class="flex items-center gap-[var(--space-8)]">
+            <p-button
+              type="button"
+              severity="danger"
+              icon="pi pi-trash"
+              [text]="true"
+              data-testid="visit-delete"
+              [label]="'newcomers.visits.form.delete' | translate"
+              (onClick)="confirmDelete(visit.publicId)" />
+            <span class="flex-1"></span>
+            <p-button
+              type="button"
+              severity="secondary"
+              [outlined]="true"
+              data-testid="visit-cancel"
+              [label]="'newcomers.visits.form.cancel' | translate"
+              (onClick)="cancelEdit()" />
+            <p-button
+              type="submit"
+              data-testid="visit-save"
+              [loading]="saving()"
+              [label]="'newcomers.visits.form.update' | translate" />
+          </div>
+        } @else {
+          <div class="flex justify-end gap-[var(--space-8)]">
+            <p-button
+              type="button"
+              severity="secondary"
+              [outlined]="true"
+              data-testid="visit-reset"
+              [label]="'newcomers.visits.form.reset' | translate"
+              (onClick)="reset()" />
+            <p-button
+              type="submit"
+              data-testid="visit-save"
+              [loading]="saving()"
+              [label]="'newcomers.visits.form.save' | translate" />
+          </div>
+        }
+      </form>
+    }
+
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex min-w-0 flex-1 flex-col gap-[var(--space-12)] overflow-hidden rounded-[var(--radius-lg)] border p-card"
+      [attr.aria-busy]="loading()">
+      <div class="flex items-center justify-between gap-[var(--space-12)]">
+        <h2 class="type-h3 text-ink-strong">{{ 'newcomers.visits.history.title' | translate }}</h2>
+        <p-select
+          size="small"
+          optionLabel="label"
+          optionValue="value"
+          data-testid="visit-period"
+          [options]="periodOptions()"
+          [ngModel]="period()"
+          [ariaLabel]="'newcomers.visits.period.label' | translate"
+          (ngModelChange)="onPeriodChange($event)" />
+      </div>
+      <div class="relative flex flex-col overflow-x-auto">
+        @if (loading()) {
+          <app-skeleton variant="card" />
+        } @else if (failed()) {
+          <app-empty-state
+            variant="error"
+            [heading]="'newcomers.visits.history.error.heading' | translate"
+            [description]="'newcomers.visits.history.error.description' | translate"
+            [actionLabel]="'newcomers.error.retry' | translate"
+            actionIcon="pi pi-refresh"
+            (action)="load()" />
+        } @else if (visits().length === 0) {
+          <app-empty-state
+            variant="no-data"
+            [heading]="'newcomers.visits.history.empty.heading' | translate"
+            [description]="'newcomers.visits.history.empty.description' | translate" />
+        } @else if (isPhone()) {
+          <div class="flex flex-col gap-[var(--space-8)]">
+            @for (record of records(); track record.id) {
+              <app-list-card [record]="record" [selectable]="canWrite()" (selected)="startEdit($event.id)" />
+            }
+          </div>
+        } @else {
+          <app-data-table
+            stickyHeader
+            [rows]="tableRows()"
+            [columns]="columns()"
+            [selectable]="false"
+            [caption]="'newcomers.visits.history.caption' | translate"
+            (edit)="startEdit($event.id)"
+            (remove)="confirmDelete($event.id)" />
+        }
+      </div>
+
+      @if (!loading() && !failed() && hasPages()) {
+        <div class="flex items-center justify-end gap-[var(--space-8)]" data-testid="visit-pager">
+          <span class="type-caption text-ink-muted tabular-nums">
+            {{ 'newcomers.pagination.range' | translate: rangeParams() }}
+          </span>
+          <p-button
+            size="small"
+            severity="secondary"
+            icon="pi pi-chevron-left"
+            [text]="true"
+            [disabled]="page() === 0"
+            [label]="'newcomers.pagination.prev' | translate"
+            (onClick)="prevPage()" />
+          <p-button
+            size="small"
+            severity="secondary"
+            icon="pi pi-chevron-right"
+            iconPos="right"
+            [text]="true"
+            [disabled]="page() >= lastPage()"
+            [label]="'newcomers.pagination.next' | translate"
+            (onClick)="nextPage()" />
+        </div>
+      }
+    </section>
+  </div>
+</div>

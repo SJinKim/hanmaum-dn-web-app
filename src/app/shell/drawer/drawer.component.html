@@ -1,0 +1,17 @@
+<!-- Figma: Drawer > scrim -->
+<div
+  class="fixed inset-0 z-40 bg-scrim"
+  (click)="dismiss.emit()"
+  aria-hidden="true"
+></div>
+
+<!-- Figma: Drawer > panel -->
+<div
+  #panel
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="'shell.nav.aria' | translate"
+  class="fixed bottom-0 left-0 top-0 z-50 w-[var(--size-sidebar)] border-r border-line bg-surface shadow-elevation-lg"
+>
+  <app-sidebar mode="drawer" (navigate)="dismiss.emit()" />
+</div>

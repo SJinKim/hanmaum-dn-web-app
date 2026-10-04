@@ -1,0 +1,108 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 560px)' }"
+  [draggable]="false"
+  [resizable]="false"
+  [pt]="dialogPt"
+>
+  <ng-template #header>
+    <h2 class="type-h3 text-ink-strong" data-testid="event-dialog-title">
+      {{ (isEdit() ? 'events.dialog.editHeader' : 'events.dialog.addHeader') | translate }}
+    </h2>
+  </ng-template>
+
+  <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)]" data-testid="event-form">
+    <p class="type-body text-ink-muted">{{ 'events.dialog.subtitle' | translate }}</p>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="event-title" class="type-caption text-ink-muted">
+        {{ 'events.dialog.title' | translate }}
+        <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+      </label>
+      <input id="event-title" pInputText formControlName="title" [maxlength]="titleMax" class="w-full" />
+      @if (hasError('title')) {
+        <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'events.dialog.required' | translate }}</small>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 gap-[var(--space-16)] sm:grid-cols-2">
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="event-description" class="type-caption text-ink-muted">{{ 'events.dialog.description' | translate }}</label>
+        <textarea
+          id="event-description"
+          pTextarea
+          rows="3"
+          formControlName="description"
+          [maxlength]="descriptionMax"
+          class="w-full"></textarea>
+      </div>
+
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="event-status" class="type-caption text-ink-muted">{{ 'events.dialog.status' | translate }}</label>
+        <div class="flex items-center gap-[var(--space-12)]">
+          <p-select
+            inputId="event-status"
+            [ngModel]="derivedStatus()"
+            [ngModelOptions]="{ standalone: true }"
+            [options]="statusOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [placeholder]="'events.dialog.statusPlaceholder' | translate"
+            [disabled]="true"
+            appendTo="body"
+            class="min-w-0 flex-1"
+            data-testid="event-status" />
+          <span class="flex items-center gap-[var(--space-8)]">
+            <p-checkbox inputId="event-active" formControlName="isActive" [binary]="true" />
+            <label for="event-active" class="type-body text-ink-strong whitespace-nowrap">{{ 'events.dialog.publishNow' | translate }}</label>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-[var(--space-16)]">
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="event-start" class="type-caption text-ink-muted">
+          {{ 'events.dialog.windowStart' | translate }}
+          <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+        </label>
+        <p-datepicker
+          inputId="event-start"
+          formControlName="windowStart"
+          dateFormat="yy. m. d."
+          [showIcon]="true"
+          [readonlyInput]="true"
+          appendTo="body"
+          styleClass="w-full" />
+      </div>
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="event-end" class="type-caption text-ink-muted">
+          {{ 'events.dialog.windowEnd' | translate }}
+          <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+        </label>
+        <p-datepicker
+          inputId="event-end"
+          formControlName="windowEnd"
+          dateFormat="yy. m. d."
+          [showIcon]="true"
+          [readonlyInput]="true"
+          appendTo="body"
+          styleClass="w-full" />
+      </div>
+    </div>
+    @if (endBeforeStart()) {
+      <small class="type-caption text-[var(--color-badge-deleted-fg)]" data-testid="window-error">
+        {{ 'events.dialog.endBeforeStart' | translate }}
+      </small>
+    } @else if (hasError('windowStart') || hasError('windowEnd')) {
+      <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'events.dialog.required' | translate }}</small>
+    }
+  </form>
+
+  <ng-template #footer>
+    <p-button [label]="'events.dialog.cancel' | translate" severity="secondary" [outlined]="true" (onClick)="close()" />
+    <p-button [label]="'events.dialog.save' | translate" [loading]="saving()" (onClick)="submit()" data-testid="event-save" />
+  </ng-template>
+</p-dialog>

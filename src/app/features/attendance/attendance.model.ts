@@ -14,6 +14,8 @@ export interface DefinitionDto {
   windowStart: string; // "HH:mm:ss"
   windowEnd: string;
   isActive: boolean;
+  /** 설명; absent on servers before HDN-223. */
+  description?: string | null;
 }
 
 export interface AttendanceCheckInResponse {
@@ -27,6 +29,13 @@ export interface ChurchGroupAttendanceCountResponse {
   groupDivision: string | null;
   groupName: string | null;
   attendanceCount: number;
+  /**
+   * Split of `attendanceCount` by check-in location (#35); absent on older servers.
+   * `unconfirmedCount` means the location is unknown, never "absent".
+   */
+  inPlaceCount?: number;
+  outsideCount?: number;
+  unconfirmedCount?: number;
 }
 
 export interface AttendanceGroupCountsResponse {
@@ -34,6 +43,10 @@ export interface AttendanceGroupCountsResponse {
   definitionTitle: string;
   attendanceDate: string; // ISO date "YYYY-MM-DD"
   totalCount: number;
+  /** Totals of the location split (#35); absent on older servers. */
+  totalInPlaceCount?: number;
+  totalOutsideCount?: number;
+  totalUnconfirmedCount?: number;
   groups: ChurchGroupAttendanceCountResponse[];
 }
 
@@ -42,10 +55,15 @@ export interface CreateDefinitionRequest {
   dayOfWeek: DayOfWeek;
   windowStart: string; // "HH:mm:ss"
   windowEnd: string;
+  description?: string | null;
+  /** Defaults to true on the server. */
+  isActive?: boolean;
 }
 
 export interface UpdateDefinitionRequest {
   title?: string;
+  /** Blank clears it, absent keeps it. */
+  description?: string;
   dayOfWeek?: DayOfWeek;
   windowStart?: string;
   windowEnd?: string;
@@ -89,3 +107,22 @@ export const DIVISION_LABELS: Record<string, string> = {
   NEHEMIAH: '느헤미야',
   DANIEL:   '다니엘',
 };
+
+/** Where a check-in happened; UNCONFIRMED is an unknown location, never "absent". */
+export type CheckInPresence = 'IN_PLACE' | 'OUTSIDE' | 'UNCONFIRMED';
+
+/** One row of the admin 체크인 명단 (server #224, ADMIN only). */
+export interface AttendanceLogResponse {
+  logPublicId: string;
+  /** `null` once the member was purged; the row stays without a name. */
+  memberPublicId: string | null;
+  fullName: string | null;
+  /** The 순 at check-in, not the member's current one. */
+  groupPublicId: string | null;
+  groupName: string | null;
+  definitionPublicId: string;
+  definitionTitle: string;
+  /** ISO instant. */
+  checkedInAt: string;
+  presence: CheckInPresence;
+}

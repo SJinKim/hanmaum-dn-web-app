@@ -16,13 +16,11 @@ interface CountryRule {
   dialCode: string;
   /** Matches the national number (leading 0 already stripped). */
   mobile: RegExp;
-  /** How many leading national digits form the "prefix" group when displaying. */
-  displayPrefixLen: number;
 }
 
 const RULES: Record<PhoneCountry, CountryRule> = {
-  DE: { dialCode: '+49', mobile: /^1[567]\d{8,9}$/, displayPrefixLen: 3 },
-  KR: { dialCode: '+82', mobile: /^1[016789]\d{7,8}$/, displayPrefixLen: 2 },
+  DE: { dialCode: '+49', mobile: /^1[567]\d{8,9}$/ },
+  KR: { dialCode: '+82', mobile: /^1[016789]\d{7,8}$/ },
 };
 
 export const PHONE_COUNTRIES: PhoneCountryOption[] = [
@@ -65,17 +63,13 @@ export function parseE164(stored: string | null): { country: PhoneCountry; local
   return { country: 'DE', local: stored ?? '' };
 }
 
-/** Human-readable form for read-only display, e.g. +49 151 2345678. */
+/**
+ * Read-only display form: the stored E.164 value verbatim, e.g. +491512345678.
+ * Dial code and number are captured separately in the form, but they are shown
+ * as one unbroken string everywhere so the format stays uniform across screens
+ * (#71). This is the only place that formats a phone number — templates never
+ * do it themselves.
+ */
 export function formatForDisplay(stored: string | null): string {
-  if (!stored) return '—';
-  for (const country of Object.keys(RULES) as PhoneCountry[]) {
-    const { dialCode, displayPrefixLen } = RULES[country];
-    if (stored.startsWith(dialCode)) {
-      const national = stored.slice(dialCode.length);
-      const prefix = national.slice(0, displayPrefixLen);
-      const rest = national.slice(displayPrefixLen);
-      return `${dialCode} ${prefix} ${rest}`.trim();
-    }
-  }
-  return stored;
+  return stored || '—';
 }

@@ -4,6 +4,8 @@ import {
   catalogEntryByCode,
   catalogEntryByName,
   completedAtFromMonthYear,
+  isoToLocalDate,
+  localDateToIso,
   mapFormValueToItem,
   mapUserTrainingToFormValue,
   monthYearFromCompletedAt,
@@ -104,18 +106,32 @@ describe('member-activity.model — training mapping', () => {
     });
   });
 
+  describe('isoToLocalDate / localDateToIso', () => {
+    it('keeps the calendar day in both directions (no UTC shift)', () => {
+      const date = isoToLocalDate('1998-03-02')!;
+      expect(date.getFullYear()).toBe(1998);
+      expect(date.getMonth()).toBe(2);
+      expect(date.getDate()).toBe(2);
+      expect(localDateToIso(date)).toBe('1998-03-02');
+    });
+
+    it('maps null to null', () => {
+      expect(isoToLocalDate(null)).toBeNull();
+      expect(localDateToIso(null)).toBeNull();
+    });
+  });
+
   describe('mapUserTrainingToFormValue', () => {
     it('maps a completed backend training to a form value', () => {
       const ut: UserTraining = {
         trainingPublicId: 'p-ONE_ON_ONE',
         name: 'One-to-One Discipleship Training',
         status: 'COMPLETED',
-        completedAt: '2023-05-01',
+        completedAt: '2023-05-14',
       };
       expect(mapUserTrainingToFormValue(ut, CATALOG)).toEqual({
         code: 'ONE_ON_ONE',
-        month: 5,
-        year: 2023,
+        completedAt: new Date(2023, 4, 14),
         status: 'COMPLETED',
       });
     });
@@ -129,8 +145,7 @@ describe('member-activity.model — training mapping', () => {
       };
       expect(mapUserTrainingToFormValue(ut, CATALOG)).toEqual({
         code: 'QT_BASIC_SEMINAR',
-        month: null,
-        year: null,
+        completedAt: null,
         status: 'APPLIED',
       });
     });
@@ -149,22 +164,22 @@ describe('member-activity.model — training mapping', () => {
   describe('mapFormValueToItem', () => {
     it('resolves the course code to its catalog publicId', () => {
       expect(
-        mapFormValueToItem({ code: 'QT_BASIC_SEMINAR', month: 5, year: 2023, status: 'COMPLETED' }, CATALOG),
-      ).toEqual({ trainingPublicId: 'p-QT_BASIC_SEMINAR', status: 'COMPLETED', completedAt: '2023-05-01' });
+        mapFormValueToItem({ code: 'QT_BASIC_SEMINAR', completedAt: new Date(2023, 4, 14), status: 'COMPLETED' }, CATALOG),
+      ).toEqual({ trainingPublicId: 'p-QT_BASIC_SEMINAR', status: 'COMPLETED', completedAt: '2023-05-14' });
     });
 
     it('drops the completion date for a course that is not completed', () => {
       expect(
-        mapFormValueToItem({ code: 'ONE_ON_ONE', month: 5, year: 2023, status: 'ENROLLED' }, CATALOG),
+        mapFormValueToItem({ code: 'ONE_ON_ONE', completedAt: new Date(2023, 4, 14), status: 'ENROLLED' }, CATALOG),
       ).toEqual({ trainingPublicId: 'p-ONE_ON_ONE', status: 'ENROLLED', completedAt: null });
     });
 
     it('returns null without a code, or when the catalog is empty', () => {
       expect(
-        mapFormValueToItem({ code: null, month: 5, year: 2023, status: 'COMPLETED' }, CATALOG),
+        mapFormValueToItem({ code: null, completedAt: new Date(2023, 4, 14), status: 'COMPLETED' }, CATALOG),
       ).toBeNull();
       expect(
-        mapFormValueToItem({ code: 'QT_BASIC_SEMINAR', month: 5, year: 2023, status: 'COMPLETED' }, []),
+        mapFormValueToItem({ code: 'QT_BASIC_SEMINAR', completedAt: new Date(2023, 4, 14), status: 'COMPLETED' }, []),
       ).toBeNull();
     });
   });

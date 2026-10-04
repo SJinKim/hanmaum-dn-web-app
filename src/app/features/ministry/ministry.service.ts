@@ -9,6 +9,8 @@ import {
   UpdateMinistryRequest,
   MemberNameDto,
   AddMinistryMemberRequest,
+  MinistryRegistrationDto,
+  ReviewMinistryApplicationRequest,
 } from './ministry.model';
 
 @Injectable({ providedIn: 'root' })
@@ -41,6 +43,11 @@ export class MinistryService {
     return this.api.get<ActiveMinistryMemberDto[]>(`/v1/ministries/${publicId}/members`);
   }
 
+  /** Every assignment this ministry ever had, current and ended — the 팀원 히스토리. */
+  getMemberHistory(publicId: string): Observable<ActiveMinistryMemberDto[]> {
+    return this.api.get<ActiveMinistryMemberDto[]>(`/v1/ministries/${publicId}/members`, { includeEnded: true });
+  }
+
   /** Lightweight 맴버 name list for the add-member picker. Admin or ministry-leader. */
   getMemberNames(): Observable<MemberNameDto[]> {
     return this.api.get<MemberNameDto[]>('/v1/members/names');
@@ -53,6 +60,23 @@ export class MinistryService {
   ): Observable<ActiveMinistryMemberDto> {
     return this.api.post<ActiveMinistryMemberDto>(
       `/v1/ministries/${ministryPublicId}/members`,
+      body,
+    );
+  }
+
+  /** Self-applications waiting for a decision (HDN-170). Admin or ministry-leader. */
+  getPendingApplications(ministryPublicId: string): Observable<ActiveMinistryMemberDto[]> {
+    return this.api.get<ActiveMinistryMemberDto[]>(`/v1/ministries/${ministryPublicId}/applications`);
+  }
+
+  /** 승인 or 거절 of one self-application; a 거절 needs a message. */
+  reviewApplication(
+    ministryPublicId: string,
+    memberPublicId: string,
+    body: ReviewMinistryApplicationRequest,
+  ): Observable<MinistryRegistrationDto> {
+    return this.api.patch<MinistryRegistrationDto>(
+      `/v1/ministries/${ministryPublicId}/applications/${memberPublicId}`,
       body,
     );
   }

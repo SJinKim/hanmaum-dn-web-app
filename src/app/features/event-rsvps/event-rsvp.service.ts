@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import {
+  ActiveEventRsvpDto,
   CreateEventRsvpRequest,
   EventAnnouncementOption,
   EventRsvpAttendeesResponse,
@@ -22,6 +23,11 @@ export class EventRsvpService {
 
   getRsvps(): Observable<EventRsvpDto[]> {
     return this.api.get<EventRsvpDto[]>(this.basePath);
+  }
+
+  /** The RSVPs whose window is open right now, each with the caller's own answer. */
+  getActiveRsvps(): Observable<ActiveEventRsvpDto[]> {
+    return this.api.get<ActiveEventRsvpDto[]>(`${this.basePath}/active`);
   }
 
   getEventAnnouncements(): Observable<EventAnnouncementOption[]> {

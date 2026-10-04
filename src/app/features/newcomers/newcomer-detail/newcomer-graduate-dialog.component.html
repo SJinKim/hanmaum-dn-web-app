@@ -1,0 +1,84 @@
+<!-- Figma: 새가족 등반 · Dialog (327:22301) -->
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  (onShow)="onShow()"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 480px)' }"
+  [draggable]="false"
+  [resizable]="false"
+  [pt]="dialogPt">
+  <ng-template #header>
+    <h2 class="type-h3 text-ink-strong">{{ 'newcomers.graduate.header' | translate }}</h2>
+  </ng-template>
+
+  <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)]" data-testid="graduate-form">
+    <p class="type-body text-ink-muted">{{ 'newcomers.graduate.subtitle' | translate }}</p>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="graduate-cohort" class="type-caption text-ink-muted">{{ 'newcomers.graduate.cohort' | translate }}</label>
+      <p-select
+        inputId="graduate-cohort"
+        formControlName="cohortNumber"
+        [options]="cohortOptions"
+        optionValue="value"
+        [showClear]="true"
+        [placeholder]="'newcomers.form.selectPlaceholder' | translate"
+        appendTo="body"
+        styleClass="w-full">
+        <ng-template #selectedItem let-o>{{ cohortLabel(o.value) }}</ng-template>
+        <ng-template #item let-o>{{ cohortLabel(o.value) }}</ng-template>
+      </p-select>
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="graduate-date" class="type-caption text-ink-muted">
+        {{ 'newcomers.graduate.date' | translate }} <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+      </label>
+      <p-datepicker
+        inputId="graduate-date"
+        formControlName="graduatedAt"
+        dateFormat="yy-mm-dd"
+        placeholder="YYYY-MM-DD"
+        [showIcon]="true"
+        appendTo="body"
+        styleClass="w-full" />
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="graduate-group" class="type-caption text-ink-muted">
+        {{ 'newcomers.graduate.group' | translate }} <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+      </label>
+      <p-select
+        inputId="graduate-group"
+        formControlName="groupId"
+        [options]="groups()"
+        optionLabel="label"
+        optionValue="publicId"
+        [filter]="true"
+        filterBy="label"
+        [placeholder]="'newcomers.form.selectPlaceholder' | translate"
+        appendTo="body"
+        styleClass="w-full" />
+      @if (form.controls.groupId.touched && form.controls.groupId.invalid) {
+        <small class="type-caption text-[var(--color-badge-deleted-fg)]" data-testid="graduate-group-error">
+          {{ 'newcomers.graduate.groupRequired' | translate }}
+        </small>
+      }
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="graduate-note" class="type-caption text-ink-muted">{{ 'newcomers.graduate.note' | translate }}</label>
+      <input id="graduate-note" pInputText formControlName="note" maxlength="500" class="w-full" />
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <p-button [label]="'newcomers.form.cancel' | translate" severity="secondary" [outlined]="true" (onClick)="close()" />
+    <p-button
+      data-testid="graduate-submit"
+      [label]="'newcomers.graduate.submit' | translate"
+      [loading]="saving()"
+      (onClick)="submit()" />
+  </ng-template>
+</p-dialog>

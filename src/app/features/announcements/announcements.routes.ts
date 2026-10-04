@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from '../../core/guards/auth.guard';
+import { featureGuard } from '../../core/guards/feature.guard';
 
 export const ANNOUNCEMENTS_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [adminGuard],
+    canActivate: [featureGuard('announcements')],
     loadComponent: () =>
       import('./announcements-list/announcements-list.component').then(
         m => m.AnnouncementsListComponent,

@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, Subject, catchError, of, switchMap, tap } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { TrainingCatalogService } from '../../core/services/training-catalog.service';
 import { PageResponse } from '../../core/models/api-response.model';
@@ -19,6 +20,24 @@ import {
   MemberMinistryItem,
 } from '../../core/models/member-activity.model';
 
+/**
+ * 순 filter value for "no group". `GET /members` takes it as `unassigned=true`, a
+ * separate flag rather than a group id — the select needs one value for both.
+ */
+export const UNASSIGNED_GROUP = '__UNASSIGNED__';
+
+/**
+ * The columns `GET /members` can sort by. The server answers any other property
+ * with 400, and 양육, 사역 and 최근 활동 are deliberately not sortable (#68).
+ */
+export type MemberSortProperty = 'lastName' | 'memberStatus' | 'groupName' | 'baptism';
+
+/** One column in one direction — sent as `sort=<property>,<direction>`. */
+export interface MemberSort {
+  readonly property: MemberSortProperty;
+  readonly direction: 'asc' | 'desc';
+}
+
 @Injectable({ providedIn: 'root' })
 export class MemberService {
   private readonly api             = inject(ApiService);
@@ -26,6 +45,162 @@ export class MemberService {
 
   /** Shared, real-time count of members in PENDING status. */
   readonly pendingCount = signal(0);
+  /** 활성 count for the 청년 subtitle (#131), independent of the list's filters. */
+  readonly activeCount = signal(0);
+
+  // ── 청년-Listen-State (#53) ────────────────────────────────────────────────
+  // Filter, Seite und Ergebnis liegen im Service, nicht in der Liste: der
+  // Deep-Link aus Home (`/members?status=PENDING`) und der Approve-Flow
+  // schreiben denselben State, und er überlebt so einen Komponenten-Neuaufbau.
+
+  readonly search  = signal('');
+  readonly status  = signal<MemberStatus | null>(null);
+  readonly baptism = signal<Baptism | null>(null);
+  /** A group `publicId`, {@link UNASSIGNED_GROUP}, or null for every group. */
+  readonly group    = signal<string | null>(null);
+  /** Catalog `code` of the course, never its display name. */
+  readonly training = signal<string | null>(null);
+  readonly ministry = signal<string | null>(null);
+  /** 최근 활동 range as ISO 'YYYY-MM-DD', both ends inclusive and optional (#88). */
+  readonly updatedFrom = signal<string | null>(null);
+  readonly updatedTo   = signal<string | null>(null);
+  /** Null sends no `sort`; the server then orders by name. */
+  readonly sort     = signal<MemberSort | null>(null);
+  readonly page    = signal(0);
+  readonly size    = signal(20);
+
+  readonly members     = signal<readonly MemberSummary[]>([]);
+  readonly total       = signal(0);
+  readonly listLoading = signal(true);
+  /** True when the last list request failed — the list shows an error state. */
+  readonly listFailed  = signal(false);
+
+  /** Every load goes through here, so `switchMap` cancels the outdated request. */
+  private readonly reload$ = new Subject<void>();
+
+  constructor() {
+    this.reload$
+      .pipe(
+        tap(() => {
+          this.listLoading.set(true);
+          this.listFailed.set(false);
+        }),
+        switchMap(() =>
+          this.getMembers({
+            search:  this.search(),
+            status:  this.status(),
+            baptism: this.baptism(),
+            group:    this.group(),
+            training: this.training(),
+            ministry: this.ministry(),
+            updatedFrom: this.updatedFrom(),
+            updatedTo:   this.updatedTo(),
+            sort:     this.sort(),
+            page:    this.page(),
+            size:    this.size(),
+          }).pipe(catchError(() => of(null))),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe(res => {
+        if (res) {
+          this.members.set(res.content);
+          this.total.set(res.totalElements);
+        } else {
+          this.members.set([]);
+          this.total.set(0);
+          this.listFailed.set(true);
+        }
+        this.listLoading.set(false);
+      });
+  }
+
+  /** Fetches the current page for the current filters. */
+  loadMembers(): void {
+    this.reload$.next();
+  }
+
+  // A filter change always returns to page 0 — page 3 of the old result set says
+  // nothing about the new one. A page change leaves the filters standing (#53).
+  setSearch(value: string): void {
+    this.search.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setStatus(value: MemberStatus | null): void {
+    this.status.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setBaptism(value: Baptism | null): void {
+    this.baptism.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setGroup(value: string | null): void {
+    this.group.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setTraining(value: string | null): void {
+    this.training.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setMinistry(value: string | null): void {
+    this.ministry.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setUpdatedFrom(value: string | null): void {
+    this.updatedFrom.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setUpdatedTo(value: string | null): void {
+    this.updatedTo.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  /**
+   * A header click: a new column starts ascending, the current one flips
+   * direction. There is no "off" state — the name fallback is only the default.
+   * Like a filter change it returns to page 0; the filters stay.
+   */
+  toggleSort(property: MemberSortProperty): void {
+    const current = this.sort();
+    const direction = current?.property === property && current.direction === 'asc' ? 'desc' : 'asc';
+    this.sort.set({ property, direction });
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setPage(value: number): void {
+    if (value < 0) return;
+    this.page.set(value);
+    this.loadMembers();
+  }
+
+  resetFilters(): void {
+    this.search.set('');
+    this.status.set(null);
+    this.baptism.set(null);
+    this.group.set(null);
+    this.training.set(null);
+    this.ministry.set(null);
+    this.updatedFrom.set(null);
+    this.updatedTo.set(null);
+    this.page.set(0);
+    this.loadMembers();
+  }
 
   /** Refetches the pending count. Safe to call from anywhere after a state change. */
   refreshPendingCount(): void {
@@ -34,24 +209,47 @@ export class MemberService {
     });
   }
 
+  refreshActiveCount(): void {
+    this.getMembers({ status: 'ACTIVE', size: 1 }).subscribe({
+      next: res => this.activeCount.set(res.totalElements),
+    });
+  }
+
+  /**
+   * Every filter is a real query parameter of `MemberController.listMembers`
+   * (hanmaum-dn-server#196); nothing is filtered or sorted in the client.
+   * `sort` goes out only once a header was clicked (#68). 최근 활동 filters on
+   * `updatedAt` through `updatedFrom` / `updatedTo` (#88).
+   */
   getMembers(params: {
     search?: string;
     status?: MemberStatus | null;
-    role?: 'ADMIN' | 'MEMBER' | null;
     baptism?: Baptism | null;
+    group?: string | null;
+    training?: string | null;
+    ministry?: string | null;
+    updatedFrom?: string | null;
+    updatedTo?: string | null;
+    sort?: MemberSort | null;
     page?: number;
     size?: number;
-    sort?: string;
   }): Observable<PageResponse<MemberSummary>> {
-    const qp: Record<string, string | number | boolean> = {
+    const qp: Record<string, string | number | boolean | readonly string[]> = {
       page: params.page ?? 0,
       size: params.size ?? 20,
     };
     if (params.search?.trim()) qp['search']  = params.search.trim();
     if (params.status)         qp['status']  = params.status;
-    if (params.role)           qp['role']    = params.role;
     if (params.baptism)        qp['baptism'] = params.baptism;
-    if (params.sort)           qp['sort']    = params.sort;
+    // The server rejects `groupPublicId` together with `unassigned=true` (400),
+    // so exactly one of the two goes out.
+    if (params.group === UNASSIGNED_GROUP) qp['unassigned']     = true;
+    else if (params.group)                 qp['groupPublicId']  = params.group;
+    if (params.training)                   qp['trainingCode']     = params.training;
+    if (params.ministry)                   qp['ministryPublicId'] = params.ministry;
+    if (params.updatedFrom)                qp['updatedFrom']      = params.updatedFrom;
+    if (params.updatedTo)                  qp['updatedTo']        = params.updatedTo;
+    if (params.sort) qp['sort'] = `${params.sort.property},${params.sort.direction}`;
     return this.api.get<PageResponse<MemberSummary>>('/v1/members', qp);
   }
 
@@ -61,6 +259,14 @@ export class MemberService {
       memberStatus: 'ACTIVE',
       groupPublicId,
     });
+  }
+
+  /**
+   * Rejects a pending member (#29). Its own endpoint, not a PATCH: the server
+   * refuses `memberStatus: 'REJECTED'` on PATCH so the transition stays PENDING-only.
+   */
+  rejectMember(publicId: string): Observable<Member> {
+    return this.api.post<Member>(`/v1/members/${publicId}/reject`, {});
   }
 
   getMember(publicId: string): Observable<Member> {
@@ -77,6 +283,22 @@ export class MemberService {
 
   deleteMember(publicId: string): Observable<void> {
     return this.api.delete(`/v1/members/${publicId}`);
+  }
+
+  /**
+   * Restores a soft-deleted member (#144). The server answers 409 when an active
+   * member already uses the same email, and 400 when the member is not deleted.
+   */
+  restoreMember(publicId: string): Observable<Member> {
+    return this.api.post<Member>(`/v1/members/${publicId}/restore`, {});
+  }
+
+  /**
+   * Hard-deletes a soft-deleted member together with the Keycloak account (#144).
+   * Admin only; the email is free for a new registration afterwards.
+   */
+  purgeMember(publicId: string): Observable<void> {
+    return this.api.delete(`/v1/members/${publicId}/permanent`);
   }
 
   /** All church groups — populates the "Church Group" select in the member edit form. */

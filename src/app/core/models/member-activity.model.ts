@@ -102,11 +102,11 @@ export interface SummaryTraining {
   status: TrainingStatus;
 }
 
-/** The training form's per-card value (catalog code + completion month/year + status). */
+/** The training form's per-card value (catalog code + completion date + status). */
 export interface TrainingFormValue {
   code: string | null;
-  month: number | null;
-  year: number | null;
+  /** Picked on a calendar (Figma 555:26766); any day, not pinned to the 1st. */
+  completedAt: Date | null;
   status: TrainingStatus;
 }
 
@@ -172,7 +172,7 @@ export function trainingOptions(
 
 /**
  * A member's ministry assignment as returned by `GET /members/{id}` → `ministries`.
- * `endDate` null ⇒ currently active. Dates are first-of-month ISO strings 'YYYY-MM-DD'.
+ * `endDate` null ⇒ currently active. Dates are ISO strings 'YYYY-MM-DD'.
  */
 export interface MinistryHistory {
   ministryPublicId: string;
@@ -191,19 +191,19 @@ export interface MinistryCatalogEntry {
 /** A single item in the `PUT /members/{id}/ministries` request body. */
 export interface MemberMinistryItem {
   ministryPublicId: string;
-  startDate: string;        // 'YYYY-MM-DD' first-of-month
+  startDate: string;        // 'YYYY-MM-DD'
   endDate: string | null;   // null = ongoing
   note: string | null;
 }
 
-/** The ministry editor's per-card value. */
+/**
+ * The ministry editor's per-card value. Both dates are picked on a calendar
+ * (Figma 556:27121); an empty `endDate` means the assignment is ongoing.
+ */
 export interface MinistryFormValue {
   ministryPublicId: string | null;
-  startMonth: number | null;
-  startYear: number | null;
-  endMonth: number | null;
-  endYear: number | null;
-  ongoing: boolean;
+  startDate: Date | null;
+  endDate: Date | null;
   note: string | null;
 }
 
@@ -236,6 +236,22 @@ export function monthYearFromCompletedAt(iso: string | null): { month: number | 
   return { month: month ?? null, year: year ?? null };
 }
 
+/** ISO 'YYYY-MM-DD' → local-midnight Date; `new Date(iso)` would parse it as UTC. */
+export function isoToLocalDate(iso: string | null): Date | null {
+  if (!iso) return null;
+  const [year, month, day] = iso.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * Date → ISO 'YYYY-MM-DD' from its local parts. Not `toISOString()`: that converts
+ * to UTC, which in CET turns a picked 1998-03-02 into 1998-03-01.
+ */
+export function localDateToIso(date: Date | null | undefined): string | null {
+  if (!date) return null;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 /** Maps a backend training to the edit-form value, or null when the catalog lacks it. */
 export function mapUserTrainingToFormValue(
   ut: UserTraining,
@@ -243,8 +259,7 @@ export function mapUserTrainingToFormValue(
 ): TrainingFormValue | null {
   const entry = catalogEntryByName(catalog, ut.name);
   if (!entry) return null;
-  const { month, year } = monthYearFromCompletedAt(ut.completedAt);
-  return { code: entry.code, month, year, status: ut.status };
+  return { code: entry.code, completedAt: isoToLocalDate(ut.completedAt), status: ut.status };
 }
 
 /** Maps an edit-form value + catalog to a PUT item, or null if it can't be resolved. */
@@ -255,13 +270,8 @@ export function mapFormValueToItem(
   const entry = catalogEntryByCode(catalog, value.code);
   if (!entry) return null;
   const completedAt =
-    value.status === 'COMPLETED' ? completedAtFromMonthYear(value.month, value.year) : null;
+    value.status === 'COMPLETED' ? localDateToIso(value.completedAt) : null;
   return { trainingPublicId: entry.publicId, status: value.status, completedAt };
-}
-
-/** first-of-month ISO → {month, year}; reuses the training helper. */
-export function firstOfMonthToMonthYear(iso: string | null): { month: number | null; year: number | null } {
-  return monthYearFromCompletedAt(iso);
 }
 
 /** {month, year} → first-of-month ISO 'YYYY-MM-01', or null. Reuses the training helper. */

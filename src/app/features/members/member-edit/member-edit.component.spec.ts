@@ -1,13 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
+import { provideRouter, ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { By } from '@angular/platform-browser';
-import { provideTranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { TranslateService, provideTranslateService } from '@ngx-translate/core';
+import { ConfirmationService } from 'primeng/api';
+import { of, throwError } from 'rxjs';
 
 import { MemberEditComponent } from './member-edit.component';
 import { MemberService } from '../member.service';
+import { UNSAVED_CHANGES_DIALOG_KEY } from '../../../core/guards/unsaved-changes.guard';
 import {
   MemberMinistryItem,
   MemberTrainingItem,
@@ -25,6 +27,7 @@ describe('MemberEditComponent — ministry editor', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
       ],
     }).compileComponents();
 
@@ -32,104 +35,66 @@ describe('MemberEditComponent — ministry editor', () => {
     component = fixture.componentInstance;
   });
 
-  it('addMinistry() pushes a card with ongoing=true; removeMinistry(0) empties the array', () => {
+  it('addMinistry() pushes an empty card; removeMinistry(0) empties the array', () => {
     expect(component.ministries.length).toBe(0);
 
     component.addMinistry();
     expect(component.ministries.length).toBe(1);
-    expect(component.ministries.at(0).get('ongoing')!.value).toBeTrue();
+    expect(component.ministries.at(0).get('endDate')!.value).toBeNull();
 
     component.removeMinistry(0);
     expect(component.ministries.length).toBe(0);
   });
 
-  it('toggling ongoing to false + onMinistryOngoingChange() enables endMonth', () => {
+  it('collectMinistryItems() maps an empty 종료일 to an ongoing PUT item', () => {
     component.addMinistry();
-    const group = component.ministries.at(0);
-
-    // Initially ongoing=true, endMonth is disabled
-    expect(group.get('endMonth')!.disabled).toBeTrue();
-
-    // Simulate the user unchecking "Ongoing"
-    group.get('ongoing')!.setValue(false);
-    component.onMinistryOngoingChange(0);
-
-    expect(group.get('endMonth')!.enabled).toBeTrue();
-    expect(group.get('endYear')!.enabled).toBeTrue();
-  });
-
-  it('collectMinistryItems() maps an ongoing card to the correct PUT item', () => {
-    component.addMinistry();
-    const group = component.ministries.at(0);
-    group.patchValue({
+    component.ministries.at(0).patchValue({
       ministryPublicId: 'abc',
-      startMonth: 3,
-      startYear: 2024,
-      ongoing: true,
+      startDate: new Date(2024, 2, 15),
     });
 
     const items: MemberMinistryItem[] = component['collectMinistryItems']();
 
     expect(items).toEqual([{
       ministryPublicId: 'abc',
-      startDate: '2024-03-01',
+      startDate: '2024-03-15',
       endDate: null,
       note: null,
     }]);
   });
 
-  it('re-toggling ongoing back to true clears and disables the end date', () => {
+  it('collectMinistryItems() sends the picked day of a finished row and drops a row without 시작일', () => {
     component.addMinistry();
-    const group = component.ministries.at(0);
-
-    // User unchecks Ongoing, enters an end date...
-    group.get('ongoing')!.setValue(false);
-    component.onMinistryOngoingChange(0);
-    group.patchValue({ endMonth: 11, endYear: 2025 });
-
-    // ...then re-checks Ongoing — the end date must be wiped and disabled again.
-    group.get('ongoing')!.setValue(true);
-    component.onMinistryOngoingChange(0);
-
-    expect(group.get('endMonth')!.value).toBeNull();
-    expect(group.get('endYear')!.value).toBeNull();
-    expect(group.get('endMonth')!.disabled).toBeTrue();
-  });
-
-  it('collectMinistryItems() maps a finished card to a real endDate, and drops one missing its end date', () => {
-    // Finished card with an end date → endDate populated.
-    component.addMinistry();
-    const finished = component.ministries.at(0);
-    finished.get('ongoing')!.setValue(false);
-    component.onMinistryOngoingChange(0);
-    finished.patchValue({
+    component.ministries.at(0).patchValue({
       ministryPublicId: 'abc',
-      startMonth: 3,
-      startYear: 2024,
-      endMonth: 5,
-      endYear: 2025,
+      startDate: new Date(2024, 2, 15),
+      endDate: new Date(2025, 4, 31),
     });
-
-    // Second finished card missing its end date → dropped by the filter.
     component.addMinistry();
-    const incomplete = component.ministries.at(1);
-    incomplete.get('ongoing')!.setValue(false);
-    component.onMinistryOngoingChange(1);
-    incomplete.patchValue({ ministryPublicId: 'def', startMonth: 1, startYear: 2023 });
+    component.ministries.at(1).patchValue({ ministryPublicId: 'def' });
 
     const items: MemberMinistryItem[] = component['collectMinistryItems']();
 
-    expect(items).toEqual([{
-      ministryPublicId: 'abc',
-      startDate: '2024-03-01',
-      endDate: '2025-05-01',
-      note: null,
-    }]);
+    expect(items).toEqual([
+      { ministryPublicId: 'abc', startDate: '2024-03-15', endDate: '2025-05-31', note: null },
+    ]);
+  });
+
+  it('clearing the 종료일 makes the assignment ongoing again', () => {
+    component.addMinistry();
+    const group = component.ministries.at(0);
+    group.patchValue({ ministryPublicId: 'abc', startDate: new Date(2024, 2, 15), endDate: new Date(2025, 10, 3) });
+
+    // PrimeNG showClear sets the control to null.
+    group.get('endDate')!.setValue(null);
+
+    const items: MemberMinistryItem[] = component['collectMinistryItems']();
+    expect(items[0].endDate).toBeNull();
   });
 });
 
 // Reproduction of the reported bug: a member loaded with an ONGOING ministry, edited
-// via the real rendered checkbox to a finished (To month/year) assignment, must persist
+// with a picked 종료일 to a finished assignment, must persist
 // the endDate. Drives the actual DOM through a stubbed MemberService (no HTTP matching).
 describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', () => {
   const memberWithOngoing = {
@@ -163,6 +128,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: memberServiceStub },
       ],
@@ -171,6 +137,47 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     fixture.detectChanges(); // ngOnInit → stubbed loads resolve synchronously via of()
     return fixture;
   }
+
+  it('round-trips 등록일 through the datepicker and back to an ISO date', () => {
+    const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of(memberWithOngoing));
+    const registered = { ...memberWithOngoing, registrationDate: '2019-04-01' };
+    const memberServiceStub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([{ publicId: 'min1', name: '찬양팀' }]),
+      getChurchGroups: () => of([]),
+      getMember: () => of(registered),
+      updateMember: updateSpy,
+      createMember: () => of(registered),
+      replaceMemberTrainings: () => of(registered),
+      replaceMemberMinistries: () => of(registered),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
+        { provide: MemberService, useValue: memberServiceStub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    // Reverse-fill: the stored date becomes a local Date for the datepicker.
+    expect(component.form.get('registrationDate')!.value).toEqual(new Date(2019, 3, 1));
+
+    // The user picks any day; it is sent as-is.
+    component.form.get('registrationDate')!.setValue(new Date(2019, 10, 17));
+    component.save();
+
+    const req = updateSpy.calls.mostRecent().args[1] as { registrationDate?: string };
+    expect(req.registrationDate).toBe('2019-11-17');
+  });
 
   it('sends groupPublicId="" when a loaded group is cleared, so the backend removes it', () => {
     const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of(memberWithOngoing));
@@ -193,6 +200,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: memberServiceStub },
       ],
@@ -213,54 +221,80 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     expect(req.groupPublicId).withContext('cleared group must send "" to clear, not undefined').toBe('');
   });
 
-  it('persists endDate when a loaded ongoing ministry is unchecked and given To dates', () => {
+  it('persists endDate when a loaded ongoing ministry is given a 종료일', () => {
     const fixture = setup();
     const component = fixture.componentInstance;
 
     expect(component.ministries.length).toBe(1);
     const card = component.ministries.at(0);
-    expect(card.get('ongoing')!.value).toBeTrue();
-    expect(card.get('endMonth')!.disabled).toBeTrue();
+    expect(card.get('endDate')!.value).toBeNull();
+    // Loaded ISO dates become local calendar dates.
+    expect(card.get('startDate')!.value).toEqual(new Date(2024, 2, 1));
 
-    // Click the REAL Ongoing checkbox (PrimeNG renders an <input type=checkbox>).
-    const checkbox = fixture.debugElement.query(By.css('#memberMinistryOngoing-0'));
-    expect(checkbox).withContext('ongoing checkbox should be rendered').toBeTruthy();
-    checkbox.nativeElement.click();
+    // 사역 sits in its own tab now. `p-tabpanel` is not lazy, so the row is in the
+    // DOM either way — activating the tab keeps the test honest about what the user
+    // actually sees when they click it.
+    component.activeTab.set(3);
     fixture.detectChanges();
 
-    // The toggle must flip the control AND enable the end-date fields.
-    expect(card.get('ongoing')!.value).withContext('checkbox should set ongoing=false').toBeFalse();
-    expect(card.get('endMonth')!.enabled).withContext('endMonth must be enabled after un-toggling').toBeTrue();
-    expect(card.get('endYear')!.enabled).toBeTrue();
+    expect(fixture.debugElement.query(By.css('#memberMinistryOngoing-0')))
+      .withContext('the ongoing checkbox must be gone').toBeNull();
+    expect(fixture.debugElement.query(By.css('#memberMinistryEndDate-0')))
+      .withContext('the 종료일 row should render a date picker').toBeTruthy();
 
-    // User selects To month/year, then saves.
-    card.get('endMonth')!.setValue(11);
-    card.get('endYear')!.setValue(2025);
+    // User picks a 종료일 on the calendar, then saves.
+    card.get('endDate')!.setValue(new Date(2025, 10, 17));
+    card.markAsDirty();
     component.save();
 
     expect(replaceSpy).toHaveBeenCalled();
     const items = replaceSpy.calls.mostRecent().args[1] as MemberMinistryItem[];
     expect(items.length).toBe(1);
-    expect(items[0].endDate).withContext('endDate must be persisted, not null').toBe('2025-11-01');
+    expect(items[0].endDate).withContext('endDate must be persisted, not null').toBe('2025-11-17');
   });
 });
 
-describe('MemberEditComponent — 순장 checkbox', () => {
+describe('MemberEditComponent — 순장', () => {
   const member = {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
     city: null, registrationDate: null, memberStatus: 'ACTIVE' as const, churchRole: null,
     groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, trainings: [], ministries: [],
-    isGroupLeader: false,
+    isGroupLeader: false as boolean,
+    groupLeaderSince: null as string | null,
+    lastGroupLeaderTenure: null as {
+      groupPublicId: string; groupName: string; startDate: string; endDate: string | null;
+    } | null,
   };
 
   const groups = [
-    { publicId: 'grp-1', division: 'NEHEMIA', name: '믿음', leaderPublicId: 'other', leaderName: '박민수' },
+    { publicId: 'grp-1', division: 'NEHEMIA', name: '믿음', leaderPublicId: 'other', leaderName: '박민수', leaderSince: '2025-01-05' },
     { publicId: 'grp-2', division: 'NEHEMIA', name: '소망' },
   ];
 
-  function setup(loaded: Partial<typeof member> = {}) {
+  const ko = {
+    members: {
+      edit: {
+        leaderDialog: {
+          assign: '{{name}}{{obj}} {{group}} 순장으로 지정할까요?',
+          replace: '현재 순장 {{leader}} ({{since}}~){{topic}} 오늘 날짜로 종료됩니다.',
+          end: '{{name}}의 {{group}} 순장 임기를 종료할까요? 종료일은 오늘({{today}})로 기록됩니다.',
+          move: '{{name}}{{obj}} {{group}} 순장으로 옮길까요?',
+          moveEndsOld: '{{group}} 순장 임기는 오늘 날짜로 종료됩니다.',
+          moveReplace: '현재 {{group}} 순장 {{leader}} ({{since}}~)도 오늘 날짜로 종료됩니다.',
+        },
+      },
+    },
+  };
+
+  const today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  /** `answer` decides every leader dialog: true = 예, false = 취소. */
+  function setup(loaded: Partial<typeof member> = {}, answer = true) {
     const assignSpy = jasmine.createSpy('assignGroupLeader').and.returnValue(of(groups[0]));
     const clearSpy = jasmine.createSpy('clearGroupLeader').and.returnValue(of({
       ...groups[0], leaderPublicId: null, leaderName: null,
@@ -285,14 +319,26 @@ describe('MemberEditComponent — 순장 checkbox', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        provideTranslateService({ fallbackLang: 'en' }),
+        provideTranslateService({ fallbackLang: 'ko' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: stub },
       ],
     });
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('ko', ko);
+    translate.use('ko');
+
+    const confirmSpy = spyOn(TestBed.inject(ConfirmationService), 'confirm').and.callFake(c => {
+      if (c.key === 'leader-change') {
+        if (answer) c.accept?.(); else c.reject?.();
+      }
+      return TestBed.inject(ConfirmationService);
+    });
     const fixture = TestBed.createComponent(MemberEditComponent);
     fixture.detectChanges();
-    return { fixture, component: fixture.componentInstance, assignSpy, clearSpy, updateSpy };
+    const leaderDialogs = () => confirmSpy.calls.all().map(c => c.args[0]).filter(c => c.key === 'leader-change');
+    return { fixture, component: fixture.componentInstance, assignSpy, clearSpy, updateSpy, leaderDialogs };
   }
 
   it('shows a replacement hint when checking 순장 on a group that already has another leader', () => {
@@ -304,41 +350,108 @@ describe('MemberEditComponent — 순장 checkbox', () => {
   });
 
   it('does not hint when this member is already the group\'s 순장', () => {
-    const { component } = setup({
-      isGroupLeader: true,
-    });
-    // The loaded groups still list "other" as leader; override to this member.
+    const { component } = setup({ isGroupLeader: true });
     component['churchGroups'].set([{ ...groups[0], leaderPublicId: 'm1', leaderName: '김철수' }]);
-    component.form.get('isGroupLeader')!.setValue(true);
     component.refreshLeaderHint();
     expect(component.leaderChangeHintName()).toBeNull();
   });
 
-  it('calls assignGroupLeader after save when the checkbox is checked', () => {
-    const { component, assignSpy, clearSpy, updateSpy } = setup();
+  it('asks before assigning and names the replaced leader with leaderSince', () => {
+    const { component, assignSpy, clearSpy, updateSpy, leaderDialogs } = setup();
     component.form.get('isGroupLeader')!.setValue(true);
-    component.save();
 
-    expect(updateSpy).toHaveBeenCalled();
+    expect(leaderDialogs().length).toBe(1);
+    expect(leaderDialogs()[0].message)
+      .toBe('김철수를 믿음 순장으로 지정할까요? 현재 순장 박민수 (2025-01-05~)는 오늘 날짜로 종료됩니다.');
+    expect(component.form.get('isGroupLeader')!.value).toBeTrue();
+    expect(component.tenure()).toEqual(jasmine.objectContaining({ startDate: today(), endDate: null }));
+
+    component.save();
     const req = updateSpy.calls.mostRecent().args[1] as { isNextGroupLeader?: boolean };
     expect(req.isNextGroupLeader).toBeFalse();
     expect(assignSpy).toHaveBeenCalledWith('grp-1', 'm1');
     expect(clearSpy).not.toHaveBeenCalled();
   });
 
-  it('calls clearGroupLeader after save when the current 순장 is unchecked', () => {
-    const { component, assignSpy, clearSpy } = setup({ isGroupLeader: true });
-    component.form.get('isGroupLeader')!.setValue(false);
-    component.save();
+  it('leaves the toggle off when the assign dialog is cancelled', () => {
+    const { component, assignSpy } = setup({}, false);
+    component.form.get('isGroupLeader')!.setValue(true);
 
+    expect(component.form.get('isGroupLeader')!.value).toBeFalse();
+    expect(component.form.get('isGroupLeader')!.dirty).toBeFalse();
+    component.save();
+    expect(assignSpy).not.toHaveBeenCalled();
+  });
+
+  it('omits the replacement sentence when the 순 has no leader', () => {
+    const { component, leaderDialogs } = setup({ groupPublicId: 'grp-2', groupName: '소망' });
+    component.form.get('isGroupLeader')!.setValue(true);
+    expect(leaderDialogs()[0].message).toBe('김철수를 소망 순장으로 지정할까요?');
+  });
+
+  it('asks before ending a tenure, shows today as end date and clears on save', () => {
+    const { component, assignSpy, clearSpy, leaderDialogs } = setup({ isGroupLeader: true, groupLeaderSince: '2024-03-01' });
+    expect(component.tenure()).toEqual(jasmine.objectContaining({ startDate: '2024-03-01', endDate: null, endHint: 'end' }));
+
+    component.form.get('isGroupLeader')!.setValue(false);
+    expect(leaderDialogs()[0].message)
+      .toBe(`김철수의 믿음 순장 임기를 종료할까요? 종료일은 오늘(${today()})로 기록됩니다.`);
+    expect(component.tenure()).toEqual(jasmine.objectContaining({ startDate: '2024-03-01', endDate: today(), endHint: 'pendingEnd' }));
+
+    component.save();
     expect(clearSpy).toHaveBeenCalledWith('grp-1');
     expect(assignSpy).not.toHaveBeenCalled();
   });
 
-  it('does not re-assign when the current 순장 is saved unchanged', () => {
-    const { component, assignSpy, clearSpy } = setup({ isGroupLeader: true });
+  it('treats on → off → on before 저장 as undo: one dialog, end date back to —, no calls', () => {
+    const { component, assignSpy, clearSpy, leaderDialogs } = setup({ isGroupLeader: true, groupLeaderSince: '2024-03-01' });
+    component.form.get('isGroupLeader')!.setValue(false);
+    component.form.get('isGroupLeader')!.setValue(true);
+
+    expect(leaderDialogs().length).toBe(1);
+    expect(component.tenure().endDate).toBeNull();
+    component.save();
+    expect(assignSpy).not.toHaveBeenCalled();
+    expect(clearSpy).not.toHaveBeenCalled();
+  });
+
+  it('asks before moving a 순장 and reverts the 순 on 취소', () => {
+    const { component, leaderDialogs } = setup({ isGroupLeader: true }, false);
+    component.form.get('groupPublicId')!.setValue('grp-2');
+
+    expect(leaderDialogs()[0].message)
+      .toBe('김철수를 소망 순장으로 옮길까요? 믿음 순장 임기는 오늘 날짜로 종료됩니다.');
+    expect(component.form.get('groupPublicId')!.value).toBe('grp-1');
+    expect(component.form.get('groupPublicId')!.dirty).toBeFalse();
+  });
+
+  it('names the target 순\'s leader when a move replaces them', () => {
+    const { component, leaderDialogs } = setup({ isGroupLeader: true, groupPublicId: 'grp-2', groupName: '소망' });
+    component.form.get('groupPublicId')!.setValue('grp-1');
+    expect(leaderDialogs()[0].message).toBe(
+      '김철수를 믿음 순장으로 옮길까요? 소망 순장 임기는 오늘 날짜로 종료됩니다. '
+      + '현재 믿음 순장 박민수 (2025-01-05~)도 오늘 날짜로 종료됩니다.');
+  });
+
+  it('on a confirmed move PATCHes the new 순 and assigns there — the server ends the old tenure', () => {
+    const { component, assignSpy, clearSpy, updateSpy } = setup({ isGroupLeader: true });
+    component['churchGroups'].set([{ ...groups[0], leaderPublicId: 'm1', leaderName: '김철수' }, groups[1]]);
+    assignSpy.and.returnValue(of({ ...groups[1], leaderPublicId: 'm1', leaderName: '김철수' }));
+    component.form.get('groupPublicId')!.setValue('grp-2');
     component.save();
 
+    const req = updateSpy.calls.mostRecent().args[1] as { groupPublicId?: string };
+    expect(req.groupPublicId).toBe('grp-2');
+    expect(assignSpy).toHaveBeenCalledWith('grp-2', 'm1');
+    expect(clearSpy).not.toHaveBeenCalled();
+    expect(component['churchGroups']().find(g => g.publicId === 'grp-1')!.leaderPublicId).toBeNull();
+  });
+
+  it('does not ask or call anything when the current 순장 is saved unchanged', () => {
+    const { component, assignSpy, clearSpy, leaderDialogs } = setup({ isGroupLeader: true });
+    component.save();
+
+    expect(leaderDialogs().length).toBe(0);
     expect(assignSpy).not.toHaveBeenCalled();
     expect(clearSpy).not.toHaveBeenCalled();
   });
@@ -351,6 +464,28 @@ describe('MemberEditComponent — 순장 checkbox', () => {
 
     expect(clearSpy).not.toHaveBeenCalled();
     expect(assignSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows a former 순장\'s last tenure, naming the 순 when it was another one', () => {
+    const { component } = setup({
+      lastGroupLeaderTenure: { groupPublicId: 'grp-2', groupName: '소망', startDate: '2024-03-01', endDate: '2026-09-10' },
+    });
+    expect(component.tenure()).toEqual({
+      startDate: '2024-03-01', endDate: '2026-09-10', startHint: null, endHint: 'past', pastGroupName: '소망',
+    });
+  });
+
+  it('starts a new tenure when a former 순장 is switched on again', () => {
+    const { component, assignSpy, leaderDialogs } = setup({
+      lastGroupLeaderTenure: { groupPublicId: 'grp-1', groupName: '믿음', startDate: '2024-03-01', endDate: '2026-09-10' },
+    });
+    expect(component.tenure().pastGroupName).toBeNull();
+
+    component.form.get('isGroupLeader')!.setValue(true);
+    expect(leaderDialogs().length).toBe(1);
+    expect(component.tenure()).toEqual(jasmine.objectContaining({ startDate: today(), endDate: null }));
+    component.save();
+    expect(assignSpy).toHaveBeenCalledWith('grp-1', 'm1');
   });
 });
 
@@ -406,6 +541,7 @@ describe('MemberEditComponent — training catalog', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: stub },
       ],
@@ -421,8 +557,7 @@ describe('MemberEditComponent — training catalog', () => {
     expect(component.trainings.length).toBe(2);
     expect(component.trainings.at(0).get('code')!.value).toBe('QT_BASIC_SEMINAR');
     expect(component.trainings.at(0).get('status')!.value).toBe('COMPLETED');
-    expect(component.trainings.at(0).get('month')!.value).toBe(5);
-    expect(component.trainings.at(0).get('year')!.value).toBe(2023);
+    expect(component.trainings.at(0).get('completedAt')!.value).toEqual(new Date(2023, 4, 1));
     // A status the old two-value model could not represent survives the round trip.
     expect(component.trainings.at(1).get('status')!.value).toBe('APPLIED');
   });
@@ -446,14 +581,15 @@ describe('MemberEditComponent — training catalog', () => {
     // What Angular's value accessor does on a real edit; setValue() alone does not.
     status.markAsDirty();
     component.onTrainingStatusChange(1);
-    component.trainings.at(1).patchValue({ month: 11, year: 2025 });
+    // Any day from the calendar, not just the 1st.
+    component.trainings.at(1).patchValue({ completedAt: new Date(2025, 10, 17) });
     component.save();
 
     expect(replaceTrainingsSpy).toHaveBeenCalled();
     const items = replaceTrainingsSpy.calls.mostRecent().args[1] as MemberTrainingItem[];
     expect(items).toEqual([
       { trainingPublicId: 'p-qtbs', status: 'COMPLETED', completedAt: '2023-05-01' },
-      { trainingPublicId: 'p-1on1', status: 'COMPLETED', completedAt: '2025-11-01' },
+      { trainingPublicId: 'p-1on1', status: 'COMPLETED', completedAt: '2025-11-17' },
     ]);
   });
 
@@ -506,6 +642,7 @@ describe('MemberEditComponent — training catalog', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
         { provide: MemberService, useValue: stub },
       ],
@@ -516,5 +653,322 @@ describe('MemberEditComponent — training catalog', () => {
 
     expect(component.trainings.at(0).get('code')!.value).toBe('KAIROS');
     expect(component.availableTrainingOptions(0).map(o => o.value)).toContain('KAIROS');
+  });
+});
+
+// #75: die 양육- und 사역-Reiter sind Zeilenlisten mit Hinzufügen/Entfernen und einem
+// Leerzustand statt der Liste. Getestet wird am gerenderten DOM, weil genau dort die
+// Regressionen sitzen (Labels nur in Zeile 1, Papierkorb an der richtigen Zeile).
+describe('MemberEditComponent — 양육 / 사역 Zeilen', () => {
+  const CATALOG: TrainingCatalogEntry[] = [
+    { publicId: 'p-qtbs', code: 'QT_BASIC_SEMINAR', name: 'Quiet Time Basic Seminar',
+      nameKo: '큐티베이직세미나', category: 'CORE', sortOrder: 1, hasCohorts: true,
+      isActive: true, prerequisiteCode: null },
+    { publicId: 'p-1on1', code: 'ONE_ON_ONE', name: 'One-to-One Discipleship Training',
+      nameKo: '일대일제자양육', category: 'CORE', sortOrder: 2, hasCohorts: true,
+      isActive: true, prerequisiteCode: null },
+  ];
+
+  const member = {
+    publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
+    baptism: null, birthDate: null, phoneNumber: null, email: null, street: null,
+    houseNumber: null, zipCode: null, city: null, registrationDate: null,
+    memberStatus: 'ACTIVE' as const, churchRole: null, groupPublicId: null, groupName: null,
+    profileImageUrl: null, trainings: [], ministries: [],
+  };
+
+  function setup() {
+    const stub = {
+      getTrainingCatalog: () => of(CATALOG),
+      getMinistryCatalog: () => of([{ publicId: 'min1', name: '찬양팀' }]),
+      getChurchGroups: () => of([]),
+      getMember: () => of(member),
+      updateMember: () => of(member),
+      createMember: () => of(member),
+      replaceMemberTrainings: () => of(member),
+      replaceMemberMinistries: () => of(member),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
+        { provide: MemberService, useValue: stub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance };
+  }
+
+  it('양육: shows the empty state until the first row exists', () => {
+    const { fixture, component } = setup();
+    component.activeTab.set(2);
+    fixture.detectChanges();
+
+    // `p-tabpanel` is not lazy, so 양육 and 사역 both render their empty state —
+    // count them rather than asserting on a single one.
+    const emptyStates = () => fixture.debugElement.queryAll(By.css('app-empty-state')).length;
+
+    expect(component.trainings.length).toBe(0);
+    expect(emptyStates()).withContext('both empty tabs render EmptyState/NoData').toBe(2);
+    expect(fixture.debugElement.query(By.css('#memberTrainingCode-0'))).toBeNull();
+
+    component.addTraining();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#memberTrainingCode-0')))
+      .withContext('the added row must render its 양육-Select').toBeTruthy();
+    expect(emptyStates()).withContext('only 사역 is still empty').toBe(1);
+  });
+
+  it('양육: labels are rendered for the first row only', () => {
+    const { fixture, component } = setup();
+    component.activeTab.set(2);
+    component.addTraining();
+    component.addTraining();
+    fixture.detectChanges();
+
+    expect(component.trainings.length).toBe(2);
+    expect(fixture.debugElement.query(By.css('label[for="memberTrainingCode-0"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('label[for="memberTrainingCode-1"]')))
+      .withContext('DESIGN.md §9.1: Labels nur in der ersten Zeile').toBeNull();
+    // The second row is still announced — its label lives on the select's aria-label.
+    expect(fixture.debugElement.query(By.css('#memberTrainingCode-1'))).toBeTruthy();
+  });
+
+  it('양육: the row trash button removes exactly its own row', () => {
+    const { fixture, component } = setup();
+    component.activeTab.set(2);
+    component.addTraining();
+    component.trainings.at(0).get('code')!.setValue('QT_BASIC_SEMINAR');
+    component.addTraining();
+    component.trainings.at(1).get('code')!.setValue('ONE_ON_ONE');
+    fixture.detectChanges();
+
+    const trash = fixture.debugElement
+      .queryAll(By.css('button[aria-label="members.edit.training.remove"]'));
+    expect(trash.length).withContext('one trash button per row').toBe(2);
+
+    trash[0].nativeElement.click();
+    fixture.detectChanges();
+
+    expect(component.trainings.length).toBe(1);
+    expect(component.trainings.at(0).get('code')!.value).toBe('ONE_ON_ONE');
+  });
+
+  it('사역: add and remove work the same way', () => {
+    const { fixture, component } = setup();
+    component.activeTab.set(3);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#memberMinistry-0'))).toBeNull();
+
+    component.addMinistry();
+    component.addMinistry();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('#memberMinistry-1'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('label[for="memberMinistry-1"]'))).toBeNull();
+
+    const trash = fixture.debugElement
+      .queryAll(By.css('button[aria-label="members.edit.ministry.remove"]'));
+    expect(trash.length).toBe(2);
+
+    trash[1].nativeElement.click();
+    fixture.detectChanges();
+
+    expect(component.ministries.length).toBe(1);
+  });
+});
+
+// #76: the unsaved-changes guard asks only after a real user edit, never after
+// the form was pre-filled on load, and never once 저장 has gone through.
+describe('MemberEditComponent — unsaved changes', () => {
+  const member = {
+    publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: 'MALE',
+    baptism: null, birthDate: '1995-04-12', phoneNumber: '+4917647384957', email: 'a@b.de',
+    street: null, houseNumber: null, zipCode: null, city: 'Düsseldorf',
+    registrationDate: '2023-09-01', memberStatus: 'ACTIVE', churchRole: null,
+    groupPublicId: 'grp-1', groupName: '믿음', isGroupLeader: true,
+    profileImageUrl: null, trainings: [],
+    ministries: [{ ministryPublicId: 'min1', name: '찬양팀', startDate: '2024-03-01', endDate: null, note: null }],
+  };
+
+  function setup(publicId: string | null) {
+    const stub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([{ publicId: 'min1', title: '찬양팀' }]),
+      getChurchGroups: () => of([{ publicId: 'grp-1', division: 'NEHEMIA', name: '믿음', leaderPublicId: 'm1' }]),
+      getMember: () => of(member),
+      updateMember: () => of(member),
+      createMember: () => of(member),
+      replaceMemberTrainings: () => of(member),
+      replaceMemberMinistries: () => of(member),
+      assignGroupLeader: () => of({}),
+      clearGroupLeader: () => of({}),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(publicId ? { publicId } : {}) } } },
+        { provide: MemberService, useValue: stub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance };
+  }
+
+  it('reports no changes after loading and rendering every tab', () => {
+    const { fixture, component } = setup('m1');
+    // Each tab renders its own controls; none may mark the form dirty on write.
+    for (const tab of [0, 1, 2, 3]) {
+      component.activeTab.set(tab);
+      fixture.detectChanges();
+    }
+    expect(component.form.get('lastName')!.value).toBe('김');
+    expect(component.hasUnsavedChanges()).toBeFalse();
+  });
+
+  it('hosts the dialog the guard opens', () => {
+    const { fixture } = setup('m1');
+    const dialog = fixture.debugElement.query(By.css('p-confirmdialog'));
+    expect(dialog.componentInstance.key).toBe(UNSAVED_CHANGES_DIALOG_KEY);
+  });
+
+  it('reports no changes on an untouched create form', () => {
+    const { component } = setup(null);
+    expect(component.hasUnsavedChanges()).toBeFalse();
+  });
+
+  it('reports changes once the user edits a field', () => {
+    const { fixture, component } = setup('m1');
+    const input: HTMLInputElement = fixture.debugElement.query(By.css('input[formControlName="city"]')).nativeElement;
+    input.value = 'Köln';
+    input.dispatchEvent(new Event('input'));
+    expect(component.hasUnsavedChanges()).toBeTrue();
+  });
+
+  it('reports changes after removing a 사역 row', () => {
+    const { component } = setup('m1');
+    component.removeMinistry(0);
+    expect(component.hasUnsavedChanges()).toBeTrue();
+  });
+
+  it('reports no changes after a successful 저장', () => {
+    const { component } = setup('m1');
+    const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    component.form.get('city')!.markAsDirty();
+    component.form.get('city')!.setValue('Köln');
+
+    component.save();
+
+    expect(navigate).toHaveBeenCalledWith(['/members', 'm1']);
+    expect(component.hasUnsavedChanges()).toBeFalse();
+  });
+
+  it('keeps the changes when 저장 fails', () => {
+    const { component } = setup('m1');
+    spyOn(TestBed.inject(MemberService), 'updateMember').and.returnValue(throwError(() => new Error('500')));
+    component.form.get('city')!.markAsDirty();
+
+    component.save();
+
+    expect(component.hasUnsavedChanges()).toBeTrue();
+  });
+});
+
+// hanmaum-dn-server#197: 직업 is a stored field, loaded into the form and sent on 저장.
+describe('MemberEditComponent — 직업', () => {
+  const member = {
+    publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
+    baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null,
+    zipCode: null, city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
+    groupPublicId: null, groupName: null, isGroupLeader: false,
+    profileImageUrl: null, trainings: [], ministries: [],
+    occupation: null as string | null,
+  };
+
+  function setup(publicId: string | null, occupation: string | null = null) {
+    const loaded = { ...member, occupation };
+    const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of(loaded));
+    const createSpy = jasmine.createSpy('createMember').and.returnValue(of(loaded));
+    const stub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([]),
+      getChurchGroups: () => of([]),
+      getMember: () => of(loaded),
+      updateMember: updateSpy,
+      createMember: createSpy,
+      replaceMemberTrainings: () => of(loaded),
+      replaceMemberMinistries: () => of(loaded),
+      assignGroupLeader: () => of({}),
+      clearGroupLeader: () => of({}),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(publicId ? { publicId } : {}) } } },
+        { provide: MemberService, useValue: stub },
+      ],
+    });
+    spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const sent = () => updateSpy.calls.mostRecent().args[1];
+    return { fixture, component, updateSpy, createSpy, sent };
+  }
+
+  it('loads the saved occupation into an enabled control', () => {
+    const { fixture, component } = setup('m1', '간호사');
+    const input: HTMLInputElement = fixture.debugElement.query(By.css('#memberOccupation')).nativeElement;
+    expect(component.form.get('occupation')!.value).toBe('간호사');
+    expect(input.disabled).toBeFalse();
+  });
+
+  it('sends the trimmed occupation on 저장', () => {
+    const { component, sent } = setup('m1');
+    component.form.get('occupation')!.setValue('  개발자 ');
+    component.save();
+    expect(sent().occupation).toBe('개발자');
+  });
+
+  it('sends an empty string to clear a saved occupation', () => {
+    const { component, sent } = setup('m1', '간호사');
+    component.form.get('occupation')!.setValue('');
+    component.save();
+    expect(sent().occupation).toBe('');
+  });
+
+  it('omits an occupation that was never set', () => {
+    const { component, sent } = setup('m1');
+    component.save();
+    expect(sent().occupation).toBeUndefined();
+  });
+
+  it('sends the occupation when registering a new member', () => {
+    const { component, createSpy } = setup(null);
+    component.form.patchValue({ lastName: '이', firstName: '영희', occupation: '교사' });
+    component.save();
+    expect(createSpy.calls.mostRecent().args[0].occupation).toBe('교사');
   });
 });

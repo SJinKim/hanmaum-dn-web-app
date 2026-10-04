@@ -1,21 +1,44 @@
 export interface EventRsvpDto {
   publicId: string;
   title: string;
+  /** Server #226 (PR #227); absent until that is deployed. */
+  description?: string | null;
   windowStart: string;
   windowEnd: string;
   isActive: boolean;
   announcementPublicId: string | null;
 }
 
-export interface CreateEventRsvpRequest {
+/**
+ * `GET /api/v1/events/rsvps/active` — `ActiveEventRsvpDto` in
+ * `../hanmaum-dn-ops/api/openapi.yaml`. `myStatus` is the caller's own answer, so
+ * `null` is "응답 대기" (has not replied yet).
+ */
+export interface ActiveEventRsvpDto {
+  publicId: string;
   title: string;
   windowStart: string;
   windowEnd: string;
+  announcementId: string | null;
+  myStatus: 'GOING' | 'NOT_GOING' | 'MAYBE' | null;
+  respondedAt: string | null;
+  nextReminderAt: string | null;
+}
+
+export interface CreateEventRsvpRequest {
+  title: string;
+  description?: string | null;
+  windowStart: string;
+  windowEnd: string;
+  /** 바로 공개; the server defaults to `true` when it is left out. */
+  isActive?: boolean;
   announcementId?: string;
 }
 
 export interface UpdateEventRsvpRequest {
   title?: string;
+  /** Blank clears it, `undefined` leaves it unchanged. */
+  description?: string;
   windowStart?: string;
   windowEnd?: string;
   isActive?: boolean;

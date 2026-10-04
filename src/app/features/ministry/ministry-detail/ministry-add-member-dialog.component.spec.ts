@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { provideTranslateService } from '@ngx-translate/core';
 
 import { MinistryAddMemberDialogComponent } from './ministry-add-member-dialog.component';
 import { MinistryService } from '../ministry.service';
@@ -21,8 +22,17 @@ describe('MinistryAddMemberDialogComponent', () => {
     service.getMemberNames.and.returnValue(of([]));
     TestBed.configureTestingModule({
       imports: [MinistryAddMemberDialogComponent],
-      providers: [{ provide: MinistryService, useValue: service }],
+      providers: [{ provide: MinistryService, useValue: service }, provideTranslateService({ fallbackLang: 'ko' })],
     });
+  });
+
+  it('picks 시작일 from a calendar like the other date fields', async () => {
+    const fixture = makeComponent();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const body = document.body;
+    expect(body.querySelector('p-datepicker input#add-member-start')).not.toBeNull();
+    expect(body.querySelector('[data-testid="start-date-hint"]')).not.toBeNull();
   });
 
   it('memberLabel() appends the discriminator only when present', () => {
@@ -31,9 +41,9 @@ describe('MinistryAddMemberDialogComponent', () => {
     expect(c.memberLabel({ publicId: 'b', fullName: '이영희', discriminator: null })).toBe('이영희');
   });
 
-  it('submit() posts the selected member with a first-of-month startDate and emits added', () => {
+  it('submit() posts the selected member with the picked startDate and emits added', () => {
     const dto: ActiveMinistryMemberDto = {
-      publicId: 'm1', fullName: '김철수', startDate: '2026-06-01', note: null, gender: 'M',
+      publicId: 'm1', fullName: '김철수', startDate: '2026-06-15', note: null, gender: 'M',
     };
     service.addMember.and.returnValue(of(dto));
 
@@ -42,11 +52,11 @@ describe('MinistryAddMemberDialogComponent', () => {
     const emitted: ActiveMinistryMemberDto[] = [];
     c.added.subscribe(d => emitted.push(d));
 
-    c.form.patchValue({ memberId: 'm1', startYear: 2026, startMonth: 6, note: '  ' });
+    c.form.patchValue({ memberId: 'm1', startDate: new Date(2026, 5, 15), note: '  ' });
     c.submit();
 
     expect(service.addMember).toHaveBeenCalledWith('ministry-1', {
-      memberId: 'm1', startDate: '2026-06-01', note: null,
+      memberId: 'm1', startDate: '2026-06-15', note: null,
     });
     expect(emitted).toEqual([dto]);
     expect(c.visible()).toBeFalse();
@@ -61,7 +71,7 @@ describe('MinistryAddMemberDialogComponent', () => {
     expect(c.visible()).toBeFalse();
     expect(c.form.value.memberId).toBeNull();
     expect(c.form.value.note).toBe('');
-    expect(c.form.value.startMonth).toBe(new Date().getMonth() + 1);
+    expect(c.form.value.startDate?.toDateString()).toBe(new Date().toDateString());
   });
 
   it('submit() on 409 keeps the dialog open and does not emit', () => {
@@ -73,7 +83,7 @@ describe('MinistryAddMemberDialogComponent', () => {
     const emitted: ActiveMinistryMemberDto[] = [];
     c.added.subscribe(d => emitted.push(d));
 
-    c.form.patchValue({ memberId: 'm1', startYear: 2026, startMonth: 6 });
+    c.form.patchValue({ memberId: 'm1', startDate: new Date(2026, 5, 15) });
     c.submit();
 
     expect(emitted).toEqual([]);

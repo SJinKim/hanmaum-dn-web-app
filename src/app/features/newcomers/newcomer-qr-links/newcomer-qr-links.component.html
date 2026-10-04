@@ -1,0 +1,218 @@
+<!--
+  QR 등록 링크 (#44). Figma 330:22789 shows one persistent link with an on/off
+  toggle; the contract has many short-lived links with 만료 and 취소, so this
+  page follows the contract (deviation named in the PR).
+-->
+<p-toast />
+<p-confirmDialog />
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'newcomers.qrLinks.eyebrow' | translate"
+    [heading]="'newcomers.qrLinks.title' | translate"
+    [subtitle]="'newcomers.qrLinks.subtitle' | translate">
+    @if (!isPhone()) {
+      <p-button
+        appActions
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        data-testid="newcomers-link"
+        [label]="'newcomers.qrLinks.listButton' | translate"
+        (onClick)="goToList()" />
+    }
+    @if (canWrite() && !isPhone()) {
+      <p-button
+        appActions
+        size="small"
+        icon="pi pi-qrcode"
+        data-testid="create-link"
+        [label]="'newcomers.qrLinks.createButton' | translate"
+        (onClick)="openCreate()" />
+    }
+  </app-page-header>
+
+  @if (isPhone()) {
+    @if (canWrite()) {
+      <p-button
+        size="small"
+        icon="pi pi-qrcode"
+        styleClass="w-full"
+        data-testid="create-link-phone"
+        [label]="'newcomers.qrLinks.createButton' | translate"
+        (onClick)="openCreate()" />
+    }
+    <p-button
+      size="small"
+      severity="secondary"
+      styleClass="w-full"
+      [outlined]="true"
+      data-testid="newcomers-link-phone"
+      [label]="'newcomers.qrLinks.listButton' | translate"
+      (onClick)="goToList()" />
+  }
+
+  <section
+    class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+    [attr.aria-busy]="loading()">
+    <div class="flex items-center justify-between gap-[var(--space-12)]">
+      <h2 class="type-h3 text-ink-strong">{{ 'newcomers.qrLinks.list.title' | translate }}</h2>
+      @if (!loading() && !failed()) {
+        <span class="type-caption text-ink-muted tabular-nums" data-testid="active-count">
+          {{ 'newcomers.qrLinks.list.activeCount' | translate: { count: activeCount() } }}
+        </span>
+      }
+    </div>
+    <p class="type-body-sm text-ink-muted">{{ 'newcomers.qrLinks.list.hint' | translate }}</p>
+
+    @if (loading()) {
+      <app-skeleton variant="card" />
+    } @else if (failed()) {
+      <app-empty-state
+        variant="error"
+        [heading]="'newcomers.qrLinks.list.error.heading' | translate"
+        [description]="'newcomers.qrLinks.list.error.description' | translate"
+        [actionLabel]="'newcomers.error.retry' | translate"
+        actionIcon="pi pi-refresh"
+        (action)="load()" />
+    } @else if (rows().length === 0) {
+      <app-empty-state
+        variant="no-data"
+        [heading]="'newcomers.qrLinks.list.empty.heading' | translate"
+        [description]="'newcomers.qrLinks.list.empty.description' | translate"
+        [actionLabel]="canWrite() ? ('newcomers.qrLinks.createButton' | translate) : undefined"
+        actionIcon="pi pi-qrcode"
+        (action)="openCreate()" />
+    } @else {
+      <ul class="flex flex-col gap-[var(--space-8)]" [attr.aria-label]="'newcomers.qrLinks.list.title' | translate">
+        @for (row of rows(); track row.link.publicId) {
+          <li
+            class="border-line-subtle flex flex-col gap-[var(--space-8)] rounded-[var(--radius-md)] border p-[var(--space-12)] tablet:flex-row tablet:items-center tablet:gap-[var(--space-16)]"
+            data-testid="link-row"
+            [attr.data-status]="row.status">
+            <app-badge size="small" [variant]="row.badge" [label]="row.statusLabel" />
+            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-2)]">
+              <span class="type-body-sm text-ink">
+                {{ 'newcomers.qrLinks.list.expires' | translate: { time: row.expires } }}
+              </span>
+              @if (row.remaining) {
+                <span class="type-caption text-ink-muted" data-testid="link-remaining">{{ row.remaining }}</span>
+              }
+            </div>
+            <span class="type-body-sm text-ink-muted tabular-nums" data-testid="link-uses">
+              {{ 'newcomers.qrLinks.list.uses' | translate: { count: row.link.useCount } }}
+            </span>
+            @if (canWrite() && row.status === 'active') {
+              <p-button
+                size="small"
+                severity="danger"
+                icon="pi pi-ban"
+                [text]="true"
+                data-testid="link-revoke"
+                [loading]="revoking() === row.link.publicId"
+                [label]="'newcomers.qrLinks.revoke.button' | translate"
+                (onClick)="confirmRevoke(row.link)" />
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>
+
+<p-dialog
+  [visible]="createOpen()"
+  (visibleChange)="onCreateVisibleChange($event)"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 520px)' }"
+  [draggable]="false"
+  [resizable]="false"
+  [header]="(created() ? 'newcomers.qrLinks.result.title' : 'newcomers.qrLinks.create.title') | translate">
+  @if (created(); as link) {
+    <div class="flex flex-col items-center gap-[var(--space-16)]" data-testid="link-result">
+      <p
+        class="type-body-sm w-full rounded-[var(--radius-md)] bg-[var(--color-badge-inactive-bg)] p-[var(--space-12)] text-[var(--color-badge-inactive-fg)]"
+        role="note">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        {{ 'newcomers.qrLinks.result.onceWarning' | translate }}
+      </p>
+      @if (qrDataUrl(); as src) {
+        <img
+          class="h-64 w-64 rounded-[var(--radius-md)] bg-surface"
+          data-testid="link-qr"
+          [src]="src"
+          [alt]="'newcomers.qrLinks.result.qrAlt' | translate" />
+      } @else {
+        <app-skeleton variant="card" />
+      }
+      <span class="type-body-sm text-ink-muted">
+        {{ 'newcomers.qrLinks.list.expires' | translate: { time: createdExpires() } }}
+      </span>
+      <div class="flex w-full flex-col gap-[var(--space-4)]">
+        <label for="createdUrl" class="type-caption text-ink-muted">{{ 'newcomers.qrLinks.result.url' | translate }}</label>
+        <input
+          id="createdUrl"
+          readonly
+          class="type-body-sm border-line-subtle w-full rounded-[var(--radius-md)] border bg-surface-subtle p-[var(--space-8)] text-ink"
+          data-testid="link-url"
+          [value]="createdUrl()" />
+      </div>
+      <div class="flex w-full flex-wrap justify-end gap-[var(--space-8)]">
+        <p-button
+          size="small"
+          severity="secondary"
+          icon="pi pi-copy"
+          [outlined]="true"
+          data-testid="link-copy"
+          [label]="'newcomers.qrLinks.result.copy' | translate"
+          (onClick)="copyUrl()" />
+        <p-button
+          size="small"
+          severity="secondary"
+          icon="pi pi-download"
+          [outlined]="true"
+          data-testid="link-download"
+          [disabled]="!qrDataUrl()"
+          [label]="'newcomers.qrLinks.result.download' | translate"
+          (onClick)="downloadQr()" />
+        <p-button
+          size="small"
+          icon="pi pi-print"
+          data-testid="link-print"
+          [disabled]="!qrDataUrl()"
+          [label]="'newcomers.qrLinks.result.print' | translate"
+          (onClick)="printQr()" />
+      </div>
+    </div>
+  } @else {
+    <div class="flex flex-col gap-[var(--space-16)]">
+      <div class="flex flex-col gap-[var(--space-8)]">
+        <span class="type-caption text-ink-muted">{{ 'newcomers.qrLinks.create.duration' | translate }}</span>
+        <app-segmented-control
+          data-testid="link-duration"
+          [options]="durationOptions()"
+          [value]="hours()"
+          [ariaLabel]="'newcomers.qrLinks.create.duration' | translate"
+          (valueChange)="hours.set($event)" />
+        <small class="type-caption text-ink-disabled">{{ 'newcomers.qrLinks.create.durationHint' | translate }}</small>
+      </div>
+      @if (createFailed()) {
+        <p class="type-body-sm text-[var(--color-badge-deleted-fg)]" role="alert" data-testid="create-error">
+          {{ 'newcomers.qrLinks.create.error' | translate }}
+        </p>
+      }
+      <div class="flex justify-end gap-[var(--space-8)]">
+        <p-button
+          severity="secondary"
+          [outlined]="true"
+          [label]="'newcomers.qrLinks.create.cancel' | translate"
+          (onClick)="onCreateVisibleChange(false)" />
+        <p-button
+          icon="pi pi-qrcode"
+          data-testid="create-submit"
+          [loading]="creating()"
+          [label]="'newcomers.qrLinks.create.submit' | translate"
+          (onClick)="create()" />
+      </div>
+    </div>
+  }
+</p-dialog>
