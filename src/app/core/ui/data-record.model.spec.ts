@@ -12,7 +12,7 @@ import {
 
 const record: DataRecord = {
   id: 'm-1',
-  title: '김승진',
+  title: '홍길동',
   subtitle: '1순',
   badge: { variant: 'active', label: '활동' },
   meta: '2024-03-12',
@@ -28,7 +28,7 @@ const record: DataRecord = {
 describe('DataColumn definition (#69)', () => {
   describe('cellValue', () => {
     it('reads the named field for an unkeyed column', () => {
-      expect(cellValue(record, { type: 'avatar-name', header: '이름' })).toBe('김승진');
+      expect(cellValue(record, { type: 'avatar-name', header: '이름' })).toBe('홍길동');
       expect(cellValue(record, { type: 'text', header: '순' })).toBe('1순');
       expect(cellValue(record, { type: 'badge', header: '상태' })).toEqual(record.badge);
       expect(cellValue(record, { type: 'date', header: '등록일' })).toBe('2024-03-12');
@@ -42,7 +42,7 @@ describe('DataColumn definition (#69)', () => {
     });
 
     it('keeps the title for a keyed avatar-name column', () => {
-      expect(cellValue(record, { type: 'avatar-name', key: 'name', header: '이름' })).toBe('김승진');
+      expect(cellValue(record, { type: 'avatar-name', key: 'name', header: '이름' })).toBe('홍길동');
     });
   });
 

@@ -92,7 +92,7 @@ const STAGE_LABELS: Record<MemberPillStage, string> = {
           <h3 class="type-h3 text-ink-strong mt-6 mb-2">Avatar · IconTile · ProgressBar</h3>
           <div class="mb-3 flex flex-wrap items-end gap-4">
             @for (size of avatarSizes; track size) {
-              <app-avatar name="김승진" [size]="size" />
+              <app-avatar name="홍길동" [size]="size" />
             }
             <app-icon-tile />
             <app-icon-tile icon="pi pi-chart-line" />
@@ -167,11 +167,11 @@ const STAGE_LABELS: Record<MemberPillStage, string> = {
           <h3 class="type-h3 text-ink-strong mb-2">DefinitionList — stacked / inline</h3>
           <div class="mb-6 grid gap-gutter sm:grid-cols-2">
             <dl class="grid gap-3">
-              <app-definition-row term="이름" value="김승진" />
+              <app-definition-row term="이름" value="홍길동" />
               <app-definition-row term="연락처" value="010-1234-5678" />
             </dl>
             <dl class="grid gap-3">
-              <app-definition-row layout="inline" term="이름" value="김승진" />
+              <app-definition-row layout="inline" term="이름" value="홍길동" />
               <app-definition-row layout="inline" term="연락처" value="010-1234-5678" />
             </dl>
           </div>
@@ -212,7 +212,7 @@ export class DataSandboxComponent {
   readonly records: DataRecord[] = [
     {
       id: 'm-1',
-      title: '김승진',
+      title: '홍길동',
       subtitle: '1순',
       badge: { variant: 'active', label: '활동' },
       meta: '2024-03-12',
@@ -249,7 +249,7 @@ export class DataSandboxComponent {
   readonly cellRecords: DataRecord[] = [
     {
       id: 'c-1',
-      title: '김승진',
+      title: '홍길동',
       cells: {
         role: { variant: 'group-leader', label: '순장' },
         status: { variant: 'active', label: '활동' },
@@ -273,7 +273,7 @@ export class DataSandboxComponent {
 
   readonly groupMembers: GroupCardMember[] = [
     { label: '박지훈', stage: 'next-leader', stageLabel: STAGE_LABELS['next-leader'] },
-    { label: '김승진', stage: 'discipleship', stageLabel: STAGE_LABELS['discipleship'] },
+    { label: '홍길동', stage: 'discipleship', stageLabel: STAGE_LABELS['discipleship'] },
     { label: '이수민', stage: 'one-on-one-progress', stageLabel: STAGE_LABELS['one-on-one-progress'] },
     { label: '정하늘', stage: 'qbs', stageLabel: STAGE_LABELS['qbs'], state: 'dimmed' },
     { label: '최은지', stage: 'unbaptized', stageLabel: STAGE_LABELS['unbaptized'] },

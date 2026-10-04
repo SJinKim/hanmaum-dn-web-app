@@ -204,8 +204,6 @@
       },
       "placeholders": {
         "select": "Select",
-        "lastName": "Kim",
-        "firstName": "Seungjin",
         "discriminator": "e.g. 1남",
         "occupation": "Occupation",
         "street": "Street name",
