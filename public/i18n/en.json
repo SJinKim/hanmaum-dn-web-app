@@ -969,7 +969,6 @@
     },
     "fields": {
       "name": "Name",
-      "englishName": "English name",
       "gender": "Gender",
       "birthDate": "Birth date",
       "identity": "Status",
@@ -1280,7 +1279,6 @@
     "fields": {
       "lastName": "Last name",
       "firstName": "First name",
-      "englishName": "Name (English)",
       "gender": "Gender",
       "birthDate": "Date of birth",
       "phone": "Mobile",

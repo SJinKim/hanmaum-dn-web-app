@@ -119,7 +119,6 @@ export class NewcomerEditComponent implements OnInit, HasUnsavedChanges {
   readonly form = this.fb.group({
     lastName:                 ['', Validators.required],
     firstName:                ['', Validators.required],
-    englishName:              [''],
     gender:                   [null as Gender | null, Validators.required],
     birthDate:                [null as Date | null, Validators.required],
     identityStatus:           [null as NewcomerIdentityStatus | null],
@@ -301,7 +300,6 @@ export class NewcomerEditComponent implements OnInit, HasUnsavedChanges {
     this.form.patchValue({
       lastName:                 n.lastName,
       firstName:                n.firstName,
-      englishName:              n.englishName ?? '',
       gender:                   n.gender,
       birthDate:                n.birthDate ? isoToLocalDate(n.birthDate) : null,
       identityStatus:           n.identityStatus,
@@ -331,7 +329,6 @@ export class NewcomerEditComponent implements OnInit, HasUnsavedChanges {
     return {
       lastName:                 v.lastName!.trim(),
       firstName:                v.firstName!.trim(),
-      englishName:              text(v.englishName),
       gender:                   v.gender ?? undefined,
       birthDate:                localDateToIso(v.birthDate) ?? undefined,
       identityStatus:           v.identityStatus ?? undefined,

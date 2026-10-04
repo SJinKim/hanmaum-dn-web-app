@@ -116,7 +116,6 @@ export class PublicRegisterComponent implements OnInit {
   readonly form = this.fb.group({
     lastName:         ['', Validators.required],
     firstName:        ['', Validators.required],
-    englishName:      ['', Validators.required],
     gender:           [null as Gender | null, Validators.required],
     birthDate:        [null as Date | null, Validators.required],
     phoneCountry:     ['DE' as PhoneCountry],
@@ -251,7 +250,6 @@ export class PublicRegisterComponent implements OnInit {
     return {
       lastName:         v.lastName!.trim(),
       firstName:        v.firstName!.trim(),
-      englishName:      v.englishName!.trim(),
       gender:           v.gender ?? undefined,
       birthDate:        localDateToIso(v.birthDate) ?? undefined,
       phoneNumber:      normalizeToE164(v.phoneCountry!, v.phoneLocal ?? '') ?? undefined,

@@ -32,7 +32,7 @@ describe('PublicFormService — 새가족 등록 (#42)', () => {
 
   it('submits with the Idempotency-Key header', () => {
     const body: PublicNewcomerSubmissionRequest = {
-      lastName: '홍', firstName: '길동', englishName: 'John Doe',
+      lastName: '홍', firstName: '길동',
       visitMotives: ['지인의 소개로'], consentAccepted: true, honeypot: '',
     };
     let id = '';

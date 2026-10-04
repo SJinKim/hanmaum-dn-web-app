@@ -969,7 +969,6 @@
     },
     "fields": {
       "name": "이름",
-      "englishName": "영어 이름",
       "gender": "성별",
       "birthDate": "생년월일",
       "identity": "신분",
@@ -1280,7 +1279,6 @@
     "fields": {
       "lastName": "성",
       "firstName": "이름",
-      "englishName": "이름(영)",
       "gender": "성별",
       "birthDate": "생년월일",
       "phone": "핸드폰",
