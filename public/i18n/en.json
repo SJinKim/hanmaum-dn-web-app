@@ -914,5 +914,200 @@
       "ministry": "No former ministry members yet"
     },
     "error": "Could not load the archive"
+  },
+  "newcomers": {
+    "eyebrow": "Newcomer team",
+    "title": "Newcomers",
+    "subtitle": "{{inCare}} in care · {{graduated}} graduated · {{newThisWeek}} new this week",
+    "addButton": "Add newcomer",
+    "caption": "Newcomer list",
+    "unassigned": "Unassigned",
+    "intakeRound": "Round {{n}}",
+    "search": {
+      "aria": "Search newcomers",
+      "placeholder": "Search by name or phone"
+    },
+    "filters": {
+      "toggle": "Filters",
+      "attendance": "Attendance",
+      "attendanceAll": "All attendance",
+      "caregiver": "Caregiver",
+      "caregiverAll": "All caregivers",
+      "identity": "Status",
+      "identityAll": "All statuses"
+    },
+    "columns": {
+      "registrationDate": "Registered",
+      "name": "Name",
+      "gender": "Gender",
+      "caregiver": "Caregiver",
+      "group": "Group",
+      "attendance": "Attendance",
+      "intakeRound": "Round",
+      "birthDate": "Birth date",
+      "baptism": "Baptism",
+      "identity": "Status",
+      "workOrSchool": "Work / school"
+    },
+    "error": {
+      "heading": "Couldn't load newcomers",
+      "description": "Please try again in a moment.",
+      "retry": "Retry"
+    },
+    "noResults": {
+      "heading": "No newcomers match",
+      "description": "Try another search or filter.",
+      "action": "Reset filters"
+    },
+    "empty": {
+      "heading": "No newcomers yet",
+      "description": "Registered newcomers appear here."
+    },
+    "pagination": {
+      "range": "{{from}}–{{to}} of {{total}}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "fields": {
+      "name": "Name",
+      "englishName": "English name",
+      "gender": "Gender",
+      "birthDate": "Birth date",
+      "identity": "Status",
+      "workOrSchool": "Work / school",
+      "phone": "Phone",
+      "email": "Email",
+      "kakaoId": "KakaoTalk ID",
+      "address": "Address",
+      "baptism": "Baptism",
+      "churchExperience": "Church experience",
+      "previousChurch": "Previous church",
+      "firstVisitDate": "First visit",
+      "registrationDate": "Registered",
+      "intakeRound": "Round",
+      "caregiver": "Caregiver",
+      "group": "Assigned group",
+      "assignmentReason": "Assignment reason",
+      "attendance": "Attendance after assignment",
+      "lifecycle": "Status",
+      "notes": "Notes"
+    },
+    "gender": {
+      "M": "Male",
+      "F": "Female"
+    },
+    "identity": {
+      "EMPLOYEE": "Employee",
+      "UNIVERSITY_STUDENT": "University student",
+      "EXAM_PREPARATION": "Exam preparation",
+      "WORKING_HOLIDAY": "Working holiday",
+      "EXCHANGE_STUDENT": "Exchange student",
+      "SELF_EMPLOYED": "Self-employed",
+      "EXPATRIATE": "Expatriate",
+      "JOB_SEEKING": "Job seeking"
+    },
+    "attendance": {
+      "REGULAR": "Regular",
+      "OCCASIONAL": "Occasional",
+      "WORSHIP_ONLY": "Worship only",
+      "ABSENT_OVER_MONTH": "Absent over a month",
+      "CHANGED_CHURCH": "Changed church",
+      "RETURNED_OR_MOVED": "Returned or moved"
+    },
+    "lifecycle": {
+      "SUBMITTED": "Submitted",
+      "IN_CARE": "In care",
+      "GRADUATED": "Graduated",
+      "ARCHIVED": "Archived"
+    },
+    "churchExperience": {
+      "FIRST_TIME": "First time",
+      "CHILDHOOD_FEW_TIMES": "A few times as a child",
+      "IRREGULAR": "Irregularly",
+      "REGULAR": "Regularly"
+    },
+    "detail": {
+      "edit": "Edit",
+      "more": "More",
+      "graduate": "Graduate",
+      "delete": "Delete",
+      "registeredOn": "Registered {{date}}",
+      "caredBy": "Cared for by {{name}}",
+      "notesEmpty": "No notes yet",
+      "cards": {
+        "basic": "Basic info",
+        "assignment": "Assignment",
+        "attendance": "Attendance",
+        "notes": "Notes"
+      },
+      "deleteDialog": {
+        "header": "Delete newcomer",
+        "message": "Delete the record of {{name}}? This can't be undone.",
+        "accept": "Delete"
+      },
+      "toast": {
+        "deleted": "Newcomer deleted",
+        "deleteFailed": "Couldn't delete"
+      },
+      "notFound": {
+        "heading": "Newcomer not found",
+        "description": "It was deleted or the link is wrong.",
+        "action": "Back to list"
+      }
+    },
+    "form": {
+      "eyebrow": "Newcomer team",
+      "createHeading": "Add newcomer",
+      "editHeading": "Edit newcomer",
+      "createSubtitle": "Enter the newcomer's details. * marks required fields.",
+      "editSubtitle": "Change the details and save.",
+      "cardTitle": "Newcomer details",
+      "lastName": "Last name",
+      "firstName": "First name",
+      "phoneCountry": "Country code",
+      "select": "Select",
+      "selectPlaceholder": "Select…",
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Add",
+      "hints": {
+        "identity": "Current job or residence status",
+        "baptism": "Infant baptism · baptism · confirmation · none",
+        "churchExperience": "Prior church attendance",
+        "caregiver": "Loaded from the current newcomer team roster",
+        "group": "Any group can be chosen",
+        "attendance": "Attendance since the group assignment",
+        "notes": "Same value as the notes column in the list"
+      },
+      "errors": {
+        "required": "Required",
+        "email": "Not a valid email",
+        "phone": "Not a valid phone number"
+      },
+      "toast": {
+        "created": "Newcomer added",
+        "updated": "Changes saved",
+        "conflict": "Someone else changed this first. Reload and try again.",
+        "saveFailed": "Couldn't save"
+      }
+    },
+    "graduate": {
+      "header": "Graduate newcomer",
+      "subtitle": "Graduating turns the newcomer into a member.",
+      "cohort": "Cohort",
+      "date": "Graduation date",
+      "group": "Group",
+      "groupRequired": "Choose a group",
+      "note": "Note",
+      "submit": "Graduate",
+      "toast": {
+        "done": "Newcomer graduated",
+        "failed": "Couldn't graduate"
+      }
+    },
+    "toast": {
+      "done": "Done",
+      "error": "Error"
+    }
   }
 }

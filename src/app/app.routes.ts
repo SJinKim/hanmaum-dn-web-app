@@ -23,6 +23,11 @@ export const APP_ROUTES: Routes = [
           import('./features/members/members.routes').then(m => m.MEMBERS_ROUTES),
       },
       {
+        path: 'newcomers',
+        loadChildren: () =>
+          import('./features/newcomers/newcomers.routes').then(m => m.NEWCOMERS_ROUTES),
+      },
+      {
         path: 'ministry',
         loadChildren: () =>
           import('./features/ministry/ministry.routes').then(m => m.MINISTRY_ROUTES),

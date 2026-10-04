@@ -1,0 +1,148 @@
+<!--
+  Figma: 새가족 / Desktop 318:20606. Below 834px the table becomes a list of
+  `app-list-card`, like 청년.
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'newcomers.eyebrow' | translate"
+    [heading]="'newcomers.title' | translate"
+    [subtitle]="'newcomers.subtitle' | translate: subtitleParams()">
+    @if (canWrite() && !isPhone()) {
+      <p-button
+        appActions
+        size="small"
+        icon="pi pi-plus"
+        data-testid="add-newcomer"
+        [label]="'newcomers.addButton' | translate"
+        (onClick)="goToCreate()" />
+    }
+  </app-page-header>
+
+  @if (canWrite() && isPhone()) {
+    <p-button
+      size="small"
+      icon="pi pi-plus"
+      styleClass="w-full"
+      data-testid="add-newcomer-phone"
+      [label]="'newcomers.addButton' | translate"
+      (onClick)="goToCreate()" />
+  }
+
+  <app-toolbar [hasFilters]="!isPhone() || filtersOpen()">
+    <app-search-field
+      appSearch
+      [value]="searchText()"
+      (valueChange)="onSearchChange($event)"
+      (cleared)="onSearchCleared()"
+      [label]="'newcomers.search.aria' | translate"
+      [placeholder]="'newcomers.search.placeholder' | translate" />
+
+    @if (isPhone()) {
+      <p-button
+        appActions
+        severity="secondary"
+        icon="pi pi-filter"
+        [text]="true"
+        [styleClass]="filtersOpen() ? 'bg-surface-subtle' : ''"
+        data-testid="filter-toggle"
+        [ariaLabel]="'newcomers.filters.toggle' | translate"
+        [pt]="{ root: { 'aria-expanded': filtersOpen() } }"
+        (onClick)="toggleFilters()" />
+    }
+
+    <!-- Every chip is one query parameter of GET /newcomers; nothing is filtered in the client. -->
+    <app-filter-select
+      appFilters
+      [label]="'newcomers.filters.attendance' | translate"
+      [options]="attendanceOptions()"
+      [value]="attendance()"
+      (valueChange)="onAttendanceChange($event)" />
+    <app-filter-select
+      appFilters
+      [label]="'newcomers.filters.caregiver' | translate"
+      [options]="caregiverOptions()"
+      [value]="caregiver()"
+      (valueChange)="onCaregiverChange($event)" />
+    <app-filter-select
+      appFilters
+      [label]="'newcomers.filters.identity' | translate"
+      [options]="identityOptions()"
+      [value]="identity()"
+      (valueChange)="onIdentityChange($event)" />
+  </app-toolbar>
+
+  <section
+    class="bg-surface border-line-subtle shadow-elevation-sm flex min-h-px flex-1 flex-col gap-[var(--space-12)] overflow-hidden rounded-[var(--radius-lg)] border p-card"
+    [attr.aria-busy]="loading()">
+    <!-- `relative` keeps the sr-only caption inside this scroller, see 청년. -->
+    <div class="relative flex min-h-px flex-1 flex-col overflow-auto">
+      @if (loading()) {
+        <app-skeleton variant="card" />
+      } @else if (failed()) {
+        <app-empty-state
+          variant="error"
+          [heading]="'newcomers.error.heading' | translate"
+          [description]="'newcomers.error.description' | translate"
+          [actionLabel]="'newcomers.error.retry' | translate"
+          actionIcon="pi pi-refresh"
+          (action)="retry()" />
+      } @else if (newcomers().length === 0 && filtered()) {
+        <app-empty-state
+          variant="no-results"
+          [heading]="'newcomers.noResults.heading' | translate"
+          [description]="'newcomers.noResults.description' | translate"
+          [actionLabel]="'newcomers.noResults.action' | translate"
+          (action)="resetFilters()" />
+      } @else if (newcomers().length === 0) {
+        <app-empty-state
+          variant="no-data"
+          [heading]="'newcomers.empty.heading' | translate"
+          [description]="'newcomers.empty.description' | translate"
+          [actionLabel]="canWrite() ? ('newcomers.addButton' | translate) : undefined"
+          actionIcon="pi pi-plus"
+          (action)="goToCreate()" />
+      } @else if (isPhone()) {
+        <div class="flex flex-col gap-[var(--space-8)]">
+          @for (record of records(); track record.id) {
+            <app-list-card [record]="record" (selected)="goToDetail($event.id)" />
+          }
+        </div>
+      } @else {
+        <app-data-table
+          externalSort
+          stickyHeader
+          [rows]="tableRows()"
+          [columns]="columns()"
+          [sort]="tableSort()"
+          [caption]="'newcomers.caption' | translate"
+          (sortChange)="onSort($event)"
+          (rowSelected)="goToDetail($event.id)" />
+      }
+    </div>
+
+    @if (!loading() && !failed() && hasPages()) {
+      <div class="flex items-center justify-end gap-[var(--space-8)]">
+        <span class="type-caption text-ink-muted tabular-nums">
+          {{ 'newcomers.pagination.range' | translate: rangeParams() }}
+        </span>
+        <p-button
+          size="small"
+          severity="secondary"
+          icon="pi pi-chevron-left"
+          [text]="true"
+          [disabled]="page() === 0"
+          [label]="'newcomers.pagination.prev' | translate"
+          (onClick)="prevPage()" />
+        <p-button
+          size="small"
+          severity="secondary"
+          icon="pi pi-chevron-right"
+          iconPos="right"
+          [text]="true"
+          [disabled]="page() >= lastPage()"
+          [label]="'newcomers.pagination.next' | translate"
+          (onClick)="nextPage()" />
+      </div>
+    }
+  </section>
+</div>
