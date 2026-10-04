@@ -204,8 +204,6 @@
       },
       "placeholders": {
         "select": "선택",
-        "lastName": "김",
-        "firstName": "승진",
         "discriminator": "1남",
         "occupation": "직업 입력",
         "street": "도로명 입력",
