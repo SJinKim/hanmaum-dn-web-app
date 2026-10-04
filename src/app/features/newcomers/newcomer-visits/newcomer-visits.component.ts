@@ -108,7 +108,7 @@ export function percent(part: number, whole: number): number {
     SkeletonComponent,
   ],
   providers: [ConfirmationService, MessageService],
-  host: { class: 'flex h-full flex-col' },
+  host: { class: 'flex flex-col' },
   templateUrl: './newcomer-visits.component.html',
 })
 export class NewcomerVisitsComponent implements OnInit {

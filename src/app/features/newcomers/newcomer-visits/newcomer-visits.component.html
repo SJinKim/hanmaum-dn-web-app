@@ -3,10 +3,12 @@
   981:100965 / 981:101021; 수정 984:104316, 984:105080, 984:105838, 984:106129;
   삭제 확인 987:102961, 987:103340, 987:103689, 987:103790. Below 1440px the form
   stacks above 방문 기록; below 834px the table becomes `app-list-card`s.
+  The page grows with its content and `main` scrolls: pinned to the viewport
+  height, the form and KPIs left 방문 기록 almost no room (#165).
 -->
 <p-toast />
 <p-confirmDialog />
-<div class="flex min-h-px flex-1 flex-col gap-gutter">
+<div class="flex flex-col gap-gutter">
   <app-page-header
     [eyebrow]="'newcomers.visits.eyebrow' | translate"
     [heading]="'newcomers.visits.title' | translate"
@@ -40,7 +42,7 @@
     }
   </div>
 
-  <div class="flex min-h-px flex-1 flex-col gap-gutter desktop:flex-row">
+  <div class="flex flex-col gap-gutter desktop:flex-row desktop:items-start">
     @if (canWrite()) {
       <form
         [formGroup]="form"
@@ -226,7 +228,7 @@
     }
 
     <section
-      class="bg-surface border-line-subtle shadow-elevation-sm flex min-h-px min-w-0 flex-1 flex-col gap-[var(--space-12)] overflow-hidden rounded-[var(--radius-lg)] border p-card"
+      class="bg-surface border-line-subtle shadow-elevation-sm flex min-w-0 flex-1 flex-col gap-[var(--space-12)] overflow-hidden rounded-[var(--radius-lg)] border p-card"
       [attr.aria-busy]="loading()">
       <div class="flex items-center justify-between gap-[var(--space-12)]">
         <h2 class="type-h3 text-ink-strong">{{ 'newcomers.visits.history.title' | translate }}</h2>
@@ -240,7 +242,7 @@
           [ariaLabel]="'newcomers.visits.period.label' | translate"
           (ngModelChange)="onPeriodChange($event)" />
       </div>
-      <div class="relative flex min-h-px flex-1 flex-col overflow-auto">
+      <div class="relative flex flex-col overflow-x-auto">
         @if (loading()) {
           <app-skeleton variant="card" />
         } @else if (failed()) {
