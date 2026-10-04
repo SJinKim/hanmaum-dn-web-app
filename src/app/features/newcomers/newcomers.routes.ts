@@ -16,12 +16,8 @@ export const NEWCOMERS_ROUTES: Routes = [
       import('./newcomer-edit/newcomer-edit.component').then(m => m.NewcomerEditComponent),
     canDeactivate: [unsavedChangesGuard],
   },
-  {
-    path: 'visits',
-    canActivate: [featureGuard('newcomers')],
-    loadComponent: () =>
-      import('./newcomer-visits/newcomer-visits.component').then(m => m.NewcomerVisitsComponent),
-  },
+  // 빠른 기록 moved to its own sidebar entry; old links still land there.
+  { path: 'visits', redirectTo: '/quick-records', pathMatch: 'full' },
   {
     path: ':publicId',
     canActivate: [featureGuard('newcomers')],

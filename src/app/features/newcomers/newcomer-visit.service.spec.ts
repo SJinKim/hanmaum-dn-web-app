@@ -21,14 +21,24 @@ describe('NewcomerVisitService — 방문 기록 (#40)', () => {
 
   it('lists visits of a range', () => {
     let count = -1;
-    service.getVisits({ from: '2026-09-05', to: '2026-10-04' }).subscribe(v => (count = v.length));
+    service.getVisits({ from: '2026-09-05', to: '2026-10-04', page: 2, size: 20 }).subscribe(p => (count = p.content.length));
 
     const req = http.expectOne(r => r.url.endsWith('/v1/newcomers/visits'));
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('from')).toBe('2026-09-05');
     expect(req.request.params.get('to')).toBe('2026-10-04');
-    req.flush(ok([{ publicId: 'v-1' }]));
+    expect(req.request.params.get('page')).toBe('2');
+    expect(req.request.params.get('size')).toBe('20');
+    req.flush(ok({ content: [{ publicId: 'v-1' }], totalElements: 41, totalPages: 3, number: 2, size: 20 }));
     expect(count).toBe(1);
+  });
+
+  it('leaves out from for 전체', () => {
+    service.getVisits({ to: '2026-10-04', page: 0, size: 20 }).subscribe();
+
+    const req = http.expectOne(r => r.url.endsWith('/v1/newcomers/visits'));
+    expect(req.request.params.has('from')).toBeFalse();
+    req.flush(ok({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 }));
   });
 
   it('reads stats of a range', () => {

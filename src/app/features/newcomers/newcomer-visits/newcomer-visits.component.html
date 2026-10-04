@@ -1,9 +1,11 @@
 <!--
-  Figma: 새가족 / 방문 기록 — Desktop 967:98043, Tablet 967:98575, Phone 967:99107
-  (Dark 968:102879, 968:104046, 969:99731). Below 1440px the 빠른 기록 card
-  stacks above the history; below 834px the table becomes `app-list-card`s.
+  Figma: 빠른 기록 — Light 981:99781 / 981:100077 / 981:100373, Dark 981:100669 /
+  981:100965 / 981:101021; 수정 984:104316, 984:105080, 984:105838, 984:106129;
+  삭제 확인 987:102961, 987:103340, 987:103689, 987:103790. Below 1440px the form
+  stacks above 방문 기록; below 834px the table becomes `app-list-card`s.
 -->
 <p-toast />
+<p-confirmDialog />
 <div class="flex min-h-px flex-1 flex-col gap-gutter">
   <app-page-header
     [eyebrow]="'newcomers.visits.eyebrow' | translate"
@@ -45,7 +47,9 @@
         (ngSubmit)="save()"
         data-testid="visit-form"
         class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] self-start rounded-[var(--radius-lg)] border p-card w-full desktop:w-[440px] desktop:shrink-0">
-        <h2 class="type-h3 text-ink-strong">{{ 'newcomers.visits.form.title' | translate }}</h2>
+        <h2 class="type-h3 text-ink-strong" data-testid="visit-form-title">
+          {{ (editing() ? 'newcomers.visits.form.editTitle' : 'newcomers.visits.form.title') | translate }}
+        </h2>
 
         <div class="flex flex-col gap-[var(--space-4)]">
           <label for="visitDate" class="type-caption text-ink-muted">
@@ -178,27 +182,64 @@
           <small class="type-caption text-ink-disabled">{{ 'newcomers.visits.form.noteHint' | translate }}</small>
         </div>
 
-        <div class="flex justify-end gap-[var(--space-8)]">
-          <p-button
-            type="button"
-            severity="secondary"
-            [outlined]="true"
-            data-testid="visit-reset"
-            [label]="'newcomers.visits.form.reset' | translate"
-            (onClick)="reset()" />
-          <p-button
-            type="submit"
-            data-testid="visit-save"
-            [loading]="saving()"
-            [label]="'newcomers.visits.form.save' | translate" />
-        </div>
+        @if (editing(); as visit) {
+          <div class="flex items-center gap-[var(--space-8)]">
+            <p-button
+              type="button"
+              severity="danger"
+              icon="pi pi-trash"
+              [text]="true"
+              data-testid="visit-delete"
+              [label]="'newcomers.visits.form.delete' | translate"
+              (onClick)="confirmDelete(visit.publicId)" />
+            <span class="flex-1"></span>
+            <p-button
+              type="button"
+              severity="secondary"
+              [outlined]="true"
+              data-testid="visit-cancel"
+              [label]="'newcomers.visits.form.cancel' | translate"
+              (onClick)="cancelEdit()" />
+            <p-button
+              type="submit"
+              data-testid="visit-save"
+              [loading]="saving()"
+              [label]="'newcomers.visits.form.update' | translate" />
+          </div>
+        } @else {
+          <div class="flex justify-end gap-[var(--space-8)]">
+            <p-button
+              type="button"
+              severity="secondary"
+              [outlined]="true"
+              data-testid="visit-reset"
+              [label]="'newcomers.visits.form.reset' | translate"
+              (onClick)="reset()" />
+            <p-button
+              type="submit"
+              data-testid="visit-save"
+              [loading]="saving()"
+              [label]="'newcomers.visits.form.save' | translate" />
+          </div>
+        }
       </form>
     }
 
     <section
       class="bg-surface border-line-subtle shadow-elevation-sm flex min-h-px min-w-0 flex-1 flex-col gap-[var(--space-12)] overflow-hidden rounded-[var(--radius-lg)] border p-card"
       [attr.aria-busy]="loading()">
-      <h2 class="type-h3 text-ink-strong">{{ 'newcomers.visits.history.title' | translate }}</h2>
+      <div class="flex items-center justify-between gap-[var(--space-12)]">
+        <h2 class="type-h3 text-ink-strong">{{ 'newcomers.visits.history.title' | translate }}</h2>
+        <p-select
+          size="small"
+          optionLabel="label"
+          optionValue="value"
+          data-testid="visit-period"
+          [options]="periodOptions()"
+          [ngModel]="period()"
+          [ariaLabel]="'newcomers.visits.period.label' | translate"
+          (ngModelChange)="onPeriodChange($event)" />
+      </div>
       <div class="relative flex min-h-px flex-1 flex-col overflow-auto">
         @if (loading()) {
           <app-skeleton variant="card" />
@@ -218,7 +259,7 @@
         } @else if (isPhone()) {
           <div class="flex flex-col gap-[var(--space-8)]">
             @for (record of records(); track record.id) {
-              <app-list-card [record]="record" [selectable]="false" />
+              <app-list-card [record]="record" [selectable]="canWrite()" (selected)="startEdit($event.id)" />
             }
           </div>
         } @else {
@@ -227,9 +268,36 @@
             [rows]="tableRows()"
             [columns]="columns()"
             [selectable]="false"
-            [caption]="'newcomers.visits.history.caption' | translate" />
+            [caption]="'newcomers.visits.history.caption' | translate"
+            (edit)="startEdit($event.id)"
+            (remove)="confirmDelete($event.id)" />
         }
       </div>
+
+      @if (!loading() && !failed() && hasPages()) {
+        <div class="flex items-center justify-end gap-[var(--space-8)]" data-testid="visit-pager">
+          <span class="type-caption text-ink-muted tabular-nums">
+            {{ 'newcomers.pagination.range' | translate: rangeParams() }}
+          </span>
+          <p-button
+            size="small"
+            severity="secondary"
+            icon="pi pi-chevron-left"
+            [text]="true"
+            [disabled]="page() === 0"
+            [label]="'newcomers.pagination.prev' | translate"
+            (onClick)="prevPage()" />
+          <p-button
+            size="small"
+            severity="secondary"
+            icon="pi pi-chevron-right"
+            iconPos="right"
+            [text]="true"
+            [disabled]="page() >= lastPage()"
+            [label]="'newcomers.pagination.next' | translate"
+            (onClick)="nextPage()" />
+        </div>
+      }
     </section>
   </div>
 </div>

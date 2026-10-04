@@ -55,6 +55,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { labelKey: 'nav.items.home', feature: 'home', icon: 'pi pi-home', route: '/', exact: true },
       { labelKey: 'nav.items.members', feature: 'members', icon: 'pi pi-users', route: '/members' },
       { labelKey: 'nav.items.newcomers', feature: 'newcomers', icon: 'pi pi-user-plus', route: '/newcomers' },
+      { labelKey: 'nav.items.quickRecords', feature: 'newcomers', icon: 'pi pi-pencil', route: '/quick-records' },
       { labelKey: 'nav.items.churchGroups', feature: 'churchGroups', icon: 'pi pi-th-large', route: '/church-groups' },
     ],
   },

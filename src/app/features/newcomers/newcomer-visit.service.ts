@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { PageResponse } from '../../core/models/api-response.model';
 import { ApiService } from '../../core/services/api.service';
 import {
   CreateNewcomerVisitRequest,
@@ -14,13 +15,24 @@ export interface VisitRange {
   readonly to: string;
 }
 
+/** One page of 빠른 기록. Without `from` the server starts at the first visit (전체). */
+export interface VisitPageQuery {
+  readonly from?: string;
+  readonly to: string;
+  readonly page: number;
+  readonly size: number;
+}
+
 /** 방문 기록 (#40) — `NewcomerVisitController` of hanmaum-dn-server #262. */
 @Injectable({ providedIn: 'root' })
 export class NewcomerVisitService {
   private readonly api = inject(ApiService);
 
-  getVisits(range: VisitRange): Observable<NewcomerVisit[]> {
-    return this.api.get<NewcomerVisit[]>('/v1/newcomers/visits', { from: range.from, to: range.to });
+  /** Newest first; the order is the server's (#265). */
+  getVisits(query: VisitPageQuery): Observable<PageResponse<NewcomerVisit>> {
+    const params: Record<string, string | number> = { to: query.to, page: query.page, size: query.size };
+    if (query.from) params['from'] = query.from;
+    return this.api.get<PageResponse<NewcomerVisit>>('/v1/newcomers/visits', params);
   }
 
   getStats(range: VisitRange): Observable<NewcomerVisitStats> {
