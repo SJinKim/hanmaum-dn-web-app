@@ -17,6 +17,12 @@ export const NEWCOMERS_ROUTES: Routes = [
     canDeactivate: [unsavedChangesGuard],
   },
   {
+    path: 'visits',
+    canActivate: [featureGuard('newcomers')],
+    loadComponent: () =>
+      import('./newcomer-visits/newcomer-visits.component').then(m => m.NewcomerVisitsComponent),
+  },
+  {
     path: ':publicId',
     canActivate: [featureGuard('newcomers')],
     loadComponent: () =>
