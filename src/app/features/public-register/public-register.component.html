@@ -1,4 +1,4 @@
-<div class="bg-surface-base flex min-h-screen flex-col">
+<div class="bg-surface-base flex min-h-screen flex-col overflow-x-clip" data-testid="pr-root">
   <header
     class="border-line-subtle bg-surface flex h-[var(--size-topbar)] shrink-0 items-center justify-between gap-[var(--space-10)] border-b p-[var(--space-20)]">
     <div class="flex items-baseline gap-[var(--space-8)]">
@@ -274,8 +274,8 @@
             }
           </div>
 
-          <!-- Honeypot: invisible to people, filled in by naive bots. -->
-          <div class="absolute -left-[10000px] h-px w-px overflow-hidden" aria-hidden="true">
+          <!-- Honeypot: invisible to people, filled in by naive bots. Clipped in place rather than pushed off-screen, so nothing widens the page on mobile (#172). -->
+          <div class="sr-only" aria-hidden="true" data-testid="pr-honeypot">
             <label for="pr-website">{{ 'publicRegister.fields.honeypot' | translate }}</label>
             <input id="pr-website" type="text" formControlName="honeypot" tabindex="-1" autocomplete="off" />
           </div>
