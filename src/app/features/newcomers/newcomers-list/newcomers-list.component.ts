@@ -278,7 +278,7 @@ export class NewcomersListComponent implements OnInit {
   }
 
   goToVisits(): void {
-    void this.router.navigate(['/newcomers', 'visits']);
+    void this.router.navigate(['/quick-records']);
   }
 
   private fullName(n: Newcomer): string {

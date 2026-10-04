@@ -18,6 +18,7 @@
       "home": "Home",
       "members": "Members",
       "newcomers": "Newcomers",
+      "quickRecords": "Quick records",
       "churchGroups": "Groups",
       "attendance": "Attendance",
       "eventRsvps": "Events",
@@ -1108,9 +1109,9 @@
       "error": "Error"
     },
     "visits": {
-      "button": "Visit log",
+      "button": "Quick records",
       "eyebrow": "Newcomer care",
-      "title": "Visit log",
+      "title": "Quick records",
       "subtitle": "Record first-time visitors on the day of the service · records are kept as history for statistics",
       "listButton": "Newcomer list",
       "kpi": {
@@ -1124,7 +1125,7 @@
         "graduatedSub": "{{pct}}% of registrations"
       },
       "form": {
-        "title": "Quick entry",
+        "title": "New record",
         "visitDate": "Visit date",
         "visitDateHint": "Today's date is filled in automatically",
         "required": "Required",
@@ -1136,9 +1137,13 @@
         "sourceHint": "Used to measure advertising",
         "note": "Notes",
         "notePlaceholder": "Who invited them, when to reach them, etc.",
-        "noteHint": "Optional · can be completed on the detail page",
+        "noteHint": "Optional",
         "reset": "Reset",
-        "save": "Save and add another"
+        "save": "Save and add another",
+        "editTitle": "Edit record",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "update": "Save"
       },
       "type": {
         "FIRST": "First visit",
@@ -1162,23 +1167,42 @@
         "gender": "Gender",
         "birthYear": "Birth year",
         "visitType": "Type",
-        "status": "Status"
+        "source": "Source",
+        "note": "Notes",
+        "actions": "Actions"
       },
       "history": {
-        "title": "Visits in the last 30 days",
-        "caption": "Visit records of the last 30 days",
+        "title": "Visit log",
+        "caption": "Visits recorded as quick records",
         "error": {
           "heading": "Couldn't load visits",
           "description": "Please try again in a moment."
         },
         "empty": {
-          "heading": "No visits in the last 30 days",
+          "heading": "No visits yet",
           "description": "Add the first visitor in Quick entry."
         }
       },
       "toast": {
         "saved": "Recorded the visit of {{name}}",
-        "saveFailed": "Couldn't record the visit. Please try again."
+        "saveFailed": "Couldn't record the visit. Please try again.",
+        "updated": "Updated the record of {{name}}",
+        "updateFailed": "Couldn't update the record. Please try again.",
+        "deleted": "Deleted the record of {{name}}",
+        "deleteFailed": "Couldn't delete the record. Please try again."
+      },
+      "period": {
+        "label": "Period",
+        "30d": "Last 30 days",
+        "3m": "Last 3 months",
+        "year": "This year",
+        "all": "All"
+      },
+      "delete": {
+        "header": "Delete record",
+        "message": "Delete the visit of {{name}} on {{date}}? It is also removed from the statistics.",
+        "accept": "Delete",
+        "cancel": "Cancel"
       }
     }
   }

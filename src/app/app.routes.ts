@@ -2,6 +2,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { webAccessGuard } from './core/guards/web-access.guard';
+import { featureGuard } from './core/guards/feature.guard';
 import { ShellComponent } from './shell/shell.component';
 
 export const APP_ROUTES: Routes = [
@@ -26,6 +27,14 @@ export const APP_ROUTES: Routes = [
         path: 'newcomers',
         loadChildren: () =>
           import('./features/newcomers/newcomers.routes').then(m => m.NEWCOMERS_ROUTES),
+      },
+      {
+        path: 'quick-records',
+        canActivate: [featureGuard('newcomers')],
+        loadComponent: () =>
+          import('./features/newcomers/newcomer-visits/newcomer-visits.component').then(
+            m => m.NewcomerVisitsComponent,
+          ),
       },
       {
         path: 'ministry',
