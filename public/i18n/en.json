@@ -710,7 +710,11 @@
       "share": "Share",
       "inPlace": "In church",
       "outside": "Outside",
-      "unconfirmed": "Unconfirmed"
+      "unconfirmed": "Unconfirmed",
+      "name": "Name",
+      "worship": "Service",
+      "checkedInAt": "Checked in",
+      "location": "Location"
     },
     "status": {
       "active": "Active",
@@ -735,7 +739,6 @@
     "people": "{{count}}",
     "noGroup": "No group",
     "recordsEmpty": "No attendance on this date",
-    "privacyNote": "Until access rules are decided, attendance is shown as group totals only.",
     "saved": "Attendance definition saved",
     "deactivate": {
       "header": "Deactivate definition",
@@ -762,10 +765,31 @@
       "load": "Could not load definitions",
       "save": "Could not save",
       "counts": "Could not load attendance",
-      "deactivate": "Could not deactivate"
+      "deactivate": "Could not deactivate",
+      "roster": "Could not load the check-in roster"
     },
     "locationTotals": "Total · {{totals}}.",
-    "unconfirmedHint": "Unconfirmed means the check-in location is unknown, not that the person was absent."
+    "unconfirmedHint": "Unconfirmed means the check-in location is unknown, not that the person was absent.",
+    "roster": "Check-in roster",
+    "rosterEmpty": "Nobody checked in on this date",
+    "unknownMember": "Unknown member",
+    "presence": {
+      "IN_PLACE": "In church",
+      "OUTSIDE": "Outside",
+      "UNCONFIRMED": "Unconfirmed"
+    },
+    "logs": {
+      "eyebrow": "Attendance counts",
+      "title": "Attendance counts",
+      "subtitle": "Attendance per group.",
+      "datePlaceholder": "Select a date",
+      "total": "Total attendance",
+      "group": "Group",
+      "distribution": "Distribution",
+      "empty": "No group counts for this date",
+      "back": "Back",
+      "refresh": "Refresh"
+    }
   },
   "forbidden": {
     "eyebrow": "403",

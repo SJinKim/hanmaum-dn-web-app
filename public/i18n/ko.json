@@ -710,7 +710,11 @@
       "share": "비율",
       "inPlace": "교회 안",
       "outside": "교회 밖",
-      "unconfirmed": "미확인"
+      "unconfirmed": "미확인",
+      "name": "이름",
+      "worship": "예배",
+      "checkedInAt": "체크인 시간",
+      "location": "위치"
     },
     "status": {
       "active": "활성",
@@ -735,7 +739,6 @@
     "people": "{{count}}명",
     "noGroup": "소속 순 없음",
     "recordsEmpty": "이 날짜에 출석 기록이 없습니다",
-    "privacyNote": "개인별 명단은 권한 정책이 정해질 때까지 순별 합계로만 표시됩니다.",
     "saved": "출석 정의를 저장했습니다",
     "deactivate": {
       "header": "출석 정의 비활성화",
@@ -762,10 +765,31 @@
       "load": "출석 정의를 불러오지 못했습니다",
       "save": "저장하지 못했습니다",
       "counts": "출석 기록을 불러오지 못했습니다",
-      "deactivate": "비활성화하지 못했습니다"
+      "deactivate": "비활성화하지 못했습니다",
+      "roster": "체크인 명단을 불러오지 못했습니다"
     },
     "locationTotals": "합계 · {{totals}}.",
-    "unconfirmedHint": "미확인은 체크인 시 위치를 확인하지 못한 인원이며 결석이 아닙니다."
+    "unconfirmedHint": "미확인은 체크인 시 위치를 확인하지 못한 인원이며 결석이 아닙니다.",
+    "roster": "체크인 명단",
+    "rosterEmpty": "이 날짜에 체크인한 사람이 없습니다",
+    "unknownMember": "알 수 없는 교인",
+    "presence": {
+      "IN_PLACE": "교회 안",
+      "OUTSIDE": "교회 밖",
+      "UNCONFIRMED": "미확인"
+    },
+    "logs": {
+      "eyebrow": "출석 집계",
+      "title": "출석 집계",
+      "subtitle": "순별 참석 수를 표시합니다.",
+      "datePlaceholder": "날짜 선택",
+      "total": "총 출석",
+      "group": "순",
+      "distribution": "분포",
+      "empty": "선택한 날짜의 순별 집계가 없습니다",
+      "back": "뒤로",
+      "refresh": "새로고침"
+    }
   },
   "forbidden": {
     "eyebrow": "403",

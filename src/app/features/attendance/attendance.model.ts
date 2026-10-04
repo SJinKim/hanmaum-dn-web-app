@@ -107,3 +107,22 @@ export const DIVISION_LABELS: Record<string, string> = {
   NEHEMIAH: '느헤미야',
   DANIEL:   '다니엘',
 };
+
+/** Where a check-in happened; UNCONFIRMED is an unknown location, never "absent". */
+export type CheckInPresence = 'IN_PLACE' | 'OUTSIDE' | 'UNCONFIRMED';
+
+/** One row of the admin 체크인 명단 (server #224, ADMIN only). */
+export interface AttendanceLogResponse {
+  logPublicId: string;
+  /** `null` once the member was purged; the row stays without a name. */
+  memberPublicId: string | null;
+  fullName: string | null;
+  /** The 순 at check-in, not the member's current one. */
+  groupPublicId: string | null;
+  groupName: string | null;
+  definitionPublicId: string;
+  definitionTitle: string;
+  /** ISO instant. */
+  checkedInAt: string;
+  presence: CheckInPresence;
+}

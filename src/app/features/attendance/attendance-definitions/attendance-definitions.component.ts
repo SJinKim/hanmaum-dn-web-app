@@ -25,6 +25,8 @@ import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component'
 import { AttendanceService } from '../attendance.service';
 import {
   AttendanceGroupCountsResponse,
+  AttendanceLogResponse,
+  CheckInPresence,
   ChurchGroupAttendanceCountResponse,
   DIVISION_LABELS,
   DayOfWeek,
@@ -33,6 +35,13 @@ import {
 import { AttendanceDefinitionDialogComponent } from './attendance-definition-dialog.component';
 
 /** Sunday first, as `Date.getDay()` counts. */
+/** Figma 211:6948 위치 column: 교회 안 green, 교회 밖 orange, 미확인 neutral. */
+const PRESENCE_BADGE: Record<CheckInPresence, NonNullable<DataRecord['badge']>['variant']> = {
+  IN_PLACE: 'active',
+  OUTSIDE: 'pending',
+  UNCONFIRMED: 'neutral',
+};
+
 const DAYS_BY_INDEX: DayOfWeek[] = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 
 /**
@@ -40,8 +49,9 @@ const DAYS_BY_INDEX: DayOfWeek[] = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 
  * 출석 정의 with 요일, 체크인 시간 and 상태; ✎ opens the dialog (279:18000),
  * 🗑 deactivates.
  *
- * Tab 기록 shows per 순 counts only. Figma lists people there, but until #224
- * decides who may see names, the web shows the aggregate `group-counts`.
+ * Tab 기록 shows the 순 aggregate (#35, 739:39837) and below it the 체크인 명단
+ * (#146): who checked in, when and where. The 명단 comes from the ADMIN-only
+ * `attendance/logs` (server #224); the 순 chips filter both.
  */
 @Component({
   selector: 'app-attendance-definitions',
@@ -82,6 +92,8 @@ export class AttendanceDefinitionsComponent implements OnInit {
   readonly countsLoading = signal(false);
   readonly groupCounts   = signal<AttendanceGroupCountsResponse | null>(null);
   readonly activeTab     = signal<number>(0);
+  readonly roster        = signal<AttendanceLogResponse[]>([]);
+  readonly rosterLoading = signal(false);
 
   readonly dialogVisible = signal(false);
   readonly editing       = signal<DefinitionDto | null>(null);
@@ -183,6 +195,42 @@ export class AttendanceDefinitionsComponent implements OnInit {
         },
       };
     });
+  });
+
+  readonly rosterColumns = computed<DataColumn[]>(() => {
+    this.lang();
+    const t = (key: string) => this.translate.instant(`attendance.columns.${key}`) as string;
+    return [
+      { type: 'avatar-name', key: 'name', header: t('name') },
+      { type: 'text', key: 'group', header: t('group'), width: '200px' },
+      { type: 'text', key: 'worship', header: t('worship'), width: '200px' },
+      { type: 'date', header: t('checkedInAt'), width: '180px' },
+      { type: 'badge', header: t('location'), width: '140px' },
+    ];
+  });
+
+  /** The 명단 under the chosen chip, oldest check-in first as the server sends it. */
+  readonly rosterRecords = computed<DataRecord[]>(() => {
+    this.lang();
+    const selected = this.selectedGroup();
+    return this.roster()
+      .filter(log => selected === null || (log.groupPublicId ?? 'none') === selected)
+      .map(log => {
+        const name = log.fullName ?? this.translate.instant('attendance.unknownMember') as string;
+        const group = log.groupName ?? this.translate.instant('attendance.noGroup') as string;
+        const time = timeLabel(log.checkedInAt);
+        return {
+          id: log.logPublicId,
+          title: name,
+          subtitle: `${group} · ${time}`,
+          meta: time,
+          badge: {
+            variant: PRESENCE_BADGE[log.presence],
+            label: this.translate.instant(`attendance.presence.${log.presence}`) as string,
+          },
+          cells: { group, worship: log.definitionTitle },
+        };
+      });
   });
 
   /** 교회 안 · 교회 밖 · 미확인 totals below the table; null on servers before #35. */
@@ -294,8 +342,10 @@ export class AttendanceDefinitionsComponent implements OnInit {
     this.selectedGroup.set(null);
     if (!definitionId || !date) {
       this.groupCounts.set(null);
+      this.roster.set([]);
       return;
     }
+    this.loadRoster(definitionId, date);
 
     this.countsLoading.set(true);
     this.service.getGroupCounts({ definitionId, date })
@@ -309,6 +359,23 @@ export class AttendanceDefinitionsComponent implements OnInit {
           this.groupCounts.set(null);
           this.countsLoading.set(false);
           this.toastError('attendance.errors.counts');
+        },
+      });
+  }
+
+  private loadRoster(definitionId: string, date: string): void {
+    this.rosterLoading.set(true);
+    this.service.getLogs({ definitionId, date })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: logs => {
+          this.roster.set(logs);
+          this.rosterLoading.set(false);
+        },
+        error: () => {
+          this.roster.set([]);
+          this.rosterLoading.set(false);
+          this.toastError('attendance.errors.roster');
         },
       });
   }
@@ -361,4 +428,10 @@ export class AttendanceDefinitionsComponent implements OnInit {
 /** Chip and row key; groups without a 순 share one. */
 function groupKey(group: ChurchGroupAttendanceCountResponse): string {
   return group.groupPublicId ?? 'none';
+}
+
+/** "HH:mm" in the viewer's local time. */
+function timeLabel(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
