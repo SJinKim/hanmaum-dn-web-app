@@ -6,6 +6,9 @@ import { of, throwError } from 'rxjs';
 
 import { PublicRegisterComponent, newIdempotencyKey } from './public-register.component';
 import { PublicFormService } from './public-form.service';
+import { PlzService } from '../../core/services/plz.service';
+
+const PLZ: Record<string, string[]> = { '80331': ['München'], '04808': ['Thallwitz', 'Wurzen'] };
 
 const META = { expiresAt: '2026-10-05T08:00:00Z', consentVersion: '2026-09' };
 const RESPONSE = { newcomerPublicId: 'n-1', submittedAt: '2026-10-04T08:00:00Z' };
@@ -36,6 +39,10 @@ describe('PublicRegisterComponent — 새가족 등록 (공개) (#42)', () => {
         provideTranslateService(),
         { provide: PublicFormService, useValue: service },
         {
+          provide: PlzService,
+          useValue: { preload: () => undefined, lookup: (plz: string) => Promise.resolve(PLZ[plz] ?? []) },
+        },
+        {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: convertToParamMap(token ? { token } : {}) } },
         },
@@ -58,6 +65,8 @@ describe('PublicRegisterComponent — 새가족 등록 (공개) (#42)', () => {
       baptism: 'UNBAPTIZED',
       motives: { REFERRAL: true },
       consentAccepted: true,
+      street: ' Hauptstraße ',
+      houseNumber: '12a',
     });
   }
 
@@ -114,11 +123,14 @@ describe('PublicRegisterComponent — 새가족 등록 (공개) (#42)', () => {
       gender: 'M',
       birthDate: '1990-01-15',
       phoneNumber: '+491512345678',
+      street: 'Hauptstraße',
+      houseNumber: '12a',
       visitMotives: ['지인의 소개로'],
       consentAccepted: true,
       honeypot: '',
     }));
     expect(body.email).toBeUndefined();
+    expect(body.zipCode).toBeUndefined();
     expect(component.state()).toBe('done');
     expect(component.form.get('lastName')!.value).toBeFalsy();
   });
@@ -161,6 +173,61 @@ describe('PublicRegisterComponent — 새가족 등록 (공개) (#42)', () => {
 
     const keys = service.submit.calls.all().map(c => c.args[2]);
     expect(keys[1]).not.toBe(keys[0]);
+  });
+
+  it('lets nothing widen the page on mobile (#172)', () => {
+    const { fixture } = setup();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-testid="pr-root"]')!.classList).toContain('overflow-x-clip');
+    const honeypot = el.querySelector('[data-testid="pr-honeypot"]')!;
+    expect(honeypot.classList).toContain('sr-only');
+    expect(honeypot.className).not.toContain('-left-');
+  });
+
+  describe('Ort from the PLZ (#174)', () => {
+    const settle = () => new Promise(resolve => setTimeout(resolve));
+
+    it('fills Ort for a PLZ with one place and sends all four fields', async () => {
+      const { component } = setup();
+      service.submit.and.returnValue(of(RESPONSE));
+      fillValid(component);
+      component.form.patchValue({ zipCode: '80331' });
+      await settle();
+      expect(component.form.get('city')!.value).toBe('München');
+
+      component.submit();
+      expect(service.submit.calls.mostRecent().args[1]).toEqual(jasmine.objectContaining({
+        street: 'Hauptstraße', houseNumber: '12a', zipCode: '80331', city: 'München',
+      }));
+    });
+
+    it('offers a choice when several places share the PLZ', async () => {
+      const { component, fixture } = setup();
+      component.form.patchValue({ zipCode: '04808' });
+      await settle();
+      expect(component.form.get('city')!.value).toBeFalsy();
+      expect(component.cityChoices()).toEqual(['Thallwitz', 'Wurzen']);
+
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="pr-city-choices"]')).not.toBeNull();
+      component.chooseCity('Wurzen');
+      expect(component.form.get('city')!.value).toBe('Wurzen');
+      expect(component.cityChoices()).toEqual([]);
+    });
+
+    it('replaces its own Ort when the PLZ changes but keeps a typed one', async () => {
+      const { component } = setup();
+      component.form.patchValue({ zipCode: '80331' });
+      await settle();
+      component.form.patchValue({ zipCode: '8033' });
+      await settle();
+      expect(component.form.get('city')!.value).toBe('');
+
+      component.form.patchValue({ city: 'Garching' });
+      component.form.patchValue({ zipCode: '80331' });
+      await settle();
+      expect(component.form.get('city')!.value).toBe('Garching');
+    });
   });
 
   it('switches to unavailable when the link dies before submitting', () => {

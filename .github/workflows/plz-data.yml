@@ -1,0 +1,49 @@
+# Refreshes the PLZ → Ort list of the 새가족 등록 form (#174) once a year.
+# Opens a PR against dev when GeoNames changed anything; merging it is the only manual step.
+# Needs: Settings › Actions › General › "Allow GitHub Actions to create and approve pull requests".
+name: PLZ data
+
+on:
+  schedule:
+    - cron: '0 6 15 1 *'   # 15 January, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download GeoNames
+        run: |
+          curl -sSfL -o zip.zip  https://download.geonames.org/export/zip/DE.zip
+          curl -sSfL -o dump.zip https://download.geonames.org/export/dump/DE.zip
+          unzip -p zip.zip  DE.txt > "$RUNNER_TEMP/postal.txt"
+          unzip -p dump.zip DE.txt > "$RUNNER_TEMP/places.txt"
+          rm zip.zip dump.zip
+
+      - name: Build
+        run: node scripts/build-plz-data.mjs "$RUNNER_TEMP/postal.txt" "$RUNNER_TEMP/places.txt"
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          base: dev
+          branch: chore/plz-data-refresh
+          delete-branch: true
+          commit-message: 'chore(public-register): PLZ-Daten aus GeoNames aktualisiert'
+          title: 'chore(public-register): PLZ-Daten aus GeoNames aktualisiert'
+          body: |
+            Jährliche Aktualisierung von `src/app/core/data/de-plz.data.ts` aus GeoNames (CC BY 4.0).
+            Erzeugt von `.github/workflows/plz-data.yml`. Diff kurz ansehen, dann mergen.
+          labels: 'type:chore'
+          add-paths: src/app/core/data/de-plz.data.ts
