@@ -1,4 +1,4 @@
-<!-- 계정 연결 확인 — 비교 (#45), Figma 1028:105799 (Light) / 1029:106132 (Dark), 대화상자 1029:105984 / 1029:106189. -->
+<!-- 계정 연결 확인 — 비교 (#45, #182), Figma 1028:105799 (Light) / 1029:106132 (Dark), 대화상자 1029:105984 / 1029:106189. -->
 <p-toast />
 <p-confirmDialog />
 <div class="flex flex-col gap-gutter">
@@ -63,7 +63,11 @@
                     <span class="type-caption text-ink-muted">
                       {{ (col.registration ? 'newcomers.reconciliation.registration' : 'newcomers.reconciliation.candidate') | translate }}
                     </span>
-                    <span class="type-body text-ink-strong">{{ col.name }}</span>
+                    <span class="type-body text-ink-strong" data-testid="column-name">
+                      {{ col.name }}@if (col.origin) {
+                        · {{ col.origin }}
+                      }
+                    </span>
                     <div class="flex flex-wrap gap-[var(--space-4)]">
                       @if (col.member.linked) {
                         <app-badge size="small" variant="neutral" [label]="'newcomers.reconciliation.accountLinked' | translate" />
@@ -92,6 +96,13 @@
                       <span class="break-all">{{ cell.value || '–' }}</span>
                       @if (cell.differs) {
                         <app-badge size="small" variant="pending" [label]="'newcomers.reconciliation.differs' | translate" />
+                      }
+                      @if (cell.verification; as v) {
+                        <app-badge
+                          size="small"
+                          data-testid="email-verification"
+                          [variant]="verificationBadge[v]"
+                          [label]="'newcomers.reconciliation.emailVerification.' + v | translate" />
                       }
                     </div>
                   </td>
@@ -140,8 +151,6 @@
           {{ 'newcomers.reconciliation.resolvedAt' | translate: { date: (item.resolvedAt | date: 'yyyy.MM.dd HH:mm') } }}
         </p>
       }
-
-      <p class="type-caption text-ink-muted">{{ 'newcomers.reconciliation.missingInfo' | translate }}</p>
     </section>
   }
 </div>

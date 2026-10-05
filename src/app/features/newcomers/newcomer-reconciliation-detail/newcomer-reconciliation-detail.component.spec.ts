@@ -18,10 +18,12 @@ const ITEM: Reconciliation = {
   registrationMember: {
     publicId: 'm-1', lastName: '홍', firstName: '길동', email: 'john.doe@example.com',
     birthDate: '1990-01-15', phoneNumber: '+491512345678', linked: false,
+    emailVerified: null, origin: 'NEWCOMER_FORM',
   },
   candidates: [{
     publicId: 'm-2', lastName: '홍', firstName: '길동', email: 'john.doe@example.com',
     birthDate: '1990-01-15', phoneNumber: '+491700000000', linked: true,
+    emailVerified: true, origin: 'APP',
   }],
   version: 3,
   createdAt: '2026-10-01T08:00:00Z',
@@ -68,6 +70,30 @@ describe('NewcomerReconciliationDetailComponent — 계정 연결 확인 비교 
     const email = component.rows().find(r => r.field === 'email')!;
     expect(email.cells.some(c => c.differs)).toBeFalse();
     expect(el.querySelectorAll('[data-differs]').length).toBe(1);
+  });
+
+  it('names each column with the origin of its member (#182)', () => {
+    const { component, el } = create();
+    expect(component.columns().map(c => c.origin)).toEqual(['NEWCOMER_FORM', 'APP']);
+    const names = Array.from(el.querySelectorAll('[data-testid="column-name"]')).map(n => n.textContent!.trim());
+    expect(names[0]).toContain('· NEWCOMER_FORM');
+  });
+
+  it('shows email verification only for members with an account (#182)', () => {
+    const verificationOf = (candidate: Partial<Reconciliation['candidates'][number]>) => {
+      TestBed.resetTestingModule();
+      const { component } = create({ item: { ...ITEM, candidates: [{ ...ITEM.candidates[0], ...candidate }] } });
+      return component.rows().find(r => r.field === 'email')!.cells.map(c => c.verification);
+    };
+    expect(verificationOf({})).toEqual([null, 'verified']);
+    expect(verificationOf({ emailVerified: false })).toEqual([null, 'unverified']);
+    expect(verificationOf({ emailVerified: null })).toEqual([null, 'unknown']);
+    expect(verificationOf({ linked: false, emailVerified: null })).toEqual([null, null]);
+  });
+
+  it('marks the verified email in the comparison (#182)', () => {
+    const { el } = create();
+    expect(el.querySelectorAll('[data-testid="email-verification"]').length).toBe(1);
   });
 
   it('names conflicting fields it cannot show side by side', () => {

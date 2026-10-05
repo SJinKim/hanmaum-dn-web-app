@@ -1308,7 +1308,10 @@
       },
       "reason": {
         "EMAIL_MATCH_IDENTITY_MISMATCH": "같은 이메일, 다른 인적 사항",
-        "PROFILE_VALUE_CONFLICT": "입력 값이 다름"
+        "PROFILE_VALUE_CONFLICT": "입력 값이 다름",
+        "POSSIBLE_NAME_BIRTH_MATCH": "이름과 생년월일 또는 전화번호가 같음",
+        "MULTIPLE_CANDIDATES": "후보가 여러 명",
+        "FORM_EMAIL_MATCH": "새가족 등록 이메일이 기존 계정과 같음"
       },
       "field": {
         "name": "이름",
@@ -1353,7 +1356,6 @@
       "dismiss": "다른 사람 · 제외",
       "dismissHint": "어느 계정과도 같은 사람이 아니면 제외하세요. 등록은 그대로 남습니다.",
       "resolvedAt": "처리: {{date}}",
-      "missingInfo": "이메일 인증 여부와 계정 출처는 아직 표시되지 않습니다.",
       "linkDialog": {
         "header": "{{name}} 계정과 연결할까요?",
         "message": "등록에 입력된 내용으로 기존 계정의 정보가 업데이트됩니다. 이 작업은 되돌릴 수 없습니다.",
@@ -1387,6 +1389,16 @@
           "notFound": "찾을 수 없습니다.",
           "failed": "처리하지 못했습니다. 다시 시도해 주세요."
         }
+      },
+      "origin": {
+        "MANUAL": "직접 등록",
+        "NEWCOMER_FORM": "새가족 양식",
+        "APP": "앱 계정"
+      },
+      "emailVerification": {
+        "verified": "인증됨",
+        "unverified": "미인증",
+        "unknown": "확인 불가"
       }
     }
   },
