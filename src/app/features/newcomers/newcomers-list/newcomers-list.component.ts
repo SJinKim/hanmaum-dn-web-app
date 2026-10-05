@@ -285,6 +285,10 @@ export class NewcomersListComponent implements OnInit {
     void this.router.navigate(['/newcomers', 'qr-links']);
   }
 
+  goToReconciliations(): void {
+    void this.router.navigate(['/newcomers', 'reconciliations']);
+  }
+
   private fullName(n: Newcomer): string {
     return `${n.lastName}${n.firstName}`;
   }

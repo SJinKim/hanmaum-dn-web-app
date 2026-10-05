@@ -1269,6 +1269,101 @@
         "revokeFailed": "Could not revoke the link",
         "qrFailed": "Could not create the QR code"
       }
+    },
+    "reconciliation": {
+      "button": "Account matches",
+      "title": "Account matches",
+      "subtitle": "Registrations the server could not match on its own",
+      "listButton": "Newcomer list",
+      "backToList": "Back to list",
+      "statusFilter": "Status",
+      "status": {
+        "OPEN": "Open",
+        "LINKED": "Linked",
+        "DISMISSED": "Dismissed"
+      },
+      "reason": {
+        "EMAIL_MATCH_IDENTITY_MISMATCH": "Same email, different person data",
+        "PROFILE_VALUE_CONFLICT": "Conflicting values"
+      },
+      "field": {
+        "name": "Name",
+        "email": "Email",
+        "birthDate": "Date of birth",
+        "phoneNumber": "Phone",
+        "gender": "Gender",
+        "street": "Street",
+        "houseNumber": "House number",
+        "zipCode": "Postal code",
+        "city": "City",
+        "baptism": "Baptism"
+      },
+      "otherFields": "Other fields: {{fields}}",
+      "candidates": "{{count}} candidate(s)",
+      "review": "Review",
+      "view": "View",
+      "loadMore": "Load more",
+      "empty": {
+        "OPEN": "Nothing to review",
+        "LINKED": "No linked registrations",
+        "DISMISSED": "No dismissed registrations",
+        "description": "Only registrations the server could not decide on show up here."
+      },
+      "error": {
+        "heading": "Could not load",
+        "description": "Please try again in a moment."
+      },
+      "notFound": {
+        "heading": "Not found",
+        "description": "It was removed or the address is wrong."
+      },
+      "question": "Is this the same person?",
+      "caption": "Compare the registration with the existing accounts and link it if it is the same person.",
+      "fieldHeader": "Field",
+      "registration": "Registration",
+      "candidate": "Existing account",
+      "accountLinked": "Has login",
+      "selected": "Chosen account",
+      "differs": "Differs",
+      "link": "Same person · link this account",
+      "dismiss": "Different person · dismiss",
+      "dismissHint": "Dismiss if it matches none of the accounts. The registration stays as it is.",
+      "resolvedAt": "Resolved: {{date}}",
+      "missingInfo": "Email verification and account origin are not shown yet.",
+      "linkDialog": {
+        "header": "Link to {{name}}?",
+        "message": "The existing account is updated with the registration's input. This cannot be undone.",
+        "accept": "Link",
+        "cancel": "Cancel"
+      },
+      "mergeDialog": {
+        "header": "Merge with {{name}}?",
+        "message": "Both have newcomer history, so they are merged into one. The existing account is updated with the registration's input. This cannot be undone.",
+        "accept": "Merge",
+        "cancel": "Cancel"
+      },
+      "dismissDialog": {
+        "header": "Dismiss as a different person?",
+        "message": "Nothing is linked. The registration stays as a newcomer.",
+        "accept": "Dismiss",
+        "cancel": "Cancel"
+      },
+      "toast": {
+        "linked": "Account linked",
+        "merged": "Accounts merged",
+        "dismissed": "Dismissed",
+        "errors": {
+          "resolved": "Already resolved. Loaded the current state.",
+          "stale": "It changed in the meantime. Please check again.",
+          "useMerge": "A merge is needed.",
+          "alreadyLinked": "The chosen account is already linked to another login.",
+          "registrationUnlinked": "The registration is no longer linked to a login.",
+          "memberInactive": "The chosen account is no longer active.",
+          "notCandidate": "The chosen account is no longer a candidate. Loaded the current state.",
+          "notFound": "Not found.",
+          "failed": "Could not complete. Please try again."
+        }
+      }
     }
   },
   "publicRegister": {

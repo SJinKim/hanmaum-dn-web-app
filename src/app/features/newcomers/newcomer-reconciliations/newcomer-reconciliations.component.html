@@ -1,0 +1,92 @@
+<!-- 계정 연결 확인 (#45), Figma 1027:105623 (Light) / 1029:106092 (Dark). -->
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'newcomers.eyebrow' | translate"
+    [heading]="'newcomers.reconciliation.title' | translate"
+    [subtitle]="'newcomers.reconciliation.subtitle' | translate">
+    <p-button
+      appActions
+      size="small"
+      severity="secondary"
+      [outlined]="true"
+      data-testid="newcomers-link"
+      [label]="'newcomers.reconciliation.listButton' | translate"
+      (onClick)="goToList()" />
+  </app-page-header>
+
+  <section
+    class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+    [attr.aria-busy]="loading()">
+    <div class="flex flex-wrap gap-[var(--space-8)]" role="group" [attr.aria-label]="'newcomers.reconciliation.statusFilter' | translate">
+      @for (s of statuses; track s) {
+        <app-filter-chip
+          [attr.data-testid]="'status-' + s"
+          [label]="'newcomers.reconciliation.status.' + s | translate"
+          [selected]="status() === s"
+          [count]="status() === s && !loading() && !failed() ? total() : undefined"
+          (toggled)="select(s)" />
+      }
+    </div>
+
+    @if (loading()) {
+      <app-skeleton variant="card" />
+    } @else if (failed()) {
+      <app-empty-state
+        variant="error"
+        [heading]="'newcomers.reconciliation.error.heading' | translate"
+        [description]="'newcomers.reconciliation.error.description' | translate"
+        [actionLabel]="'newcomers.error.retry' | translate"
+        actionIcon="pi pi-refresh"
+        (action)="load()" />
+    } @else if (rows().length === 0) {
+      <app-empty-state
+        variant="no-data"
+        [heading]="'newcomers.reconciliation.empty.' + status() | translate"
+        [description]="'newcomers.reconciliation.empty.description' | translate" />
+    } @else {
+      <ul class="flex flex-col gap-[var(--space-8)]" [attr.aria-label]="'newcomers.reconciliation.title' | translate">
+        @for (row of rows(); track row.item.publicId) {
+          <li
+            class="border-line-subtle flex flex-col gap-[var(--space-8)] rounded-[var(--radius-md)] border p-[var(--space-12)] tablet:flex-row tablet:items-center tablet:gap-[var(--space-16)]"
+            data-testid="reconciliation-row">
+            <app-badge
+              size="small"
+              [variant]="statusBadge[row.item.status]"
+              [label]="'newcomers.reconciliation.status.' + row.item.status | translate" />
+            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-2)]">
+              <span class="type-body text-ink-strong">{{ row.name }}</span>
+              <span class="type-caption text-ink-muted" data-testid="row-reasons">
+                {{ row.reasons }}
+                @if (row.fields) {
+                  · {{ 'newcomers.reconciliation.otherFields' | translate: { fields: row.fields } }}
+                }
+              </span>
+            </div>
+            <span class="type-body-sm text-ink-muted tabular-nums">
+              {{ 'newcomers.reconciliation.candidates' | translate: { count: row.item.candidates.length } }}
+            </span>
+            <span class="type-body-sm text-ink-muted tabular-nums">{{ row.item.createdAt | date: 'yyyy.MM.dd' }}</span>
+            <p-button
+              size="small"
+              severity="secondary"
+              [outlined]="true"
+              data-testid="row-open"
+              [label]="(row.item.status === 'OPEN' ? 'newcomers.reconciliation.review' : 'newcomers.reconciliation.view') | translate"
+              (onClick)="open(row.item)" />
+          </li>
+        }
+      </ul>
+      @if (hasMore()) {
+        <p-button
+          size="small"
+          severity="secondary"
+          styleClass="w-full"
+          [text]="true"
+          data-testid="load-more"
+          [loading]="loadingMore()"
+          [label]="'newcomers.reconciliation.loadMore' | translate"
+          (onClick)="more()" />
+      }
+    }
+  </section>
+</div>

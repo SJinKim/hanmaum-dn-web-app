@@ -1,0 +1,147 @@
+<!-- 계정 연결 확인 — 비교 (#45), Figma 1028:105799 (Light) / 1029:106132 (Dark), 대화상자 1029:105984 / 1029:106189. -->
+<p-toast />
+<p-confirmDialog />
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    [heading]="name() || ('newcomers.reconciliation.title' | translate)"
+    [breadcrumb]="breadcrumb()"
+    [hasBack]="true"
+    [backLabel]="'newcomers.reconciliation.backToList' | translate"
+    (back)="goToList()" />
+
+  @if (loading()) {
+    <app-skeleton variant="card" />
+  } @else if (failed() === 'notFound') {
+    <app-empty-state
+      variant="no-results"
+      [heading]="'newcomers.reconciliation.notFound.heading' | translate"
+      [description]="'newcomers.reconciliation.notFound.description' | translate"
+      [actionLabel]="'newcomers.reconciliation.backToList' | translate"
+      actionIcon="pi pi-arrow-left"
+      (action)="goToList()" />
+  } @else if (failed()) {
+    <app-empty-state
+      variant="error"
+      [heading]="'newcomers.reconciliation.error.heading' | translate"
+      [description]="'newcomers.reconciliation.error.description' | translate"
+      [actionLabel]="'newcomers.error.retry' | translate"
+      actionIcon="pi pi-refresh"
+      (action)="load()" />
+  } @else if (item(); as item) {
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card">
+      <div class="flex flex-col gap-[var(--space-8)]">
+        <div class="flex flex-wrap items-center gap-[var(--space-8)]">
+          <h2 class="type-h3 text-ink-strong">{{ 'newcomers.reconciliation.question' | translate }}</h2>
+          <app-badge
+            size="small"
+            data-testid="status-badge"
+            [variant]="statusBadge[item.status]"
+            [label]="'newcomers.reconciliation.status.' + item.status | translate" />
+          @for (reason of reasons(); track reason) {
+            <app-badge size="small" variant="neutral" [label]="reason" />
+          }
+        </div>
+        <p class="type-body-sm text-ink-muted">{{ 'newcomers.reconciliation.caption' | translate }}</p>
+        @if (hiddenConflicts(); as fields) {
+          <p class="type-body-sm text-ink-muted" data-testid="hidden-conflicts">
+            {{ 'newcomers.reconciliation.otherFields' | translate: { fields } }}
+          </p>
+        }
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse" data-testid="comparison">
+          <thead>
+            <tr>
+              <th class="type-caption text-ink-muted p-[var(--space-8)] text-left font-normal" scope="col">
+                <span class="sr-only">{{ 'newcomers.reconciliation.fieldHeader' | translate }}</span>
+              </th>
+              @for (col of columns(); track col.member.publicId) {
+                <th class="p-[var(--space-8)] text-left align-top" scope="col">
+                  <div class="flex flex-col gap-[var(--space-4)]">
+                    <span class="type-caption text-ink-muted">
+                      {{ (col.registration ? 'newcomers.reconciliation.registration' : 'newcomers.reconciliation.candidate') | translate }}
+                    </span>
+                    <span class="type-body text-ink-strong">{{ col.name }}</span>
+                    <div class="flex flex-wrap gap-[var(--space-4)]">
+                      @if (col.member.linked) {
+                        <app-badge size="small" variant="neutral" [label]="'newcomers.reconciliation.accountLinked' | translate" />
+                      }
+                      @if (col.selected) {
+                        <app-badge size="small" variant="active" [label]="'newcomers.reconciliation.selected' | translate" />
+                      }
+                    </div>
+                  </div>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.field) {
+              <tr class="border-line-subtle border-t">
+                <th class="type-body-sm text-ink-muted p-[var(--space-8)] text-left font-normal" scope="row">
+                  {{ 'newcomers.reconciliation.field.' + row.field | translate }}
+                </th>
+                @for (cell of row.cells; track $index) {
+                  <td
+                    class="type-body-sm text-ink-strong p-[var(--space-8)] align-top"
+                    [class.bg-surface-subtle]="cell.differs"
+                    [attr.data-differs]="cell.differs || null">
+                    <div class="flex flex-wrap items-center gap-[var(--space-4)]">
+                      <span class="break-all">{{ cell.value || '–' }}</span>
+                      @if (cell.differs) {
+                        <app-badge size="small" variant="pending" [label]="'newcomers.reconciliation.differs' | translate" />
+                      }
+                    </div>
+                  </td>
+                }
+              </tr>
+            }
+            @if (editable()) {
+              <tr class="border-line-subtle border-t">
+                <td></td>
+                @for (col of columns(); track col.member.publicId) {
+                  <td class="p-[var(--space-8)] align-top">
+                    @if (!col.registration) {
+                      <p-button
+                        size="small"
+                        styleClass="w-full"
+                        [attr.data-testid]="'link-' + col.member.publicId"
+                        [label]="'newcomers.reconciliation.link' | translate"
+                        [loading]="busy() === col.member.publicId"
+                        [disabled]="!!busy()"
+                        (onClick)="confirmLink(col)" />
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (editable()) {
+        <div
+          class="border-line-subtle flex flex-col gap-[var(--space-8)] rounded-[var(--radius-md)] border p-[var(--space-12)] tablet:flex-row tablet:items-center tablet:justify-between">
+          <p class="type-body-sm text-ink-muted">{{ 'newcomers.reconciliation.dismissHint' | translate }}</p>
+          <p-button
+            size="small"
+            severity="secondary"
+            [outlined]="true"
+            data-testid="dismiss"
+            [label]="'newcomers.reconciliation.dismiss' | translate"
+            [loading]="busy() === 'dismiss'"
+            [disabled]="!!busy()"
+            (onClick)="confirmDismiss()" />
+        </div>
+      } @else if (item.resolvedAt) {
+        <p class="type-body-sm text-ink-muted" data-testid="resolved-at">
+          {{ 'newcomers.reconciliation.resolvedAt' | translate: { date: (item.resolvedAt | date: 'yyyy.MM.dd HH:mm') } }}
+        </p>
+      }
+
+      <p class="type-caption text-ink-muted">{{ 'newcomers.reconciliation.missingInfo' | translate }}</p>
+    </section>
+  }
+</div>

@@ -32,6 +32,17 @@
       <p-button
         appActions
         size="small"
+        severity="secondary"
+        icon="pi pi-link"
+        [outlined]="true"
+        data-testid="reconciliations-link"
+        [label]="'newcomers.reconciliation.button' | translate"
+        (onClick)="goToReconciliations()" />
+    }
+    @if (canWrite() && !isPhone()) {
+      <p-button
+        appActions
+        size="small"
         icon="pi pi-plus"
         data-testid="add-newcomer"
         [label]="'newcomers.addButton' | translate"
@@ -60,6 +71,15 @@
   }
 
   @if (canWrite() && isPhone()) {
+    <p-button
+      size="small"
+      severity="secondary"
+      icon="pi pi-link"
+      styleClass="w-full"
+      [outlined]="true"
+      data-testid="reconciliations-link-phone"
+      [label]="'newcomers.reconciliation.button' | translate"
+      (onClick)="goToReconciliations()" />
     <p-button
       size="small"
       icon="pi pi-plus"
