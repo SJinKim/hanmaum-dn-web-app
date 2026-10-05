@@ -166,9 +166,7 @@
                 <label for="pr-kakaoId" class="type-caption text-ink-muted">{{ 'publicRegister.fields.kakaoId' | translate }}</label>
                 <input pInputText id="pr-kakaoId" formControlName="kakaoId" class="w-full" />
               </div>
-            </div>
 
-            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-16)]">
               <div class="flex flex-col gap-[var(--space-4)]">
                 <label for="pr-email" class="type-caption text-ink-muted">{{ 'publicRegister.fields.email' | translate }}</label>
                 <input pInputText id="pr-email" type="email" formControlName="email" autocomplete="email" class="w-full" />
@@ -176,7 +174,9 @@
                   <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.email' | translate }}</small>
                 }
               </div>
+            </div>
 
+            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-16)]">
               <div class="flex gap-[var(--space-12)]">
                 <div class="flex min-w-0 flex-[7] flex-col gap-[var(--space-4)]">
                   <label for="pr-street" class="type-caption text-ink-muted">{{ 'publicRegister.fields.street' | translate }}</label>
