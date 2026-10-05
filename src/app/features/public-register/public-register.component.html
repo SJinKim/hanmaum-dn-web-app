@@ -166,9 +166,7 @@
                 <label for="pr-kakaoId" class="type-caption text-ink-muted">{{ 'publicRegister.fields.kakaoId' | translate }}</label>
                 <input pInputText id="pr-kakaoId" formControlName="kakaoId" class="w-full" />
               </div>
-            </div>
 
-            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-16)]">
               <div class="flex flex-col gap-[var(--space-4)]">
                 <label for="pr-email" class="type-caption text-ink-muted">{{ 'publicRegister.fields.email' | translate }}</label>
                 <input pInputText id="pr-email" type="email" formControlName="email" autocomplete="email" class="w-full" />
@@ -176,11 +174,45 @@
                   <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'publicRegister.errors.email' | translate }}</small>
                 }
               </div>
+            </div>
 
-              <div class="flex flex-col gap-[var(--space-4)]">
-                <label for="pr-street" class="type-caption text-ink-muted">{{ 'publicRegister.fields.address' | translate }}</label>
-                <input pInputText id="pr-street" formControlName="street" autocomplete="street-address" class="w-full"
-                       [placeholder]="'publicRegister.placeholders.address' | translate" />
+            <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-16)]">
+              <div class="flex gap-[var(--space-12)]">
+                <div class="flex min-w-0 flex-[7] flex-col gap-[var(--space-4)]">
+                  <label for="pr-street" class="type-caption text-ink-muted">{{ 'publicRegister.fields.street' | translate }}</label>
+                  <input pInputText id="pr-street" formControlName="street" autocomplete="address-line1" class="w-full"
+                         [placeholder]="'publicRegister.placeholders.street' | translate" />
+                </div>
+                <div class="flex min-w-0 flex-[3] flex-col gap-[var(--space-4)]">
+                  <label for="pr-houseNumber" class="type-caption text-ink-muted">{{ 'publicRegister.fields.houseNumber' | translate }}</label>
+                  <input pInputText id="pr-houseNumber" formControlName="houseNumber" class="w-full"
+                         [placeholder]="'publicRegister.placeholders.houseNumber' | translate" />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-[var(--space-8)]">
+                <div class="flex gap-[var(--space-12)]">
+                  <div class="flex min-w-0 flex-[3] flex-col gap-[var(--space-4)]">
+                    <label for="pr-zipCode" class="type-caption text-ink-muted">{{ 'publicRegister.fields.zipCode' | translate }}</label>
+                    <input pInputText id="pr-zipCode" formControlName="zipCode" autocomplete="postal-code" inputmode="numeric"
+                           maxlength="10" placeholder="00000" class="w-full" />
+                  </div>
+                  <div class="flex min-w-0 flex-[7] flex-col gap-[var(--space-4)]">
+                    <label for="pr-city" class="type-caption text-ink-muted">{{ 'publicRegister.fields.city' | translate }}</label>
+                    <input pInputText id="pr-city" formControlName="city" autocomplete="address-level2" class="w-full"
+                           [placeholder]="'publicRegister.placeholders.city' | translate" />
+                  </div>
+                </div>
+                @if (cityChoices().length) {
+                  <div class="flex flex-col gap-[var(--space-4)]" data-testid="pr-city-choices">
+                    <span class="type-caption text-ink-muted">{{ 'publicRegister.cityChoice' | translate }}</span>
+                    <div class="flex flex-wrap gap-[var(--space-8)]">
+                      @for (city of cityChoices(); track city) {
+                        <app-filter-chip [label]="city" (toggled)="chooseCity(city)" />
+                      }
+                    </div>
+                  </div>
+                }
               </div>
 
               <div class="flex flex-col gap-[var(--space-4)]">
@@ -298,6 +330,9 @@
         </form>
 
         <p class="type-caption text-ink-disabled text-center">{{ 'publicRegister.footer' | translate }}</p>
+        <p class="type-caption text-ink-disabled text-center">
+          <a href="https://www.geonames.org" target="_blank" rel="noopener" class="underline">{{ 'publicRegister.dataCredit' | translate }}</a>
+        </p>
       }
     }
   </main>
