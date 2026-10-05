@@ -24,6 +24,7 @@ import { BadgeComponent } from '../../../core/ui/badge/badge.component';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
+import { BadgeVariant } from '../../../core/ui/variant-tokens';
 import { STATUS_BADGE } from '../newcomer-reconciliations/newcomer-reconciliations.component';
 import { ReconciliationService } from '../reconciliation.service';
 
@@ -32,12 +33,32 @@ interface Column {
   readonly registration: boolean;
   readonly selected: boolean;
   readonly name: string;
+  /** How the member record came to exist, translated; empty when the server sent none. */
+  readonly origin: string;
 }
+
+type Verification = 'verified' | 'unverified' | 'unknown';
 
 interface Cell {
   readonly value: string;
   /** A candidate value that is not the registration's. */
   readonly differs: boolean;
+  /** Email cells of members with an account only. */
+  readonly verification: Verification | null;
+}
+
+const VERIFICATION_BADGE: Record<Verification, BadgeVariant> = {
+  verified: 'active',
+  unverified: 'pending',
+  unknown: 'neutral',
+};
+
+/** Without an account there is nothing to verify; `null` means Keycloak could not be asked. */
+function verification(member: ReconciliationMember): Verification | null {
+  if (!member.linked) return null;
+  if (member.emailVerified === true) return 'verified';
+  if (member.emailVerified === false) return 'unverified';
+  return 'unknown';
 }
 
 interface FieldRow {
@@ -86,6 +107,7 @@ export class NewcomerReconciliationDetailComponent implements OnInit {
   private readonly publicId = this.route.snapshot.paramMap.get('publicId');
 
   readonly statusBadge = STATUS_BADGE;
+  readonly verificationBadge = VERIFICATION_BADGE;
   readonly canWrite = computed(() => this.roles.canWrite('newcomers'));
 
   readonly item = signal<Reconciliation | null>(null);
@@ -111,6 +133,7 @@ export class NewcomerReconciliationDetailComponent implements OnInit {
   });
 
   readonly columns = computed<readonly Column[]>(() => {
+    this.translate.currentLang();
     const item = this.item();
     if (!item) return [];
     const column = (member: ReconciliationMember, registration: boolean): Column => ({
@@ -118,6 +141,7 @@ export class NewcomerReconciliationDetailComponent implements OnInit {
       registration,
       selected: !registration && member.publicId === item.selectedMemberPublicId,
       name: reconciliationValue(member, 'name'),
+      origin: member.origin ? this.label('origin', member.origin) : '',
     });
     return [column(item.registrationMember, true), ...item.candidates.map(c => column(c, false))];
   });
@@ -131,7 +155,11 @@ export class NewcomerReconciliationDetailComponent implements OnInit {
         field,
         cells: columns.map((c, i) => {
           const value = reconciliationValue(c.member, field);
-          return { value, differs: i > 0 && value !== own };
+          return {
+            value,
+            differs: i > 0 && value !== own,
+            verification: field === 'email' ? verification(c.member) : null,
+          };
         }),
       };
     });
@@ -269,7 +297,7 @@ export class NewcomerReconciliationDetailComponent implements OnInit {
   }
 
   /** A server value without a translation is shown as is, never as a key. */
-  private label(group: 'reason' | 'field', value: string): string {
+  private label(group: 'reason' | 'field' | 'origin', value: string): string {
     const key = `newcomers.reconciliation.${group}.${value}`;
     const text = this.translate.instant(key) as string;
     return text === key ? value : text;

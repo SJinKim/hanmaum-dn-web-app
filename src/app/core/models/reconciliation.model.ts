@@ -1,11 +1,18 @@
 // 계정 연결 확인 (#45), mirrors `ReconciliationResponse` of `MemberReconciliationController`.
 
+import { MemberOrigin } from './member.model';
+
 export type ReconciliationStatus = 'OPEN' | 'LINKED' | 'DISMISSED';
 
 export const RECONCILIATION_STATUSES: readonly ReconciliationStatus[] = ['OPEN', 'LINKED', 'DISMISSED'];
 
 /** Why the server could not decide on its own. */
-export type ReconciliationReason = 'EMAIL_MATCH_IDENTITY_MISMATCH' | 'PROFILE_VALUE_CONFLICT';
+export type ReconciliationReason =
+  | 'EMAIL_MATCH_IDENTITY_MISMATCH'
+  | 'PROFILE_VALUE_CONFLICT'
+  | 'POSSIBLE_NAME_BIRTH_MATCH'
+  | 'MULTIPLE_CANDIDATES'
+  | 'FORM_EMAIL_MATCH';
 
 export interface ReconciliationMember {
   publicId: string;
@@ -17,6 +24,10 @@ export interface ReconciliationMember {
   phoneNumber?: string | null;
   /** Has a Keycloak account. */
   linked: boolean;
+  /** From Keycloak; null without an account or when Keycloak could not be asked (#182). */
+  emailVerified?: boolean | null;
+  /** How the member record came to exist (#182). */
+  origin?: MemberOrigin;
 }
 
 export interface Reconciliation {

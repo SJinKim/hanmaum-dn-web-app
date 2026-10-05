@@ -1308,7 +1308,10 @@
       },
       "reason": {
         "EMAIL_MATCH_IDENTITY_MISMATCH": "Same email, different person data",
-        "PROFILE_VALUE_CONFLICT": "Conflicting values"
+        "PROFILE_VALUE_CONFLICT": "Conflicting values",
+        "POSSIBLE_NAME_BIRTH_MATCH": "Same name and birth date or phone",
+        "MULTIPLE_CANDIDATES": "Several candidates",
+        "FORM_EMAIL_MATCH": "Form email belongs to an existing account"
       },
       "field": {
         "name": "Name",
@@ -1353,7 +1356,6 @@
       "dismiss": "Different person · dismiss",
       "dismissHint": "Dismiss if it matches none of the accounts. The registration stays as it is.",
       "resolvedAt": "Resolved: {{date}}",
-      "missingInfo": "Email verification and account origin are not shown yet.",
       "linkDialog": {
         "header": "Link to {{name}}?",
         "message": "The existing account is updated with the registration's input. This cannot be undone.",
@@ -1387,6 +1389,16 @@
           "notFound": "Not found.",
           "failed": "Could not complete. Please try again."
         }
+      },
+      "origin": {
+        "MANUAL": "Added manually",
+        "NEWCOMER_FORM": "Newcomer form",
+        "APP": "App account"
+      },
+      "emailVerification": {
+        "verified": "Verified",
+        "unverified": "Not verified",
+        "unknown": "Could not check"
       }
     }
   },
