@@ -18,6 +18,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { FilterChipComponent } from '../../core/ui/filter-chip/filter-chip.component';
 import { EmptyStateComponent } from '../../core/ui/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../core/ui/skeleton/skeleton.component';
 import { SegmentedControlComponent } from '../../core/ui/segmented-control/segmented-control.component';
@@ -31,6 +32,7 @@ import {
   VISIT_MOTIVES,
   VisitMotiveId,
 } from '../../core/models/public-newcomer-form.model';
+import { PlzService } from '../../core/services/plz.service';
 import { PublicFormService } from './public-form.service';
 
 const THEME_KEY = 'app-theme';
@@ -86,6 +88,7 @@ export function newIdempotencyKey(): string {
     SelectModule,
     TranslatePipe,
     EmptyStateComponent,
+    FilterChipComponent,
     SkeletonComponent,
     SegmentedControlComponent,
   ],
@@ -93,6 +96,7 @@ export function newIdempotencyKey(): string {
 })
 export class PublicRegisterComponent implements OnInit {
   private readonly service    = inject(PublicFormService);
+  private readonly plz        = inject(PlzService);
   private readonly route      = inject(ActivatedRoute);
   private readonly fb         = inject(FormBuilder);
   private readonly translate  = inject(TranslateService);
@@ -103,12 +107,16 @@ export class PublicRegisterComponent implements OnInit {
   private token = '';
   /** Kept across retries of the same input, so a lost response cannot create a second newcomer. */
   private idempotencyKey: string | null = null;
+  /** The Ort last filled in from the PLZ; anything else in the field was typed and stays. */
+  private autoCity: string | null = null;
 
   readonly state          = signal<PageState>('loading');
   readonly consentVersion = signal('');
   readonly submitting     = signal(false);
   readonly submitError    = signal<SubmitError | null>(null);
   readonly isDark         = signal(this.readInitialTheme());
+  /** Several Orte share the typed PLZ: offered as a choice under the Ort field. */
+  readonly cityChoices    = signal<string[]>([]);
 
   readonly phoneCountryOptions = PHONE_COUNTRIES;
   readonly motives = VISIT_MOTIVES;
@@ -123,6 +131,9 @@ export class PublicRegisterComponent implements OnInit {
     kakaoId:          [''],
     email:            ['', Validators.email],
     street:           [''],
+    houseNumber:      [''],
+    zipCode:          [''],
+    city:             [''],
     churchExperience: [null as ChurchExperience | null, Validators.required],
     baptism:          [null as Baptism | null, Validators.required],
     previousChurch:   [''],
@@ -156,6 +167,11 @@ export class PublicRegisterComponent implements OnInit {
     this.form.get('phoneCountry')!.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.form.get('phoneLocal')!.updateValueAndValidity());
+
+    this.plz.preload();
+    this.form.get('zipCode')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(zip => void this.fillCity((zip ?? '').trim()));
 
     // Different input is a different submission.
     this.form.valueChanges
@@ -194,6 +210,12 @@ export class PublicRegisterComponent implements OnInit {
     ctrl.markAsTouched();
   }
 
+  chooseCity(city: string): void {
+    this.form.get('city')!.setValue(city);
+    this.autoCity = city;
+    this.cityChoices.set([]);
+  }
+
   isInvalid(name: string): boolean {
     const ctrl = this.form.get(name)!;
     return ctrl.invalid && ctrl.touched;
@@ -215,6 +237,8 @@ export class PublicRegisterComponent implements OnInit {
         next: () => {
           this.submitting.set(false);
           this.idempotencyKey = null;
+          this.autoCity = null;
+          this.cityChoices.set([]);
           // Nothing of what was entered stays in memory once it is sent.
           this.form.reset(undefined, { emitEvent: false });
           this.state.set('done');
@@ -256,6 +280,9 @@ export class PublicRegisterComponent implements OnInit {
       kakaoId:          text(v.kakaoId),
       email:            text(v.email),
       street:           text(v.street),
+      houseNumber:      text(v.houseNumber),
+      zipCode:          text(v.zipCode),
+      city:             text(v.city),
       churchExperience: v.churchExperience ?? undefined,
       baptism:          v.baptism ?? undefined,
       previousChurch:   text(v.previousChurch),
@@ -263,6 +290,20 @@ export class PublicRegisterComponent implements OnInit {
       consentAccepted:  v.consentAccepted === true,
       honeypot:         v.honeypot ?? '',
     };
+  }
+
+  /** Fills Ort from a German PLZ, unless the visitor typed an Ort of their own. */
+  private async fillCity(zip: string): Promise<void> {
+    const cities = await this.plz.lookup(zip);
+    if ((this.form.get('zipCode')!.value ?? '').trim() !== zip) return; // typed on meanwhile
+    const cityCtrl = this.form.get('city')!;
+    const current = (cityCtrl.value ?? '').trim();
+    const untouched = !current || current === this.autoCity;
+    this.cityChoices.set(cities.length > 1 && untouched ? cities : []);
+    if (!untouched) return;
+    const next = cities.length === 1 ? cities[0] : '';
+    if (next !== current) cityCtrl.setValue(next);
+    this.autoCity = next || null;
   }
 
   private options<T extends string>(prefix: string, values: readonly T[]): { value: T; label: string }[] {

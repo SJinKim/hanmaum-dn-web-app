@@ -1285,7 +1285,10 @@
       "phoneCountry": "국가 번호",
       "kakaoId": "카카오톡ID",
       "email": "이메일",
-      "address": "주소",
+      "street": "도로명",
+      "houseNumber": "번지",
+      "zipCode": "우편번호",
+      "city": "도시",
       "churchExperience": "교회 방문",
       "baptism": "세례",
       "previousChurch": "출석하던 교회",
@@ -1294,10 +1297,13 @@
       "honeypot": "이 칸은 비워 두세요"
     },
     "placeholders": {
-      "address": "도로명, 번지, 우편번호, 도시",
+      "street": "도로명 입력",
+      "houseNumber": "12a",
+      "city": "도시 입력",
       "select": "선택해 주세요",
       "otherMotive": "직접 입력 (선택)"
     },
+    "cityChoice": "이 우편번호에 해당하는 도시를 선택해 주세요",
     "gender": {
       "M": "남",
       "F": "여"
@@ -1350,6 +1356,7 @@
     "done": {
       "heading": "신청이 접수되었습니다",
       "description": "담당자가 확인 후 알려주신 연락처로 연락드립니다. 예배 시간과 장소는 문자로 안내해 드립니다."
-    }
+    },
+    "dataCredit": "우편번호 데이터: GeoNames (CC BY 4.0)"
   }
 }

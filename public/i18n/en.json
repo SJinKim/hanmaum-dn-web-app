@@ -1285,7 +1285,10 @@
       "phoneCountry": "Country code",
       "kakaoId": "KakaoTalk ID",
       "email": "Email",
-      "address": "Address",
+      "street": "Street",
+      "houseNumber": "No.",
+      "zipCode": "Postcode",
+      "city": "City",
       "churchExperience": "Church experience",
       "baptism": "Baptism",
       "previousChurch": "Previous church",
@@ -1294,10 +1297,13 @@
       "honeypot": "Leave this field empty"
     },
     "placeholders": {
-      "address": "Street, number, postcode, city",
+      "street": "Enter street",
+      "houseNumber": "12a",
+      "city": "Enter city",
       "select": "Please select",
       "otherMotive": "Tell us more (optional)"
     },
+    "cityChoice": "Several places share this postcode — pick yours",
     "gender": {
       "M": "Male",
       "F": "Female"
@@ -1350,6 +1356,7 @@
     "done": {
       "heading": "Your request was received",
       "description": "Our team will contact you using the details you gave. Service times and location will follow by text message."
-    }
+    },
+    "dataCredit": "Postcode data: GeoNames (CC BY 4.0)"
   }
 }
