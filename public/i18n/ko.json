@@ -1269,6 +1269,101 @@
         "revokeFailed": "링크를 취소하지 못했습니다",
         "qrFailed": "QR 코드를 만들지 못했습니다"
       }
+    },
+    "reconciliation": {
+      "button": "계정 연결 확인",
+      "title": "계정 연결 확인",
+      "subtitle": "자동으로 연결하지 못한 등록을 기존 계정과 맞춰 봅니다",
+      "listButton": "새가족 목록",
+      "backToList": "목록으로",
+      "statusFilter": "상태",
+      "status": {
+        "OPEN": "대기",
+        "LINKED": "연결됨",
+        "DISMISSED": "제외됨"
+      },
+      "reason": {
+        "EMAIL_MATCH_IDENTITY_MISMATCH": "같은 이메일, 다른 인적 사항",
+        "PROFILE_VALUE_CONFLICT": "입력 값이 다름"
+      },
+      "field": {
+        "name": "이름",
+        "email": "이메일",
+        "birthDate": "생년월일",
+        "phoneNumber": "전화번호",
+        "gender": "성별",
+        "street": "도로명",
+        "houseNumber": "번지",
+        "zipCode": "우편번호",
+        "city": "도시",
+        "baptism": "세례"
+      },
+      "otherFields": "다른 항목: {{fields}}",
+      "candidates": "후보 {{count}}명",
+      "review": "확인하기",
+      "view": "보기",
+      "loadMore": "더 보기",
+      "empty": {
+        "OPEN": "확인할 등록이 없습니다",
+        "LINKED": "연결된 등록이 없습니다",
+        "DISMISSED": "제외된 등록이 없습니다",
+        "description": "서버가 스스로 판단하지 못한 등록만 여기에 표시됩니다."
+      },
+      "error": {
+        "heading": "불러오지 못했습니다",
+        "description": "잠시 후 다시 시도해 주세요."
+      },
+      "notFound": {
+        "heading": "찾을 수 없습니다",
+        "description": "이미 삭제되었거나 주소가 잘못되었습니다."
+      },
+      "question": "같은 사람인가요?",
+      "caption": "등록 내용과 기존 계정을 비교하고, 같은 사람이면 그 계정과 연결하세요.",
+      "fieldHeader": "항목",
+      "registration": "새가족 등록",
+      "candidate": "기존 계정",
+      "accountLinked": "계정 연결됨",
+      "selected": "선택된 계정",
+      "differs": "다름",
+      "link": "같은 사람 · 이 계정과 연결",
+      "dismiss": "다른 사람 · 제외",
+      "dismissHint": "어느 계정과도 같은 사람이 아니면 제외하세요. 등록은 그대로 남습니다.",
+      "resolvedAt": "처리: {{date}}",
+      "missingInfo": "이메일 인증 여부와 계정 출처는 아직 표시되지 않습니다.",
+      "linkDialog": {
+        "header": "{{name}} 계정과 연결할까요?",
+        "message": "등록에 입력된 내용으로 기존 계정의 정보가 업데이트됩니다. 이 작업은 되돌릴 수 없습니다.",
+        "accept": "연결",
+        "cancel": "취소"
+      },
+      "mergeDialog": {
+        "header": "{{name}} 계정과 병합할까요?",
+        "message": "두 계정 모두 새가족 기록이 있어 하나로 병합합니다. 등록에 입력된 내용으로 기존 계정이 업데이트되며 되돌릴 수 없습니다.",
+        "accept": "병합",
+        "cancel": "취소"
+      },
+      "dismissDialog": {
+        "header": "다른 사람으로 제외할까요?",
+        "message": "어느 계정과도 연결하지 않습니다. 등록은 새가족으로 그대로 남습니다.",
+        "accept": "제외",
+        "cancel": "취소"
+      },
+      "toast": {
+        "linked": "계정과 연결했습니다",
+        "merged": "계정을 병합했습니다",
+        "dismissed": "제외했습니다",
+        "errors": {
+          "resolved": "이미 처리되었습니다. 최신 상태를 불러왔습니다.",
+          "stale": "그사이 내용이 바뀌었습니다. 다시 확인해 주세요.",
+          "useMerge": "병합이 필요합니다.",
+          "alreadyLinked": "선택한 계정은 이미 다른 로그인 계정과 연결되어 있습니다.",
+          "registrationUnlinked": "등록이 더 이상 로그인 계정과 연결되어 있지 않습니다.",
+          "memberInactive": "선택한 계정은 더 이상 활성 상태가 아닙니다.",
+          "notCandidate": "선택한 계정은 더 이상 후보가 아닙니다. 최신 상태를 불러왔습니다.",
+          "notFound": "찾을 수 없습니다.",
+          "failed": "처리하지 못했습니다. 다시 시도해 주세요."
+        }
+      }
     }
   },
   "publicRegister": {

@@ -22,6 +22,22 @@ export const NEWCOMERS_ROUTES: Routes = [
     loadComponent: () =>
       import('./newcomer-qr-links/newcomer-qr-links.component').then(m => m.NewcomerQrLinksComponent),
   },
+  {
+    path: 'reconciliations',
+    canActivate: [featureGuard('newcomers', 'write')],
+    loadComponent: () =>
+      import('./newcomer-reconciliations/newcomer-reconciliations.component').then(
+        m => m.NewcomerReconciliationsComponent,
+      ),
+  },
+  {
+    path: 'reconciliations/:publicId',
+    canActivate: [featureGuard('newcomers', 'write')],
+    loadComponent: () =>
+      import('./newcomer-reconciliation-detail/newcomer-reconciliation-detail.component').then(
+        m => m.NewcomerReconciliationDetailComponent,
+      ),
+  },
   // 빠른 기록 moved to its own sidebar entry; old links still land there.
   { path: 'visits', redirectTo: '/quick-records', pathMatch: 'full' },
   {
