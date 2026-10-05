@@ -770,6 +770,11 @@
     "locationTotals": "Total · {{totals}}.",
     "unconfirmedHint": "Unconfirmed means the check-in location is unknown, not that the person was absent.",
     "roster": "Check-in roster",
+    "views": {
+      "label": "View",
+      "groups": "By group",
+      "rosterCount": "Check-in roster · {{count}}"
+    },
     "rosterEmpty": "Nobody checked in on this date",
     "unknownMember": "Unknown member",
     "presence": {

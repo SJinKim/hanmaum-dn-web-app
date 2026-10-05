@@ -770,6 +770,11 @@
     "locationTotals": "합계 · {{totals}}.",
     "unconfirmedHint": "미확인은 체크인 시 위치를 확인하지 못한 인원이며 결석이 아닙니다.",
     "roster": "체크인 명단",
+    "views": {
+      "label": "보기",
+      "groups": "순별 출석",
+      "rosterCount": "체크인 명단 · {{count}}명"
+    },
     "rosterEmpty": "이 날짜에 체크인한 사람이 없습니다",
     "unknownMember": "알 수 없는 교인",
     "presence": {
