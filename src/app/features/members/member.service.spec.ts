@@ -243,6 +243,40 @@ describe('MemberService — 청년 list state (#53)', () => {
     expect(url).not.toContain('updatedTo=');
   });
 
+  it('sends 출처, 새가족 상태 and 앱 계정, appLinked=false included (#46)', () => {
+    service.page.set(2);
+    service.setOrigin('NEWCOMER_FORM');
+    flushList();
+    expect(service.page()).toBe(0);
+    service.setNewcomerStatus('IN_CARE');
+    flushList();
+    service.setAppLinked(false);
+    const url = flushList();
+
+    expect(url).toContain('origin=NEWCOMER_FORM');
+    expect(url).toContain('newcomerStatus=IN_CARE');
+    expect(url).toContain('appLinked=false');
+  });
+
+  it('clears 출처, 새가족 상태 and 앱 계정 on reset (#46)', () => {
+    service.setOrigin('APP');
+    flushList();
+    service.setNewcomerStatus('GRADUATED');
+    flushList();
+    service.setAppLinked(true);
+    flushList();
+
+    service.resetFilters();
+    const url = flushList();
+
+    expect(service.origin()).toBeNull();
+    expect(service.newcomerStatus()).toBeNull();
+    expect(service.appLinked()).toBeNull();
+    expect(url).not.toContain('origin=');
+    expect(url).not.toContain('newcomerStatus=');
+    expect(url).not.toContain('appLinked=');
+  });
+
   it('empties the list and flags the failure when the request errors', () => {
     service.loadMembers();
     http

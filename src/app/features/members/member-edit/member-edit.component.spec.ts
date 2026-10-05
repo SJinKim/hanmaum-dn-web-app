@@ -276,6 +276,8 @@ describe('MemberEditComponent — 순장', () => {
   const ko = {
     members: {
       edit: {
+        emailAppLinkHint: '이름·생년월일·이메일이 앱 가입 정보와 같아야 앱 계정이 자동으로 연결돼요.',
+        emailMissingHint: '이메일이 없으면 앱 계정은 수동으로만 연결할 수 있어요.',
         leaderDialog: {
           assign: '{{name}}{{obj}} {{group}} 순장으로 지정할까요?',
           replace: '현재 순장 {{leader}} ({{since}}~){{topic}} 오늘 날짜로 종료됩니다.',
@@ -347,6 +349,23 @@ describe('MemberEditComponent — 순장', () => {
 
     component.form.get('isGroupLeader')!.setValue(true);
     expect(component.leaderChangeHintName()).toBe('박민수');
+  });
+
+  it('explains under 이메일 how the app account gets linked (#46)', () => {
+    const { fixture, component } = setup({ email: null });
+    const hint = () =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="email-app-link-hint"]')?.textContent?.trim();
+
+    expect(hint()).toBe(ko.members.edit.emailMissingHint);
+
+    component.form.get('email')!.setValue('hong@example.com');
+    fixture.detectChanges();
+    expect(hint()).toBe(ko.members.edit.emailAppLinkHint);
+
+    component.form.get('email')!.setValue('kein-email');
+    component.form.get('email')!.markAsTouched();
+    fixture.detectChanges();
+    expect(hint()).toBeUndefined();
   });
 
   it('does not hint when this member is already the group\'s 순장', () => {

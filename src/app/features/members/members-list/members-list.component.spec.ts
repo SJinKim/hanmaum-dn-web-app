@@ -385,11 +385,106 @@ describe('MembersListComponent — 순/양육/사역 selects', () => {
     }
   });
 
-  it('renders five filter chips — 상태, 순, 양육, 사역, 세례 (#131)', () => {
+  it('renders eight filter chips — 상태, 순, 양육, 사역, 세례, 출처, 새가족 상태, 앱 계정 (#131, #46)', () => {
     const { fixture } = setup();
     fixture.detectChanges();
     expect(fixture.debugElement.queryAll(By.css('p-select[appFilters]')).length).toBe(0);
-    expect(fixture.debugElement.queryAll(By.css('app-filter-select[appFilters]')).length).toBe(5);
+    expect(fixture.debugElement.queryAll(By.css('app-filter-select[appFilters]')).length).toBe(8);
+  });
+});
+
+// #46: 출처 / 새가족 상태 / 앱 계정 (Figma 1036:109191).
+describe('MembersListComponent — 출처 and 앱 계정', () => {
+  function setup() {
+    TestBed.configureTestingModule({
+      imports: [MembersListComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        { provide: BreakpointService, useValue: { isPhone: signal(false) } },
+      ],
+    });
+
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', {
+      members: {
+        filters: { originAll: 'All origins', newcomerStatusAll: 'All newcomer statuses', appLinkedAll: 'All app accounts' },
+        origin: { MANUAL: 'Added manually', NEWCOMER_FORM: 'Newcomer', APP: 'App sign-up' },
+        appLinked: { true: 'Linked', false: 'Not linked' },
+      },
+      newcomers: { lifecycle: { SUBMITTED: 'Submitted', IN_CARE: 'In care', GRADUATED: 'Graduated', ARCHIVED: 'Archived' } },
+    }, true);
+    translate.use('en');
+
+    const fixture = TestBed.createComponent(MembersListComponent);
+    return { fixture, component: fixture.componentInstance, service: TestBed.inject(MemberService) };
+  }
+
+  it('offers 전체 first, then every value — 미연결 is a choice of its own', () => {
+    const { component } = setup();
+
+    expect(component.originOptions().map(o => o.value)).toEqual([null, 'MANUAL', 'NEWCOMER_FORM', 'APP']);
+    expect(component.newcomerStatusOptions()).toEqual([
+      { label: 'All newcomer statuses', value: null },
+      { label: 'Submitted', value: 'SUBMITTED' },
+      { label: 'In care', value: 'IN_CARE' },
+      { label: 'Graduated', value: 'GRADUATED' },
+      { label: 'Archived', value: 'ARCHIVED' },
+    ]);
+    expect(component.appLinkedOptions()).toEqual([
+      { label: 'All app accounts', value: null },
+      { label: 'Linked', value: true },
+      { label: 'Not linked', value: false },
+    ]);
+  });
+
+  it('writes each choice to the service and counts it as a filter', () => {
+    const { component, service } = setup();
+    const setOrigin = spyOn(service, 'setOrigin');
+    const setStatus = spyOn(service, 'setNewcomerStatus');
+    const setLinked = spyOn(service, 'setAppLinked');
+
+    component.onOriginChange('APP');
+    component.onNewcomerStatusChange('IN_CARE');
+    component.onAppLinkedChange(false);
+
+    expect(setOrigin).toHaveBeenCalledWith('APP');
+    expect(setStatus).toHaveBeenCalledWith('IN_CARE');
+    expect(setLinked).toHaveBeenCalledWith(false);
+
+    expect(component.filtered()).toBeFalse();
+    service.appLinked.set(false);
+    expect(component.filtered()).toBeTrue();
+  });
+
+  it('folds the 새가족 상태 into the 출처 badge', () => {
+    const { component } = setup();
+    const base = member(undefined);
+
+    expect(component.originBadge({ ...base, origin: 'NEWCOMER_FORM', newcomerStatus: 'IN_CARE' }))
+      .toEqual({ variant: 'training-progress', label: 'Newcomer · In care' });
+    expect(component.originBadge({ ...base, origin: 'APP' })).toEqual({ variant: 'member', label: 'App sign-up' });
+    expect(component.originBadge({ ...base, origin: 'MANUAL' })).toEqual({ variant: 'neutral', label: 'Added manually' });
+    expect(component.originBadge(base)).toBeNull();
+  });
+
+  it('shows 앱 계정 as 연결됨 or 미연결, nothing when the server is silent', () => {
+    const { component } = setup();
+    const base = member(undefined);
+
+    expect(component.appLinkedBadge({ ...base, appLinked: true })).toEqual({ variant: 'active', label: 'Linked' });
+    expect(component.appLinkedBadge({ ...base, appLinked: false })).toEqual({ variant: 'neutral', label: 'Not linked' });
+    expect(component.appLinkedBadge(base)).toBeNull();
+  });
+
+  it('adds 출처 and 앱 계정 as plain badge columns', () => {
+    const { component } = setup();
+    const byKey = new Map(component.columns().map(c => [c.key, c]));
+
+    expect(byKey.get('origin')).toEqual(jasmine.objectContaining({ type: 'badge', sortable: false }));
+    expect(byKey.get('appLinked')).toEqual(jasmine.objectContaining({ type: 'badge', sortable: false }));
   });
 });
 
@@ -583,7 +678,7 @@ describe('MembersListComponent — phone', () => {
     toggle.nativeElement.click();
     fixture.detectChanges();
 
-    expect(chips()).toBe(5);
+    expect(chips()).toBe(8);
     expect(toggle.attributes['aria-expanded']).toBe('true');
   });
 

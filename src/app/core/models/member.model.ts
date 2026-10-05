@@ -1,4 +1,5 @@
 import { UserTraining, MinistryHistory, SummaryTraining } from './member-activity.model';
+import type { NewcomerLifecycleStatus } from './newcomer.model';
 
 /** Lightweight DTO — used in list view */
 export interface MemberSummary {
@@ -25,6 +26,12 @@ export interface MemberSummary {
   isGroupLeader?: boolean;
   /** Day the member took over as group leader. Null/absent when isGroupLeader is false. */
   groupLeaderSince?: string | null;
+  /** How the record came in (#46): typed in by an admin, the 새가족 form, or an app sign-up. */
+  origin?: MemberOrigin;
+  /** Lifecycle of the 새가족 record behind it; null unless `origin` is NEWCOMER_FORM. */
+  newcomerStatus?: NewcomerLifecycleStatus | null;
+  /** True once an app account (Keycloak user) is linked to the record. */
+  appLinked?: boolean;
 }
 
 /** One 순장 tenure. `endDate` is null while it is still running. */
@@ -138,6 +145,8 @@ export interface ChurchGroupSummary {
   leaderSince?: string | null;
 }
 
+/** `MemberSummaryDto.origin` and the `origin` filter of `GET /v1/members` (#46). */
+export type MemberOrigin  = 'MANUAL' | 'NEWCOMER_FORM' | 'APP';
 export type MemberStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'REJECTED';
 export type Gender      = 'M' | 'F';
 export type Baptism     = 'UNBAPTIZED' | 'INFANT_BAPTIZED' | 'CONFIRMATION' | 'GENERAL_BAPTIZED';

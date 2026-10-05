@@ -92,6 +92,24 @@
       [options]="baptismOptions()"
       [value]="baptism()"
       (valueChange)="onBaptismChange($event)" />
+    <app-filter-select
+      appFilters
+      [label]="'members.filters.origin' | translate"
+      [options]="originOptions()"
+      [value]="origin()"
+      (valueChange)="onOriginChange($event)" />
+    <app-filter-select
+      appFilters
+      [label]="'members.filters.newcomerStatus' | translate"
+      [options]="newcomerStatusOptions()"
+      [value]="newcomerStatus()"
+      (valueChange)="onNewcomerStatusChange($event)" />
+    <app-filter-select
+      appFilters
+      [label]="'members.filters.appLinked' | translate"
+      [options]="appLinkedOptions()"
+      [value]="appLinked()"
+      (valueChange)="onAppLinkedChange($event)" />
     <!-- Figma DatePicker (605:147): 180px with its own calendar button, full width on phone. -->
     <div appFilters class="flex w-full items-center gap-[var(--space-4)] tablet:w-auto" data-testid="updated-range">
       <p-datepicker
