@@ -122,7 +122,9 @@
       "baptism": "Baptism",
       "updatedAt": "Last Activity",
       "approve": "Approve",
-      "edit": "Edit"
+      "edit": "Edit",
+      "origin": "Origin",
+      "appLinked": "App account"
     },
     "status": {
       "PENDING": "Pending",
@@ -245,7 +247,9 @@
         "moveReplace": "The current leader of {{group}}, {{leader}} ({{since}}~), also ends today.",
         "moveAccept": "Yes, move",
         "cancel": "Cancel"
-      }
+      },
+      "emailAppLinkHint": "The app account links automatically only when name, date of birth and email match the app sign-up.",
+      "emailMissingHint": "Without an email, the app account can only be linked manually."
     },
     "toast": {
       "error": "Error",
@@ -287,7 +291,13 @@
       "baptismAll": "All",
       "toggle": "Filters",
       "updatedFrom": "Last activity from",
-      "updatedTo": "Last activity to"
+      "updatedTo": "Last activity to",
+      "origin": "Origin",
+      "originAll": "All origins",
+      "newcomerStatus": "Newcomer status",
+      "newcomerStatusAll": "All newcomer statuses",
+      "appLinked": "App account",
+      "appLinkedAll": "All app accounts"
     },
     "empty": {
       "heading": "No members yet",
@@ -364,6 +374,15 @@
       "title": "Reject registration",
       "message": "Reject the registration of {{name}}? Rejected members stay in the list as Rejected.",
       "accept": "Reject"
+    },
+    "origin": {
+      "MANUAL": "Added manually",
+      "NEWCOMER_FORM": "Newcomer",
+      "APP": "App sign-up"
+    },
+    "appLinked": {
+      "true": "Linked",
+      "false": "Not linked"
     }
   },
   "ministry": {

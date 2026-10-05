@@ -22,13 +22,15 @@ import {
 import {
   Baptism,
   ChurchGroupSummary,
+  MemberOrigin,
   MemberStatus,
   MemberSummary,
 } from '../../../core/models/member.model';
+import { NEWCOMER_LIFECYCLE_STATUSES, NewcomerLifecycleStatus } from '../../../core/models/newcomer.model';
 import { RoleService } from '../../../core/services/role.service';
 import { TrainingCatalogService } from '../../../core/services/training-catalog.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
-import { DataColumn, DataRecord } from '../../../core/ui/data-record.model';
+import { DataColumn, DataRecord, DataRecordBadge } from '../../../core/ui/data-record.model';
 import { DataCellDirective } from '../../../core/ui/data-table/data-cell.directive';
 import { DataTableComponent, DataTableSort } from '../../../core/ui/data-table/data-table.component';
 import { FilterSelectComponent } from '../../../core/ui/filter-select/filter-select.component';
@@ -52,6 +54,23 @@ const BAPTISM_FILTERS: readonly Baptism[] = [
   'GENERAL_BAPTIZED',
   'CONFIRMATION',
 ];
+
+/** 출처 select options (#46), in the Figma order. */
+const ORIGIN_FILTERS: readonly MemberOrigin[] = ['MANUAL', 'NEWCOMER_FORM', 'APP'];
+
+/** 앱 계정 select options (#46): 연결됨 / 미연결. */
+const APP_LINKED_FILTERS: readonly boolean[] = [true, false];
+
+/**
+ * Badge colour of the 출처 cell (#46, Figma 1036:109191). A 새가족 record takes
+ * the colour of its lifecycle step; the other origins have one colour each.
+ */
+const NEWCOMER_STATUS_VARIANT: Readonly<Record<NewcomerLifecycleStatus, BadgeVariant>> = {
+  SUBMITTED: 'pending',
+  IN_CARE: 'training-progress',
+  GRADUATED: 'training-completed',
+  ARCHIVED: 'inactive',
+};
 
 /** Milliseconds a keystroke waits before it becomes a request. */
 const SEARCH_DEBOUNCE_MS = 300;
@@ -140,6 +159,9 @@ export class MembersListComponent implements OnInit {
   readonly group = this.memberService.group;
   readonly training = this.memberService.training;
   readonly ministry = this.memberService.ministry;
+  readonly origin = this.memberService.origin;
+  readonly newcomerStatus = this.memberService.newcomerStatus;
+  readonly appLinked = this.memberService.appLinked;
   /** 최근 활동 range (#88), as Dates for the pickers; the service keeps ISO days. */
   readonly updatedFrom = computed(() => this.toDate(this.memberService.updatedFrom()));
   readonly updatedTo   = computed(() => this.toDate(this.memberService.updatedTo()));
@@ -197,6 +219,45 @@ export class MembersListComponent implements OnInit {
     ];
   });
 
+  /** 출처 filter (#46). Re-resolves on language change. */
+  readonly originOptions = computed(() => {
+    this.translate.currentLang();
+    return [
+      { label: this.translate.instant('members.filters.originAll'), value: null as MemberOrigin | null },
+      ...ORIGIN_FILTERS.map(value => ({
+        label: this.translate.instant(`members.origin.${value}`),
+        value: value as MemberOrigin | null,
+      })),
+    ];
+  });
+
+  /** 새가족 상태 filter (#46), with the 새가족 screen's lifecycle labels. */
+  readonly newcomerStatusOptions = computed(() => {
+    this.translate.currentLang();
+    return [
+      {
+        label: this.translate.instant('members.filters.newcomerStatusAll'),
+        value: null as NewcomerLifecycleStatus | null,
+      },
+      ...NEWCOMER_LIFECYCLE_STATUSES.map(value => ({
+        label: this.translate.instant(`newcomers.lifecycle.${value}`),
+        value: value as NewcomerLifecycleStatus | null,
+      })),
+    ];
+  });
+
+  /** 앱 계정 filter (#46): `false` is a value of its own, distinct from 전체. */
+  readonly appLinkedOptions = computed(() => {
+    this.translate.currentLang();
+    return [
+      { label: this.translate.instant('members.filters.appLinkedAll'), value: null as boolean | null },
+      ...APP_LINKED_FILTERS.map(value => ({
+        label: this.translate.instant(`members.appLinked.${value}`),
+        value: value as boolean | null,
+      })),
+    ];
+  });
+
   /** Active ministries for the 사역 filter; empty until the request lands. */
   private readonly ministryCatalog = signal<readonly MinistryCatalogEntry[]>([]);
 
@@ -247,7 +308,10 @@ export class MembersListComponent implements OnInit {
       !!this.training() ||
       !!this.ministry() ||
       !!this.memberService.updatedFrom() ||
-      !!this.memberService.updatedTo(),
+      !!this.memberService.updatedTo() ||
+      !!this.origin() ||
+      !!this.newcomerStatus() ||
+      this.appLinked() !== null,
   );
 
   /** Phone/Tablet: the same page rendered as `app-list-card`s (Home precedent). */
@@ -255,7 +319,7 @@ export class MembersListComponent implements OnInit {
     this.members().map(member => ({
       id: member.publicId,
       title: this.memberName(member),
-      subtitle: `${member.groupName ?? this.translate.instant('members.unassigned')} · ${this.latestTrainingLabel(member)}`,
+      subtitle: this.phoneSubtitle(member),
       badge: {
         variant: this.statusVariant(member),
         label: this.translate.instant(`members.status.${member.memberStatus}`),
@@ -283,6 +347,8 @@ export class MembersListComponent implements OnInit {
         ministry: this.ministryLabel(member),
         baptism: this.baptismLabel(member.baptism),
         updatedAt: this.shortDate(member.updatedAt),
+        origin: this.originBadge(member),
+        appLinked: this.appLinkedBadge(member),
       },
     }));
   });
@@ -302,6 +368,9 @@ export class MembersListComponent implements OnInit {
       { type: 'text', key: 'ministry', header: header('ministry'), sortable: false, width: '160px' },
       { type: 'text', key: 'baptism', header: header('baptism'), sortKey: 'baptism', width: '120px' },
       { type: 'date', key: 'updatedAt', header: header('updatedAt'), sortable: false, width: '120px' },
+      // 출처 folds 새가족 상태 into its label (Figma 1036:109191) — 새가족 · 관리 중.
+      { type: 'badge', key: 'origin', header: header('origin'), sortable: false, width: '140px' },
+      { type: 'badge', key: 'appLinked', header: header('appLinked'), sortable: false, width: '100px' },
     ];
     if (this.showsApprove()) {
       // 1%: in an auto-layout table the column shrinks to its widest cell — the
@@ -415,6 +484,18 @@ export class MembersListComponent implements OnInit {
 
   onMinistryChange(value: string | null): void {
     this.memberService.setMinistry(value);
+  }
+
+  onOriginChange(value: MemberOrigin | null): void {
+    this.memberService.setOrigin(value);
+  }
+
+  onNewcomerStatusChange(value: NewcomerLifecycleStatus | null): void {
+    this.memberService.setNewcomerStatus(value);
+  }
+
+  onAppLinkedChange(value: boolean | null): void {
+    this.memberService.setAppLinked(value);
   }
 
   onUpdatedFromChange(value: Date | null): void {
@@ -608,6 +689,45 @@ export class MembersListComponent implements OnInit {
     return tags.length > 0
       ? tags
       : [{ label: this.translate.instant('members.stage.none'), stage: 'none' as MemberPillStage }];
+  }
+
+  /**
+   * 출처 cell (#46): 직접 등록, 앱 가입, or 새가족 · <lifecycle>. A server that
+   * does not send `origin` yet leaves the cell empty rather than guessing.
+   */
+  originBadge(member: MemberSummary): DataRecordBadge | null {
+    if (!member.origin) return null;
+    const origin = this.translate.instant(`members.origin.${member.origin}`);
+    if (member.origin === 'NEWCOMER_FORM' && member.newcomerStatus) {
+      return {
+        variant: NEWCOMER_STATUS_VARIANT[member.newcomerStatus],
+        label: `${origin} · ${this.translate.instant(`newcomers.lifecycle.${member.newcomerStatus}`)}`,
+      };
+    }
+    return { variant: member.origin === 'APP' ? 'member' : 'neutral', label: origin };
+  }
+
+  /**
+   * Phone subtitle: group · training, then 출처 for anyone not entered by hand
+   * (#46). The card has one badge, which stays the member status.
+   */
+  phoneSubtitle(member: MemberSummary): string {
+    const parts = [
+      member.groupName ?? this.translate.instant('members.unassigned'),
+      this.latestTrainingLabel(member),
+    ];
+    const origin = this.originBadge(member);
+    if (origin && member.origin !== 'MANUAL') parts.push(origin.label);
+    return parts.join(' · ');
+  }
+
+  /** 앱 계정 cell (#46): 연결됨 in the active colour, 미연결 neutral. */
+  appLinkedBadge(member: MemberSummary): DataRecordBadge | null {
+    if (member.appLinked == null) return null;
+    return {
+      variant: member.appLinked ? 'active' : 'neutral',
+      label: this.translate.instant(`members.appLinked.${member.appLinked}`),
+    };
   }
 
   ministryLabel(member: MemberSummary): string {

@@ -184,6 +184,11 @@
                     <small class="type-caption text-[var(--color-badge-deleted-fg)]">
                       {{ 'members.edit.errors.email' | translate }}
                     </small>
+                  } @else {
+                    <!-- #46: email is the key the app sign-up is matched on (Figma 1036:114338 / 1036:114904). -->
+                    <small class="type-caption text-ink-muted" data-testid="email-app-link-hint">
+                      {{ (form.get('email')!.value?.trim() ? 'members.edit.emailAppLinkHint' : 'members.edit.emailMissingHint') | translate }}
+                    </small>
                   }
                 </div>
 

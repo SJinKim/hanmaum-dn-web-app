@@ -6,6 +6,7 @@ import { TrainingCatalogService } from '../../core/services/training-catalog.ser
 import { PageResponse } from '../../core/models/api-response.model';
 import {
   Member,
+  MemberOrigin,
   MemberSummary,
   MemberStatus,
   Baptism,
@@ -19,6 +20,7 @@ import {
   MinistryCatalogEntry,
   MemberMinistryItem,
 } from '../../core/models/member-activity.model';
+import { NewcomerLifecycleStatus } from '../../core/models/newcomer.model';
 
 /**
  * 순 filter value for "no group". `GET /members` takes it as `unassigned=true`, a
@@ -64,6 +66,10 @@ export class MemberService {
   /** 최근 활동 range as ISO 'YYYY-MM-DD', both ends inclusive and optional (#88). */
   readonly updatedFrom = signal<string | null>(null);
   readonly updatedTo   = signal<string | null>(null);
+  /** 출처 / 새가족 상태 / 앱 계정 (#46); null sends nothing. */
+  readonly origin         = signal<MemberOrigin | null>(null);
+  readonly newcomerStatus = signal<NewcomerLifecycleStatus | null>(null);
+  readonly appLinked      = signal<boolean | null>(null);
   /** Null sends no `sort`; the server then orders by name. */
   readonly sort     = signal<MemberSort | null>(null);
   readonly page    = signal(0);
@@ -95,6 +101,9 @@ export class MemberService {
             ministry: this.ministry(),
             updatedFrom: this.updatedFrom(),
             updatedTo:   this.updatedTo(),
+            origin:         this.origin(),
+            newcomerStatus: this.newcomerStatus(),
+            appLinked:      this.appLinked(),
             sort:     this.sort(),
             page:    this.page(),
             size:    this.size(),
@@ -170,6 +179,24 @@ export class MemberService {
     this.loadMembers();
   }
 
+  setOrigin(value: MemberOrigin | null): void {
+    this.origin.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setNewcomerStatus(value: NewcomerLifecycleStatus | null): void {
+    this.newcomerStatus.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
+  setAppLinked(value: boolean | null): void {
+    this.appLinked.set(value);
+    this.page.set(0);
+    this.loadMembers();
+  }
+
   /**
    * A header click: a new column starts ascending, the current one flips
    * direction. There is no "off" state — the name fallback is only the default.
@@ -198,6 +225,9 @@ export class MemberService {
     this.ministry.set(null);
     this.updatedFrom.set(null);
     this.updatedTo.set(null);
+    this.origin.set(null);
+    this.newcomerStatus.set(null);
+    this.appLinked.set(null);
     this.page.set(0);
     this.loadMembers();
   }
@@ -219,7 +249,8 @@ export class MemberService {
    * Every filter is a real query parameter of `MemberController.listMembers`
    * (hanmaum-dn-server#196); nothing is filtered or sorted in the client.
    * `sort` goes out only once a header was clicked (#68). 최근 활동 filters on
-   * `updatedAt` through `updatedFrom` / `updatedTo` (#88).
+   * `updatedAt` through `updatedFrom` / `updatedTo` (#88). 출처, 새가족 상태 and
+   * 앱 계정 are `origin`, `newcomerStatus` and `appLinked` (#46, hanmaum-dn-server#272).
    */
   getMembers(params: {
     search?: string;
@@ -230,6 +261,9 @@ export class MemberService {
     ministry?: string | null;
     updatedFrom?: string | null;
     updatedTo?: string | null;
+    origin?: MemberOrigin | null;
+    newcomerStatus?: NewcomerLifecycleStatus | null;
+    appLinked?: boolean | null;
     sort?: MemberSort | null;
     page?: number;
     size?: number;
@@ -249,6 +283,10 @@ export class MemberService {
     if (params.ministry)                   qp['ministryPublicId'] = params.ministry;
     if (params.updatedFrom)                qp['updatedFrom']      = params.updatedFrom;
     if (params.updatedTo)                  qp['updatedTo']        = params.updatedTo;
+    if (params.origin)                     qp['origin']           = params.origin;
+    if (params.newcomerStatus)             qp['newcomerStatus']   = params.newcomerStatus;
+    // `false` is a filter of its own (미연결), so only null stays off the wire.
+    if (params.appLinked != null)          qp['appLinked']        = params.appLinked;
     if (params.sort) qp['sort'] = `${params.sort.property},${params.sort.direction}`;
     return this.api.get<PageResponse<MemberSummary>>('/v1/members', qp);
   }
