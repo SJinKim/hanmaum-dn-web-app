@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
@@ -24,6 +24,7 @@ const KO = {
     locationTotals: '합계 · {{totals}}.',
     unconfirmedHint: '미확인은 결석이 아닙니다.',
     deactivate: { accept: '비활성화' },
+    views: { label: '보기', groups: '순별 출석', rosterCount: '체크인 명단 · {{count}}명' },
   },
 };
 
@@ -232,6 +233,54 @@ describe('AttendanceDefinitionsComponent', () => {
     fixture.detectChanges();
     expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'error' }));
     expect(fixture.componentInstance.rosterRecords()).toEqual([]);
+  });
+
+  describe('기록 views (#158)', () => {
+    const card = (el: HTMLElement, id: string) => el.querySelector(`[data-testid="${id}"]`);
+
+    it('shows 순별 출석 by default and hides the 체크인 명단', () => {
+      const fixture = render();
+      expect(fixture.componentInstance.view()).toBe('groups');
+      expect(card(fixture.nativeElement, 'records-card')).not.toBeNull();
+      expect(card(fixture.nativeElement, 'roster-card')).toBeNull();
+    });
+
+    it('labels the roster segment with the count of the selected 순', () => {
+      service.getLogs.and.returnValue(of(LOGS));
+      const c = render().componentInstance;
+      expect(c.viewOptions().map(o => o.label)).toEqual(['순별 출석', '체크인 명단 · 3명']);
+      c.selectGroup('g2');
+      expect(c.viewOptions()[1].label).toBe('체크인 명단 · 1명');
+    });
+
+    it('switches to the 명단 without reloading and keeps ?view=roster in the URL', () => {
+      const fixture = render();
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate').and.resolveTo(true);
+      service.getGroupCounts.calls.reset();
+      service.getLogs.calls.reset();
+
+      fixture.componentInstance.setView('roster');
+      fixture.detectChanges();
+
+      expect(card(fixture.nativeElement, 'roster-card')).not.toBeNull();
+      expect(card(fixture.nativeElement, 'records-card')).toBeNull();
+      expect(service.getGroupCounts).not.toHaveBeenCalled();
+      expect(service.getLogs).not.toHaveBeenCalled();
+      expect(router.navigate).toHaveBeenCalledWith([], jasmine.objectContaining({
+        queryParams: { view: 'roster' }, queryParamsHandling: 'merge', replaceUrl: true,
+      }));
+
+      fixture.componentInstance.setView('groups');
+      expect((router.navigate as jasmine.Spy).calls.mostRecent().args[1].queryParams).toEqual({ view: null });
+    });
+
+    it('opens tab 기록 on the 명단 for ?view=roster', async () => {
+      await TestBed.inject(Router).navigateByUrl('/?view=roster');
+      const c = render().componentInstance;
+      expect(c.activeTab()).toBe(1);
+      expect(c.view()).toBe('roster');
+    });
   });
 
   it('renders list cards instead of the table on phone', () => {

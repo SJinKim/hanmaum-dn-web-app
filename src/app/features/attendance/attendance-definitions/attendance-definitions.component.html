@@ -60,11 +60,7 @@
       </p-tabpanel>
 
       <p-tabpanel [value]="1">
-        <section
-          class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
-          data-testid="records-card">
-          <app-section-header [heading]="'attendance.records' | translate" />
-
+        <div class="flex flex-col gap-[var(--space-12)]">
           <div class="flex flex-wrap items-end gap-[var(--space-12)]">
             <div class="flex flex-col gap-[var(--space-4)]">
               <label for="records-date" class="type-caption text-ink-muted">{{ 'attendance.date' | translate }}</label>
@@ -107,65 +103,82 @@
             </div>
           }
 
-          @if (isPhone()) {
-            @if (countsLoading()) {
-              <app-skeleton variant="card" />
-            } @else if (groupRecords().length === 0) {
-              <app-empty-state [heading]="'attendance.recordsEmpty' | translate" />
-            } @else {
-              <div class="flex flex-col gap-[var(--space-8)]">
-                @for (r of groupRecords(); track r.id) {
-                  <app-list-card [record]="r" selectable="false" />
+          <!-- #158 (Figma 1034:106737 / 1034:107766): one view at a time; filters above apply to both. -->
+          <app-segmented-control
+            [class]="isPhone() ? 'block w-full' : 'block w-[360px]'"
+            [options]="viewOptions()"
+            [value]="view()"
+            (valueChange)="setView($event)"
+            [ariaLabel]="'attendance.views.label' | translate"
+            data-testid="records-view" />
+
+          @if (view() === 'groups') {
+            <section
+              class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+              data-testid="records-card">
+              <app-section-header [heading]="'attendance.records' | translate" />
+
+              @if (isPhone()) {
+                @if (countsLoading()) {
+                  <app-skeleton variant="card" />
+                } @else if (groupRecords().length === 0) {
+                  <app-empty-state [heading]="'attendance.recordsEmpty' | translate" />
+                } @else {
+                  <div class="flex flex-col gap-[var(--space-8)]">
+                    @for (r of groupRecords(); track r.id) {
+                      <app-list-card [record]="r" selectable="false" />
+                    }
+                  </div>
                 }
-              </div>
-            }
+              } @else {
+                <app-data-table
+                  [rows]="groupRecords()"
+                  [columns]="groupColumns()"
+                  [loading]="countsLoading()"
+                  [caption]="'attendance.records' | translate"
+                  [emptyHeading]="'attendance.recordsEmpty' | translate"
+                  selectable="false" />
+              }
+
+              <!-- Figma 739:39837 (#35): 미확인 is an unknown location, never "absent". -->
+              @if (locationTotals(); as totals) {
+                <p class="type-caption text-ink-muted" data-testid="location-totals">
+                  {{ 'attendance.locationTotals' | translate: { totals } }}
+                  {{ 'attendance.unconfirmedHint' | translate }}
+                </p>
+              }
+            </section>
           } @else {
-            <app-data-table
-              [rows]="groupRecords()"
-              [columns]="groupColumns()"
-              [loading]="countsLoading()"
-              [caption]="'attendance.records' | translate"
-              [emptyHeading]="'attendance.recordsEmpty' | translate"
-              selectable="false" />
-          }
+            <!-- Figma 211:6948: 체크인 명단 (#146), filtered by the 순 chips above. ADMIN only (server #224). -->
+            <section
+              class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+              data-testid="roster-card">
+              <app-section-header [heading]="'attendance.roster' | translate" />
 
-          <!-- Figma 739:39837 (#35): 미확인 is an unknown location, never "absent". -->
-          @if (locationTotals(); as totals) {
-            <p class="type-caption text-ink-muted" data-testid="location-totals">
-              {{ 'attendance.locationTotals' | translate: { totals } }}
-              {{ 'attendance.unconfirmedHint' | translate }}
-            </p>
-          }
-        </section>
-
-        <!-- Figma 211:6948: 체크인 명단 (#146), filtered by the 순 chips above. ADMIN only (server #224). -->
-        <section
-          class="bg-surface border-line-subtle shadow-elevation-sm mt-gutter flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
-          data-testid="roster-card">
-          <app-section-header [heading]="'attendance.roster' | translate" />
-
-          @if (isPhone()) {
-            @if (rosterLoading()) {
-              <app-skeleton variant="card" />
-            } @else if (rosterRecords().length === 0) {
-              <app-empty-state [heading]="'attendance.rosterEmpty' | translate" />
-            } @else {
-              <div class="flex flex-col gap-[var(--space-8)]">
-                @for (r of rosterRecords(); track r.id) {
-                  <app-list-card [record]="r" selectable="false" />
+              @if (isPhone()) {
+                @if (rosterLoading()) {
+                  <app-skeleton variant="card" />
+                } @else if (rosterRecords().length === 0) {
+                  <app-empty-state [heading]="'attendance.rosterEmpty' | translate" />
+                } @else {
+                  <div class="flex flex-col gap-[var(--space-8)]">
+                    @for (r of rosterRecords(); track r.id) {
+                      <app-list-card [record]="r" selectable="false" />
+                    }
+                  </div>
                 }
-              </div>
-            }
-          } @else {
-            <app-data-table
-              [rows]="rosterRecords()"
-              [columns]="rosterColumns()"
-              [loading]="rosterLoading()"
-              [caption]="'attendance.roster' | translate"
-              [emptyHeading]="'attendance.rosterEmpty' | translate"
-              selectable="false" />
+              } @else {
+                <app-data-table
+                  [rows]="rosterRecords()"
+                  [columns]="rosterColumns()"
+                  [loading]="rosterLoading()"
+                  [caption]="'attendance.roster' | translate"
+                  [emptyHeading]="'attendance.rosterEmpty' | translate"
+                  selectable="false" />
+              }
+            </section>
           }
-        </section>
+        </div>
       </p-tabpanel>
     </p-tabpanels>
   </p-tabs>

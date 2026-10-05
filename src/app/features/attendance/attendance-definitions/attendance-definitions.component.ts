@@ -1,6 +1,7 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -21,6 +22,7 @@ import { FilterChipComponent } from '../../../core/ui/filter-chip/filter-chip.co
 import { ListCardComponent } from '../../../core/ui/list-card/list-card.component';
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
 import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
+import { SegmentOption, SegmentedControlComponent } from '../../../core/ui/segmented-control/segmented-control.component';
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
 import { AttendanceService } from '../attendance.service';
 import {
@@ -42,6 +44,8 @@ const PRESENCE_BADGE: Record<CheckInPresence, NonNullable<DataRecord['badge']>['
   UNCONFIRMED: 'neutral',
 };
 
+type RecordsView = 'groups' | 'roster';
+
 const DAYS_BY_INDEX: DayOfWeek[] = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 
 /**
@@ -49,9 +53,11 @@ const DAYS_BY_INDEX: DayOfWeek[] = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 
  * 출석 정의 with 요일, 체크인 시간 and 상태; ✎ opens the dialog (279:18000),
  * 🗑 deactivates.
  *
- * Tab 기록 shows the 순 aggregate (#35, 739:39837) and below it the 체크인 명단
- * (#146): who checked in, when and where. The 명단 comes from the ADMIN-only
- * `attendance/logs` (server #224); the 순 chips filter both.
+ * Tab 기록 switches between two views (#158, Figma 1034:106737 / 1034:107766):
+ * the 순 aggregate (#35, 739:39837) and the 체크인 명단 (#146): who checked in,
+ * when and where. The 명단 comes from the ADMIN-only `attendance/logs`
+ * (server #224). Date, 정의 and the 순 chips sit above and filter both;
+ * `?view=roster` opens the 명단 directly.
  */
 @Component({
   selector: 'app-attendance-definitions',
@@ -71,6 +77,7 @@ const DAYS_BY_INDEX: DayOfWeek[] = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 
     ListCardComponent,
     PageHeaderComponent,
     SectionHeaderComponent,
+    SegmentedControlComponent,
     SkeletonComponent,
     AttendanceDefinitionDialogComponent,
   ],
@@ -83,6 +90,8 @@ export class AttendanceDefinitionsComponent implements OnInit {
   private readonly confirmService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly destroyRef     = inject(DestroyRef);
+  private readonly router         = inject(Router);
+  private readonly route          = inject(ActivatedRoute);
   private readonly lang           = injectAppLang();
 
   readonly isPhone = inject(BreakpointService).isPhone;
@@ -92,6 +101,8 @@ export class AttendanceDefinitionsComponent implements OnInit {
   readonly countsLoading = signal(false);
   readonly groupCounts   = signal<AttendanceGroupCountsResponse | null>(null);
   readonly activeTab     = signal<number>(0);
+  /** 기록 view (#158); switching never reloads, both lists share one load. */
+  readonly view          = signal<RecordsView>('groups');
   readonly roster        = signal<AttendanceLogResponse[]>([]);
   readonly rosterLoading = signal(false);
 
@@ -240,8 +251,36 @@ export class AttendanceDefinitionsComponent implements OnInit {
     return c ? this.locationSummary(c.totalInPlaceCount, c.totalOutsideCount, c.totalUnconfirmedCount) : null;
   });
 
+  /** "순별 출석 | 체크인 명단 · N명"; the count follows the 순 chip. */
+  readonly viewOptions = computed<SegmentOption[]>(() => {
+    this.lang();
+    return [
+      { value: 'groups', label: this.translate.instant('attendance.views.groups') as string },
+      {
+        value: 'roster',
+        label: this.translate.instant('attendance.views.rosterCount', { count: this.rosterRecords().length }) as string,
+      },
+    ];
+  });
+
   ngOnInit(): void {
+    if (this.route.snapshot.queryParamMap.get('view') === 'roster') {
+      this.view.set('roster');
+      this.activeTab.set(1);
+    }
     this.load();
+  }
+
+  /** Keeps `?view=roster` in the URL so the 명단 can be linked and survives a reload. */
+  setView(value: string): void {
+    const view: RecordsView = value === 'roster' ? 'roster' : 'groups';
+    this.view.set(view);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view: view === 'roster' ? 'roster' : null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   load(): void {
