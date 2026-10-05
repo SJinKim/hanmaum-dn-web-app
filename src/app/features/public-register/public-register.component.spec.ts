@@ -163,6 +163,15 @@ describe('PublicRegisterComponent — 새가족 등록 (공개) (#42)', () => {
     expect(keys[1]).not.toBe(keys[0]);
   });
 
+  it('lets nothing widen the page on mobile (#172)', () => {
+    const { fixture } = setup();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-testid="pr-root"]')!.classList).toContain('overflow-x-clip');
+    const honeypot = el.querySelector('[data-testid="pr-honeypot"]')!;
+    expect(honeypot.classList).toContain('sr-only');
+    expect(honeypot.className).not.toContain('-left-');
+  });
+
   it('switches to unavailable when the link dies before submitting', () => {
     const { component } = setup();
     service.submit.and.returnValue(throwError(() => ({ status: 404 })));
