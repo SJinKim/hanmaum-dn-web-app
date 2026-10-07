@@ -887,19 +887,19 @@
   "statistics": {
     "eyebrow": "Admin",
     "title": "Statistics",
-    "subtitle": "Data-driven analysis — aggregation in progress",
+    "subtitle": "Data-driven analysis",
     "period": {
       "label": "Period",
       "last30Days": "Last 30 days",
       "quarter": "Quarter",
       "year": "Year"
     },
-    "pendingBanner": "Some aggregates are still being prepared on the server — only ready charts show real data",
-    "pendingEmpty": {
-      "heading": "Aggregation in progress",
-      "description": "Shown here once the server aggregates are ready"
-    },
     "empty": "No data",
+    "yearLabel": "{{year}}",
+    "thisWeek": "This week",
+    "lastWeek": "Last week",
+    "people": "{{count}}",
+    "trainingTotal": "{{count}} in total · current members per stage",
     "charts": {
       "growth": "Growth",
       "gender": "Gender distribution",
