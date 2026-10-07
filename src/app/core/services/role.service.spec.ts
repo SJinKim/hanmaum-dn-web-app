@@ -178,12 +178,14 @@ describe('RoleService', () => {
       expect(groups.map(group => group.labelKey)).toEqual(['nav.groups.people']);
     });
 
-    it('drops items whose screen is not routed yet', () => {
-      const routes = withRoles(['ADMIN'])
-        .navGroups()
-        .flatMap(group => group.items.map(item => item.route));
-      expect(routes).not.toContain('/analytics');
-      expect(routes).toContain('/newcomers');
+    it('shows 통계 to admin and pastor only', () => {
+      const routesOf = (roles: string[]) =>
+        withRoles(roles)
+          .navGroups()
+          .flatMap(group => group.items.map(item => item.route));
+      expect(routesOf(['ADMIN'])).toContain('/analytics');
+      expect(routesOf(['pastor'])).toContain('/analytics');
+      expect(routesOf(['note_taker'])).not.toContain('/analytics');
     });
 
     it('renders every remaining item as a route the app declares', () => {
