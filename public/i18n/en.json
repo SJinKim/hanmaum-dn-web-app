@@ -775,6 +775,8 @@
       "windowEnd": "Check-in end",
       "required": "Required",
       "endNotAfterStart": "End must be later than start",
+      "overlap": "The check-in window overlaps with “{{title}}” ({{day}} {{start}}–{{end}}). Please adjust the times.",
+      "overlapGeneric": "The check-in window overlaps with another attendance definition. Please adjust the times.",
       "cancel": "Cancel",
       "save": "Save"
     },
