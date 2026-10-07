@@ -33,7 +33,7 @@ export interface NavItem {
    */
   readonly feature: FeatureId;
   /**
-   * The screen behind this entry is not routed yet (e.g. analytics). The entry
+   * The screen behind this entry is not routed yet. The entry
    * stays here so the structure is complete
    * and reviewable; it is filtered out of the rendered navigation until the
    * route exists, because a nav item that lands on the `**` redirect is worse
@@ -72,13 +72,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { labelKey: 'nav.items.announcements', feature: 'announcements', icon: 'pi pi-megaphone', route: '/announcements' },
       { labelKey: 'nav.items.archive', feature: 'archive', icon: 'pi pi-clock', route: '/archive' },
-      {
-        labelKey: 'nav.items.analytics',
-        icon: 'pi pi-chart-bar',
-        route: '/analytics',
-        feature: 'analytics',
-        pending: true,
-      },
+      { labelKey: 'nav.items.analytics', feature: 'analytics', icon: 'pi pi-chart-bar', route: '/analytics' },
     ],
   },
 ];
