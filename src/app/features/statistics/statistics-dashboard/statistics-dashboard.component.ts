@@ -103,9 +103,11 @@ export class StatisticsDashboardComponent {
     this.lang();
     const series = this.stats()?.growthTrend ?? [];
     if (series.every(s => s.points.length === 0)) return [];
-    return series.map(s => ({
+    // The server sends the current year first; every later line is dashed, as in Figma.
+    return series.map((s, index) => ({
       label: this.translate.instant('statistics.yearLabel', { year: s.year }),
       data: s.points.map(p => p.value),
+      dashed: index > 0,
     }));
   });
 

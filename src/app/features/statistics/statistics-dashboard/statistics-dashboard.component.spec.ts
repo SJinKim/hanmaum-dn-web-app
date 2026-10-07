@@ -124,6 +124,7 @@ describe('StatisticsDashboardComponent', () => {
     expect(c.growthLabels()).toEqual(['7월', '8월', '9월']);
     expect(c.growthSeries().map(s => s.label)).toEqual(['2026년', '2025년']);
     expect(c.growthSeries()[0].data).toEqual([80, 84]);
+    expect(c.growthSeries().map(s => s.dashed)).toEqual([false, true]);
   });
 
   it('labels day buckets with month and day', () => {
