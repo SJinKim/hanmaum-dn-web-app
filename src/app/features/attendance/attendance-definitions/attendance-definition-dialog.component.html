@@ -71,20 +71,25 @@
           {{ 'attendance.dialog.windowStart' | translate }}
           <span class="text-[var(--color-badge-deleted-fg)]">*</span>
         </label>
-        <input id="definition-start" pInputText type="time" formControlName="windowStart" class="w-full" />
+        <input id="definition-start" pInputText type="time" formControlName="windowStart" class="w-full"
+          [class.ng-invalid]="overlap() !== null" [attr.aria-invalid]="overlap() !== null" />
       </div>
       <div class="flex flex-col gap-[var(--space-4)]">
         <label for="definition-end" class="type-caption text-ink-muted">
           {{ 'attendance.dialog.windowEnd' | translate }}
           <span class="text-[var(--color-badge-deleted-fg)]">*</span>
         </label>
-        <input id="definition-end" pInputText type="time" formControlName="windowEnd" class="w-full" />
+        <input id="definition-end" pInputText type="time" formControlName="windowEnd" class="w-full"
+          [class.ng-invalid]="overlap() !== null" [attr.aria-invalid]="overlap() !== null" />
       </div>
     </div>
     @if (endNotAfterStart()) {
       <small class="type-caption text-[var(--color-badge-deleted-fg)]" data-testid="window-error">
         {{ 'attendance.dialog.endNotAfterStart' | translate }}
       </small>
+    } @else if (overlapMessage(); as message) {
+      <!-- Figma: #190 체크인 시간 겹침 · Light 1058:111023, Dark 1058:111426. -->
+      <small class="type-caption text-[var(--color-badge-deleted-fg)]" role="alert" data-testid="overlap-error">{{ message }}</small>
     } @else if (hasError('windowStart') || hasError('windowEnd')) {
       <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'attendance.dialog.required' | translate }}</small>
     }

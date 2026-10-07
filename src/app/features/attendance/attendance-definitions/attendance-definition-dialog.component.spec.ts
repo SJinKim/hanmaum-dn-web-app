@@ -1,7 +1,8 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Select } from 'primeng/select';
-import { provideTranslateService } from '@ngx-translate/core';
+import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 
 import { AttendanceService } from '../attendance.service';
@@ -87,6 +88,70 @@ describe('AttendanceDefinitionDialogComponent', () => {
     expect(c.visible()).toBeTrue();
     expect(c.saving()).toBeFalse();
   });
+
+  describe('window overlap (#190)', () => {
+    const conflict = { publicId: 'd0', title: '1부 예배', dayOfWeek: 'SUNDAY', windowStart: '07:30:00', windowEnd: '09:30:00' };
+
+    function overlap(conflictingDefinition: unknown = conflict) {
+      return new HttpErrorResponse({
+        status: 409,
+        error: { status: 409, error: 'Conflict', message: '겹칩니다', code: 'ATTENDANCE_WINDOW_OVERLAP', conflictingDefinition },
+      });
+    }
+
+    function submitOverlapping(error: HttpErrorResponse) {
+      TestBed.inject(TranslateService).setTranslation('ko', {
+        attendance: {
+          days: { SUNDAY: '일요일' },
+          dialog: { overlap: '「{{title}}」({{day}} {{start}}–{{end}})', overlapGeneric: '겹침' },
+        },
+      });
+      TestBed.inject(TranslateService).use('ko');
+      service.createDefinition.and.returnValue(throwError(() => error));
+      const fixture = make();
+      const c = fixture.componentInstance;
+      let failed = 0;
+      c.failed.subscribe(() => failed++);
+      c.form.patchValue({ title: '주일 2부 예배', dayOfWeek: 'SUNDAY', windowStart: '08:00', windowEnd: '09:00' });
+      c.submit();
+      fixture.detectChanges();
+      return { fixture, c, failed: () => failed };
+    }
+
+    it('names the conflicting definition inline and keeps the dialog open without a toast', () => {
+      const { fixture, c, failed } = submitOverlapping(overlap());
+      expect(c.overlapMessage()).toBe('「1부 예배」(일요일 07:30–09:30)');
+      expect(failed()).toBe(0);
+      expect(c.visible()).toBeTrue();
+      expect(c.saving()).toBeFalse();
+
+      const el = (fixture.nativeElement.ownerDocument as Document);
+      expect(el.querySelector('[data-testid="overlap-error"]')?.textContent?.trim()).toBe('「1부 예배」(일요일 07:30–09:30)');
+      expect(el.querySelector('#definition-start')?.classList).toContain('ng-invalid');
+      expect(el.querySelector('#definition-end')?.classList).toContain('ng-invalid');
+    });
+
+    it('falls back to a generic message when the server names no definition', () => {
+      const { c } = submitOverlapping(overlap(null));
+      expect(c.overlapMessage()).toBe('겹침');
+    });
+
+    it('clears the message once a time or the 요일 changes', () => {
+      for (const patch of [{ windowStart: '10:00' }, { windowEnd: '11:00' }, { dayOfWeek: 'MONDAY' as const }]) {
+        const { c } = submitOverlapping(overlap());
+        expect(c.overlap()).not.toBeNull();
+        c.form.patchValue(patch);
+        expect(c.overlap()).toBeNull();
+      }
+    });
+
+    it('still emits failed for any other 409', () => {
+      const { c, failed } = submitOverlapping(new HttpErrorResponse({ status: 409, error: { code: 'CONFLICT' } }));
+      expect(c.overlap()).toBeNull();
+      expect(failed()).toBe(1);
+    });
+  });
+
   // #145: picking a 요일 used to clear everything typed so far, because the
   // reset effect also tracked the select's own model signal.
   it('keeps typed fields when a 요일 is picked', async () => {

@@ -775,6 +775,8 @@
       "windowEnd": "체크인 종료",
       "required": "필수 항목입니다",
       "endNotAfterStart": "종료 시간은 시작 시간보다 늦어야 합니다",
+      "overlap": "체크인 시간이 「{{title}}」({{day}} {{start}}–{{end}})와 겹칩니다. 시간을 조정해 주세요.",
+      "overlapGeneric": "체크인 시간이 다른 출석 정의와 겹칩니다. 시간을 조정해 주세요.",
       "cancel": "취소",
       "save": "저장"
     },

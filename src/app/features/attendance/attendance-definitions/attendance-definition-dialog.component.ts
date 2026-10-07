@@ -1,7 +1,9 @@
 import { Component, DestroyRef, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { merge } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -11,11 +13,18 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 
 import { injectAppLang } from '../../../core/i18n/language';
+import { ApiErrorResponse } from '../../../core/models/api-response.model';
 import { AttendanceService } from '../attendance.service';
 import { DAY_OF_WEEK_OPTIONS, DayOfWeek, DefinitionDto } from '../attendance.model';
 
 export const TITLE_MAX = 100;
 export const DESCRIPTION_MAX = 500;
+
+/** The server's 409 when the check-in window collides with another service (#190). */
+export const WINDOW_OVERLAP = 'ATTENDANCE_WINDOW_OVERLAP';
+
+/** `ConflictingDefinitionDto` — the definition the window collides with. */
+export type ConflictingDefinition = Pick<DefinitionDto, 'publicId' | 'title' | 'dayOfWeek' | 'windowStart' | 'windowEnd'>;
 
 /**
  * Figma: 출석 정의 추가 (279:18000). One form for 추가 and 수정: 제목, 설명,
@@ -50,6 +59,26 @@ export class AttendanceDefinitionDialogComponent {
 
   readonly isEdit = computed(() => this.definition() !== null);
 
+  /**
+   * Set by a 409 ATTENDANCE_WINDOW_OVERLAP; `undefined` conflict means the
+   * server named none. Shown inline so the user can move the times (#190).
+   */
+  readonly overlap = signal<{ conflict?: ConflictingDefinition } | null>(null);
+
+  readonly overlapMessage = computed(() => {
+    this.lang();
+    const o = this.overlap();
+    if (!o) return null;
+    const c = o.conflict;
+    if (!c) return this.translate.instant('attendance.dialog.overlapGeneric') as string;
+    return this.translate.instant('attendance.dialog.overlap', {
+      title: c.title,
+      day: this.translate.instant(`attendance.days.${c.dayOfWeek}`),
+      start: hhmm(c.windowStart),
+      end: hhmm(c.windowEnd),
+    }) as string;
+  });
+
   readonly dayOptions = computed(() => {
     this.lang();
     return DAY_OF_WEEK_OPTIONS.map(o => ({
@@ -79,15 +108,24 @@ export class AttendanceDefinitionDialogComponent {
     effect(() => {
       const d = this.definition();
       this.visible();
-      untracked(() => this.form.reset({
+      untracked(() => {
+        this.overlap.set(null);
+        this.form.reset({
         title: d?.title ?? '',
         description: d?.description ?? '',
         dayOfWeek: d?.dayOfWeek ?? null,
         isActive: d?.isActive ?? true,
         windowStart: d ? hhmm(d.windowStart) : '',
         windowEnd: d ? hhmm(d.windowEnd) : '',
-      }));
+        });
+      });
     });
+
+    // A changed day or time may no longer collide; drop the stale message.
+    const { dayOfWeek, windowStart, windowEnd } = this.form.controls;
+    merge(dayOfWeek.valueChanges, windowStart.valueChanges, windowEnd.valueChanges)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.overlap.set(null));
   }
 
   endNotAfterStart(): boolean { return this.form.hasError('endNotAfterStart'); }
@@ -123,8 +161,15 @@ export class AttendanceDefinitionDialogComponent {
           this.saved.emit(def);
           this.close();
         },
-        error: () => {
+        error: (err: unknown) => {
           this.saving.set(false);
+          const body = err instanceof HttpErrorResponse
+            ? err.error as ApiErrorResponse<ConflictingDefinition> | null
+            : null;
+          if (body?.code === WINDOW_OVERLAP) {
+            this.overlap.set({ conflict: body.conflictingDefinition ?? undefined });
+            return;
+          }
           this.failed.emit();
         },
       });
