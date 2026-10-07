@@ -26,6 +26,18 @@ const CHART_JS_TYPE: Record<ChartType, 'line' | 'bar' | 'doughnut'> = {
 export interface ChartSeries {
   label: string;
   data: number[];
+  /** Draws the line dashed — the previous year in 성장 추이 (193:3961). */
+  dashed?: boolean;
+}
+
+/** Dash pattern of a `dashed` series, in px. */
+const DASH = [6, 4];
+
+/** The slice of Chart.js' `TooltipItem` the label callback reads. */
+interface TooltipLabel {
+  label: string;
+  formattedValue: string;
+  dataset: { label?: string };
 }
 
 /** Tokens Chart.js needs as resolved colours; a canvas cannot read `var()`. */
@@ -85,6 +97,8 @@ export class ChartComponent implements AfterViewInit {
   readonly loading = input(false, { transform: booleanAttribute });
   readonly emptyHeading = input('데이터가 없습니다');
   readonly emptyDescription = input<string>();
+  /** Appended to the value-axis ticks and the tooltip, e.g. `' %'` for 출석률. */
+  readonly valueSuffix = input('');
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -117,12 +131,15 @@ export class ChartComponent implements AfterViewInit {
         tension: 0.35,
         pointRadius: 0,
         borderRadius: 4,
+        borderDash: series.dashed ? DASH : [],
       })),
     };
   });
 
   protected readonly chartOptions = computed(() => {
     const palette = this.palette();
+    const suffix = this.valueSuffix();
+    const withSuffix = (value: string | number) => `${value}${suffix}`;
     const axis = {
       ticks: { color: palette.text, font: { size: 10, weight: 700 } },
       grid: { color: palette.grid, drawTicks: false },
@@ -136,8 +153,20 @@ export class ChartComponent implements AfterViewInit {
           position: 'bottom' as const,
           labels: { color: palette.text, boxWidth: 12, boxHeight: 3, font: { size: 10, weight: 700 } },
         },
+        tooltip: {
+          callbacks: {
+            label: (item: TooltipLabel) =>
+              `${item.dataset.label ?? item.label}: ${withSuffix(item.formattedValue)}`,
+          },
+        },
       },
-      scales: this.type() === 'donut' ? {} : { x: axis, y: { ...axis, beginAtZero: true } },
+      scales:
+        this.type() === 'donut'
+          ? {}
+          : {
+              x: axis,
+              y: { ...axis, beginAtZero: true, ticks: { ...axis.ticks, callback: withSuffix } },
+            },
     };
   });
 
