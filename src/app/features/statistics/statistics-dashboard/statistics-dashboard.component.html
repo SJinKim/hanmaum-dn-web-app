@@ -7,21 +7,13 @@
       [eyebrow]="'statistics.eyebrow' | translate"
       [heading]="'statistics.title' | translate"
       [subtitle]="'statistics.subtitle' | translate" />
-    <!-- The endpoint has no period yet: shown as in Figma, not operable. -->
-    <div class="w-full opacity-60 lg:w-[300px]" inert data-testid="period">
+    <div class="w-full lg:w-[300px]" data-testid="period">
       <app-segmented-control
         [options]="periodOptions()"
-        [(value)]="period"
+        [value]="period()"
+        (valueChange)="onPeriodChange($event)"
         [ariaLabel]="'statistics.period.label' | translate" />
     </div>
-  </div>
-
-  <div
-    class="bg-surface-subtle border-line-subtle text-ink-muted type-body-sm flex items-center gap-[var(--space-8)] rounded-[var(--radius-md)] border px-[var(--space-16)] py-[var(--space-12)]"
-    role="status"
-    data-testid="pending-banner">
-    <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-    <span>{{ 'statistics.pendingBanner' | translate }}</span>
   </div>
 
   <div class="grid grid-cols-1 gap-[var(--space-12)] lg:grid-cols-3 lg:gap-[var(--space-24)]">
@@ -29,8 +21,10 @@
       <app-chart
         type="line"
         [heading]="'statistics.charts.growth' | translate"
-        [emptyHeading]="'statistics.pendingEmpty.heading' | translate"
-        [emptyDescription]="'statistics.pendingEmpty.description' | translate" />
+        [labels]="growthLabels()"
+        [series]="growthSeries()"
+        [loading]="loading()"
+        [emptyHeading]="'statistics.empty' | translate" />
     </div>
     <div data-chart="gender">
       <app-chart
@@ -44,22 +38,74 @@
   </div>
 
   <div class="grid grid-cols-1 gap-[var(--space-12)] lg:grid-cols-2 lg:gap-[var(--space-24)]">
-    @for (chart of pairedCharts; track chart.key) {
-      <div [attr.data-chart]="chart.key">
-        <app-chart
-          [type]="chart.type"
-          [heading]="'statistics.charts.' + chart.key | translate"
-          [emptyHeading]="'statistics.pendingEmpty.heading' | translate"
-          [emptyDescription]="'statistics.pendingEmpty.description' | translate" />
-      </div>
-    }
+    <div data-chart="attendanceRate">
+      <app-chart
+        type="bar"
+        [heading]="'statistics.charts.attendanceRate' | translate"
+        [labels]="attendanceLabels()"
+        [series]="attendanceSeries()"
+        [loading]="loading()"
+        [emptyHeading]="'statistics.empty' | translate" />
+    </div>
+    <!-- Figma draws 양육 단계 as progress bars, not as a chart. -->
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+      data-chart="trainingStages"
+      [attr.aria-busy]="loading()">
+      <h3 class="type-h3 text-ink-strong">{{ 'statistics.charts.trainingStages' | translate }}</h3>
+      @if (loading()) {
+        <app-skeleton variant="chart" />
+      } @else if (trainingStages().length === 0) {
+        <app-empty-state variant="no-data" [heading]="'statistics.empty' | translate" />
+      } @else {
+        <ul class="flex flex-col gap-[var(--space-24)] py-[var(--space-12)]">
+          @for (stage of trainingStages(); track stage.code) {
+            <li class="flex items-center gap-[var(--space-16)]" data-testid="training-stage">
+              <span class="type-body-sm text-ink-strong w-16 shrink-0 font-bold">{{ stage.name }}</span>
+              <div class="flex-1">
+                <app-progress-bar size="medium" [value]="stage.percent" [ariaLabel]="stage.name" />
+              </div>
+              <span class="type-body-sm text-ink-strong w-12 shrink-0 text-right font-bold">
+                {{ 'statistics.people' | translate: { count: stage.count } }}
+              </span>
+            </li>
+          }
+        </ul>
+        <p class="type-caption text-ink-muted" data-testid="training-total">
+          {{ 'statistics.trainingTotal' | translate: { count: trainingTotal() } }}
+        </p>
+      }
+    </section>
+  </div>
+
+  <div class="grid grid-cols-1 gap-[var(--space-12)] lg:grid-cols-3 lg:gap-[var(--space-24)]">
+    <div class="lg:col-span-2" data-chart="services">
+      <app-chart
+        type="bar"
+        [heading]="'statistics.charts.services' | translate"
+        [labels]="serviceLabels()"
+        [series]="serviceSeries()"
+        [loading]="loading()"
+        [emptyHeading]="'statistics.empty' | translate" />
+    </div>
+    <div data-chart="groupShare">
+      <app-chart
+        type="donut"
+        [heading]="'statistics.charts.groupShare' | translate"
+        [labels]="divisionLabels()"
+        [series]="divisionSeries()"
+        [loading]="loading()"
+        [emptyHeading]="'statistics.empty' | translate" />
+    </div>
   </div>
 
   <div data-chart="ministries">
     <app-chart
       type="bar"
       [heading]="'statistics.charts.ministries' | translate"
-      [emptyHeading]="'statistics.pendingEmpty.heading' | translate"
-      [emptyDescription]="'statistics.pendingEmpty.description' | translate" />
+      [labels]="ministryLabels()"
+      [series]="ministrySeries()"
+      [loading]="loading()"
+      [emptyHeading]="'statistics.empty' | translate" />
   </div>
 </div>

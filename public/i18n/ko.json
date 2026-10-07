@@ -887,19 +887,19 @@
   "statistics": {
     "eyebrow": "관리",
     "title": "통계",
-    "subtitle": "데이터 기반 분석 — 집계 로직 준비 중",
+    "subtitle": "데이터 기반 분석",
     "period": {
       "label": "기간",
       "last30Days": "최근 30일",
       "quarter": "분기",
       "year": "연간"
     },
-    "pendingBanner": "일부 집계는 서버에서 준비 중입니다 — 준비된 차트만 실제 데이터를 보여줍니다",
-    "pendingEmpty": {
-      "heading": "집계 준비 중",
-      "description": "서버 집계가 준비되면 여기에 표시됩니다"
-    },
     "empty": "데이터가 없습니다",
+    "yearLabel": "{{year}}년",
+    "thisWeek": "이번 주",
+    "lastWeek": "지난 주",
+    "people": "{{count}}명",
+    "trainingTotal": "전체 {{count}}명 · 단계별 현재 인원",
     "charts": {
       "growth": "성장 추이",
       "gender": "성별 분포",
