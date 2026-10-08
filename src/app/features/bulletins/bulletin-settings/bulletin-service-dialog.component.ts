@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -46,7 +46,7 @@ export class BulletinServiceDialogComponent {
   };
 
   readonly form = inject(FormBuilder).group({
-    name:              ['', [Validators.required, Validators.maxLength(SERVICE_NAME_MAX)]],
+    name:              ['', [notBlank, Validators.maxLength(SERVICE_NAME_MAX)]],
     startTime:         ['', Validators.required],
     active:            [true],
     isBulletinDefault: [false],
@@ -101,6 +101,11 @@ export class BulletinServiceDialogComponent {
   }
 
   close(): void { this.visible.set(false); }
+}
+
+/** `Validators.required` that also rejects "   ": submit() trims, the server needs a name. */
+function notBlank(control: AbstractControl<string | null>): ValidationErrors | null {
+  return control.value?.trim() ? null : { required: true };
 }
 
 /** "09:00:00" → "09:00" for `<input type="time">`. */

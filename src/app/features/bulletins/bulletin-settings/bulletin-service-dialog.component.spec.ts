@@ -44,6 +44,14 @@ describe('BulletinServiceDialogComponent — 예배 추가 / 수정 (#194)', () 
     expect(c.hasError('startTime')).toBeTrue();
   });
 
+  it('does not submit a whitespace-only 이름', () => {
+    const c = make();
+    c.form.patchValue({ name: '   ', startTime: '16:30' });
+    c.submit();
+    expect(service.createService).not.toHaveBeenCalled();
+    expect(c.hasError('name')).toBeTrue();
+  });
+
   it('creates with a trimmed name, HH:mm:ss and the next sortOrder', () => {
     service.createService.and.returnValue(of(SERVICE));
     const c = make();
