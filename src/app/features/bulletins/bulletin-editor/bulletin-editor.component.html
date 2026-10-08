@@ -1,0 +1,355 @@
+<!--
+  Figma: 주보 · 편집 — sections of the order of worship on the left,
+  앱 미리보기 on the right (stacked below on Phone and Tablet).
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  @if (loading()) {
+    <app-skeleton variant="card" />
+  } @else if (notFound()) {
+    <app-empty-state
+      variant="error"
+      [heading]="'bulletins.editor.notFound' | translate"
+      [actionLabel]="'bulletins.editor.back' | translate"
+      (action)="goBack()" />
+  } @else if (edition(); as e) {
+    <app-page-header
+      [eyebrow]="'bulletins.editor.eyebrow' | translate"
+      [heading]="heading()"
+      [breadcrumb]="breadcrumb()"
+      hasBack
+      [backLabel]="'bulletins.editor.back' | translate"
+      (back)="goBack()">
+      <div appActions class="flex items-center gap-[var(--space-8)]">
+        @if (statusBadge(); as b) {
+          <app-badge [variant]="b.variant" [label]="b.label" data-testid="editor-status" />
+        }
+        @if (canWrite()) {
+          @if (published()) {
+            <p-button
+              size="small"
+              severity="danger"
+              [outlined]="true"
+              [label]="'bulletins.editor.withdraw' | translate"
+              [disabled]="busy()"
+              data-testid="editor-withdraw"
+              (onClick)="confirmWithdraw()" />
+          } @else {
+            <p-button
+              size="small"
+              severity="secondary"
+              [outlined]="true"
+              [label]="'bulletins.editor.save' | translate"
+              [disabled]="busy()"
+              data-testid="editor-save"
+              (onClick)="save()" />
+            <p-button
+              size="small"
+              [label]="'bulletins.editor.publish' | translate"
+              [disabled]="busy()"
+              data-testid="editor-publish"
+              (onClick)="confirmPublish()" />
+          }
+        }
+      </div>
+    </app-page-header>
+
+    @if (published()) {
+      <p class="type-caption text-ink-muted bg-surface-subtle rounded-[var(--radius-md)] p-[var(--space-12)]"
+         data-testid="editor-readonly">
+        {{ 'bulletins.editor.readOnly' | translate }}
+      </p>
+    }
+
+    @if (conflict()) {
+      <div class="flex flex-col gap-[var(--space-8)] rounded-[var(--radius-md)] border border-[var(--color-badge-deleted-fg)] p-[var(--space-12)] tablet:flex-row tablet:items-center"
+           role="alert"
+           data-testid="editor-conflict">
+        <p class="type-body flex-1">{{ 'bulletins.editor.conflict' | translate }}</p>
+        <p-button
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          icon="pi pi-refresh"
+          [label]="'bulletins.editor.reload' | translate"
+          data-testid="editor-reload"
+          (onClick)="reload()" />
+      </div>
+    }
+
+    <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
+      <p-tablist>
+        <p-tab [value]="0" data-testid="tab-order">{{ 'bulletins.editor.tabs.order' | translate }}</p-tab>
+        <p-tab [value]="1" [disabled]="true" data-testid="tab-sharing">{{ 'bulletins.editor.tabs.sharing' | translate }}</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel [value]="0">
+          @if (draft(); as d) {
+            <div class="grid grid-cols-1 gap-gutter desktop:grid-cols-[minmax(0,1fr)_320px]">
+              <div class="flex flex-col gap-gutter">
+
+                <!-- 기본 정보 -->
+                <section class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card">
+                  <app-section-header [heading]="'bulletins.editor.basic' | translate" />
+                  <div class="grid grid-cols-1 gap-[var(--space-16)] tablet:grid-cols-3">
+                    <div class="flex flex-col gap-[var(--space-4)]">
+                      <label for="bulletin-date" class="type-caption text-ink-muted">{{ 'bulletins.editor.date' | translate }}</label>
+                      <input pInputText id="bulletin-date" class="w-full" [value]="dateLabel()" disabled />
+                    </div>
+                    <div class="flex flex-col gap-[var(--space-4)]">
+                      <label for="bulletin-service" class="type-caption text-ink-muted">{{ 'bulletins.editor.service' | translate }}</label>
+                      <input pInputText id="bulletin-service" class="w-full" [value]="serviceLabel()" disabled />
+                      <span class="type-caption text-ink-disabled">{{ 'bulletins.editor.serviceHint' | translate }}</span>
+                    </div>
+                    <div class="flex flex-col gap-[var(--space-4)]">
+                      <label for="bulletin-volume" class="type-caption text-ink-muted">{{ 'bulletins.editor.volume' | translate }}</label>
+                      <input pInputText id="bulletin-volume" class="w-full" [value]="volumeLabel()" disabled />
+                      <span class="type-caption text-ink-disabled">{{ 'bulletins.editor.volumeHint' | translate }}</span>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 예배와 찬양 -->
+                <section class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card"
+                         data-testid="section-worship">
+                  <app-section-header [heading]="sectionTitle()('SECTION_WORSHIP')" />
+
+                  <div class="flex flex-col gap-[var(--space-8)]">
+                    <span class="type-caption text-ink-muted">
+                      {{ 'bulletins.editor.songs' | translate: { count: d.songs.length, max: limits.songs } }}
+                      <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                    </span>
+                    @for (song of d.songs; track $index; let i = $index, first = $first, last = $last) {
+                      <div class="flex items-center gap-[var(--space-8)]">
+                        <div class="flex flex-col">
+                          <p-button size="small" [text]="true" severity="secondary" icon="pi pi-angle-up"
+                                    [ariaLabel]="'bulletins.editor.moveUp' | translate"
+                                    [disabled]="readOnly() || first" (onClick)="moveSong(i, -1)" />
+                          <p-button size="small" [text]="true" severity="secondary" icon="pi pi-angle-down"
+                                    [ariaLabel]="'bulletins.editor.moveDown' | translate"
+                                    [disabled]="readOnly() || last" (onClick)="moveSong(i, 1)" />
+                        </div>
+                        <span class="type-caption text-ink-muted w-[var(--space-16)] text-end">{{ i + 1 }}</span>
+                        <input pInputText class="w-full"
+                               [attr.data-testid]="'song-' + i"
+                               [attr.aria-label]="'bulletins.editor.songLabel' | translate: { n: i + 1 }"
+                               [value]="song"
+                               [attr.maxlength]="limits.longText"
+                               [disabled]="readOnly()"
+                               [class.ng-invalid]="isMissing('songs')"
+                               (input)="setSong(i, $any($event.target).value)" />
+                        <p-button size="small" [text]="true" severity="secondary" icon="pi pi-trash"
+                                  [ariaLabel]="'bulletins.editor.removeSong' | translate"
+                                  [disabled]="readOnly()"
+                                  [attr.data-testid]="'song-remove-' + i"
+                                  (onClick)="removeSong(i)" />
+                      </div>
+                    }
+                    @if (isMissing('songs')) {
+                      <span class="type-caption text-[var(--color-badge-deleted-fg)]" data-testid="missing-songs">{{ 'bulletins.editor.required' | translate }}</span>
+                    }
+                    @if (!readOnly() && d.songs.length < limits.songs) {
+                      <div>
+                        <p-button size="small" [text]="true" icon="pi pi-plus"
+                                  [label]="'bulletins.editor.addSong' | translate"
+                                  data-testid="song-add"
+                                  (onClick)="addSong()" />
+                      </div>
+                    }
+                  </div>
+
+                  <ng-container
+                    [ngTemplateOutlet]="textField"
+                    [ngTemplateOutletContext]="{ field: 'openingPrayerBy', label: 'bulletins.editor.openingPrayer', narrow: true }" />
+                </section>
+
+                <!-- 봉헌 -->
+                <section class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card"
+                         data-testid="section-offering">
+                  <app-section-header [heading]="sectionTitle()('SECTION_OFFERING')" />
+
+                  <ng-container
+                    [ngTemplateOutlet]="textField"
+                    [ngTemplateOutletContext]="{ field: 'offeringSongBy', label: 'bulletins.editor.offeringSong' }" />
+
+                  <div class="flex flex-col gap-[var(--space-8)]">
+                    <span class="type-caption text-ink-muted">
+                      {{ 'bulletins.editor.announcements' | translate: { count: d.announcements.length } }}
+                    </span>
+                    @for (a of d.announcements; track $index; let i = $index, first = $first, last = $last) {
+                      <div class="bg-surface-subtle flex gap-[var(--space-8)] rounded-[var(--radius-md)] p-[var(--space-12)]"
+                           [attr.data-testid]="'announcement-' + i">
+                        <div class="flex flex-col">
+                          <p-button size="small" [text]="true" severity="secondary" icon="pi pi-angle-up"
+                                    [ariaLabel]="'bulletins.editor.moveUp' | translate"
+                                    [disabled]="readOnly() || first" (onClick)="moveAnnouncement(i, -1)" />
+                          <p-button size="small" [text]="true" severity="secondary" icon="pi pi-angle-down"
+                                    [ariaLabel]="'bulletins.editor.moveDown' | translate"
+                                    [disabled]="readOnly() || last" (onClick)="moveAnnouncement(i, 1)" />
+                        </div>
+                        <div class="flex flex-1 flex-col gap-[var(--space-8)]">
+                          <label [for]="'ann-title-' + i" class="type-caption text-ink-muted">{{ 'bulletins.editor.annTitle' | translate }}</label>
+                          <input pInputText class="w-full" [id]="'ann-title-' + i"
+                                 [value]="a.title" [attr.maxlength]="limits.longText" [disabled]="readOnly()"
+                                 (input)="setAnnouncement(i, 'title', $any($event.target).value)" />
+                          <label [for]="'ann-body-' + i" class="type-caption text-ink-muted">{{ 'bulletins.editor.annBody' | translate }}</label>
+                          <textarea pTextarea class="w-full" rows="3" [id]="'ann-body-' + i"
+                                    [value]="a.body" [attr.maxlength]="limits.announcementBody" [disabled]="readOnly()"
+                                    (input)="setAnnouncement(i, 'body', $any($event.target).value)"></textarea>
+                        </div>
+                        <p-button size="small" [text]="true" severity="secondary" icon="pi pi-trash"
+                                  [ariaLabel]="'bulletins.editor.removeAnnouncement' | translate"
+                                  [disabled]="readOnly()"
+                                  [attr.data-testid]="'announcement-remove-' + i"
+                                  (onClick)="removeAnnouncement(i)" />
+                      </div>
+                    }
+                    @if (!readOnly() && d.announcements.length < limits.announcements) {
+                      <div>
+                        <p-button size="small" [text]="true" icon="pi pi-plus"
+                                  [label]="'bulletins.editor.addAnnouncement' | translate"
+                                  data-testid="announcement-add"
+                                  (onClick)="addAnnouncement()" />
+                      </div>
+                    }
+                  </div>
+
+                  <ng-container
+                    [ngTemplateOutlet]="textField"
+                    [ngTemplateOutletContext]="{ field: 'scriptureReference', label: 'bulletins.editor.scripture' }" />
+
+                  <div class="flex flex-col gap-[var(--space-8)]">
+                    <span class="type-caption text-ink-muted">{{ 'bulletins.editor.sermon' | translate }}</span>
+                    <div class="grid grid-cols-1 gap-[var(--space-16)] tablet:grid-cols-2">
+                      <ng-container
+                        [ngTemplateOutlet]="textField"
+                        [ngTemplateOutletContext]="{ field: 'sermonTitle', label: 'bulletins.editor.sermonTitle', required: true }" />
+                      <ng-container
+                        [ngTemplateOutlet]="textField"
+                        [ngTemplateOutletContext]="{ field: 'sermonPreacher', label: 'bulletins.editor.sermonPreacher', required: true }" />
+                    </div>
+                  </div>
+
+                  <ng-container
+                    [ngTemplateOutlet]="textField"
+                    [ngTemplateOutletContext]="{ field: 'responsePrayerBy', label: 'bulletins.editor.responsePrayer', narrow: true }" />
+                </section>
+
+                <!-- 축복과 파송 -->
+                <section class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card"
+                         data-testid="section-sending">
+                  <app-section-header [heading]="sectionTitle()('SECTION_SENDING')" />
+                  <ng-container
+                    [ngTemplateOutlet]="textField"
+                    [ngTemplateOutletContext]="{ field: 'responseSong', label: 'bulletins.editor.responseSong' }" />
+                  <div class="bg-surface-subtle flex items-center gap-[var(--space-12)] rounded-[var(--radius-md)] p-[var(--space-12)]"
+                       data-testid="fixed-blessing">
+                    <div class="flex flex-1 flex-col gap-[var(--space-4)]">
+                      <span class="type-body text-ink-strong">{{ sectionTitle()('FIXED_BLESSING_PRAYER') }}</span>
+                      <span class="type-caption text-ink-muted">{{ 'bulletins.editor.fixedHint' | translate }}</span>
+                    </div>
+                    <span class="type-caption text-ink-muted">{{ 'bulletins.editor.fixed' | translate }}</span>
+                  </div>
+                </section>
+              </div>
+
+              <!-- 앱 미리보기 -->
+              <aside class="flex flex-col gap-[var(--space-8)] desktop:sticky desktop:top-0 desktop:self-start"
+                     data-testid="preview">
+                <app-section-header [heading]="'bulletins.editor.preview.title' | translate" />
+                <p class="type-caption text-ink-muted">{{ 'bulletins.editor.preview.hint' | translate }}</p>
+                <div class="bg-surface border-line-subtle flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+                  <div class="flex flex-col gap-[var(--space-4)]">
+                    <span class="type-caption text-ink-muted">{{ volumeLabel() }} · {{ e.serviceDate }}</span>
+                    <span class="type-body text-ink-strong font-semibold">{{ serviceLabel() }}</span>
+                  </div>
+
+                  <div class="bg-surface-subtle flex flex-col gap-[var(--space-8)] rounded-[var(--radius-md)] p-[var(--space-12)]">
+                    <span class="type-caption text-ink-muted">{{ sectionTitle()('SECTION_WORSHIP') }}</span>
+                    <div class="grid grid-cols-[72px_minmax(0,1fr)] gap-[var(--space-8)] type-caption">
+                      <span class="text-ink-muted">{{ 'bulletins.editor.preview.songs' | translate }}</span>
+                      <ol class="text-ink-strong" data-testid="preview-songs">
+                        @for (s of previewSongs(); track $index) {
+                          <li>{{ $index + 1 }}. {{ s }}</li>
+                        } @empty {
+                          <li>{{ 'bulletins.editor.preview.empty' | translate }}</li>
+                        }
+                      </ol>
+                      <ng-container [ngTemplateOutlet]="previewRow"
+                        [ngTemplateOutletContext]="{ label: 'bulletins.editor.openingPrayer', value: d.openingPrayerBy }" />
+                    </div>
+                  </div>
+
+                  <div class="bg-surface-subtle flex flex-col gap-[var(--space-8)] rounded-[var(--radius-md)] p-[var(--space-12)]">
+                    <span class="type-caption text-ink-muted">{{ sectionTitle()('SECTION_OFFERING') }}</span>
+                    <div class="grid grid-cols-[72px_minmax(0,1fr)] gap-[var(--space-8)] type-caption">
+                      <ng-container [ngTemplateOutlet]="previewRow"
+                        [ngTemplateOutletContext]="{ label: 'bulletins.editor.offeringSong', value: d.offeringSongBy }" />
+                      <span class="text-ink-muted">{{ 'bulletins.editor.announcements' | translate: { count: previewAnnouncements().length } }}</span>
+                      <span class="text-ink-strong" data-testid="preview-announcements">
+                        @for (a of previewAnnouncements(); track $index; let last = $last) {
+                          {{ a.title }}@if (!last) { · }
+                        } @empty {
+                          {{ 'bulletins.editor.preview.empty' | translate }}
+                        }
+                      </span>
+                      <ng-container [ngTemplateOutlet]="previewRow"
+                        [ngTemplateOutletContext]="{ label: 'bulletins.editor.scripture', value: d.scriptureReference }" />
+                      <span class="text-ink-muted">{{ 'bulletins.editor.sermon' | translate }}</span>
+                      <span class="text-ink-strong" data-testid="preview-sermon">
+                        {{ d.sermonTitle.trim() || ('bulletins.editor.preview.empty' | translate) }}@if (d.sermonPreacher.trim()) { · {{ d.sermonPreacher.trim() }} }
+                      </span>
+                      <ng-container [ngTemplateOutlet]="previewRow"
+                        [ngTemplateOutletContext]="{ label: 'bulletins.editor.responsePrayer', value: d.responsePrayerBy }" />
+                    </div>
+                  </div>
+
+                  <div class="bg-surface-subtle flex flex-col gap-[var(--space-8)] rounded-[var(--radius-md)] p-[var(--space-12)]">
+                    <span class="type-caption text-ink-muted">{{ sectionTitle()('SECTION_SENDING') }}</span>
+                    <div class="grid grid-cols-[72px_minmax(0,1fr)] gap-[var(--space-8)] type-caption">
+                      <ng-container [ngTemplateOutlet]="previewRow"
+                        [ngTemplateOutletContext]="{ label: 'bulletins.editor.responseSong', value: d.responseSong }" />
+                      <span></span>
+                      <span class="text-ink-strong">{{ sectionTitle()('FIXED_BLESSING_PRAYER') }}</span>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+
+            <ng-template #textField let-field="field" let-label="label" let-required="required" let-narrow="narrow">
+              <div class="flex flex-col gap-[var(--space-4)]" [class.tablet:max-w-[320px]]="narrow">
+                <label [for]="'bulletin-' + field" class="type-caption text-ink-muted">
+                  {{ label | translate }}
+                  @if (required) {
+                    <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+                  }
+                </label>
+                <input pInputText class="w-full"
+                       [id]="'bulletin-' + field"
+                       [attr.data-testid]="'field-' + field"
+                       [value]="fieldValue(field)"
+                       [attr.maxlength]="maxLength(field)"
+                       [disabled]="readOnly()"
+                       [class.ng-invalid]="required && isMissing(field)"
+                       (input)="setField(field, $any($event.target).value)" />
+                @if (required && isMissing(field)) {
+                  <span class="type-caption text-[var(--color-badge-deleted-fg)]" [attr.data-testid]="'missing-' + field">
+                    {{ 'bulletins.editor.required' | translate }}
+                  </span>
+                }
+              </div>
+            </ng-template>
+
+            <ng-template #previewRow let-label="label" let-value="value">
+              <span class="text-ink-muted">{{ label | translate }}</span>
+              <span class="text-ink-strong">{{ value.trim() || ('bulletins.editor.preview.empty' | translate) }}</span>
+            </ng-template>
+          }
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  }
+</div>
+
+<p-toast />
+<p-confirmDialog />

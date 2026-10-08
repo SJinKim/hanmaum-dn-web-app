@@ -25,7 +25,8 @@
       "ministry": "Ministry",
       "announcements": "Announcements",
       "archive": "Archive",
-      "analytics": "Analytics"
+      "analytics": "Analytics",
+      "bulletins": "Bulletin"
     }
   },
   "shell": {
@@ -1491,5 +1492,128 @@
       "description": "Our team will contact you using the details you gave. Service times and location will follow by text message."
     },
     "dataCredit": "Postcode data: GeoNames (CC BY 4.0)"
+  },
+  "bulletins": {
+    "eyebrow": "Admin",
+    "title": "Bulletin",
+    "subtitle": "{{total}} bulletins · {{drafts}} drafts",
+    "add": "New bulletin",
+    "tabs": {
+      "list": "Bulletins",
+      "settings": "Settings"
+    },
+    "listHeading": "Bulletins",
+    "sunday": "Sunday",
+    "volume": "VOL {{volume}}",
+    "columns": {
+      "serviceDate": "Sunday",
+      "volume": "VOL",
+      "updated": "Last change",
+      "status": "Status",
+      "actions": ""
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "WITHDRAWN": "Withdrawn"
+    },
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "empty": {
+      "heading": "No bulletins yet",
+      "description": "Start this week's bulletin with New bulletin."
+    },
+    "loadFailed": "Couldn't load bulletins",
+    "loadFailedHint": "Please try again in a moment.",
+    "delete": {
+      "action": "Delete",
+      "header": "Delete bulletin",
+      "message": "Deletes the {{date}} draft. This cannot be undone."
+    },
+    "create": {
+      "header": "New bulletin",
+      "action": "Create",
+      "copy": "Copy last bulletin",
+      "copyHint": "Takes over the order and content of the {{date}} bulletin.",
+      "blank": "Empty bulletin",
+      "blankHint": "Starts with every field empty."
+    },
+    "toast": {
+      "created": "Bulletin created.",
+      "createFailed": "Couldn't create the bulletin.",
+      "deleted": "Bulletin deleted.",
+      "deleteFailed": "Couldn't delete the bulletin.",
+      "saved": "Saved.",
+      "saveFailed": "Couldn't save.",
+      "published": "Bulletin published.",
+      "publishFailed": "Couldn't publish the bulletin.",
+      "incomplete": "Fill in the missing fields to publish.",
+      "withdrawn": "Bulletin withdrawn.",
+      "withdrawFailed": "Couldn't withdraw the bulletin."
+    },
+    "editor": {
+      "eyebrow": "Edit bulletin",
+      "heading": "Bulletin {{date}}",
+      "crumbEdit": "Edit",
+      "crumbDraft": "Draft",
+      "back": "Bulletins",
+      "save": "Save",
+      "publish": "Publish",
+      "withdraw": "Withdraw",
+      "tabs": {
+        "order": "Order of service",
+        "sharing": "Sermon sharing"
+      },
+      "basic": "Basics",
+      "date": "Sunday",
+      "service": "Service",
+      "serviceHint": "Managed in Settings · read-only",
+      "volume": "VOL",
+      "volumeHint": "Assigned automatically · read-only",
+      "volumeNone": "Assigned on publish",
+      "songs": "Songs · {{count}} / {{max}}",
+      "songLabel": "Song {{n}}",
+      "addSong": "Add song",
+      "removeSong": "Remove song",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "openingPrayer": "Opening prayer",
+      "offeringSong": "Offering song",
+      "announcements": "Church news · {{count}}",
+      "annTitle": "Title",
+      "annBody": "Details",
+      "addAnnouncement": "Add news",
+      "removeAnnouncement": "Remove news",
+      "scripture": "Scripture reading",
+      "sermon": "Sermon",
+      "sermonTitle": "Title",
+      "sermonPreacher": "Preacher",
+      "responsePrayer": "Response prayer",
+      "responseSong": "Response song",
+      "fixedHint": "Shown on every bulletin. Cannot be edited.",
+      "fixed": "Fixed",
+      "required": "Required to publish.",
+      "conflict": "Someone else saved this bulletin first. Your input is still here. Reloading fetches the latest version and discards your input.",
+      "reload": "Reload",
+      "readOnly": "A published bulletin cannot be edited. Withdraw it to edit again.",
+      "notFound": "Bulletin not found",
+      "preview": {
+        "title": "App preview",
+        "hint": "Shows unsaved changes too.",
+        "songs": "Songs",
+        "empty": "—"
+      }
+    },
+    "publish": {
+      "header": "Publish bulletin",
+      "action": "Publish",
+      "message": "Publishes the bulletin for Sunday {{date}} · VOL {{volume}}. It appears on the app home right away and the previous one moves to past bulletins.",
+      "messageNew": "Publishes the bulletin for Sunday {{date}}. The VOL is assigned on publish. It appears on the app home right away and the previous one moves to past bulletins."
+    },
+    "withdraw": {
+      "header": "Withdraw bulletin",
+      "action": "Withdraw",
+      "message": "Takes the {{date}} bulletin off the app. It keeps its VOL and can be edited and published again."
+    }
   }
 }
