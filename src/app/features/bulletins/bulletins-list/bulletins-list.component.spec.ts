@@ -113,4 +113,13 @@ describe('BulletinsListComponent — 주보 목록 (#36)', () => {
     expect(service.delete).toHaveBeenCalledWith('d1');
     expect(service.list).toHaveBeenCalledTimes(2);
   });
+
+  it('opens 설정 on its own route from tab 1 (#194)', () => {
+    const { component, router, el } = setup();
+    expect(el.querySelector('[data-testid="tab-settings"]')?.hasAttribute('disabled')).toBeFalse();
+    component.onTab(0);
+    expect(router.navigate).not.toHaveBeenCalled();
+    component.onTab(1);
+    expect(router.navigate).toHaveBeenCalledWith(['/bulletins', 'settings']);
+  });
 });

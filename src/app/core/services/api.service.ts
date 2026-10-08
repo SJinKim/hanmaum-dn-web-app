@@ -66,4 +66,15 @@ export class ApiService {
       this.http.delete<ApiResponse<T>>(`${this.base}${path}`),
     );
   }
+
+  /** DELETE that answers either 204 without a body (`null`) or 200 with `ApiResponse<T>`. */
+  deleteOptional<T>(path: string): Observable<T | null> {
+    return this.http.delete<ApiResponse<T> | null>(`${this.base}${path}`).pipe(
+      map(res => {
+        if (res === null) return null;
+        if (!res.success) throw new Error(res.message ?? 'API error');
+        return res.data;
+      }),
+    );
+  }
 }

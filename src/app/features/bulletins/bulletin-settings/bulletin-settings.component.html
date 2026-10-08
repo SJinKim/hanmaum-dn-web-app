@@ -1,0 +1,190 @@
+<!--
+  Figma: 주보 · 설정 (#194) — 예배 and 섹션 제목 as two cards under the tabs;
+  on Phone each table becomes a stack of list cards.
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'bulletins.eyebrow' | translate"
+    [heading]="'bulletins.title' | translate"
+    [subtitle]="subtitle()">
+    @if (canWrite()) {
+      <p-button
+        appActions
+        size="small"
+        icon="pi pi-plus"
+        [label]="'bulletins.settings.addService' | translate"
+        data-testid="service-add"
+        (onClick)="openAddService()" />
+    }
+  </app-page-header>
+
+  <p-tabs [value]="1" (valueChange)="onTab($event)">
+    <p-tablist>
+      <p-tab [value]="0" data-testid="tab-list">{{ 'bulletins.tabs.list' | translate }}</p-tab>
+      <p-tab [value]="1" data-testid="tab-settings">{{ 'bulletins.tabs.settings' | translate }}</p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel [value]="1">
+        @if (failed()) {
+          <app-empty-state
+            variant="error"
+            [heading]="'bulletins.settings.loadFailed' | translate"
+            [description]="'bulletins.loadFailedHint' | translate" />
+        } @else {
+          <div class="flex flex-col gap-gutter">
+            <section
+              class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+              data-testid="services-card">
+              <app-section-header [heading]="'bulletins.settings.servicesHeading' | translate" />
+
+              @if (isPhone()) {
+                @if (loading()) {
+                  <app-skeleton variant="card" />
+                } @else {
+                  <div class="flex flex-col gap-[var(--space-8)]">
+                    @for (r of serviceRecords(); track r.id) {
+                      <app-list-card [record]="r" (selected)="openEditService($event.id)" />
+                    }
+                  </div>
+                }
+              } @else {
+                <app-data-table
+                  [rows]="serviceRecords()"
+                  [columns]="serviceColumns()"
+                  [loading]="loading()"
+                  [caption]="'bulletins.settings.servicesHeading' | translate"
+                  [emptyHeading]="'bulletins.settings.emptyServices' | translate"
+                  (rowSelected)="openEditService($event.id)">
+                  <ng-template appDataCell="actions" let-record>
+                    @if (canWrite()) {
+                      <div class="flex items-center justify-end gap-[var(--space-4)]">
+                        <p-button
+                          icon="pi pi-pencil"
+                          severity="secondary"
+                          [text]="true"
+                          [rounded]="true"
+                          [ariaLabel]="'bulletins.edit' | translate"
+                          [attr.data-testid]="'edit-service-' + record.id"
+                          (onClick)="$event.stopPropagation(); openEditService(record.id)" />
+                        <p-button
+                          icon="pi pi-trash"
+                          severity="danger"
+                          [text]="true"
+                          [rounded]="true"
+                          [ariaLabel]="'bulletins.delete.action' | translate"
+                          [attr.data-testid]="'delete-service-' + record.id"
+                          (onClick)="$event.stopPropagation(); confirmDeleteService(record.id)" />
+                      </div>
+                    }
+                  </ng-template>
+                </app-data-table>
+              }
+            </section>
+
+            <section
+              class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+              data-testid="titles-card">
+              <app-section-header [heading]="'bulletins.settings.titlesHeading' | translate" />
+
+              @if (isPhone()) {
+                @if (loading()) {
+                  <app-skeleton variant="card" />
+                } @else {
+                  <div class="flex flex-col gap-[var(--space-8)]">
+                    @for (r of titleRecords(); track r.id) {
+                      <app-list-card [record]="r" (selected)="openEditTitle($event.id)" />
+                    }
+                  </div>
+                }
+              } @else {
+                <app-data-table
+                  [rows]="titleRecords()"
+                  [columns]="titleColumns()"
+                  [loading]="loading()"
+                  [caption]="'bulletins.settings.titlesHeading' | translate"
+                  (rowSelected)="openEditTitle($event.id)">
+                  <ng-template appDataCell="actions" let-record>
+                    @if (canWrite()) {
+                      <div class="flex items-center justify-end gap-[var(--space-4)]">
+                        <p-button
+                          icon="pi pi-pencil"
+                          severity="secondary"
+                          [text]="true"
+                          [rounded]="true"
+                          [ariaLabel]="'bulletins.edit' | translate"
+                          [attr.data-testid]="'edit-title-' + record.id"
+                          (onClick)="$event.stopPropagation(); openEditTitle(record.id)" />
+                      </div>
+                    }
+                  </ng-template>
+                </app-data-table>
+              }
+            </section>
+          </div>
+        }
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</div>
+
+<app-bulletin-service-dialog
+  [(visible)]="serviceVisible"
+  [bulletinService]="editingService()"
+  [nextSortOrder]="nextSortOrder()"
+  (saved)="onServiceSaved()"
+  (failed)="onServiceFailed()" />
+
+<p-dialog
+  [visible]="titleVisible()"
+  (visibleChange)="titleVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 480px)' }"
+  [draggable]="false"
+  [resizable]="false">
+  <ng-template #header>
+    <h2 class="type-h3 text-ink-strong">{{ 'bulletins.settings.titleDialog.header' | translate }}</h2>
+  </ng-template>
+
+  @if (editingTitle(); as t) {
+    <div class="flex flex-col gap-[var(--space-16)]" data-testid="title-form">
+      <p class="type-body text-ink-muted">{{ 'bulletins.settings.positions.' + t.key | translate }}</p>
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="section-title" class="type-caption text-ink-muted">{{ 'bulletins.settings.columns.title' | translate }}</label>
+        <input
+          id="section-title"
+          pInputText
+          class="w-full"
+          [maxlength]="titleMax"
+          [placeholder]="t.defaultTitle"
+          [ngModel]="titleDraft()"
+          (ngModelChange)="titleDraft.set($event)" />
+        <small class="type-caption text-ink-muted">
+          {{ 'bulletins.settings.titleDialog.defaultHint' | translate: { title: t.defaultTitle } }}
+        </small>
+      </div>
+    </div>
+  }
+
+  <ng-template #footer>
+    <p-button
+      severity="secondary"
+      [text]="true"
+      icon="pi pi-refresh"
+      [label]="'bulletins.settings.titleDialog.reset' | translate"
+      data-testid="title-reset"
+      (onClick)="resetTitle()" />
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      [label]="'bulletins.cancel' | translate"
+      (onClick)="titleVisible.set(false)" />
+    <p-button
+      [label]="'bulletins.settings.save' | translate"
+      [loading]="savingTitle()"
+      data-testid="title-save"
+      (onClick)="saveTitle()" />
+  </ng-template>
+</p-dialog>
+
+<p-toast />
+<p-confirmDialog />

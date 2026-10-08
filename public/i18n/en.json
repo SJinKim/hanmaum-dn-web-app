@@ -1614,6 +1614,64 @@
       "header": "Withdraw bulletin",
       "action": "Withdraw",
       "message": "Takes the {{date}} bulletin off the app. It keeps its VOL and can be edited and published again."
+    },
+    "settings": {
+      "subtitle": "{{services}} services · {{titles}} section titles",
+      "addService": "Add service",
+      "servicesHeading": "Services (1st · 2nd · 3rd)",
+      "titlesHeading": "Section titles",
+      "emptyServices": "No services yet",
+      "loadFailed": "Could not load the settings",
+      "columns": {
+        "name": "Name",
+        "day": "Day",
+        "startTime": "Start time",
+        "status": "Status",
+        "actions": "Actions",
+        "position": "Position",
+        "title": "Title",
+        "default": "Default"
+      },
+      "sunday": "Sunday",
+      "defaultSuffix": "· bulletin default",
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "default": "Default",
+        "changed": "Changed"
+      },
+      "positions": {
+        "SECTION_WORSHIP": "Order of worship · 1st section",
+        "SECTION_OFFERING": "Order of worship · 2nd section",
+        "SECTION_SENDING": "Order of worship · 3rd section",
+        "FIXED_BLESSING_PRAYER": "Offering · fixed text"
+      },
+      "serviceDialog": {
+        "addHeader": "Add service",
+        "editHeader": "Edit service",
+        "name": "Name",
+        "startTime": "Start time",
+        "bulletinDefault": "Bulletin default service"
+      },
+      "titleDialog": {
+        "header": "Edit section title",
+        "reset": "Reset to default",
+        "defaultHint": "Default: {{title}}"
+      },
+      "save": "Save",
+      "required": "Required",
+      "toast": {
+        "saved": "Saved",
+        "saveFailed": "Could not save",
+        "deleted": "Service deleted",
+        "deactivated": "In use by a bulletin, so it was deactivated",
+        "deleteFailed": "Could not delete",
+        "defaultConflict": "The bulletin default service cannot be deleted. Make another service the default first."
+      },
+      "delete": {
+        "header": "Delete service",
+        "message": "Delete {{name}}? If a bulletin uses it, it is deactivated instead."
+      }
     }
   }
 }

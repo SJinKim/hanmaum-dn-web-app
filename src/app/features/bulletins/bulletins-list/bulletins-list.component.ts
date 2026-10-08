@@ -60,7 +60,6 @@ export class BulletinsListComponent implements OnInit {
   readonly failed = signal(false);
   readonly editions = signal<BulletinEditionSummary[]>([]);
   readonly total = signal(0);
-  readonly activeTab = signal(0);
 
   readonly createVisible = signal(false);
   readonly createMode = signal<CreateMode>('copy');
@@ -130,6 +129,11 @@ export class BulletinsListComponent implements OnInit {
           this.failed.set(true);
         },
       });
+  }
+
+  /** Tab 1 is 설정, which lives on its own route (#194). */
+  onTab(value: unknown): void {
+    if (value === 1) void this.router.navigate(['/bulletins', 'settings']);
   }
 
   openEdit(id: string): void {
