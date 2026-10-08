@@ -30,7 +30,8 @@ export type FeatureId =
   | 'ministry'
   | 'announcements'
   | 'archive'
-  | 'analytics';
+  | 'analytics'
+  | 'bulletin';
 
 /** Realm roles that read and write every screen. */
 export const SUPER_ROLES: readonly string[] = ['admin', 'pastor'];
@@ -59,6 +60,7 @@ export const FEATURE_ACCESS: Readonly<Record<FeatureId, FeatureAccess>> = {
   announcements: { read: ['note_taker'], write: ['note_taker'] },
   archive: NONE,
   analytics: NONE,
+  bulletin: NONE,
 };
 
 /**

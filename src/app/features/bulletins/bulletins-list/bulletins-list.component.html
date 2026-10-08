@@ -1,0 +1,146 @@
+<!--
+  Figma: 주보 · 목록 with tabs 주보 목록 and 설정 (#194);
+  on Phone the table becomes a stack of list cards.
+-->
+<div class="flex min-h-px flex-1 flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'bulletins.eyebrow' | translate"
+    [heading]="'bulletins.title' | translate"
+    [subtitle]="subtitle()">
+    @if (canWrite()) {
+      <p-button
+        appActions
+        size="small"
+        icon="pi pi-plus"
+        [label]="'bulletins.add' | translate"
+        data-testid="bulletin-add"
+        (onClick)="openCreate()" />
+    }
+  </app-page-header>
+
+  <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
+    <p-tablist>
+      <p-tab [value]="0" data-testid="tab-list">{{ 'bulletins.tabs.list' | translate }}</p-tab>
+      <p-tab [value]="1" [disabled]="true" data-testid="tab-settings">{{ 'bulletins.tabs.settings' | translate }}</p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel [value]="0">
+        @if (failed()) {
+          <app-empty-state
+            variant="error"
+            [heading]="'bulletins.loadFailed' | translate"
+            [description]="'bulletins.loadFailedHint' | translate" />
+        } @else {
+          <section
+            class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+            data-testid="bulletins-card">
+            <app-section-header [heading]="'bulletins.listHeading' | translate" />
+
+            @if (isPhone()) {
+              @if (loading()) {
+                <app-skeleton variant="card" />
+              } @else if (records().length === 0) {
+                <app-empty-state
+                  [heading]="'bulletins.empty.heading' | translate"
+                  [description]="'bulletins.empty.description' | translate" />
+              } @else {
+                <div class="flex flex-col gap-[var(--space-8)]">
+                  @for (r of records(); track r.id) {
+                    <app-list-card [record]="r" (selected)="openEdit($event.id)" />
+                  }
+                </div>
+              }
+            } @else {
+              <app-data-table
+                [rows]="records()"
+                [columns]="columns()"
+                [loading]="loading()"
+                [caption]="'bulletins.listHeading' | translate"
+                [emptyHeading]="'bulletins.empty.heading' | translate"
+                [emptyDescription]="'bulletins.empty.description' | translate"
+                (rowSelected)="openEdit($event.id)">
+                <ng-template appDataCell="actions" let-record>
+                  <div class="flex items-center justify-end gap-[var(--space-4)]">
+                    <p-button
+                      icon="pi pi-pencil"
+                      severity="secondary"
+                      [text]="true"
+                      [rounded]="true"
+                      [ariaLabel]="'bulletins.edit' | translate"
+                      [attr.data-testid]="'edit-' + record.id"
+                      (onClick)="$event.stopPropagation(); openEdit(record.id)" />
+                    @if (canWrite() && canDelete(record.id)) {
+                      <p-button
+                        icon="pi pi-trash"
+                        severity="danger"
+                        [text]="true"
+                        [rounded]="true"
+                        [ariaLabel]="'bulletins.delete.action' | translate"
+                        [attr.data-testid]="'delete-' + record.id"
+                        (onClick)="$event.stopPropagation(); confirmDelete(record.id)" />
+                    }
+                  </div>
+                </ng-template>
+              </app-data-table>
+            }
+          </section>
+        }
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</div>
+
+<p-dialog
+  [visible]="createVisible()"
+  (visibleChange)="createVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 480px)' }"
+  [draggable]="false"
+  [resizable]="false">
+  <ng-template #header>
+    <h2 class="type-h3 text-ink-strong">{{ 'bulletins.create.header' | translate }}</h2>
+  </ng-template>
+
+  <div class="flex flex-col gap-[var(--space-8)]" role="radiogroup" data-testid="create-options">
+    @if (copySource()) {
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="createMode() === 'copy'"
+        class="border-line-subtle flex flex-col gap-[var(--space-4)] rounded-[var(--radius-md)] border p-[var(--space-12)] text-left"
+        [class.border-primary]="createMode() === 'copy'"
+        data-testid="create-copy"
+        (click)="createMode.set('copy')">
+        <span class="type-body text-ink-strong">{{ 'bulletins.create.copy' | translate }}</span>
+        <span class="type-caption text-ink-muted">{{ copyHint() }}</span>
+      </button>
+    }
+    <button
+      type="button"
+      role="radio"
+      [attr.aria-checked]="createMode() === 'blank'"
+      class="border-line-subtle flex flex-col gap-[var(--space-4)] rounded-[var(--radius-md)] border p-[var(--space-12)] text-left"
+      [class.border-primary]="createMode() === 'blank'"
+      data-testid="create-blank"
+      (click)="createMode.set('blank')">
+      <span class="type-body text-ink-strong">{{ 'bulletins.create.blank' | translate }}</span>
+      <span class="type-caption text-ink-muted">{{ 'bulletins.create.blankHint' | translate }}</span>
+    </button>
+  </div>
+
+  <ng-template #footer>
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      [label]="'bulletins.cancel' | translate"
+      (onClick)="createVisible.set(false)" />
+    <p-button
+      [label]="'bulletins.create.action' | translate"
+      [loading]="creating()"
+      data-testid="create-submit"
+      (onClick)="create()" />
+  </ng-template>
+</p-dialog>
+
+<p-toast />
+<p-confirmDialog />

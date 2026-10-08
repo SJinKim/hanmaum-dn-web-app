@@ -63,6 +63,11 @@ export const APP_ROUTES: Routes = [
           import('./features/announcements/announcements.routes').then(m => m.ANNOUNCEMENTS_ROUTES),
       },
       {
+        path: 'bulletins',
+        loadChildren: () =>
+          import('./features/bulletins/bulletins.routes').then(m => m.BULLETINS_ROUTES),
+      },
+      {
         // Reference screen for the Figma Controls & Containers layer — see design-specs/DESIGN.md.
         path: 'design-ui',
         loadComponent: () =>
