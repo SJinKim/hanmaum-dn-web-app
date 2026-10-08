@@ -9,6 +9,12 @@ export const BULLETINS_ROUTES: Routes = [
       import('./bulletins-list/bulletins-list.component').then(m => m.BulletinsListComponent),
   },
   {
+    path: 'settings',
+    canActivate: [featureGuard('bulletin')],
+    loadComponent: () =>
+      import('./bulletin-settings/bulletin-settings.component').then(m => m.BulletinSettingsComponent),
+  },
+  {
     path: ':publicId',
     canActivate: [featureGuard('bulletin')],
     loadComponent: () =>

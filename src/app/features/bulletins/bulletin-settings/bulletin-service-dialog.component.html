@@ -1,0 +1,55 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [style]="{ width: 'min(92vw, 480px)' }"
+  [draggable]="false"
+  [resizable]="false"
+  [pt]="dialogPt"
+>
+  <ng-template #header>
+    <h2 class="type-h3 text-ink-strong" data-testid="service-dialog-title">
+      {{ (isEdit() ? 'bulletins.settings.serviceDialog.editHeader' : 'bulletins.settings.serviceDialog.addHeader') | translate }}
+    </h2>
+  </ng-template>
+
+  <form [formGroup]="form" class="flex flex-col gap-[var(--space-16)]" data-testid="service-form">
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="service-name" class="type-caption text-ink-muted">
+        {{ 'bulletins.settings.serviceDialog.name' | translate }}
+        <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+      </label>
+      <input id="service-name" pInputText formControlName="name" [maxlength]="nameMax" class="w-full" />
+      @if (hasError('name')) {
+        <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'bulletins.settings.required' | translate }}</small>
+      }
+    </div>
+
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="service-start" class="type-caption text-ink-muted">
+        {{ 'bulletins.settings.serviceDialog.startTime' | translate }}
+        <span class="text-[var(--color-badge-deleted-fg)]">*</span>
+      </label>
+      <input id="service-start" pInputText type="time" formControlName="startTime" class="w-full" />
+      @if (hasError('startTime')) {
+        <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'bulletins.settings.required' | translate }}</small>
+      }
+    </div>
+
+    <div class="flex flex-wrap items-center gap-[var(--space-16)]">
+      <span class="flex items-center gap-[var(--space-8)]">
+        <p-checkbox inputId="service-active" formControlName="active" [binary]="true" />
+        <label for="service-active" class="type-body text-ink-strong">{{ 'bulletins.settings.status.active' | translate }}</label>
+      </span>
+      <span class="flex items-center gap-[var(--space-8)]">
+        <p-checkbox inputId="service-default" formControlName="isBulletinDefault" [binary]="true" />
+        <label for="service-default" class="type-body text-ink-strong">{{ 'bulletins.settings.serviceDialog.bulletinDefault' | translate }}</label>
+      </span>
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <p-button [label]="'bulletins.cancel' | translate" severity="secondary" [outlined]="true" (onClick)="close()" />
+    <p-button [label]="'bulletins.settings.save' | translate" [loading]="saving()" (onClick)="submit()" data-testid="service-save" />
+  </ng-template>
+</p-dialog>

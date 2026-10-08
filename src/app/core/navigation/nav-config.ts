@@ -65,13 +65,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { labelKey: 'nav.items.attendance', feature: 'attendance', icon: 'pi pi-check-square', route: '/attendance' },
       { labelKey: 'nav.items.eventRsvps', feature: 'eventRsvps', icon: 'pi pi-calendar-plus', route: '/event-rsvps' },
       { labelKey: 'nav.items.ministry', feature: 'ministry', icon: 'pi pi-sitemap', route: '/ministry' },
+      { labelKey: 'nav.items.bulletins', feature: 'bulletin', icon: 'pi pi-book', route: '/bulletins' },
     ],
   },
   {
     labelKey: 'nav.groups.admin',
     items: [
       { labelKey: 'nav.items.announcements', feature: 'announcements', icon: 'pi pi-megaphone', route: '/announcements' },
-      { labelKey: 'nav.items.bulletins', feature: 'bulletin', icon: 'pi pi-book', route: '/bulletins' },
       { labelKey: 'nav.items.archive', feature: 'archive', icon: 'pi pi-clock', route: '/archive' },
       { labelKey: 'nav.items.analytics', feature: 'analytics', icon: 'pi pi-chart-bar', route: '/analytics' },
     ],

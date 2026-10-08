@@ -41,6 +41,30 @@ export interface BulletinDefaults {
   service: BulletinService;
 }
 
+/** `BulletinServiceRequest` — 예배 추가 and 수정 send the whole service. */
+export interface BulletinServiceRequest {
+  name: string;
+  /** LocalTime, "HH:mm:ss". */
+  startTime: string;
+  sortOrder?: number;
+  active?: boolean;
+  /** true moves the default to this service. */
+  isBulletinDefault?: boolean;
+}
+
+/** Empty or null resets the title to its default. */
+export interface UpdateSectionTitleRequest {
+  title: string | null;
+}
+
+/** The fixed order of the four titles in the 섹션 제목 card. */
+export const BULLETIN_SECTION_KEYS: readonly BulletinSectionKey[] = [
+  'SECTION_WORSHIP',
+  'SECTION_OFFERING',
+  'SECTION_SENDING',
+  'FIXED_BLESSING_PRAYER',
+];
+
 export interface BulletinEditionSummary {
   publicId: string;
   serviceDate: string;

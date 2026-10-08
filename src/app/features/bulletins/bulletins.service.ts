@@ -6,12 +6,18 @@ import {
   BulletinDefaults,
   BulletinEdition,
   BulletinEditionSummary,
+  BulletinSectionKey,
+  BulletinSectionTitle,
+  BulletinService,
+  BulletinServiceRequest,
   BulletinStatus,
   CreateBulletinRequest,
   UpdateBulletinRequest,
+  UpdateSectionTitleRequest,
 } from './bulletins.model';
 
 const BASE = '/v1/admin/bulletins';
+const SETTINGS = '/v1/admin/bulletin';
 
 @Injectable({ providedIn: 'root' })
 export class BulletinsService {
@@ -49,5 +55,33 @@ export class BulletinsService {
   /** Only a draft that never had a VOL can be deleted. */
   delete(publicId: string): Observable<void> {
     return this.api.delete(`${BASE}/${publicId}`);
+  }
+
+  services(): Observable<BulletinService[]> {
+    return this.api.get<BulletinService[]>(`${SETTINGS}/services`);
+  }
+
+  createService(req: BulletinServiceRequest): Observable<BulletinService> {
+    return this.api.post<BulletinService>(`${SETTINGS}/services`, req);
+  }
+
+  updateService(publicId: string, req: BulletinServiceRequest): Observable<BulletinService> {
+    return this.api.put<BulletinService>(`${SETTINGS}/services/${publicId}`, req);
+  }
+
+  /**
+   * `null` = deleted. A service an edition uses is only deactivated; the server
+   * then answers 200 with it.
+   */
+  deleteService(publicId: string): Observable<BulletinService | null> {
+    return this.api.deleteOptional<BulletinService>(`${SETTINGS}/services/${publicId}`);
+  }
+
+  sectionTitles(): Observable<BulletinSectionTitle[]> {
+    return this.api.get<BulletinSectionTitle[]>(`${SETTINGS}/section-titles`);
+  }
+
+  updateSectionTitle(key: BulletinSectionKey, req: UpdateSectionTitleRequest): Observable<BulletinSectionTitle> {
+    return this.api.put<BulletinSectionTitle>(`${SETTINGS}/section-titles/${key}`, req);
   }
 }

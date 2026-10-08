@@ -1614,6 +1614,64 @@
       "header": "주보 철회",
       "action": "철회",
       "message": "{{date}} 주보를 앱에서 내립니다. VOL은 유지되고, 다시 편집해 게시할 수 있습니다."
+    },
+    "settings": {
+      "subtitle": "예배 {{services}}개 · 섹션 제목 {{titles}}개",
+      "addService": "예배 추가",
+      "servicesHeading": "예배 (1부 · 2부 · 3부)",
+      "titlesHeading": "섹션 제목",
+      "emptyServices": "등록된 예배가 없습니다",
+      "loadFailed": "설정을 불러오지 못했습니다",
+      "columns": {
+        "name": "이름",
+        "day": "요일",
+        "startTime": "시작 시간",
+        "status": "상태",
+        "actions": "관리",
+        "position": "위치",
+        "title": "제목",
+        "default": "기본값"
+      },
+      "sunday": "일요일",
+      "defaultSuffix": "· 주보 기본",
+      "status": {
+        "active": "활성",
+        "inactive": "비활성",
+        "default": "기본값",
+        "changed": "변경됨"
+      },
+      "positions": {
+        "SECTION_WORSHIP": "예배 순서 · 1번째 섹션",
+        "SECTION_OFFERING": "예배 순서 · 2번째 섹션",
+        "SECTION_SENDING": "예배 순서 · 3번째 섹션",
+        "FIXED_BLESSING_PRAYER": "봉헌 · 고정 문구"
+      },
+      "serviceDialog": {
+        "addHeader": "예배 추가",
+        "editHeader": "예배 수정",
+        "name": "이름",
+        "startTime": "시작 시간",
+        "bulletinDefault": "주보 기본 예배"
+      },
+      "titleDialog": {
+        "header": "섹션 제목 수정",
+        "reset": "기본값으로",
+        "defaultHint": "기본값: {{title}}"
+      },
+      "save": "저장",
+      "required": "필수 항목입니다",
+      "toast": {
+        "saved": "저장했습니다",
+        "saveFailed": "저장하지 못했습니다",
+        "deleted": "예배를 삭제했습니다",
+        "deactivated": "주보에서 사용 중이라 비활성으로 바꿨습니다",
+        "deleteFailed": "삭제하지 못했습니다",
+        "defaultConflict": "주보 기본 예배는 삭제할 수 없습니다. 다른 예배를 기본으로 지정하세요."
+      },
+      "delete": {
+        "header": "예배 삭제",
+        "message": "{{name}}을(를) 삭제할까요? 주보에서 사용 중이면 비활성으로 바뀝니다."
+      }
     }
   }
 }

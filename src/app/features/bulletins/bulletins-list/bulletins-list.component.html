@@ -18,10 +18,10 @@
     }
   </app-page-header>
 
-  <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
+  <p-tabs [value]="0" (valueChange)="onTab($event)">
     <p-tablist>
       <p-tab [value]="0" data-testid="tab-list">{{ 'bulletins.tabs.list' | translate }}</p-tab>
-      <p-tab [value]="1" [disabled]="true" data-testid="tab-settings">{{ 'bulletins.tabs.settings' | translate }}</p-tab>
+      <p-tab [value]="1" data-testid="tab-settings">{{ 'bulletins.tabs.settings' | translate }}</p-tab>
     </p-tablist>
     <p-tabpanels>
       <p-tabpanel [value]="0">
