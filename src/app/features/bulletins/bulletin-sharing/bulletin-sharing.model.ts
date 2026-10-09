@@ -9,8 +9,8 @@ export type SharingError = 'required' | 'textTooLong' | 'referenceTooLong';
 
 export function sharingErrors(block: BulletinSharingBlock): { text?: SharingError; reference?: SharingError } {
   return {
-    text: !block.text.trim() ? 'required' : block.text.length > BULLETIN_LIMITS.sharingText ? 'textTooLong' : undefined,
-    reference: block.type === 'SCRIPTURE' && (block.reference?.length ?? 0) > BULLETIN_LIMITS.sharingReference
+    text: !block.text.trim() ? 'required' : block.text.trim().length > BULLETIN_LIMITS.sharingText ? 'textTooLong' : undefined,
+    reference: block.type === 'SCRIPTURE' && (block.reference?.trim().length ?? 0) > BULLETIN_LIMITS.sharingReference
       ? 'referenceTooLong' : undefined,
   };
 }

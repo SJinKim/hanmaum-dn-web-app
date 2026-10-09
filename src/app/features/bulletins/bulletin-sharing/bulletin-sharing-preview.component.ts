@@ -30,7 +30,7 @@ import { numberedSharing } from './bulletin-sharing.model';
             }
             @case ('QUESTION') {
               <div class="type-body-sm flex items-start gap-[var(--space-8)]" data-testid="sharing-preview-question">
-                <span class="text-action shrink-0">Q{{ row.question }}</span>
+                <span class="text-action shrink-0">{{ 'bulletins.sharing.questionNumber' | translate: { n: row.question } }}</span>
                 <p class="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere]">{{ row.block.text }}</p>
               </div>
             }

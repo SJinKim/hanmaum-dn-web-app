@@ -1,4 +1,4 @@
-import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, output, signal } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, computed, effect, inject, input, output, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { DragDropModule } from 'primeng/dragdrop';
@@ -27,19 +27,32 @@ export class BulletinSharingEditorComponent {
   readonly blocks = input.required<readonly BulletinSharingDraftBlock[]>();
   readonly disabled = input(false);
   readonly showValidation = input(false);
+  readonly resetVersion = input(0);
   readonly blocksChange = output<BulletinSharingDraftBlock[]>();
   readonly touched = signal<ReadonlySet<string>>(new Set());
   readonly announcement = signal('');
+  readonly removed = signal<{ block: BulletinSharingDraftBlock; index: number } | null>(null);
   readonly rows = computed(() => numberedSharing(this.blocks()));
   readonly questionCount = computed(() => this.blocks().filter(b => b.type === 'QUESTION').length);
   readonly limits = BULLETIN_LIMITS;
   readonly types: readonly BulletinSharingBlockType[] = ['HEADING', 'PARAGRAPH', 'SCRIPTURE', 'QUESTION'];
+
+  constructor() {
+    effect(() => {
+      this.resetVersion();
+      this.touched.set(new Set());
+      this.removed.set(null);
+      this.announcement.set('');
+      this.endDrag();
+    });
+  }
 
   add(type: BulletinSharingBlockType): void {
     if (this.disabled() || this.blocks().length >= this.limits.sharingBlocks) return;
     this.nextId = Math.max(this.nextId, ...this.blocks().map(b => b.editorId + 1));
     const editorId = this.nextId++;
     this.blocksChange.emit([...this.blocks(), { editorId, type, text: '', ...(type === 'SCRIPTURE' ? { reference: '' } : {}) }]);
+    this.announce('added', { position: this.blocks().length });
     this.focusAfterRender(`#sharing-text-${editorId}`);
   }
 
@@ -51,10 +64,28 @@ export class BulletinSharingEditorComponent {
   remove(id: number): void {
     if (this.disabled()) return;
     const index = this.blocks().findIndex(b => b.editorId === id);
+    if (index < 0) return;
+    this.removed.set({ block: this.blocks()[index], index });
     const blocks = this.blocks().filter(b => b.editorId !== id);
     this.blocksChange.emit(blocks);
+    this.announce('removed', { position: index + 1, count: blocks.length });
     const next = blocks[Math.min(index, blocks.length - 1)];
     this.focusAfterRender(next ? `[data-block-id="${next.editorId}"] [data-testid="sharing-handle"]` : '[data-add-type] button');
+  }
+
+  undoRemove(): void {
+    const removed = this.removed();
+    if (!removed || this.disabled() || this.blocks().length >= this.limits.sharingBlocks) return;
+    const blocks = [...this.blocks()];
+    blocks.splice(Math.min(removed.index, blocks.length), 0, removed.block);
+    this.blocksChange.emit(blocks);
+    this.removed.set(null);
+    this.announce('restored', { position: blocks.findIndex(b => b.editorId === removed.block.editorId) + 1 });
+    this.focusAfterRender(`#sharing-text-${removed.block.editorId}`);
+  }
+
+  moveBy(id: number, delta: number): void {
+    this.move(id, this.blocks().findIndex(b => b.editorId === id) + delta);
   }
 
   touch(id: number, field: 'text' | 'reference'): void {
@@ -93,8 +124,13 @@ export class BulletinSharingEditorComponent {
     const [block] = blocks.splice(from, 1);
     blocks.splice(to, 0, block);
     this.blocksChange.emit(blocks);
-    this.announcement.set(this.translate.instant('bulletins.sharing.moved', { position: to + 1, count: blocks.length }));
+    this.announce('moved', { block: from + 1, position: to + 1, count: blocks.length });
     this.focusAfterRender(`[data-block-id="${id}"] [data-testid="sharing-handle"]`);
+  }
+
+  private announce(key: string, params: Record<string, number>): void {
+    this.announcement.set('');
+    afterNextRender(() => this.announcement.set(this.translate.instant('bulletins.sharing.' + key, params)), { injector: this.injector });
   }
 
   private focusAfterRender(selector: string): void {

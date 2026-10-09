@@ -119,6 +119,8 @@ export class BulletinEditorComponent implements OnInit {
   readonly missing = signal<ReadonlySet<BulletinRequiredField>>(new Set());
   readonly activeTab = signal(0);
   readonly sharingValidationShown = signal(false);
+  readonly sharingResetVersion = signal(0);
+  readonly sharingInvalid = computed(() => this.sharingValidationShown() && !sharingIsValid(this.draft()?.sharingBlocks ?? []));
 
   readonly canWrite = computed(() => this.roles.canWrite('bulletin'));
   readonly published = computed(() => this.edition()?.status === 'PUBLISHED');
@@ -445,6 +447,7 @@ export class BulletinEditorComponent implements OnInit {
   }
 
   private apply(e: BulletinEdition): void {
+    this.sharingResetVersion.update(v => v + 1);
     this.edition.set(e);
     this.draft.set(toDraft(e));
     this.dirty.set(false);
@@ -456,7 +459,6 @@ export class BulletinEditorComponent implements OnInit {
   private validateSharing(): boolean {
     if (sharingIsValid(this.draft()?.sharingBlocks ?? [])) return true;
     this.sharingValidationShown.set(true);
-    this.activeTab.set(1);
     this.toast('error', 'bulletins.sharing.errors.invalid');
     return false;
   }

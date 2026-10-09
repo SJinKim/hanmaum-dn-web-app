@@ -9,12 +9,13 @@ import { BulletinSharingDraftBlock } from './bulletin-sharing.model';
 @Component({
   standalone: true,
   imports: [BulletinSharingEditorComponent],
-  template: '<app-bulletin-sharing-editor [blocks]="blocks()" [disabled]="disabled()" [showValidation]="validate()" (blocksChange)="blocks.set($event)" />',
+  template: '<app-bulletin-sharing-editor [blocks]="blocks()" [disabled]="disabled()" [showValidation]="validate()" [resetVersion]="resetVersion()" (blocksChange)="blocks.set($event)" />',
 })
 class HostComponent {
   readonly blocks = signal<BulletinSharingDraftBlock[]>([]);
   readonly disabled = signal(false);
   readonly validate = signal(false);
+  readonly resetVersion = signal(0);
 }
 
 describe('BulletinSharingEditorComponent (#193)', () => {
@@ -25,7 +26,8 @@ describe('BulletinSharingEditorComponent (#193)', () => {
     const translate = TestBed.inject(TranslateService);
     translate.setTranslation('en', { bulletins: { sharing: {
       types: { HEADING: 'Heading', PARAGRAPH: 'Paragraph', SCRIPTURE: 'Scripture', QUESTION: 'Question' },
-      questionNumber: 'Question {{n}}', moved: 'Block moved to {{position}} of {{count}}.',
+      questionNumber: 'Question {{n}}', moved: 'Block {{block}} moved to {{position}} of {{count}}.',
+      fieldLabel: '{{label}} (block {{n}})', removed: 'Block {{position}} removed. {{count}} remain.',
     } } });
     translate.use('en');
     const fixture = TestBed.createComponent(HostComponent);
@@ -66,6 +68,7 @@ describe('BulletinSharingEditorComponent (#193)', () => {
     expect(host.blocks().map(b => b.text)).toEqual(['Second', 'First', 'Heading']);
     expect(document.activeElement).toBe(handle);
     expect(editor.rows().map(r => r.question)).toEqual([1, 2, null]);
+    fixture.detectChanges();
     expect(el.querySelector('[aria-live="polite"]')?.textContent).toContain('1 of 3');
     editor.remove(2);
     fixture.detectChanges();
@@ -148,5 +151,46 @@ describe('BulletinSharingEditorComponent (#193)', () => {
     expect(host.blocks()).toEqual([{ editorId: 0, type: 'QUESTION', text: 'Original' }]);
     expect(el.querySelectorAll('[data-add-type]').length).toBe(0);
     expect(el.querySelector<HTMLInputElement>('[data-testid="sharing-text"]')!.disabled).toBeTrue();
+  });
+
+  it('restores removed content and clears stale validation on reload with reused IDs', () => {
+    const { host, editor, fixture } = setup([{ editorId: 0, type: 'SCRIPTURE', text: 'Verse', reference: 'John 1' }]);
+    editor.remove(0);
+    fixture.detectChanges();
+    expect(host.blocks()).toEqual([]);
+    editor.undoRemove();
+    fixture.detectChanges();
+    expect(host.blocks()).toEqual([{ editorId: 0, type: 'SCRIPTURE', text: 'Verse', reference: 'John 1' }]);
+    editor.touch(0, 'text');
+    editor.startDrag(0);
+    host.blocks.set([{ editorId: 0, type: 'QUESTION', text: '' }]);
+    host.resetVersion.update(v => v + 1);
+    fixture.detectChanges();
+    expect(editor.error(host.blocks()[0], 'text')).toBeUndefined();
+    expect(editor.removed()).toBeNull();
+    expect(editor.announcement()).toBe('');
+  });
+
+  it('offers click sorting with boundary guards, unique accessible names and undo', async () => {
+    const { host, fixture, el } = setup([
+      { editorId: 0, type: 'QUESTION', text: 'First?' },
+      { editorId: 1, type: 'QUESTION', text: 'Second?' },
+    ]);
+    expect(el.querySelector<HTMLButtonElement>('[data-block-id="0"] [data-testid="sharing-up"] button')!.disabled).toBeTrue();
+    expect(el.querySelector<HTMLButtonElement>('[data-block-id="1"] [data-testid="sharing-down"] button')!.disabled).toBeTrue();
+    expect(Array.from(el.querySelectorAll('[data-testid="sharing-text"]')).map(x => x.getAttribute('aria-label'))).toEqual(['Question 1', 'Question 2']);
+    el.querySelector<HTMLButtonElement>('[data-block-id="1"] [data-testid="sharing-up"] button')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.blocks().map(b => b.text)).toEqual(['Second?', 'First?']);
+    el.querySelector<HTMLButtonElement>('[data-block-id="1"] [data-testid="sharing-remove"] button')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(el.querySelector('[aria-live="polite"]')!.textContent).toContain('removed');
+    el.querySelector<HTMLButtonElement>('[data-testid="sharing-undo"] button')!.click();
+    fixture.detectChanges();
+    expect(host.blocks().map(b => b.text)).toEqual(['Second?', 'First?']);
   });
 });

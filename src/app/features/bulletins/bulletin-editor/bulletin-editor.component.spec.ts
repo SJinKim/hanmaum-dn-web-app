@@ -241,7 +241,10 @@ describe('BulletinEditorComponent — 주보 편집 (#36)', () => {
     fixture.detectChanges();
     expect(service.update).not.toHaveBeenCalled();
     expect(service.publish).not.toHaveBeenCalled();
-    expect(component.activeTab()).toBe(1);
+    expect(component.activeTab()).toBe(0);
+    expect(el.querySelector('[data-testid="sharing-tab-error"]')).not.toBeNull();
+    component.activeTab.set(1);
+    fixture.detectChanges();
     expect(el.querySelector('[data-testid="sharing-text-error"]')).not.toBeNull();
     expect(component.draft()!.sermonTitle).toBe('Unsaved sermon');
     for (const block of [
@@ -252,6 +255,22 @@ describe('BulletinEditorComponent — 주보 편집 (#36)', () => {
       component.save();
       expect(service.update).not.toHaveBeenCalled();
     }
+  });
+
+  it('validates the trimmed payload and clears the tab error after correction', () => {
+    const { component } = setup();
+    component.setSharingBlocks([{ editorId: 0, type: 'QUESTION', text: '' }]);
+    component.save();
+    expect(component.sharingInvalid()).toBeTrue();
+    component.setSharingBlocks([
+      { editorId: 1, type: 'SCRIPTURE', text: ' ' + 'x'.repeat(2000) + ' ', reference: ' ' },
+      { editorId: 2, type: 'PARAGRAPH', text: 'Text', reference: 'Ignored' },
+    ]);
+    expect(component.sharingInvalid()).toBeFalse();
+    expect(component.buildRequest()!.sharingBlocks).toEqual([
+      { type: 'SCRIPTURE', text: 'x'.repeat(2000), reference: null },
+      { type: 'PARAGRAPH', text: 'Text' },
+    ]);
   });
 
   it('allows removing all blocks and saves the empty list before publishing', () => {
