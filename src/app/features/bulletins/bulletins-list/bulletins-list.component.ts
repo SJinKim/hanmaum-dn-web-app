@@ -214,7 +214,11 @@ export class BulletinsListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: defaults => {
-          const options = new Map((from ? this.sundays() : []).map(s => [s.serviceDate, s]));
+          const first = defaults.sundays[0]?.serviceDate;
+          const advancedCursor = from && first && first > from ? first : null;
+          // The server can advance a stale cursor after Berlin midnight. Drop expired cached dates.
+          const retained = (from ? this.sundays() : []).filter(s => !advancedCursor || s.serviceDate >= advancedCursor);
+          const options = new Map(retained.map(s => [s.serviceDate, s]));
           defaults.sundays.forEach(s => options.set(s.serviceDate, s));
           // A suggestion beyond this batch is still selectable; its date comes from the server.
           if (!options.has(defaults.serviceDate)) {
@@ -222,7 +226,8 @@ export class BulletinsListComponent implements OnInit {
           }
           this.sundays.set([...options.values()].sort((a, b) => a.serviceDate.localeCompare(b.serviceDate)));
           this.nextFrom.set(defaults.nextFrom);
-          if (!this.selectedDate()) this.selectedDate.set(defaults.serviceDate);
+          const selected = this.selectedDate();
+          if (!selected || (advancedCursor && selected < advancedCursor)) this.selectedDate.set(defaults.serviceDate);
           this.datesLoading.set(false);
           if (this.conflictDate) {
             const taken = defaults.sundays.some(s => s.serviceDate === this.conflictDate && s.editionPublicId);

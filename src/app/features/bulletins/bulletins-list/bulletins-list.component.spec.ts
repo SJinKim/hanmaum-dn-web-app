@@ -285,6 +285,23 @@ describe('BulletinsListComponent — 주보 목록 (#36)', () => {
     expect(hint?.textContent).toContain('bulletins.create.dateHint');
   });
 
+  it('drops expired cached dates when the server advances a stale cursor and keeps the creation mode', () => {
+    const { component } = setup();
+    component.openCreate();
+    component.createMode.set('blank');
+    service.defaults.and.returnValue(of(defaults({
+      serviceDate: '2026-10-18',
+      sundays: [
+        { serviceDate: '2026-10-18', editionPublicId: null, status: null },
+        { serviceDate: '2026-10-25', editionPublicId: null, status: null },
+      ],
+    })));
+    component.loadDates('2026-10-11');
+    expect(component.dateOptions().some(s => s.serviceDate === '2026-10-11')).toBeFalse();
+    expect(component.selectedDate()).toBe('2026-10-18');
+    expect(component.createMode()).toBe('blank');
+  });
+
   it('keeps the Figma ISO date and source VOL in the copy hint', () => {
     const { component } = setup();
     const translate = TestBed.inject(TranslateService);
