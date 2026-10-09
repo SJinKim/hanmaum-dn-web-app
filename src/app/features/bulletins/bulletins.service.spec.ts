@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../environments/environment';
 import { BulletinsService } from './bulletins.service';
+import { UpdateBulletinRequest } from './bulletins.model';
 
 describe('BulletinsService — Sunday selection contract (#197)', () => {
   let service: BulletinsService;
@@ -29,5 +30,20 @@ describe('BulletinsService — Sunday selection contract (#197)', () => {
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({ serviceDate: '2026-10-25', copyFrom: 'source-id' });
     request.flush({ success: true, data: { publicId: 'new-edition' } });
+  });
+
+  it('saves the ordered sermon blocks and references as part of the full content replacement', () => {
+    const content: UpdateBulletinRequest = {
+      version: 4, openingPrayerBy: null, offeringSongBy: null, scriptureReference: null,
+      sermonTitle: 'Sermon', sermonPreacher: 'Pastor', responsePrayerBy: null, responseSong: null,
+      songs: ['Song'], announcements: [], sharingBlocks: [
+        { type: 'QUESTION', text: 'Question?' }, { type: 'SCRIPTURE', text: 'Verse', reference: 'John 15:1' },
+      ],
+    };
+    service.update('edition-public-id', content).subscribe();
+    const request = http.expectOne(`${environment.apiBaseUrl}/v1/admin/bulletins/edition-public-id`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(content);
+    request.flush({ success: true, data: { ...content, publicId: 'edition-public-id' } });
   });
 });

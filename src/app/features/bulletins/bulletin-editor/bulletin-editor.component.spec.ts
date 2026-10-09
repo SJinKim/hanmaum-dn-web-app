@@ -208,4 +208,122 @@ describe('BulletinEditorComponent — 주보 편집 (#36)', () => {
     component.save();
     expect(service.update).not.toHaveBeenCalled();
   });
+
+  it('opens the sharing tab and saves unsaved ordered blocks without editor IDs', () => {
+    const { component, fixture, el } = setup();
+    component.activeTab.set(1);
+    fixture.detectChanges();
+    expect(el.querySelector('[data-testid="tab-sharing"]')?.getAttribute('aria-disabled')).not.toBe('true');
+    component.setSharingBlocks([
+      { editorId: 10, type: 'QUESTION', text: ' First? ' },
+      { editorId: 11, type: 'SCRIPTURE', text: ' Verse ', reference: ' John 15:1 ' },
+      { editorId: 12, type: 'PARAGRAPH', text: 'One\nTwo' },
+    ]);
+    fixture.detectChanges();
+    expect(el.querySelector('[data-testid="sharing-preview"]')?.textContent).toContain('First?');
+    expect(component.buildRequest()!.sharingBlocks).toEqual([
+      { type: 'QUESTION', text: 'First?' },
+      { type: 'SCRIPTURE', text: 'Verse', reference: 'John 15:1' },
+      { type: 'PARAGRAPH', text: 'One\nTwo' },
+    ]);
+    service.update.and.returnValue(of(edition({ sharingBlocks: component.buildRequest()!.sharingBlocks, version: 4 })));
+    component.save();
+    expect(service.update.calls.mostRecent().args[1].sharingBlocks[0]).toEqual({ type: 'QUESTION', text: 'First?' });
+    expect(component.dirty()).toBeFalse();
+  });
+
+  it('blocks saving and publishing invalid sharing content, exposes inline errors and preserves all input', () => {
+    const { component, fixture, el } = setup();
+    component.setSharingBlocks([{ editorId: 0, type: 'QUESTION', text: ' ' }]);
+    component.setField('sermonTitle', 'Unsaved sermon');
+    component.save();
+    component.confirmPublish();
+    fixture.detectChanges();
+    expect(service.update).not.toHaveBeenCalled();
+    expect(service.publish).not.toHaveBeenCalled();
+    expect(component.activeTab()).toBe(0);
+    expect(el.querySelector('[data-testid="sharing-tab-error"]')).not.toBeNull();
+    component.activeTab.set(1);
+    fixture.detectChanges();
+    expect(el.querySelector('[data-testid="sharing-text-error"]')).not.toBeNull();
+    expect(component.draft()!.sermonTitle).toBe('Unsaved sermon');
+    for (const block of [
+      { editorId: 0, type: 'PARAGRAPH' as const, text: 'x'.repeat(2001) },
+      { editorId: 0, type: 'SCRIPTURE' as const, text: 'Verse', reference: 'x'.repeat(101) },
+    ]) {
+      component.setSharingBlocks([block]);
+      component.save();
+      expect(service.update).not.toHaveBeenCalled();
+    }
+  });
+
+  it('validates the trimmed payload and clears the tab error after correction', () => {
+    const { component } = setup();
+    component.setSharingBlocks([{ editorId: 0, type: 'QUESTION', text: '' }]);
+    component.save();
+    expect(component.sharingInvalid()).toBeTrue();
+    component.setSharingBlocks([
+      { editorId: 1, type: 'SCRIPTURE', text: ' ' + 'x'.repeat(2000) + ' ', reference: ' ' },
+      { editorId: 2, type: 'PARAGRAPH', text: 'Text', reference: 'Ignored' },
+    ]);
+    expect(component.sharingInvalid()).toBeFalse();
+    expect(component.buildRequest()!.sharingBlocks).toEqual([
+      { type: 'SCRIPTURE', text: 'x'.repeat(2000), reference: null },
+      { type: 'PARAGRAPH', text: 'Text' },
+    ]);
+  });
+
+  it('allows removing all blocks and saves the empty list before publishing', () => {
+    const { component } = setup();
+    component.setSharingBlocks([]);
+    service.update.and.returnValue(of(edition({ sharingBlocks: [], version: 4 })));
+    service.publish.and.returnValue(of(edition({ sharingBlocks: [], status: 'PUBLISHED', version: 5 })));
+    component.confirmPublish();
+    expect(service.update.calls.mostRecent().args[1].sharingBlocks).toEqual([]);
+    expect(service.publish).toHaveBeenCalledWith('b1');
+  });
+
+  it('accepts the exact contract limits and rejects a fifty-first block', () => {
+    const { component } = setup();
+    const blocks = Array.from({ length: 50 }, (_, editorId) => ({
+      editorId, type: 'SCRIPTURE' as const, text: 'x'.repeat(2000), reference: 'r'.repeat(100),
+    }));
+    component.setSharingBlocks(blocks);
+    service.update.and.returnValue(of(edition({ sharingBlocks: component.buildRequest()!.sharingBlocks, version: 4 })));
+    component.save();
+    expect(service.update.calls.count()).toBe(1);
+    component.setSharingBlocks([...blocks, { editorId: 50, type: 'QUESTION', text: 'Too many' }]);
+    component.save();
+    expect(service.update.calls.count()).toBe(1);
+    expect(component.sharingValidationShown()).toBeTrue();
+  });
+
+  it('keeps sharing changes after a save failure or version conflict, then reloads server blocks', () => {
+    const { component } = setup();
+    const blocks = [{ editorId: 0, type: 'QUESTION' as const, text: 'Unsaved?' }];
+    component.setSharingBlocks(blocks);
+    for (const status of [500, 409]) {
+      service.update.and.returnValue(throwError(() => new HttpErrorResponse({ status })));
+      component.save();
+      expect(component.draft()!.sharingBlocks).toEqual(blocks);
+      expect(component.dirty()).toBeTrue();
+    }
+    component.reload();
+    expect(component.draft()!.sharingBlocks[0].text).toBe('나눔');
+    expect(component.dirty()).toBeFalse();
+  });
+
+  it('does not mutate loaded API objects and guards sharing edits while read-only or saving', () => {
+    const original = edition();
+    const { component } = setup({ edition: original });
+    component.setSharingBlocks([{ editorId: 0, type: 'QUESTION', text: 'Changed' }]);
+    expect(original.sharingBlocks).toEqual([{ type: 'PARAGRAPH', text: '나눔' }]);
+    component.busy.set(true);
+    component.setSharingBlocks([]);
+    expect(component.draft()!.sharingBlocks.length).toBe(1);
+    component.busy.set(false);
+    component.edition.set(edition({ status: 'PUBLISHED' }));
+    component.setSharingBlocks([]);
+    expect(component.draft()!.sharingBlocks[0].text).toBe('Changed');
+  });
 });

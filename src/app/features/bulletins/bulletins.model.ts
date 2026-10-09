@@ -130,6 +130,9 @@ export const BULLETIN_LIMITS = {
   shortText: 100,
   longText: 200,
   announcementBody: 2000,
+  sharingBlocks: 50,
+  sharingText: 2000,
+  sharingReference: 100,
 } as const;
 
 /** The fields a 422 `BULLETIN_INCOMPLETE` names in `fieldErrors`. */

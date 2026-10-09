@@ -79,7 +79,14 @@
     <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
       <p-tablist>
         <p-tab [value]="0" data-testid="tab-order">{{ 'bulletins.editor.tabs.order' | translate }}</p-tab>
-        <p-tab [value]="1" [disabled]="true" data-testid="tab-sharing">{{ 'bulletins.editor.tabs.sharing' | translate }}</p-tab>
+        <p-tab [value]="1" data-testid="tab-sharing">
+          {{ 'bulletins.editor.tabs.sharing' | translate }}
+          @if (sharingInvalid()) {
+            <span role="img" [attr.aria-label]="'bulletins.sharing.errors.invalid' | translate" [title]="'bulletins.sharing.errors.invalid' | translate" data-testid="sharing-tab-error">
+              <app-badge variant="deleted" label="!" />
+            </span>
+          }
+        </p-tab>
       </p-tablist>
       <p-tabpanels>
         <p-tabpanel [value]="0">
@@ -344,6 +351,25 @@
               <span class="text-ink-muted">{{ label | translate }}</span>
               <span class="text-ink-strong">{{ value.trim() || ('bulletins.editor.preview.empty' | translate) }}</span>
             </ng-template>
+          }
+        </p-tabpanel>
+        <p-tabpanel [value]="1">
+          @if (draft(); as d) {
+            <div class="grid grid-cols-1 gap-gutter desktop:grid-cols-[minmax(0,1fr)_340px]">
+              <app-bulletin-sharing-editor class="min-w-0" [blocks]="d.sharingBlocks" [disabled]="readOnly() || busy()"
+                [showValidation]="sharingValidationShown()" [resetVersion]="sharingResetVersion()" (blocksChange)="setSharingBlocks($event)" />
+              <aside class="flex min-w-0 flex-col gap-[var(--space-12)] desktop:sticky desktop:top-0 desktop:self-start" data-testid="sharing-preview-panel">
+                <app-section-header [heading]="'bulletins.editor.preview.title' | translate" />
+                <p class="type-caption text-ink-muted">{{ 'bulletins.editor.preview.hint' | translate }}</p>
+                <div class="bg-surface-base border-line-subtle flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-[var(--space-16)]">
+                  <div class="flex flex-col gap-[var(--space-4)]">
+                    <span class="type-overline text-ink-muted">{{ volumeLabel() }} · {{ e.serviceDate }}</span>
+                    <span class="type-h3 text-ink-strong">{{ serviceLabel() }}</span>
+                  </div>
+                  <app-bulletin-sharing-preview [blocks]="d.sharingBlocks" />
+                </div>
+              </aside>
+            </div>
           }
         </p-tabpanel>
       </p-tabpanels>
