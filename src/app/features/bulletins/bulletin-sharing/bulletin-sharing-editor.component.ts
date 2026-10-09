@@ -129,11 +129,17 @@ export class BulletinSharingEditorComponent {
   }
 
   private announce(key: string, params: Record<string, number>): void {
+    const version = this.resetVersion();
     this.announcement.set('');
-    afterNextRender(() => this.announcement.set(this.translate.instant('bulletins.sharing.' + key, params)), { injector: this.injector });
+    afterNextRender(() => {
+      if (this.resetVersion() === version) this.announcement.set(this.translate.instant('bulletins.sharing.' + key, params));
+    }, { injector: this.injector });
   }
 
   private focusAfterRender(selector: string): void {
-    afterNextRender(() => this.element.nativeElement.querySelector<HTMLElement>(selector)?.focus(), { injector: this.injector });
+    const version = this.resetVersion();
+    afterNextRender(() => {
+      if (this.resetVersion() === version) this.element.nativeElement.querySelector<HTMLElement>(selector)?.focus();
+    }, { injector: this.injector });
   }
 }
