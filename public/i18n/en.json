@@ -1684,6 +1684,35 @@
         "header": "Delete service",
         "message": "Delete {{name}}? If a bulletin uses it, it is deactivated instead."
       }
+    },
+    "sharing": {
+      "count": "Blocks: {{count}} · Questions: {{questions}}",
+      "countEmpty": "0 blocks",
+      "types": {
+        "HEADING": "Heading",
+        "PARAGRAPH": "Paragraph",
+        "SCRIPTURE": "Scripture",
+        "QUESTION": "Question"
+      },
+      "questionNumber": "Question {{n}}",
+      "scriptureText": "Scripture text",
+      "reference": "Reference",
+      "add": "Add block",
+      "remove": "Remove block {{n}}",
+      "reorder": "Reorder block {{n}}",
+      "sortHelp": "Drag to reorder. On the keyboard, use Up and Down to move a block, or Home and End to move it to the start or end.",
+      "moved": "Block moved to position {{position}} of {{count}}.",
+      "emptyTitle": "No blocks yet",
+      "emptyHint": "Without blocks, the sermon sharing section is hidden in the app. Add your first block below.",
+      "previewHidden": "Sermon sharing · hidden in app",
+      "previewHiddenHint": "This section is not shown in the app because it has no blocks.",
+      "limit": "You can add up to {{max}} blocks.",
+      "errors": {
+        "required": "Enter the block content.",
+        "textTooLong": "Block content can have up to {{max}} characters.",
+        "referenceTooLong": "References can have up to {{max}} characters.",
+        "invalid": "Check the sermon sharing fields."
+      }
     }
   }
 }

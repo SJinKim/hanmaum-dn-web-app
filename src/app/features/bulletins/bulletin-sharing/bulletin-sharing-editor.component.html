@@ -1,0 +1,84 @@
+<section class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card" data-testid="sharing-editor">
+  <app-section-header [heading]="'bulletins.editor.tabs.sharing' | translate" />
+  <p class="type-overline text-ink-muted" data-testid="sharing-count">
+    {{ (blocks().length ? 'bulletins.sharing.count' : 'bulletins.sharing.countEmpty') | translate: { count: blocks().length, questions: questionCount() } }}
+  </p>
+  <span id="sharing-sort-help" class="sr-only">{{ 'bulletins.sharing.sortHelp' | translate }}</span>
+  <span class="sr-only" aria-live="polite" aria-atomic="true">{{ announcement() }}</span>
+  @if (blocks().length) {
+    <ol class="flex flex-col gap-[var(--space-16)]" [attr.aria-label]="'bulletins.editor.tabs.sharing' | translate">
+      @for (row of rows(); track row.block.editorId) {
+        @let block = row.block;
+        <li class="bg-surface-subtle flex items-start gap-[var(--space-12)] rounded-[var(--radius-md)] p-[var(--space-12)]"
+            pDroppable="bulletin-sharing" dropEffect="move" [pDroppableDisabled]="disabled()"
+            (onDrop)="drop(block.editorId)" [attr.data-block-id]="block.editorId">
+          <button pButton type="button" size="small" [text]="true" severity="secondary"
+                  icon="pi pi-sort-alt" class="shrink-0 cursor-grab active:cursor-grabbing"
+                  pDraggable="bulletin-sharing" dragEffect="move" [pDraggableDisabled]="disabled()"
+                  [disabled]="disabled()" [attr.aria-label]="'bulletins.sharing.reorder' | translate: { n: $index + 1 }"
+                  [title]="'bulletins.sharing.sortHelp' | translate" aria-describedby="sharing-sort-help"
+                  (onDragStart)="startDrag(block.editorId)" (onDragEnd)="endDrag()"
+                  (keydown)="reorderKey($event, block.editorId)" data-testid="sharing-handle">
+          </button>
+          <div class="flex min-w-0 flex-1 flex-col gap-[var(--space-8)]">
+            <app-badge class="flex self-start" variant="neutral" [label]="(row.question ? 'bulletins.sharing.questionNumber' : 'bulletins.sharing.types.' + block.type) | translate: { n: row.question }" />
+            <div class="type-body-sm flex flex-col gap-[var(--space-4)]">
+              <label class="type-caption text-ink" [for]="'sharing-text-' + block.editorId">
+                {{ (block.type === 'SCRIPTURE' ? 'bulletins.sharing.scriptureText' : 'bulletins.sharing.types.' + block.type) | translate }}
+              </label>
+              @if (block.type === 'HEADING') {
+                <input pInputText class="w-full" [style.font]="'inherit'" [id]="'sharing-text-' + block.editorId" [value]="block.text"
+                       [attr.maxlength]="limits.sharingText" [disabled]="disabled()" [invalid]="!!error(block, 'text')"
+                       [attr.aria-invalid]="!!error(block, 'text')" [attr.aria-describedby]="error(block, 'text') ? 'sharing-text-error-' + block.editorId : null"
+                       (input)="setField(block.editorId, 'text', $any($event.target).value)" (blur)="touch(block.editorId, 'text')" data-testid="sharing-text" />
+              } @else {
+                <textarea pTextarea [style.font]="'inherit'" class="type-body-sm min-h-[72px] w-full" [autoResize]="true" rows="3"
+                          [id]="'sharing-text-' + block.editorId" [value]="block.text"
+                          [attr.maxlength]="limits.sharingText" [disabled]="disabled()" [invalid]="!!error(block, 'text')"
+                          [attr.aria-invalid]="!!error(block, 'text')" [attr.aria-describedby]="error(block, 'text') ? 'sharing-text-error-' + block.editorId : null"
+                          (input)="setField(block.editorId, 'text', $any($event.target).value)" (blur)="touch(block.editorId, 'text')" data-testid="sharing-text"></textarea>
+              }
+              @if (error(block, 'text'); as errorKey) {
+                <span class="type-caption text-[var(--color-badge-deleted-fg)]" [id]="'sharing-text-error-' + block.editorId" data-testid="sharing-text-error">
+                  {{ 'bulletins.sharing.errors.' + errorKey | translate: { max: limits.sharingText } }}
+                </span>
+              }
+            </div>
+            @if (block.type === 'SCRIPTURE') {
+              <div class="type-body-sm flex flex-col gap-[var(--space-4)]">
+                <label class="type-caption text-ink" [for]="'sharing-reference-' + block.editorId">{{ 'bulletins.sharing.reference' | translate }}</label>
+                <input pInputText class="w-full" [style.font]="'inherit'" [id]="'sharing-reference-' + block.editorId" [value]="block.reference ?? ''"
+                       [attr.maxlength]="limits.sharingReference" [disabled]="disabled()" [invalid]="!!error(block, 'reference')"
+                       [attr.aria-invalid]="!!error(block, 'reference')" [attr.aria-describedby]="error(block, 'reference') ? 'sharing-reference-error-' + block.editorId : null"
+                       (input)="setField(block.editorId, 'reference', $any($event.target).value)" (blur)="touch(block.editorId, 'reference')" data-testid="sharing-reference" />
+                @if (error(block, 'reference'); as errorKey) {
+                  <span class="type-caption text-[var(--color-badge-deleted-fg)]" [id]="'sharing-reference-error-' + block.editorId" data-testid="sharing-reference-error">
+                    {{ 'bulletins.sharing.errors.' + errorKey | translate: { max: limits.sharingReference } }}
+                  </span>
+                }
+              </div>
+            }
+          </div>
+          <p-button size="small" [text]="true" severity="secondary" icon="pi pi-trash" [disabled]="disabled()"
+                    [ariaLabel]="'bulletins.sharing.remove' | translate: { n: $index + 1 }" [title]="'bulletins.sharing.remove' | translate: { n: $index + 1 }"
+                    (onClick)="remove(block.editorId)" data-testid="sharing-remove" />
+        </li>
+      }
+    </ol>
+  } @else {
+    <app-empty-state [heading]="'bulletins.sharing.emptyTitle' | translate" [description]="'bulletins.sharing.emptyHint' | translate" />
+  }
+  @if (blocks().length >= limits.sharingBlocks) {
+    <p class="type-caption text-ink-muted" data-testid="sharing-limit">{{ 'bulletins.sharing.limit' | translate: { max: limits.sharingBlocks } }}</p>
+  }
+  @if (!disabled()) {
+    <div class="flex flex-wrap items-center gap-[var(--space-8)]">
+      <span class="type-caption text-ink-muted">{{ 'bulletins.sharing.add' | translate }}</span>
+      @for (type of types; track type) {
+        <p-button size="small" [text]="true" severity="secondary" icon="pi pi-plus"
+                  [label]="'bulletins.sharing.types.' + type | translate" [disabled]="blocks().length >= limits.sharingBlocks"
+                  (onClick)="add(type)" [attr.data-add-type]="type" />
+      }
+    </div>
+  }
+</section>

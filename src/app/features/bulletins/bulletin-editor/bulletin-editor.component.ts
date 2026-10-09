@@ -33,6 +33,9 @@ import {
   formatServiceDate,
 } from '../bulletins.model';
 import { BulletinsService } from '../bulletins.service';
+import { BulletinSharingEditorComponent } from '../bulletin-sharing/bulletin-sharing-editor.component';
+import { BulletinSharingPreviewComponent } from '../bulletin-sharing/bulletin-sharing-preview.component';
+import { BulletinSharingDraftBlock, sharingIsValid, sharingRequest } from '../bulletin-sharing/bulletin-sharing.model';
 
 /** The single-line text fields of an edition, in form order. */
 export type BulletinTextField =
@@ -43,6 +46,7 @@ export type BulletinTextField =
 export type BulletinDraft = Record<BulletinTextField, string> & {
   songs: string[];
   announcements: { title: string; body: string }[];
+  sharingBlocks: BulletinSharingDraftBlock[];
 };
 
 const LONG_FIELDS: readonly BulletinTextField[] = ['sermonTitle', 'responseSong'];
@@ -58,6 +62,7 @@ function toDraft(e: BulletinContent): BulletinDraft {
     responseSong: e.responseSong ?? '',
     songs: [...e.songs],
     announcements: e.announcements.map(a => ({ title: a.title, body: a.body ?? '' })),
+    sharingBlocks: e.sharingBlocks.map((block, editorId) => ({ ...block, editorId })),
   };
 }
 
@@ -77,8 +82,8 @@ function move<T>(list: T[], from: number, to: number): T[] {
  * 주보 편집 (#36) — Figma: 주보 · 편집. One card per section of the order of
  * worship, the 앱 미리보기 on the right follows every keystroke.
  *
- * PUT replaces the whole content, so 설교 나눔 (#193) is passed through as
- * loaded. A published edition is read-only until it is withdrawn.
+ * PUT replaces the whole content, including the 설교 나눔 block editor (#193).
+ * A published edition is read-only until it is withdrawn.
  */
 @Component({
   selector: 'app-bulletin-editor',
@@ -86,7 +91,7 @@ function move<T>(list: T[], from: number, to: number): T[] {
   imports: [
     NgTemplateOutlet, TranslatePipe, ButtonModule, ConfirmDialogModule, InputTextModule, TabsModule, TextareaModule,
     ToastModule, BadgeComponent, EmptyStateComponent, PageHeaderComponent, SectionHeaderComponent,
-    SkeletonComponent,
+    SkeletonComponent, BulletinSharingEditorComponent, BulletinSharingPreviewComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './bulletin-editor.component.html',
@@ -113,6 +118,7 @@ export class BulletinEditorComponent implements OnInit {
   readonly conflict = signal(false);
   readonly missing = signal<ReadonlySet<BulletinRequiredField>>(new Set());
   readonly activeTab = signal(0);
+  readonly sharingValidationShown = signal(false);
 
   readonly canWrite = computed(() => this.roles.canWrite('bulletin'));
   readonly published = computed(() => this.edition()?.status === 'PUBLISHED');
@@ -279,10 +285,16 @@ export class BulletinEditorComponent implements OnInit {
     });
   }
 
+  setSharingBlocks(sharingBlocks: BulletinSharingDraftBlock[]): void {
+    if (this.busy()) return;
+    this.patch(d => ({ ...d, sharingBlocks }));
+  }
+
   // ─── Actions ────────────────────────────────────────────────────────────────
 
   save(): void {
     if (this.readOnly() || this.busy()) return;
+    if (!this.validateSharing()) return;
     this.busy.set(true);
     this.saveIfDirty(true)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -301,6 +313,7 @@ export class BulletinEditorComponent implements OnInit {
   confirmPublish(): void {
     const e = this.edition();
     if (!e || this.readOnly() || this.busy()) return;
+    if (!this.validateSharing()) return;
     this.confirm.confirm({
       header: this.translate.instant('bulletins.publish.header'),
       message: e.volume === null
@@ -348,7 +361,7 @@ export class BulletinEditorComponent implements OnInit {
       responseSong: blankToNull(d.responseSong),
       songs: d.songs.map(s => s.trim()).filter(s => s !== ''),
       announcements,
-      sharingBlocks: e.sharingBlocks,
+      sharingBlocks: sharingRequest(d.sharingBlocks),
     };
   }
 
@@ -437,6 +450,15 @@ export class BulletinEditorComponent implements OnInit {
     this.dirty.set(false);
     this.conflict.set(false);
     this.missing.set(new Set());
+    this.sharingValidationShown.set(false);
+  }
+
+  private validateSharing(): boolean {
+    if (sharingIsValid(this.draft()?.sharingBlocks ?? [])) return true;
+    this.sharingValidationShown.set(true);
+    this.activeTab.set(1);
+    this.toast('error', 'bulletins.sharing.errors.invalid');
+    return false;
   }
 
   private patch(change: (d: BulletinDraft) => BulletinDraft): void {
