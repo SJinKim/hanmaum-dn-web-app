@@ -108,9 +108,10 @@
   <div class="flex flex-col gap-[var(--space-16)]" data-testid="create-form">
     <p class="type-body text-ink">{{ 'bulletins.create.description' | translate }}</p>
     <div class="flex flex-col gap-[var(--space-4)]">
-      <label for="bulletin-sunday" class="type-caption text-ink">{{ 'bulletins.create.sunday' | translate }}</label>
+      <label id="bulletin-sunday-label" for="bulletin-sunday" class="type-caption text-ink">{{ 'bulletins.create.sunday' | translate }}</label>
       <p-select
         inputId="bulletin-sunday"
+        ariaLabelledBy="bulletin-sunday-label"
         [options]="dateOptions()"
         optionLabel="label"
         optionValue="serviceDate"
@@ -118,9 +119,8 @@
         (ngModelChange)="selectedDate.set($event)"
         [disabled]="datesLoading() || creating()"
         [invalid]="datesFailed()"
-        [pt]="{ label: { class: 'type-body-sm !text-xs !leading-4 ' + (datesLoading() ? '!text-ink-disabled' : datesFailed() ? '!text-ink' : '!text-ink-muted') }, option: { class: 'type-body-sm !text-xs !leading-4' }, dropdown: { style: { width: datesFailed() ? 'var(--space-48)' : 'var(--space-32)' } } }"
+        [pt]="sundaySelectPt()"
         [placeholder]="(datesLoading() ? 'bulletins.create.datesLoading' : 'bulletins.create.selectSunday') | translate"
-        ariaDescribedBy="bulletin-sunday-hint"
         appendTo="body"
         class="w-full"
         data-testid="create-sunday">
@@ -133,12 +133,10 @@
           </span>
         </ng-template>
       </p-select>
-      @if (!datesLoading()) {
-        <p id="bulletin-sunday-hint" class="type-caption text-ink-muted" aria-live="polite">
-          {{ (datesFailed() ? 'bulletins.create.datesFailed' :
-              selectedSunday()?.editionPublicId ? 'bulletins.create.existingHint' : 'bulletins.create.dateHint') | translate }}
-        </p>
-      }
+      <p id="bulletin-sunday-hint" class="type-caption text-ink-muted" [class.sr-only]="datesLoading()" aria-live="polite" aria-atomic="true">
+        {{ (datesLoading() ? 'bulletins.create.datesLoading' : datesFailed() ? 'bulletins.create.datesFailed' :
+            selectedSunday()?.editionPublicId ? 'bulletins.create.existingHint' : 'bulletins.create.dateHint') | translate }}
+      </p>
     </div>
 
     @if (!datesLoading() && !datesFailed()) {

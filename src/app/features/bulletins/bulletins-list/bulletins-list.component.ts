@@ -77,11 +77,21 @@ export class BulletinsListComponent implements OnInit {
   readonly nextFrom = signal<string | null>(null);
   private datesRequest?: Subscription;
   private requestedFrom?: string;
+  private conflictDate: string | null = null;
 
   readonly dialogPt = {
     header: { style: { paddingBottom: 'var(--space-16)' } },
     content: { style: { paddingBottom: '0' } },
   };
+
+  readonly sundaySelectPt = computed(() => {
+    const labelColor = this.datesLoading() ? '!text-ink-disabled' : this.datesFailed() ? '!text-ink' : '!text-ink-muted';
+    return {
+      label: { class: `type-body-sm !text-xs !leading-4 ${labelColor}`, 'aria-describedby': 'bulletin-sunday-hint' },
+      option: { class: 'type-body-sm !text-xs !leading-4' },
+      dropdown: { style: { width: this.datesFailed() ? 'var(--space-48)' : 'var(--space-32)' } },
+    };
+  });
 
   readonly selectedSunday = computed(() => this.sundays().find(s => s.serviceDate === this.selectedDate()) ?? null);
   readonly dateOptions = computed(() => {
@@ -94,7 +104,7 @@ export class BulletinsListComponent implements OnInit {
     }));
   });
 
-  /** The edition 지난 주보 복사 takes over: the newest one. */
+  /** Copying always uses the newest edition in the server-sorted list. */
   readonly copySource = computed(() => this.editions()[0] ?? null);
 
   readonly subtitle = computed(() => {
@@ -179,6 +189,7 @@ export class BulletinsListComponent implements OnInit {
     this.createMode.set(this.copySource() ? 'copy' : 'blank');
     if (!this.canWrite()) return;
     this.datesRequest?.unsubscribe();
+    this.conflictDate = null;
     this.selectedDate.set(null);
     this.sundays.set([]);
     this.nextFrom.set(null);
@@ -189,11 +200,12 @@ export class BulletinsListComponent implements OnInit {
   closeCreate(): void {
     if (this.creating()) return;
     this.datesRequest?.unsubscribe();
+    this.conflictDate = null;
     this.datesLoading.set(false);
     this.createVisible.set(false);
   }
 
-  loadDates(from?: string, keepSelection = true): void {
+  loadDates(from?: string): void {
     this.datesRequest?.unsubscribe();
     this.requestedFrom = from;
     this.datesLoading.set(true);
@@ -210,12 +222,21 @@ export class BulletinsListComponent implements OnInit {
           }
           this.sundays.set([...options.values()].sort((a, b) => a.serviceDate.localeCompare(b.serviceDate)));
           this.nextFrom.set(defaults.nextFrom);
-          if (!keepSelection || !this.selectedDate()) this.selectedDate.set(defaults.serviceDate);
+          if (!this.selectedDate()) this.selectedDate.set(defaults.serviceDate);
           this.datesLoading.set(false);
+          if (this.conflictDate) {
+            const taken = defaults.sundays.some(s => s.serviceDate === this.conflictDate && s.editionPublicId);
+            this.conflictDate = null;
+            this.toast(taken ? 'warn' : 'error', taken ? 'bulletins.create.dateTaken' : 'bulletins.toast.createFailed');
+          }
         },
         error: () => {
           this.datesLoading.set(false);
           this.datesFailed.set(true);
+          if (this.conflictDate) {
+            this.conflictDate = null;
+            this.toast('error', 'bulletins.toast.createFailed');
+          }
         },
       });
   }
@@ -253,7 +274,7 @@ export class BulletinsListComponent implements OnInit {
         error: (err: unknown) => {
           this.creating.set(false);
           if (err instanceof HttpErrorResponse && err.status === 409) {
-            this.toast('warn', 'bulletins.create.dateTaken');
+            this.conflictDate = sunday.serviceDate;
             this.loadDates(sunday.serviceDate);
           } else {
             this.toast('error', 'bulletins.toast.createFailed');

@@ -3,7 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { provideTranslateService } from '@ngx-translate/core';
+import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { of, Subject, throwError } from 'rxjs';
 
@@ -76,7 +76,7 @@ describe('BulletinsListComponent — 주보 목록 (#36)', () => {
       c.accept?.();
       return confirmations;
     });
-    return { fixture, component: fixture.componentInstance, router, el: fixture.nativeElement as HTMLElement };
+    return { fixture, component: fixture.componentInstance, router, messages, el: fixture.nativeElement as HTMLElement };
   }
 
   it('lists the editions with VOL and publish date', () => {
@@ -227,6 +227,70 @@ describe('BulletinsListComponent — 주보 목록 (#36)', () => {
     component.create();
     expect(router.navigate).toHaveBeenCalledWith(['/bulletins', 'racing-edition']);
     expect(service.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits for refreshed evidence before announcing that a Sunday was taken', () => {
+    const { component, messages } = setup();
+    component.openCreate();
+    const pending = new Subject<BulletinDefaults>();
+    service.create.and.returnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
+    service.defaults.and.returnValue(pending);
+    component.create();
+    expect(messages.add).not.toHaveBeenCalled();
+    pending.next(defaults({ sundays: [{ serviceDate: '2026-10-11', editionPublicId: 'racing', status: 'DRAFT' }] }));
+    expect(messages.add).toHaveBeenCalledWith({ severity: 'warn', summary: 'bulletins.create.dateTaken' });
+  });
+
+  it('shows a normal create error when a 409 refresh confirms that the Sunday is still free', () => {
+    const { component, messages, router } = setup();
+    component.openCreate();
+    component.createMode.set('blank');
+    service.create.and.returnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
+    component.create();
+    expect(component.selectedSunday()?.editionPublicId).toBeNull();
+    expect(component.createMode()).toBe('blank');
+    expect(messages.add).toHaveBeenCalledWith({ severity: 'error', summary: 'bulletins.toast.createFailed' });
+    expect(messages.add).not.toHaveBeenCalledWith({ severity: 'warn', summary: 'bulletins.create.dateTaken' });
+    service.create.and.returnValue(of({ publicId: 'retry-success' } as BulletinEdition));
+    component.create();
+    expect(router.navigate).toHaveBeenCalledWith(['/bulletins', 'retry-success']);
+  });
+
+  it('does not announce a taken date when refreshing after a 409 fails', () => {
+    const { component, messages } = setup();
+    component.openCreate();
+    service.create.and.returnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
+    service.defaults.and.returnValue(throwError(() => new Error('network')));
+    component.create();
+    expect(component.datesFailed()).toBeTrue();
+    expect(messages.add).toHaveBeenCalledWith({ severity: 'error', summary: 'bulletins.toast.createFailed' });
+    expect(messages.add).not.toHaveBeenCalledWith({ severity: 'warn', summary: 'bulletins.create.dateTaken' });
+  });
+
+  it('keeps the described-by live region mounted across asynchronous date loading', () => {
+    const { component, fixture } = setup();
+    const pending = new Subject<BulletinDefaults>();
+    service.defaults.and.returnValue(pending);
+    component.openCreate();
+    fixture.detectChanges();
+    const hint = document.getElementById('bulletin-sunday-hint');
+    expect(hint).not.toBeNull();
+    expect(hint?.getAttribute('aria-live')).toBe('polite');
+    expect(document.getElementById('bulletin-sunday')?.getAttribute('aria-describedby')).toBe('bulletin-sunday-hint');
+    expect(document.getElementById('bulletin-sunday')?.getAttribute('aria-labelledby')).toBe('bulletin-sunday-label');
+    pending.next(defaults());
+    fixture.detectChanges();
+    expect(document.getElementById('bulletin-sunday-hint')).toBe(hint);
+    expect(hint?.classList.contains('sr-only')).toBeFalse();
+    expect(hint?.textContent).toContain('bulletins.create.dateHint');
+  });
+
+  it('keeps the Figma ISO date and source VOL in the copy hint', () => {
+    const { component } = setup();
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('ko', { bulletins: { volume: 'VOL {{volume}}', create: { copyHint: '{{volume}}{{date}} 주보' } } });
+    translate.use('ko');
+    expect(component.copyHint()).toBe('VOL 12 · 2099-10-11 주보');
   });
 
   it('keeps the selected date and mode after a non-conflict create error', () => {

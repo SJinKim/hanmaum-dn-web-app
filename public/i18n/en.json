@@ -1533,7 +1533,7 @@
     "create": {
       "header": "New bulletin",
       "action": "Create",
-      "copy": "Copy an existing bulletin",
+      "copy": "Copy the latest bulletin",
       "copyHint": "Copy the worship order and sermon discussion from {{volume}}{{date}}. The date and VOL will be assigned to the new edition.",
       "blank": "Start with a blank bulletin",
       "blankHint": "Create a new draft without content.",
