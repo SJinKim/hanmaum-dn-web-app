@@ -36,9 +36,17 @@ export interface BulletinService {
   isBulletinDefault: boolean;
 }
 
+export interface BulletinSundayOption {
+  serviceDate: string;
+  editionPublicId: string | null;
+  status: BulletinStatus | null;
+}
+
 export interface BulletinDefaults {
   serviceDate: string;
   service: BulletinService;
+  sundays: BulletinSundayOption[];
+  nextFrom: string;
 }
 
 /** `BulletinServiceRequest` — 예배 추가 and 수정 send the whole service. */

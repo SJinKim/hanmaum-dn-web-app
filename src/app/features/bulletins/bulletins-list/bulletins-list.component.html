@@ -90,42 +90,88 @@
   </p-tabs>
 </div>
 
+<!-- Figma #197: 1073:113839 Light / 1077:117924 Dark; states linked in the issue. -->
 <p-dialog
   [visible]="createVisible()"
-  (visibleChange)="createVisible.set($event)"
+  (visibleChange)="closeCreate()"
   [modal]="true"
-  [style]="{ width: 'min(92vw, 480px)' }"
+  [style]="{ width: 'min(92vw, 400px)' }"
   [draggable]="false"
-  [resizable]="false">
+  [resizable]="false"
+  [closable]="false"
+  [closeOnEscape]="!creating()"
+  [pt]="dialogPt">
   <ng-template #header>
     <h2 class="type-h3 text-ink-strong">{{ 'bulletins.create.header' | translate }}</h2>
   </ng-template>
 
-  <div class="flex flex-col gap-[var(--space-8)]" role="radiogroup" data-testid="create-options">
-    @if (copySource()) {
-      <button
-        type="button"
-        role="radio"
-        [attr.aria-checked]="createMode() === 'copy'"
-        class="border-line-subtle flex flex-col gap-[var(--space-4)] rounded-[var(--radius-md)] border p-[var(--space-12)] text-left"
-        [class.border-primary]="createMode() === 'copy'"
-        data-testid="create-copy"
-        (click)="createMode.set('copy')">
-        <span class="type-body text-ink-strong">{{ 'bulletins.create.copy' | translate }}</span>
-        <span class="type-caption text-ink-muted">{{ copyHint() }}</span>
-      </button>
+  <div class="flex flex-col gap-[var(--space-16)]" data-testid="create-form">
+    <p class="type-body text-ink">{{ 'bulletins.create.description' | translate }}</p>
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label id="bulletin-sunday-label" for="bulletin-sunday" class="type-caption text-ink">{{ 'bulletins.create.sunday' | translate }}</label>
+      <p-select
+        inputId="bulletin-sunday"
+        ariaLabelledBy="bulletin-sunday-label"
+        [options]="dateOptions()"
+        optionLabel="label"
+        optionValue="serviceDate"
+        [ngModel]="selectedDate()"
+        (ngModelChange)="selectedDate.set($event)"
+        [disabled]="datesLoading() || creating()"
+        [invalid]="datesFailed()"
+        [pt]="sundaySelectPt()"
+        [placeholder]="(datesLoading() ? 'bulletins.create.datesLoading' : 'bulletins.create.selectSunday') | translate"
+        appendTo="body"
+        class="w-full"
+        data-testid="create-sunday">
+        <ng-template #dropdownicon>
+          <span class="flex items-center gap-[var(--space-8)]">
+            @if (datesFailed()) {
+              <i class="pi pi-exclamation-triangle text-[var(--color-badge-deleted-fg)]" aria-hidden="true"></i>
+            }
+            <i class="pi pi-chevron-down" aria-hidden="true"></i>
+          </span>
+        </ng-template>
+      </p-select>
+      <p id="bulletin-sunday-hint" class="type-caption text-ink-muted" [class.sr-only]="datesLoading()" aria-live="polite" aria-atomic="true">
+        {{ (datesLoading() ? 'bulletins.create.datesLoading' : datesFailed() ? 'bulletins.create.datesFailed' :
+            selectedSunday()?.editionPublicId ? 'bulletins.create.existingHint' : 'bulletins.create.dateHint') | translate }}
+      </p>
+    </div>
+
+    @if (!datesLoading() && !datesFailed()) {
+      <p-button
+        [text]="true"
+        severity="secondary"
+        size="small"
+        [label]="'bulletins.create.moreDates' | translate"
+        [disabled]="creating()"
+        data-testid="create-more-dates"
+        (onClick)="loadMoreDates()" />
+      @if (!selectedSunday()?.editionPublicId) {
+        <div class="flex flex-col gap-[var(--space-8)]" role="radiogroup" aria-labelledby="create-method-label" data-testid="create-options">
+          <p id="create-method-label" class="type-body-sm text-ink-strong">{{ 'bulletins.create.method' | translate }}</p>
+          <div class="flex flex-col gap-[var(--space-4)]">
+            <div class="flex items-center gap-[var(--space-8)]">
+              <p-radiobutton inputId="create-blank" name="createMode" value="blank"
+                [ngModel]="createMode()" (ngModelChange)="createMode.set($event)" [disabled]="creating()" />
+              <label for="create-blank" class="type-body-sm text-ink">{{ 'bulletins.create.blank' | translate }}</label>
+            </div>
+            <span class="type-caption text-ink-muted pl-[calc(var(--space-16)+var(--space-12))]">{{ 'bulletins.create.blankHint' | translate }}</span>
+          </div>
+          @if (copySource()) {
+            <div class="flex flex-col gap-[var(--space-4)]">
+              <div class="flex items-center gap-[var(--space-8)]">
+                <p-radiobutton inputId="create-copy" name="createMode" value="copy"
+                  [ngModel]="createMode()" (ngModelChange)="createMode.set($event)" [disabled]="creating()" />
+                <label for="create-copy" class="type-body-sm text-ink">{{ 'bulletins.create.copy' | translate }}</label>
+              </div>
+              <span class="type-caption text-ink-muted pl-[calc(var(--space-16)+var(--space-12))]">{{ copyHint() }}</span>
+            </div>
+          }
+        </div>
+      }
     }
-    <button
-      type="button"
-      role="radio"
-      [attr.aria-checked]="createMode() === 'blank'"
-      class="border-line-subtle flex flex-col gap-[var(--space-4)] rounded-[var(--radius-md)] border p-[var(--space-12)] text-left"
-      [class.border-primary]="createMode() === 'blank'"
-      data-testid="create-blank"
-      (click)="createMode.set('blank')">
-      <span class="type-body text-ink-strong">{{ 'bulletins.create.blank' | translate }}</span>
-      <span class="type-caption text-ink-muted">{{ 'bulletins.create.blankHint' | translate }}</span>
-    </button>
   </div>
 
   <ng-template #footer>
@@ -133,12 +179,18 @@
       severity="secondary"
       [outlined]="true"
       [label]="'bulletins.cancel' | translate"
-      (onClick)="createVisible.set(false)" />
-    <p-button
-      [label]="'bulletins.create.action' | translate"
-      [loading]="creating()"
-      data-testid="create-submit"
-      (onClick)="create()" />
+      [disabled]="creating()"
+      (onClick)="closeCreate()" />
+    @if (datesFailed()) {
+      <p-button [label]="'bulletins.create.retry' | translate" data-testid="create-retry" (onClick)="retryDates()" />
+    } @else {
+      <p-button
+        [label]="(selectedSunday()?.editionPublicId ? 'bulletins.create.openExisting' : 'bulletins.create.action') | translate"
+        [loading]="creating()"
+        [disabled]="datesLoading() || !selectedSunday()"
+        data-testid="create-submit"
+        (onClick)="create()" />
+    }
   </ng-template>
 </p-dialog>
 

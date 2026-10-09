@@ -27,8 +27,8 @@ export class BulletinsService {
     return this.api.get<PageResponse<BulletinEditionSummary>>(BASE, { page, size, ...(status ? { status } : {}) });
   }
 
-  defaults(): Observable<BulletinDefaults> {
-    return this.api.get<BulletinDefaults>(`${BASE}/defaults`);
+  defaults(from?: string): Observable<BulletinDefaults> {
+    return this.api.get<BulletinDefaults>(`${BASE}/defaults`, from ? { from } : undefined);
   }
 
   get(publicId: string): Observable<BulletinEdition> {

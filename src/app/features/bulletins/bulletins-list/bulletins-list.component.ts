@@ -1,3 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
@@ -7,6 +10,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
 
@@ -21,7 +26,7 @@ import { ListCardComponent } from '../../../core/ui/list-card/list-card.componen
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
 import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
-import { BULLETIN_STATUS_BADGE, BulletinEditionSummary, formatServiceDate } from '../bulletins.model';
+import { BULLETIN_STATUS_BADGE, BulletinEditionSummary, BulletinSundayOption, formatServiceDate } from '../bulletins.model';
 import { BulletinsService } from '../bulletins.service';
 
 export type CreateMode = 'copy' | 'blank';
@@ -29,14 +34,15 @@ export type CreateMode = 'copy' | 'blank';
 /**
  * 주보 (#36) — Figma: 주보 · 목록. Newest Sunday first, as the server sorts.
  *
- * 새 주보 asks whether to copy the newest edition; the server picks the next
- * free Sunday and the default service, then the editor opens.
+ * Figma #197: 새 주보 shows server-provided Sundays and preselects the earliest
+ * free one. An existing edition is opened instead of duplicated.
  */
 @Component({
   selector: 'app-bulletins-list',
   standalone: true,
   imports: [
-    TranslatePipe, ButtonModule, ConfirmDialogModule, DialogModule, TabsModule, ToastModule,
+    TranslatePipe, FormsModule, ButtonModule, ConfirmDialogModule, DialogModule,
+    RadioButtonModule, SelectModule, TabsModule, ToastModule,
     DataCellDirective, DataTableComponent, EmptyStateComponent, ListCardComponent,
     PageHeaderComponent, SectionHeaderComponent, SkeletonComponent,
   ],
@@ -64,8 +70,41 @@ export class BulletinsListComponent implements OnInit {
   readonly createVisible = signal(false);
   readonly createMode = signal<CreateMode>('copy');
   readonly creating = signal(false);
+  readonly datesLoading = signal(false);
+  readonly datesFailed = signal(false);
+  readonly selectedDate = signal<string | null>(null);
+  readonly sundays = signal<BulletinSundayOption[]>([]);
+  readonly nextFrom = signal<string | null>(null);
+  private datesRequest?: Subscription;
+  private requestedFrom?: string;
+  private conflictDate: string | null = null;
 
-  /** The edition 지난 주보 복사 takes over: the newest one. */
+  readonly dialogPt = {
+    header: { style: { paddingBottom: 'var(--space-16)' } },
+    content: { style: { paddingBottom: '0' } },
+  };
+
+  readonly sundaySelectPt = computed(() => {
+    const labelColor = this.datesLoading() ? '!text-ink-disabled' : this.datesFailed() ? '!text-ink' : '!text-ink-muted';
+    return {
+      label: { class: `type-body-sm !text-xs !leading-4 ${labelColor}`, 'aria-describedby': 'bulletin-sunday-hint' },
+      option: { class: 'type-body-sm !text-xs !leading-4' },
+      dropdown: { style: { width: this.datesFailed() ? 'var(--space-48)' : 'var(--space-32)' } },
+    };
+  });
+
+  readonly selectedSunday = computed(() => this.sundays().find(s => s.serviceDate === this.selectedDate()) ?? null);
+  readonly dateOptions = computed(() => {
+    this.lang();
+    const sunday = this.translate.instant('bulletins.sunday') as string;
+    return this.sundays().map(s => ({
+      ...s,
+      label: formatServiceDate(s.serviceDate, sunday) +
+        (s.status ? ` · ${this.translate.instant(`bulletins.status.${s.status}`)}` : ''),
+    }));
+  });
+
+  /** Copying always uses the newest edition in the server-sorted list. */
   readonly copySource = computed(() => this.editions()[0] ?? null);
 
   readonly subtitle = computed(() => {
@@ -148,14 +187,87 @@ export class BulletinsListComponent implements OnInit {
 
   openCreate(): void {
     this.createMode.set(this.copySource() ? 'copy' : 'blank');
+    if (!this.canWrite()) return;
+    this.datesRequest?.unsubscribe();
+    this.conflictDate = null;
+    this.selectedDate.set(null);
+    this.sundays.set([]);
+    this.nextFrom.set(null);
     this.createVisible.set(true);
+    this.loadDates();
+  }
+
+  closeCreate(): void {
+    if (this.creating()) return;
+    this.datesRequest?.unsubscribe();
+    this.conflictDate = null;
+    this.datesLoading.set(false);
+    this.createVisible.set(false);
+  }
+
+  loadDates(from?: string): void {
+    this.datesRequest?.unsubscribe();
+    this.requestedFrom = from;
+    this.datesLoading.set(true);
+    this.datesFailed.set(false);
+    this.datesRequest = this.service.defaults(from)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: defaults => {
+          const first = defaults.sundays[0]?.serviceDate;
+          const advancedCursor = from && first && first > from ? first : null;
+          // The server can advance a stale cursor after Berlin midnight. Drop expired cached dates.
+          const retained = (from ? this.sundays() : []).filter(s => !advancedCursor || s.serviceDate >= advancedCursor);
+          const options = new Map(retained.map(s => [s.serviceDate, s]));
+          defaults.sundays.forEach(s => options.set(s.serviceDate, s));
+          // A suggestion beyond this batch is still selectable; its date comes from the server.
+          if (!options.has(defaults.serviceDate)) {
+            options.set(defaults.serviceDate, { serviceDate: defaults.serviceDate, editionPublicId: null, status: null });
+          }
+          this.sundays.set([...options.values()].sort((a, b) => a.serviceDate.localeCompare(b.serviceDate)));
+          this.nextFrom.set(defaults.nextFrom);
+          const selected = this.selectedDate();
+          if (!selected || (advancedCursor && selected < advancedCursor)) this.selectedDate.set(defaults.serviceDate);
+          this.datesLoading.set(false);
+          if (this.conflictDate) {
+            const taken = defaults.sundays.some(s => s.serviceDate === this.conflictDate && s.editionPublicId);
+            this.conflictDate = null;
+            this.toast(taken ? 'warn' : 'error', taken ? 'bulletins.create.dateTaken' : 'bulletins.toast.createFailed');
+          }
+        },
+        error: () => {
+          this.datesLoading.set(false);
+          this.datesFailed.set(true);
+          if (this.conflictDate) {
+            this.conflictDate = null;
+            this.toast('error', 'bulletins.toast.createFailed');
+          }
+        },
+      });
+  }
+
+  loadMoreDates(): void {
+    const from = this.nextFrom();
+    if (from && !this.datesLoading()) this.loadDates(from);
+  }
+
+  retryDates(): void {
+    this.loadDates(this.requestedFrom);
   }
 
   create(): void {
+    if (!this.canWrite() || this.creating() || this.datesLoading() || this.datesFailed()) return;
+    const sunday = this.selectedSunday();
+    if (!sunday) return;
+    if (sunday.editionPublicId) {
+      this.closeCreate();
+      this.openEdit(sunday.editionPublicId);
+      return;
+    }
     const source = this.copySource();
     const copyFrom = this.createMode() === 'copy' && source ? source.publicId : undefined;
     this.creating.set(true);
-    this.service.create(copyFrom ? { copyFrom } : {})
+    this.service.create({ serviceDate: sunday.serviceDate, ...(copyFrom ? { copyFrom } : {}) })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: edition => {
@@ -164,9 +276,14 @@ export class BulletinsListComponent implements OnInit {
           this.toast('success', 'bulletins.toast.created');
           this.openEdit(edition.publicId);
         },
-        error: () => {
+        error: (err: unknown) => {
           this.creating.set(false);
-          this.toast('error', 'bulletins.toast.createFailed');
+          if (err instanceof HttpErrorResponse && err.status === 409) {
+            this.conflictDate = sunday.serviceDate;
+            this.loadDates(sunday.serviceDate);
+          } else {
+            this.toast('error', 'bulletins.toast.createFailed');
+          }
         },
       });
   }
@@ -175,7 +292,8 @@ export class BulletinsListComponent implements OnInit {
     const source = this.copySource();
     return source
       ? this.translate.instant('bulletins.create.copyHint', {
-        date: formatServiceDate(source.serviceDate, this.translate.instant('bulletins.sunday')),
+        date: source.serviceDate,
+        volume: source.volume === null ? '' : `${this.volumeLabel(source)} · `,
       })
       : '';
   }
@@ -213,7 +331,7 @@ export class BulletinsListComponent implements OnInit {
     return e.volume === null ? '—' : this.translate.instant('bulletins.volume', { volume: e.volume });
   }
 
-  private toast(severity: 'success' | 'error', key: string): void {
+  private toast(severity: 'success' | 'error' | 'warn', key: string): void {
     this.messages.add({ severity, summary: this.translate.instant(key) });
   }
 }
