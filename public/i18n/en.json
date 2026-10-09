@@ -1533,10 +1533,22 @@
     "create": {
       "header": "New bulletin",
       "action": "Create",
-      "copy": "Copy last bulletin",
-      "copyHint": "Takes over the order and content of the {{date}} bulletin.",
-      "blank": "Empty bulletin",
-      "blankHint": "Starts with every field empty."
+      "copy": "Copy an existing bulletin",
+      "copyHint": "Copy the worship order and sermon discussion from {{volume}}{{date}}. The date and VOL will be assigned to the new edition.",
+      "blank": "Start with a blank bulletin",
+      "blankHint": "Create a new draft without content.",
+      "description": "Choose the Sunday and how to start.",
+      "sunday": "Sunday",
+      "selectSunday": "Choose a Sunday",
+      "dateHint": "Choose today or a future Sunday. Deleting a draft makes its date available again.",
+      "existingHint": "A bulletin already exists for this Sunday. Open it to edit.",
+      "openExisting": "Open existing bulletin",
+      "datesLoading": "Loading Sundays…",
+      "datesFailed": "Could not load Sundays. Please try again.",
+      "moreDates": "Show more Sundays",
+      "retry": "Try again",
+      "dateTaken": "A bulletin was just created for this Sunday. Open the existing bulletin.",
+      "method": "Start with"
     },
     "toast": {
       "created": "Bulletin created.",

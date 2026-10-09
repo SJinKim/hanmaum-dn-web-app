@@ -1,3 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
@@ -7,6 +10,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
 
@@ -21,7 +26,7 @@ import { ListCardComponent } from '../../../core/ui/list-card/list-card.componen
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
 import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
 import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component';
-import { BULLETIN_STATUS_BADGE, BulletinEditionSummary, formatServiceDate } from '../bulletins.model';
+import { BULLETIN_STATUS_BADGE, BulletinEditionSummary, BulletinSundayOption, formatServiceDate } from '../bulletins.model';
 import { BulletinsService } from '../bulletins.service';
 
 export type CreateMode = 'copy' | 'blank';
@@ -29,14 +34,15 @@ export type CreateMode = 'copy' | 'blank';
 /**
  * 주보 (#36) — Figma: 주보 · 목록. Newest Sunday first, as the server sorts.
  *
- * 새 주보 asks whether to copy the newest edition; the server picks the next
- * free Sunday and the default service, then the editor opens.
+ * Figma #197: 새 주보 shows server-provided Sundays and preselects the earliest
+ * free one. An existing edition is opened instead of duplicated.
  */
 @Component({
   selector: 'app-bulletins-list',
   standalone: true,
   imports: [
-    TranslatePipe, ButtonModule, ConfirmDialogModule, DialogModule, TabsModule, ToastModule,
+    TranslatePipe, FormsModule, ButtonModule, ConfirmDialogModule, DialogModule,
+    RadioButtonModule, SelectModule, TabsModule, ToastModule,
     DataCellDirective, DataTableComponent, EmptyStateComponent, ListCardComponent,
     PageHeaderComponent, SectionHeaderComponent, SkeletonComponent,
   ],
@@ -64,6 +70,29 @@ export class BulletinsListComponent implements OnInit {
   readonly createVisible = signal(false);
   readonly createMode = signal<CreateMode>('copy');
   readonly creating = signal(false);
+  readonly datesLoading = signal(false);
+  readonly datesFailed = signal(false);
+  readonly selectedDate = signal<string | null>(null);
+  readonly sundays = signal<BulletinSundayOption[]>([]);
+  readonly nextFrom = signal<string | null>(null);
+  private datesRequest?: Subscription;
+  private requestedFrom?: string;
+
+  readonly dialogPt = {
+    header: { style: { paddingBottom: 'var(--space-16)' } },
+    content: { style: { paddingBottom: '0' } },
+  };
+
+  readonly selectedSunday = computed(() => this.sundays().find(s => s.serviceDate === this.selectedDate()) ?? null);
+  readonly dateOptions = computed(() => {
+    this.lang();
+    const sunday = this.translate.instant('bulletins.sunday') as string;
+    return this.sundays().map(s => ({
+      ...s,
+      label: formatServiceDate(s.serviceDate, sunday) +
+        (s.status ? ` · ${this.translate.instant(`bulletins.status.${s.status}`)}` : ''),
+    }));
+  });
 
   /** The edition 지난 주보 복사 takes over: the newest one. */
   readonly copySource = computed(() => this.editions()[0] ?? null);
@@ -148,14 +177,71 @@ export class BulletinsListComponent implements OnInit {
 
   openCreate(): void {
     this.createMode.set(this.copySource() ? 'copy' : 'blank');
+    if (!this.canWrite()) return;
+    this.datesRequest?.unsubscribe();
+    this.selectedDate.set(null);
+    this.sundays.set([]);
+    this.nextFrom.set(null);
     this.createVisible.set(true);
+    this.loadDates();
+  }
+
+  closeCreate(): void {
+    if (this.creating()) return;
+    this.datesRequest?.unsubscribe();
+    this.datesLoading.set(false);
+    this.createVisible.set(false);
+  }
+
+  loadDates(from?: string, keepSelection = true): void {
+    this.datesRequest?.unsubscribe();
+    this.requestedFrom = from;
+    this.datesLoading.set(true);
+    this.datesFailed.set(false);
+    this.datesRequest = this.service.defaults(from)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: defaults => {
+          const options = new Map((from ? this.sundays() : []).map(s => [s.serviceDate, s]));
+          defaults.sundays.forEach(s => options.set(s.serviceDate, s));
+          // A suggestion beyond this batch is still selectable; its date comes from the server.
+          if (!options.has(defaults.serviceDate)) {
+            options.set(defaults.serviceDate, { serviceDate: defaults.serviceDate, editionPublicId: null, status: null });
+          }
+          this.sundays.set([...options.values()].sort((a, b) => a.serviceDate.localeCompare(b.serviceDate)));
+          this.nextFrom.set(defaults.nextFrom);
+          if (!keepSelection || !this.selectedDate()) this.selectedDate.set(defaults.serviceDate);
+          this.datesLoading.set(false);
+        },
+        error: () => {
+          this.datesLoading.set(false);
+          this.datesFailed.set(true);
+        },
+      });
+  }
+
+  loadMoreDates(): void {
+    const from = this.nextFrom();
+    if (from && !this.datesLoading()) this.loadDates(from);
+  }
+
+  retryDates(): void {
+    this.loadDates(this.requestedFrom);
   }
 
   create(): void {
+    if (!this.canWrite() || this.creating() || this.datesLoading() || this.datesFailed()) return;
+    const sunday = this.selectedSunday();
+    if (!sunday) return;
+    if (sunday.editionPublicId) {
+      this.closeCreate();
+      this.openEdit(sunday.editionPublicId);
+      return;
+    }
     const source = this.copySource();
     const copyFrom = this.createMode() === 'copy' && source ? source.publicId : undefined;
     this.creating.set(true);
-    this.service.create(copyFrom ? { copyFrom } : {})
+    this.service.create({ serviceDate: sunday.serviceDate, ...(copyFrom ? { copyFrom } : {}) })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: edition => {
@@ -164,9 +250,14 @@ export class BulletinsListComponent implements OnInit {
           this.toast('success', 'bulletins.toast.created');
           this.openEdit(edition.publicId);
         },
-        error: () => {
+        error: (err: unknown) => {
           this.creating.set(false);
-          this.toast('error', 'bulletins.toast.createFailed');
+          if (err instanceof HttpErrorResponse && err.status === 409) {
+            this.toast('warn', 'bulletins.create.dateTaken');
+            this.loadDates(sunday.serviceDate);
+          } else {
+            this.toast('error', 'bulletins.toast.createFailed');
+          }
         },
       });
   }
@@ -175,7 +266,8 @@ export class BulletinsListComponent implements OnInit {
     const source = this.copySource();
     return source
       ? this.translate.instant('bulletins.create.copyHint', {
-        date: formatServiceDate(source.serviceDate, this.translate.instant('bulletins.sunday')),
+        date: source.serviceDate,
+        volume: source.volume === null ? '' : `${this.volumeLabel(source)} · `,
       })
       : '';
   }
@@ -213,7 +305,7 @@ export class BulletinsListComponent implements OnInit {
     return e.volume === null ? '—' : this.translate.instant('bulletins.volume', { volume: e.volume });
   }
 
-  private toast(severity: 'success' | 'error', key: string): void {
+  private toast(severity: 'success' | 'error' | 'warn', key: string): void {
     this.messages.add({ severity, summary: this.translate.instant(key) });
   }
 }
