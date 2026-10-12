@@ -4,9 +4,12 @@ import { firstValueFrom, of, throwError } from 'rxjs';
 import { PageResponse } from '../../core/models/api-response.model';
 import { MemberSummary } from '../../core/models/member.model';
 import { MemberCountService } from '../../core/services/member-count.service';
+import { AttendanceGroupCountsResponse, DefinitionDto } from '../attendance/attendance.model';
+import { AttendanceService } from '../attendance/attendance.service';
 import { EventRsvpService } from '../event-rsvps/event-rsvp.service';
 import { MemberService } from '../members/member.service';
 import { MinistryService } from '../ministry/ministry.service';
+import { groupSizeClass } from './home.model';
 import { HomeService } from './home.service';
 
 function page(totalElements: number): PageResponse<MemberSummary> {
@@ -107,5 +110,108 @@ describe('HomeService — snapshot (#93)', () => {
     expect(members.getMembers).not.toHaveBeenCalled();
     expect(snapshot.recentActivity).toEqual([]);
     expect(snapshot.overview.totalMembers).toBe(32);
+  });
+
+  it('asks only the rendered blocks — the 총무 path sends nothing to /members (#211)', async () => {
+    const snapshot = await firstValueFrom(
+      service.loadSnapshot({
+        pendingApprovals: false,
+        overview: false,
+        recentActivity: false,
+        upcomingEvents: false,
+      }),
+    );
+
+    expect(memberCount.count).not.toHaveBeenCalled();
+    expect(members.getMembers).not.toHaveBeenCalled();
+    expect(ministries.getMinistries).not.toHaveBeenCalled();
+    expect(rsvps.getRsvps).not.toHaveBeenCalled();
+    expect(rsvps.getActiveRsvps).toHaveBeenCalled();
+    expect(snapshot.awaitingRsvps).toBe(0);
+  });
+});
+
+describe('HomeService — 일요일 순별 참석 현황 (#211)', () => {
+  let service: HomeService;
+  let attendance: jasmine.SpyObj<AttendanceService>;
+  let members: jasmine.SpyObj<MemberService>;
+
+  const SUNDAY: DefinitionDto = {
+    publicId: 'def-sun',
+    title: '주일예배',
+    dayOfWeek: 'SUNDAY',
+    windowStart: '10:00:00',
+    windowEnd: '13:00:00',
+    isActive: true,
+  };
+  const FRIDAY: DefinitionDto = { ...SUNDAY, publicId: 'def-fri', title: '금요기도회', dayOfWeek: 'FRIDAY' };
+
+  function counts(groups: { name: string | null; count: number }[]): AttendanceGroupCountsResponse {
+    return {
+      definitionPublicId: 'def-sun',
+      definitionTitle: '주일예배',
+      attendanceDate: '2026-10-11',
+      totalCount: groups.reduce((sum, group) => sum + group.count, 0),
+      groups: groups.map((group, index) => ({
+        groupPublicId: group.name ? `g-${index}` : null,
+        groupDivision: null,
+        groupName: group.name,
+        attendanceCount: group.count,
+      })),
+    };
+  }
+
+  beforeEach(() => {
+    attendance = jasmine.createSpyObj<AttendanceService>('AttendanceService', ['getDefinitions', 'getGroupCounts']);
+    members = jasmine.createSpyObj<MemberService>('MemberService', ['getMembers']);
+    attendance.getDefinitions.and.returnValue(of([FRIDAY, SUNDAY]));
+    attendance.getGroupCounts.and.returnValue(of(counts([{ name: '2순', count: 11 }, { name: '1순', count: 4 }])));
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AttendanceService, useValue: attendance },
+        { provide: MemberService, useValue: members },
+        { provide: MemberCountService, useValue: jasmine.createSpyObj('MemberCountService', ['count']) },
+        { provide: MinistryService, useValue: jasmine.createSpyObj('MinistryService', ['getMinistries']) },
+        { provide: EventRsvpService, useValue: jasmine.createSpyObj('EventRsvpService', ['getActiveRsvps', 'getRsvps']) },
+      ],
+    });
+    service = TestBed.inject(HomeService);
+  });
+
+  it('reads the last Sunday of the Sunday service, without a roster', async () => {
+    // Tuesday 2026-10-13 → Sunday 2026-10-11.
+    const result = await firstValueFrom(service.loadSundayGroupCounts(new Date(2026, 9, 13)));
+
+    expect(attendance.getGroupCounts).toHaveBeenCalledOnceWith({ definitionId: 'def-sun', date: '2026-10-11' });
+    expect(members.getMembers).not.toHaveBeenCalled();
+    expect(result.date).toBe('2026-10-11');
+    expect(result.rows.map(row => [row.groupName, row.count, row.sizeClass])).toEqual([
+      ['1순', 4, 'S'],
+      ['2순', 11, 'XL'],
+    ]);
+  });
+
+  it('names the members without a 순', async () => {
+    attendance.getGroupCounts.and.returnValue(of(counts([{ name: null, count: 2 }])));
+
+    const result = await firstValueFrom(service.loadSundayGroupCounts(new Date(2026, 9, 13)));
+
+    expect(result.rows[0].groupName).toBe('소속 그룹 없음');
+  });
+
+  it('answers an empty table when no service is defined', async () => {
+    attendance.getDefinitions.and.returnValue(of([]));
+
+    const result = await firstValueFrom(service.loadSundayGroupCounts());
+
+    expect(result).toEqual({ date: null, rows: [] });
+    expect(attendance.getGroupCounts).not.toHaveBeenCalled();
+  });
+});
+
+describe('groupSizeClass (#211)', () => {
+  it('cuts at 5, 8 and 11', () => {
+    expect([0, 4, 5, 7, 8, 10, 11, 30].map(groupSizeClass)).toEqual(['S', 'S', 'M', 'M', 'L', 'L', 'XL', 'XL']);
   });
 });

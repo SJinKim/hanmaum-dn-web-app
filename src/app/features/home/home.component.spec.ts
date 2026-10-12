@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 import { MemberSummary } from '../../core/models/member.model';
 import { AuthService } from '../../core/services/auth.service';
 import { HomeComponent } from './home.component';
-import { GroupAttendanceRow, HomeSnapshot } from './home.model';
+import { GroupAttendanceRow, HomeSnapshot, SundayGroupCounts } from './home.model';
 import { HomeService } from './home.service';
 
 /**
@@ -37,6 +37,14 @@ const SNAPSHOT: HomeSnapshot = {
   upcomingEvents: [{ publicId: 'e-1', title: '수련회', daysUntil: 5 }],
 };
 
+const SUNDAY_COUNTS: SundayGroupCounts = {
+  date: '2026-10-11',
+  rows: [
+    { groupPublicId: 'g-1', groupName: '1순', count: 4, sizeClass: 'S' },
+    { groupPublicId: 'g-2', groupName: '2순', count: 12, sizeClass: 'XL' },
+  ],
+};
+
 const ROWS: GroupAttendanceRow[] = [
   { groupPublicId: 'g-1', groupName: '1순', attended: 8, total: 10, ratio: 80 },
   { groupPublicId: 'g-2', groupName: '2순', attended: 3, total: 10, ratio: 30 },
@@ -53,9 +61,11 @@ function createHarness(roles: string[] = ['ADMIN']): Harness {
   const home = jasmine.createSpyObj<HomeService>('HomeService', [
     'loadSnapshot',
     'loadGroupAttendance',
+    'loadSundayGroupCounts',
   ]);
   home.loadSnapshot.and.returnValue(of(SNAPSHOT));
   home.loadGroupAttendance.and.returnValue(of(ROWS));
+  home.loadSundayGroupCounts.and.returnValue(of(SUNDAY_COUNTS));
   const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
   router.navigate.and.resolveTo(true);
 
@@ -118,13 +128,67 @@ describe('HomeComponent', () => {
       expect(text()).not.toContain('home.attendance.heading');
       expect(text()).not.toContain('home.recent.heading');
       expect(text()).toContain('home.overview.heading');
-      expect(home.loadSnapshot).toHaveBeenCalledWith({ recentActivity: false });
+      expect(home.loadSnapshot).toHaveBeenCalledWith(jasmine.objectContaining({ recentActivity: false }));
       expect(home.loadGroupAttendance).not.toHaveBeenCalled();
     });
 
-    it('asks an admin snapshot for 최근 활동 (#207)', () => {
+    it('asks an admin snapshot for every block (#207)', () => {
       const { home } = createHarness(['ADMIN']);
-      expect(home.loadSnapshot).toHaveBeenCalledWith({ recentActivity: true });
+      expect(home.loadSnapshot).toHaveBeenCalledWith({
+        pendingApprovals: true,
+        overview: true,
+        recentActivity: true,
+        upcomingEvents: true,
+      });
+    });
+
+    it('gives 총무 only 응답 대기 and 일요일 순별 참석 현황 (#211)', () => {
+      ['general_operations_viewer', 'GENERAL_OPERATIONS_EDITOR'].forEach(role => {
+        TestBed.resetTestingModule();
+        const { text, home } = createHarness([role]);
+        const rendered = text();
+        expect(rendered).toContain('home.attention.awaitingRsvps');
+        expect(rendered).toContain('home.sundayCounts.heading');
+        expect(rendered).not.toContain('home.attention.pendingApprovals');
+        expect(rendered).not.toContain('home.attendance.heading');
+        expect(rendered).not.toContain('home.overview.heading');
+        expect(rendered).not.toContain('home.recent.heading');
+        expect(rendered).not.toContain('home.events.heading');
+        expect(home.loadSnapshot).toHaveBeenCalledWith({
+          pendingApprovals: false,
+          overview: false,
+          recentActivity: false,
+          upcomingEvents: false,
+        });
+        expect(home.loadGroupAttendance).not.toHaveBeenCalled();
+      });
+    });
+
+    it('shows 일요일 순별 참석 현황 to admin and pastor, not to a 순장 (#211)', () => {
+      expect(createHarness(['ADMIN']).text()).toContain('home.sundayCounts.heading');
+      TestBed.resetTestingModule();
+      expect(createHarness(['pastor']).text()).toContain('home.sundayCounts.heading');
+      TestBed.resetTestingModule();
+      const leader = createHarness(['group_leader']);
+      expect(leader.text()).not.toContain('home.sundayCounts.heading');
+      expect(leader.home.loadSundayGroupCounts).not.toHaveBeenCalled();
+    });
+
+    it('prints 순, 인원 and the size letter, never 전체 or 비율 (#211)', () => {
+      const { fixture } = createHarness(['general_operations_viewer']);
+      const table = fixture.nativeElement.querySelector('table') as HTMLTableElement;
+      const headers = Array.from(table.querySelectorAll('thead th'), th => th.textContent?.trim());
+      expect(headers).toEqual(['home.sundayCounts.group', 'home.sundayCounts.count']);
+      const rows = Array.from(table.querySelectorAll('tbody tr'), tr => [
+        tr.querySelector('th')?.textContent?.trim(),
+        tr.querySelector('.tabular-nums')?.textContent?.trim(),
+        tr.querySelector('app-badge')?.textContent?.trim(),
+      ]);
+      expect(rows).toEqual([
+        ['1순', '4', 'S'],
+        ['2순', '12', 'XL'],
+      ]);
+      expect(fixture.nativeElement.textContent).toContain('home.sundayCounts.legend.XL');
     });
   });
 
@@ -163,9 +227,11 @@ describe('HomeComponent', () => {
       const home = jasmine.createSpyObj<HomeService>('HomeService', [
         'loadSnapshot',
         'loadGroupAttendance',
+        'loadSundayGroupCounts',
       ]);
       home.loadSnapshot.and.returnValue(of(SNAPSHOT));
       home.loadGroupAttendance.and.returnValue(of([]));
+      home.loadSundayGroupCounts.and.returnValue(of(SUNDAY_COUNTS));
       TestBed.configureTestingModule({
         imports: [HomeComponent],
         providers: [

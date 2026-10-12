@@ -99,6 +99,19 @@
     "events": {
       "heading": "다가오는 일정",
       "empty": "예정된 일정이 없습니다"
+    },
+    "sundayCounts": {
+      "heading": "일요일 순별 참석 현황",
+      "group": "순",
+      "count": "인원",
+      "date": "{{month}}월 {{day}}일 (주일)",
+      "empty": "지난 주일 출석 기록이 없습니다.",
+      "legend": {
+        "S": "5명 미만",
+        "M": "5–7명",
+        "L": "8–10명",
+        "XL": "11명 이상"
+      }
     }
   },
   "members": {

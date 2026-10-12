@@ -13,10 +13,20 @@ import {
   AttendanceRange,
   GroupAttendanceRow,
   HomeSnapshot,
+  SundayGroupCounts,
   UpcomingEvent,
   daysUntil,
+  groupSizeClass,
   recentSundays,
 } from './home.model';
+
+/**
+ * The snapshot blocks whose requests a role may be refused. `false` sends no
+ * request for that block; an omitted key counts as `true`.
+ */
+export type SnapshotBlocks = Partial<
+  Record<'pendingApprovals' | 'overview' | 'recentActivity' | 'upcomingEvents', boolean>
+>;
 
 /** One page of members big enough to stand in for "all of them". */
 const ROSTER_PAGE_SIZE = 9999;
@@ -52,25 +62,24 @@ export class HomeService {
    * that must cost 응답 대기 only — not 승인 대기, 현황 and the lists with it.
    *
    * The counts come from `/members/count`, which `note_taker` may read; the
-   * member list may not (#207). So 최근 활동 is fetched only when the caller
-   * renders it — `recentActivity: false` sends no `/members` request at all.
+   * member list may not (#207). 총무 may read neither, nor the 행사 list (#211).
+   * So each block's requests go out only when the caller renders it —
+   * `recentActivity: false` sends no `/members` request at all.
    */
-  loadSnapshot(
-    options: { recentActivity: boolean } = { recentActivity: true },
-    now = new Date(),
-  ): Observable<HomeSnapshot> {
+  loadSnapshot(blocks: SnapshotBlocks = {}, now = new Date()): Observable<HomeSnapshot> {
+    const shows = (block: keyof SnapshotBlocks) => blocks[block] ?? true;
+    const when = <T>(block: keyof SnapshotBlocks, source: () => Observable<T>) =>
+      shows(block) ? orNull(source()) : of(null);
     return forkJoin({
-      pending: orNull(this.memberCount.count('PENDING')),
-      total: orNull(this.memberCount.count()),
-      active: orNull(this.memberCount.count('ACTIVE')),
-      ministries: orNull(this.ministries.getMinistries(true)),
+      pending: when('pendingApprovals', () => this.memberCount.count('PENDING')),
+      total: when('overview', () => this.memberCount.count()),
+      active: when('overview', () => this.memberCount.count('ACTIVE')),
+      ministries: when('overview', () => this.ministries.getMinistries(true)),
       activeRsvps: orNull(this.rsvps.getActiveRsvps()),
-      events: orNull(this.rsvps.getRsvps()),
+      events: when('upcomingEvents', () => this.rsvps.getRsvps()),
       // No `sort` — the server ignores it (hanmaum-dn-server#196); `sortByUpdatedAt`
       // below does the ordering over the pool this fetches.
-      recent: options.recentActivity
-        ? orNull(this.members.getMembers({ size: RECENT_ACTIVITY_POOL }))
-        : of(null),
+      recent: when('recentActivity', () => this.members.getMembers({ size: RECENT_ACTIVITY_POOL })),
     }).pipe(
       map(({ pending, total, active, ministries, activeRsvps, events, recent }) => ({
         pendingApprovals: pending,
@@ -114,6 +123,39 @@ export class HomeService {
             this.attendance.getGroupCounts({ definitionId: sundayService.publicId, date }),
           ),
         ).pipe(map(counts => buildAttendanceRows(roster, counts, sundays.length)));
+      }),
+    );
+  }
+
+  /**
+   * 일요일 순별 참석 현황 (#211): the last Sunday's check-ins per 순, nothing
+   * else. No roster — 총무 may not read `/members` — so there is no 전체 and no
+   * 비율, only 인원 and its size class.
+   */
+  loadSundayGroupCounts(now = new Date()): Observable<SundayGroupCounts> {
+    const [date] = recentSundays(1, now);
+    return this.attendance.getDefinitions(true).pipe(
+      switchMap(definitions => {
+        const sundayService =
+          definitions.find(definition => definition.dayOfWeek === 'SUNDAY') ?? definitions[0];
+        if (!sundayService) {
+          return of<SundayGroupCounts>({ date: null, rows: [] });
+        }
+        return this.attendance
+          .getGroupCounts({ definitionId: sundayService.publicId, date })
+          .pipe(
+            map(response => ({
+              date,
+              rows: response.groups
+                .map(group => ({
+                  groupPublicId: group.groupPublicId,
+                  groupName: group.groupName ?? '소속 그룹 없음',
+                  count: group.attendanceCount,
+                  sizeClass: groupSizeClass(group.attendanceCount),
+                }))
+                .sort((left, right) => left.groupName.localeCompare(right.groupName, 'ko')),
+            })),
+          );
       }),
     );
   }

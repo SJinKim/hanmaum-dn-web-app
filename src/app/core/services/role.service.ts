@@ -1,7 +1,7 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { FEATURE_ACCESS, FeatureId, SUPER_ROLES } from '../navigation/feature-access';
 import { HomeBlockId, HomeBlockScope, HOME_BLOCKS } from '../navigation/home-blocks';
-import { NavGroup, NavItem, NavRole, NAV_GROUPS } from '../navigation/nav-config';
+import { NavGroup, NavItem, NAV_GROUPS } from '../navigation/nav-config';
 import { AuthService } from './auth.service';
 
 /**
@@ -20,7 +20,7 @@ export class RoleService {
   readonly isAdmin = computed(() => this.auth.isAdmin());
 
   /** True when the current user may see something gated on `role`. */
-  can(role: NavRole | undefined): boolean {
+  can(role: string | undefined): boolean {
     if (!role) {
       return true;
     }
@@ -62,10 +62,13 @@ export class RoleService {
    * Whether the user gets into the web app at all: some screen other than home
    * must be readable. Everyone else sees the 403 "화면 준비 중" variant.
    */
-  readonly hasWebAccess = computed(() =>
-    (Object.keys(FEATURE_ACCESS) as FeatureId[]).some(
-      feature => feature !== 'home' && this.canRead(feature),
-    ),
+  readonly hasWebAccess = computed(
+    () =>
+      (Object.keys(FEATURE_ACCESS) as FeatureId[]).some(
+        feature => feature !== 'home' && this.canRead(feature),
+      ) ||
+      // A role-gated Home block is web access too: 총무 has no screen but 홈 (#211).
+      HOME_BLOCKS.some(block => !block.pending && !!block.roles?.length && this.canAny(block.roles)),
   );
 
   /**
@@ -124,7 +127,7 @@ export class RoleService {
   }
 
   /** Any-of, because a matrix row is often 관리자 *and* 목사님. */
-  private canAny(roles: readonly NavRole[] | undefined): boolean {
+  private canAny(roles: readonly string[] | undefined): boolean {
     if (!roles || roles.length === 0) {
       return true;
     }

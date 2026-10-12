@@ -25,8 +25,11 @@ import { BadgeVariant, resolveBadgeVariant } from '../../core/ui/variant-tokens'
 import {
   ATTENDANCE_RANGES,
   AttendanceRange,
+  GROUP_SIZE_CLASSES,
   GroupAttendanceRow,
+  GroupSizeClass,
   HomeSnapshot,
+  SundayGroupCounts,
   totalAttendanceRow,
 } from './home.model';
 import { HomeService } from './home.service';
@@ -81,6 +84,10 @@ export class HomeComponent implements OnInit {
   readonly range = signal<AttendanceRange>('last-sunday');
   readonly attendanceLoading = signal(true);
   readonly attendanceRows = signal<readonly GroupAttendanceRow[]>([]);
+
+  readonly sundayCountsLoading = signal(true);
+  readonly sundayCounts = signal<SundayGroupCounts | null>(null);
+  readonly sizeClasses = GROUP_SIZE_CLASSES;
 
   readonly isPhone = this.breakpoints.isPhone;
 
@@ -186,7 +193,12 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     this.home
-      .loadSnapshot({ recentActivity: this.showsBlock('recentActivity') })
+      .loadSnapshot({
+        pendingApprovals: this.showsBlock('pendingApprovals'),
+        overview: this.showsBlock('overview'),
+        recentActivity: this.showsBlock('recentActivity'),
+        upcomingEvents: this.showsBlock('upcomingEvents'),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: snapshot => {
@@ -201,6 +213,12 @@ export class HomeComponent implements OnInit {
     } else {
       this.attendanceLoading.set(false);
     }
+
+    if (this.showsBlock('sundayGroupCounts')) {
+      this.loadSundayCounts();
+    } else {
+      this.sundayCountsLoading.set(false);
+    }
   }
 
   showsBlock(id: HomeBlockId): boolean {
@@ -210,6 +228,16 @@ export class HomeComponent implements OnInit {
   onRangeChange(value: string): void {
     this.range.set(value as AttendanceRange);
     this.loadAttendance();
+  }
+
+  /** Figma 1218:121934: S→neutral, M→pending, L→active, XL→admin. */
+  sizeVariant(sizeClass: GroupSizeClass): BadgeVariant {
+    return SIZE_CLASS_VARIANTS[sizeClass];
+  }
+
+  /** `2026-10-11` → month and day for `home.sundayCounts.date`. */
+  sundayDateParams(iso: string): { month: number; day: number } {
+    return { month: Number(iso.slice(5, 7)), day: Number(iso.slice(8, 10)) };
   }
 
   /** `2026-09-18T…` → `2026.09.18`; the app registers no ko locale data. */
@@ -249,6 +277,22 @@ export class HomeComponent implements OnInit {
     void this.router.navigate(['/members', publicId]);
   }
 
+  private loadSundayCounts(): void {
+    this.home
+      .loadSundayGroupCounts()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: counts => {
+          this.sundayCounts.set(counts);
+          this.sundayCountsLoading.set(false);
+        },
+        error: () => {
+          this.sundayCounts.set(null);
+          this.sundayCountsLoading.set(false);
+        },
+      });
+  }
+
   private loadAttendance(): void {
     this.attendanceLoading.set(true);
     this.home
@@ -266,6 +310,13 @@ export class HomeComponent implements OnInit {
       });
   }
 }
+
+const SIZE_CLASS_VARIANTS: Readonly<Record<GroupSizeClass, BadgeVariant>> = {
+  S: 'neutral',
+  M: 'pending',
+  L: 'active',
+  XL: 'admin',
+};
 
 /** `2026년 9월 21일`. */
 function formatToday(date: Date): string {

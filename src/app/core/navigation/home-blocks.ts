@@ -21,6 +21,11 @@ import { NavRole } from './nav-config';
  * | 최근 활동        | 자기 순 기준| ✓      | ✓      |
  * | 다가오는 일정    | ✓           | ✓      | ✓      |
  * | 통계 화면        | —           | —      | ✓      |
+ *
+ * #211 adds a row outside the 254:3 matrix: 일요일 순별 참석 현황 (Figma
+ * 1218:121934) for 총무 (`general_operations_viewer` / `_editor`), admin and
+ * pastor. 총무 reads no member list and no 행사 list, so every block that needs
+ * one is hidden for them — they see 응답 대기 and this block only.
  */
 export type HomeBlockId =
   | 'pendingApprovals'
@@ -30,7 +35,8 @@ export type HomeBlockId =
   | 'overview'
   | 'recentActivity'
   | 'upcomingEvents'
-  | 'statistics';
+  | 'statistics'
+  | 'sundayGroupCounts';
 
 /**
  * How much data a block shows. `own-group` is the matrix's "자기 순만" / "자기 순
@@ -44,15 +50,17 @@ export interface HomeBlock {
   readonly id: HomeBlockId;
   /**
    * Any one of these roles may see the block. Omitted = every authenticated
-   * user, which is the matrix's three-✓ row.
+   * user, which is the matrix's three-✓ row. A realm role outside `NavRole`
+   * (e.g. `general_operations_viewer`) is matched case-insensitively.
    */
-  readonly roles?: readonly NavRole[];
+  readonly roles?: readonly string[];
   /** Roles that see their own 순 instead of the whole church. */
   readonly ownGroupRoles?: readonly NavRole[];
   /**
    * Realm roles that lose the block unless they also hold a `SUPER_ROLES` role.
    * `note_taker` reads no member list (hanmaum-dn-server#305), so 순별 참석 has
-   * no roster and 최근 활동 no members to show (#205, #207).
+   * no roster and 최근 활동 no members to show (#205, #207). 총무 may read
+   * neither the member list nor `/members/count` nor the 행사 list (#211).
    */
   readonly hiddenForRoles?: readonly string[];
   /**
@@ -64,13 +72,24 @@ export interface HomeBlock {
   readonly pending?: boolean;
 }
 
+const GENERAL_OPERATIONS_ROLES = ['general_operations_viewer', 'general_operations_editor'] as const;
+
 export const HOME_BLOCKS: readonly HomeBlock[] = [
   { id: 'pendingApprovals', roles: ['admin', 'pastor'] },
   { id: 'awaitingRsvps' },
   { id: 'longAbsent', roles: ['pastor'], pending: true },
-  { id: 'groupAttendance', ownGroupRoles: ['leader'], hiddenForRoles: ['note_taker'] },
-  { id: 'overview', ownGroupRoles: ['leader'] },
-  { id: 'recentActivity', ownGroupRoles: ['leader'], hiddenForRoles: ['note_taker'] },
-  { id: 'upcomingEvents' },
+  {
+    id: 'groupAttendance',
+    ownGroupRoles: ['leader'],
+    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES],
+  },
+  { id: 'overview', ownGroupRoles: ['leader'], hiddenForRoles: GENERAL_OPERATIONS_ROLES },
+  {
+    id: 'recentActivity',
+    ownGroupRoles: ['leader'],
+    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES],
+  },
+  { id: 'upcomingEvents', hiddenForRoles: GENERAL_OPERATIONS_ROLES },
   { id: 'statistics', roles: ['pastor'], pending: true },
+  { id: 'sundayGroupCounts', roles: ['admin', 'pastor', ...GENERAL_OPERATIONS_ROLES] },
 ];
