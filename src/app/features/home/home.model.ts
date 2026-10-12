@@ -105,3 +105,33 @@ export function totalAttendanceRow(
     ratio: total > 0 ? Math.round((attended / total) * 100) : 0,
   };
 }
+
+/**
+ * 순 size on the last Sunday (#211): S < 5, M 5–7, L 8–10, XL ≥ 11. The badge
+ * prints the letter, so the class never rests on color alone.
+ */
+export type GroupSizeClass = 'S' | 'M' | 'L' | 'XL';
+
+/** The legend's order, left to right (Figma 1218:121934). */
+export const GROUP_SIZE_CLASSES: readonly GroupSizeClass[] = ['S', 'M', 'L', 'XL'];
+
+export function groupSizeClass(count: number): GroupSizeClass {
+  if (count >= 11) return 'XL';
+  if (count >= 8) return 'L';
+  if (count >= 5) return 'M';
+  return 'S';
+}
+
+/** One 일요일 순별 참석 현황 row: 순 / 인원 — no roster, so no 전체 and no 비율. */
+export interface SundayGroupCountRow {
+  groupPublicId: string | null;
+  groupName: string;
+  count: number;
+  sizeClass: GroupSizeClass;
+}
+
+/** The last Sunday's counts; `date` is `null` when no Sunday service is defined. */
+export interface SundayGroupCounts {
+  date: string | null;
+  rows: SundayGroupCountRow[];
+}

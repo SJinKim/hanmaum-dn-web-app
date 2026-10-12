@@ -99,6 +99,20 @@
     "events": {
       "heading": "Upcoming events",
       "empty": "No upcoming events"
+    },
+    "sundayCounts": {
+      "heading": "Sunday attendance by group",
+      "loadFailed": "Could not load attendance by group.",
+      "group": "Group",
+      "count": "People",
+      "date": "Sun {{month}}/{{day}}",
+      "empty": "No attendance recorded last Sunday.",
+      "legend": {
+        "S": "under 5",
+        "M": "5–7",
+        "L": "8–10",
+        "XL": "11 or more"
+      }
     }
   },
   "members": {

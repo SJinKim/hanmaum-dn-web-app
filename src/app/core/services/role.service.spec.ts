@@ -153,6 +153,12 @@ describe('RoleService', () => {
       );
     });
 
+    it('admits 총무 through its Home block alone, in any case (#211)', () => {
+      ['general_operations_viewer', 'GENERAL_OPERATIONS_EDITOR'].forEach(role =>
+        expect(withRoles([role]).hasWebAccess()).withContext(role).toBeTrue(),
+      );
+    });
+
     it('keeps out a member, an unknown ministry role and a user without roles', () => {
       [['member'], ['worship_viewer'], ['default-roles-hanmaum'], []].forEach(roles =>
         expect(withRoles(roles).hasWebAccess()).withContext(roles.join()).toBeFalse(),
@@ -250,6 +256,29 @@ describe('RoleService', () => {
         expect(roles.showsHomeBlock('groupAttendance')).toBeTrue();
         expect(roles.showsHomeBlock('recentActivity')).toBeTrue();
       });
+    });
+
+    it('gives 총무 only 응답 대기 and 일요일 순별 참석 현황 (#211)', () => {
+      ['general_operations_viewer', 'GENERAL_OPERATIONS_EDITOR'].forEach(role => {
+        const blocks = withRoles([role]).homeBlocks();
+        expect([...blocks]).withContext(role).toEqual(
+          jasmine.arrayWithExactContents(['awaitingRsvps', 'sundayGroupCounts']),
+        );
+      });
+    });
+
+    it('shows 일요일 순별 참석 현황 to admin and pastor but not to a 순장 or note_taker (#211)', () => {
+      expect(withRoles(['ADMIN']).showsHomeBlock('sundayGroupCounts')).toBeTrue();
+      expect(withRoles(['pastor']).showsHomeBlock('sundayGroupCounts')).toBeTrue();
+      expect(withRoles(['group_leader']).showsHomeBlock('sundayGroupCounts')).toBeFalse();
+      expect(withRoles(['note_taker']).showsHomeBlock('sundayGroupCounts')).toBeFalse();
+    });
+
+    it('keeps every block for a 총무 who is also admin (#211)', () => {
+      const roles = withRoles(['general_operations_viewer', 'ADMIN']);
+      expect(roles.showsHomeBlock('overview')).toBeTrue();
+      expect(roles.showsHomeBlock('recentActivity')).toBeTrue();
+      expect(roles.showsHomeBlock('sundayGroupCounts')).toBeTrue();
     });
 
     it('covers every registry entry — no block decides its own visibility', () => {

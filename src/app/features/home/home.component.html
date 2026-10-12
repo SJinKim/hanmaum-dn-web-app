@@ -41,15 +41,75 @@
                 <span class="type-h2 text-ink-strong">{{ snapshot()?.awaitingRsvps ?? '—' }}</span>
               }
             </span>
-            <p-button
-              size="small"
-              severity="secondary"
-              [outlined]="true"
-              [label]="'home.attention.confirm' | translate"
-              (onClick)="goToRsvps()" />
+            @if (canOpenRsvps()) {
+              <p-button
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                [label]="'home.attention.confirm' | translate"
+                (onClick)="goToRsvps()" />
+            }
           </div>
         }
       </div>
+    </section>
+  }
+
+  @if (showsBlock('sundayGroupCounts')) {
+    <!-- Figma 1218:121934 (light) · 1218:122562 (dark), #211. -->
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+      <div class="flex items-center justify-between gap-[var(--space-8)]">
+        <app-section-header class="min-w-px flex-1" [heading]="'home.sundayCounts.heading' | translate" />
+        @if (sundayCounts()?.date; as date) {
+          <span class="type-caption text-ink-muted shrink-0">{{
+            'home.sundayCounts.date' | translate: sundayDateParams(date)
+          }}</span>
+        }
+      </div>
+
+      @if (sundayCountsLoading()) {
+        <app-skeleton variant="card" />
+      } @else if (sundayCountsFailed()) {
+        <app-empty-state variant="error" [heading]="'home.sundayCounts.loadFailed' | translate" />
+      } @else if ((sundayCounts()?.rows ?? []).length === 0) {
+        <app-empty-state variant="no-data" [heading]="'home.sundayCounts.empty' | translate" />
+      } @else {
+        <table class="w-full border-collapse">
+          <caption class="sr-only">{{ 'home.sundayCounts.heading' | translate }}</caption>
+          <thead>
+            <tr class="border-line-subtle border-b">
+              <th scope="col" class="type-caption text-ink-muted py-[var(--space-8)] text-left font-normal">
+                {{ 'home.sundayCounts.group' | translate }}
+              </th>
+              <th scope="col" class="type-caption text-ink-muted py-[var(--space-8)] text-right font-normal">
+                {{ 'home.sundayCounts.count' | translate }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of sundayCounts()?.rows ?? []; track row.groupPublicId ?? row.groupName) {
+              <tr class="border-line-subtle h-[var(--size-table-row)] border-b last:border-b-0">
+                <th scope="row" class="type-body text-ink-strong text-left font-normal">{{ row.groupName }}</th>
+                <td class="text-right">
+                  <span class="inline-flex items-center gap-[var(--space-8)]">
+                    <span class="type-h3 text-ink-strong tabular-nums">{{ row.count }}</span>
+                    <app-badge [variant]="sizeVariant(row.sizeClass)" [label]="row.sizeClass" />
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <p class="type-caption text-ink-muted m-0">
+        @for (sizeClass of sizeClasses; track sizeClass; let last = $last) {
+          {{ sizeClass }} {{ 'home.sundayCounts.legend.' + sizeClass | translate }}@if (!last) {
+            ·
+          }
+        }
+      </p>
     </section>
   }
 
