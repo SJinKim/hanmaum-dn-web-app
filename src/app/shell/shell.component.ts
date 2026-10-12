@@ -1,4 +1,4 @@
-import { Component, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { Component, PLATFORM_ID, computed, effect, inject, signal, untracked } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BreakpointService } from '../core/ui/breakpoint.service';
@@ -15,7 +15,8 @@ const COLLAPSED_KEY = 'sidebar-collapsed';
  * breakpoint decides the default — expanded on Desktop, rail on Tablet, no
  * sidebar at all on Phone — and the collapse toggle overrides it on the two
  * viewports that have a sidebar. The override lives here, not in the sidebar,
- * because it survives navigation and is persisted per browser.
+ * because it survives navigation. Desktop persists it per browser; on Tablet
+ * the sidebar opens only until the next reload or breakpoint change (#208).
  */
 @Component({
   selector: 'app-shell',
@@ -30,6 +31,7 @@ export class ShellComponent {
   readonly isPhone = this.breakpoint.isPhone;
 
   private readonly collapsed = signal(this.readCollapsed());
+  private readonly tabletExpanded = signal(false);
   private readonly drawerOpen = signal(false);
 
   /** Phone has no sidebar — the same nav renders inside the Drawer instead. */
@@ -37,13 +39,26 @@ export class ShellComponent {
   readonly showDrawer = computed(() => this.isPhone() && this.drawerOpen());
 
   readonly sidebarMode = computed<SidebarMode>(() => {
-    if (this.collapsed() || this.breakpoint.isTablet()) {
-      return 'rail';
+    if (this.breakpoint.isTablet()) {
+      return this.tabletExpanded() ? 'expanded' : 'rail';
     }
-    return 'expanded';
+    return this.collapsed() ? 'rail' : 'expanded';
   });
 
+  constructor() {
+    // Leaving Tablet drops the temporary expansion, so returning shows the rail again.
+    effect(() => {
+      if (!this.breakpoint.isTablet()) {
+        untracked(() => this.tabletExpanded.set(false));
+      }
+    });
+  }
+
   toggleSidebar(): void {
+    if (this.breakpoint.isTablet()) {
+      this.tabletExpanded.update(expanded => !expanded);
+      return;
+    }
     const next = !this.collapsed();
     this.collapsed.set(next);
     if (isPlatformBrowser(this.platformId)) {
