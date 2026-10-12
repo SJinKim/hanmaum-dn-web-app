@@ -200,6 +200,15 @@ describe('HomeService — 일요일 순별 참석 현황 (#211)', () => {
     expect(result.rows[0].groupName).toBe('소속 그룹 없음');
   });
 
+  it('never falls back to another weekday when no Sunday service exists', async () => {
+    attendance.getDefinitions.and.returnValue(of([FRIDAY]));
+
+    const result = await firstValueFrom(service.loadSundayGroupCounts(new Date(2026, 9, 13)));
+
+    expect(result).toEqual({ date: null, rows: [] });
+    expect(attendance.getGroupCounts).not.toHaveBeenCalled();
+  });
+
   it('answers an empty table when no service is defined', async () => {
     attendance.getDefinitions.and.returnValue(of([]));
 

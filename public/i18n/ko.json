@@ -102,6 +102,7 @@
     },
     "sundayCounts": {
       "heading": "일요일 순별 참석 현황",
+      "loadFailed": "순별 참석 현황을 불러오지 못했습니다.",
       "group": "순",
       "count": "인원",
       "date": "{{month}}월 {{day}}일 (주일)",

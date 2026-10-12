@@ -102,6 +102,7 @@
     },
     "sundayCounts": {
       "heading": "Sunday attendance by group",
+      "loadFailed": "Could not load attendance by group.",
       "group": "Group",
       "count": "People",
       "date": "Sun {{month}}/{{day}}",

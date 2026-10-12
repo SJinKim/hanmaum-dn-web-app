@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { MemberSummary } from '../../core/models/member.model';
 import { AuthService } from '../../core/services/auth.service';
 import { HomeComponent } from './home.component';
@@ -172,6 +172,27 @@ describe('HomeComponent', () => {
       const leader = createHarness(['group_leader']);
       expect(leader.text()).not.toContain('home.sundayCounts.heading');
       expect(leader.home.loadSundayGroupCounts).not.toHaveBeenCalled();
+    });
+
+    it('shows 총무 the RSVP count without the 확인하기 action they may not open (#211)', () => {
+      ['general_operations_viewer', 'general_operations_editor'].forEach(role => {
+        TestBed.resetTestingModule();
+        const { text } = createHarness([role]);
+        expect(text()).toContain('home.attention.awaitingRsvps');
+        expect(text()).not.toContain('home.attention.confirm');
+      });
+      TestBed.resetTestingModule();
+      expect(createHarness(['ADMIN']).text()).toContain('home.attention.confirm');
+    });
+
+    it('shows a load error, not an empty Sunday, when the counts fail (#211)', () => {
+      TestBed.resetTestingModule();
+      const home = createHarness(['general_operations_viewer']);
+      home.home.loadSundayGroupCounts.and.returnValue(throwError(() => new Error('503')));
+      home.fixture.componentInstance.ngOnInit();
+      home.fixture.detectChanges();
+      expect(home.text()).toContain('home.sundayCounts.loadFailed');
+      expect(home.text()).not.toContain('home.sundayCounts.empty');
     });
 
     it('prints 순, 인원 and the size letter, never 전체 or 비율 (#211)', () => {

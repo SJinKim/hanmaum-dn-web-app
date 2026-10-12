@@ -87,6 +87,10 @@ export class HomeComponent implements OnInit {
 
   readonly sundayCountsLoading = signal(true);
   readonly sundayCounts = signal<SundayGroupCounts | null>(null);
+  /** A failed load is not an empty Sunday — it gets its own error state. */
+  readonly sundayCountsFailed = signal(false);
+  /** 총무 sees the RSVP count but may not open `/event-rsvps`. */
+  readonly canOpenRsvps = computed(() => this.roles.canRead('eventRsvps'));
   readonly sizeClasses = GROUP_SIZE_CLASSES;
 
   readonly isPhone = this.breakpoints.isPhone;
@@ -284,10 +288,12 @@ export class HomeComponent implements OnInit {
       .subscribe({
         next: counts => {
           this.sundayCounts.set(counts);
+          this.sundayCountsFailed.set(false);
           this.sundayCountsLoading.set(false);
         },
         error: () => {
           this.sundayCounts.set(null);
+          this.sundayCountsFailed.set(true);
           this.sundayCountsLoading.set(false);
         },
       });

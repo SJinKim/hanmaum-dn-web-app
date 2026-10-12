@@ -113,8 +113,8 @@ export class HomeService {
       definitions: this.attendance.getDefinitions(true),
     }).pipe(
       switchMap(({ roster, definitions }) => {
-        const sundayService =
-          definitions.find(definition => definition.dayOfWeek === 'SUNDAY') ?? definitions[0];
+        // Only a Sunday service counts; another weekday's zeros would read as real.
+        const sundayService = definitions.find(definition => definition.dayOfWeek === 'SUNDAY');
         if (!sundayService) {
           return of(buildAttendanceRows(roster, [], sundays.length));
         }
@@ -136,8 +136,8 @@ export class HomeService {
     const [date] = recentSundays(1, now);
     return this.attendance.getDefinitions(true).pipe(
       switchMap(definitions => {
-        const sundayService =
-          definitions.find(definition => definition.dayOfWeek === 'SUNDAY') ?? definitions[0];
+        // Only a Sunday service counts; another weekday's zeros would read as real.
+        const sundayService = definitions.find(definition => definition.dayOfWeek === 'SUNDAY');
         if (!sundayService) {
           return of<SundayGroupCounts>({ date: null, rows: [] });
         }

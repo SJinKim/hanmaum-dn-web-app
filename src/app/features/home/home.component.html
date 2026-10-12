@@ -41,12 +41,14 @@
                 <span class="type-h2 text-ink-strong">{{ snapshot()?.awaitingRsvps ?? '—' }}</span>
               }
             </span>
-            <p-button
-              size="small"
-              severity="secondary"
-              [outlined]="true"
-              [label]="'home.attention.confirm' | translate"
-              (onClick)="goToRsvps()" />
+            @if (canOpenRsvps()) {
+              <p-button
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                [label]="'home.attention.confirm' | translate"
+                (onClick)="goToRsvps()" />
+            }
           </div>
         }
       </div>
@@ -68,6 +70,8 @@
 
       @if (sundayCountsLoading()) {
         <app-skeleton variant="card" />
+      } @else if (sundayCountsFailed()) {
+        <app-empty-state variant="error" [heading]="'home.sundayCounts.loadFailed' | translate" />
       } @else if ((sundayCounts()?.rows ?? []).length === 0) {
         <app-empty-state variant="no-data" [heading]="'home.sundayCounts.empty' | translate" />
       } @else {
