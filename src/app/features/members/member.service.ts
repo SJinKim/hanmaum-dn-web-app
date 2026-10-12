@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, Subject, catchError, of, switchMap, tap } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { TrainingCatalogService } from '../../core/services/training-catalog.service';
+import { MemberCountService } from '../../core/services/member-count.service';
 import { PageResponse } from '../../core/models/api-response.model';
 import {
   Member,
@@ -44,6 +45,7 @@ export interface MemberSort {
 export class MemberService {
   private readonly api             = inject(ApiService);
   private readonly trainingCatalog = inject(TrainingCatalogService);
+  private readonly memberCount     = inject(MemberCountService);
 
   /** Shared, real-time count of members in PENDING status. */
   readonly pendingCount = signal(0);
@@ -234,14 +236,14 @@ export class MemberService {
 
   /** Refetches the pending count. Safe to call from anywhere after a state change. */
   refreshPendingCount(): void {
-    this.getMembers({ status: 'PENDING', size: 1 }).subscribe({
-      next: res => this.pendingCount.set(res.totalElements),
+    this.memberCount.count('PENDING').subscribe({
+      next: count => this.pendingCount.set(count),
     });
   }
 
   refreshActiveCount(): void {
-    this.getMembers({ status: 'ACTIVE', size: 1 }).subscribe({
-      next: res => this.activeCount.set(res.totalElements),
+    this.memberCount.count('ACTIVE').subscribe({
+      next: count => this.activeCount.set(count),
     });
   }
 

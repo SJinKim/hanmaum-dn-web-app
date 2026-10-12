@@ -50,6 +50,12 @@ export interface HomeBlock {
   /** Roles that see their own 순 instead of the whole church. */
   readonly ownGroupRoles?: readonly NavRole[];
   /**
+   * Realm roles that lose the block unless they also hold a `SUPER_ROLES` role.
+   * `note_taker` reads no member list (hanmaum-dn-server#305), so 순별 참석 has
+   * no roster and 최근 활동 no members to show (#205, #207).
+   */
+  readonly hiddenForRoles?: readonly string[];
+  /**
    * No endpoint backs this block yet, so it is absent for everyone regardless of
    * role — same reasoning as `NavItem.pending`. 장기 미출석자 has no attendance
    * query behind it in `openapi.yaml`, and 통계 화면 is the `/analytics` screen
@@ -62,9 +68,9 @@ export const HOME_BLOCKS: readonly HomeBlock[] = [
   { id: 'pendingApprovals', roles: ['admin', 'pastor'] },
   { id: 'awaitingRsvps' },
   { id: 'longAbsent', roles: ['pastor'], pending: true },
-  { id: 'groupAttendance', ownGroupRoles: ['leader'] },
+  { id: 'groupAttendance', ownGroupRoles: ['leader'], hiddenForRoles: ['note_taker'] },
   { id: 'overview', ownGroupRoles: ['leader'] },
-  { id: 'recentActivity', ownGroupRoles: ['leader'] },
+  { id: 'recentActivity', ownGroupRoles: ['leader'], hiddenForRoles: ['note_taker'] },
   { id: 'upcomingEvents' },
   { id: 'statistics', roles: ['pastor'], pending: true },
 ];

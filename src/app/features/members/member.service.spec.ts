@@ -289,32 +289,22 @@ describe('MemberService — 청년 list state (#53)', () => {
     expect(service.listLoading()).toBeFalse();
   });
 
-  it('refreshPendingCount asks for one PENDING row only', () => {
+  it('refreshPendingCount reads /members/count with status PENDING (#207)', () => {
     service.refreshPendingCount();
-    const req = http.expectOne(r => r.url.endsWith('/v1/members'));
+    const req = http.expectOne(r => r.url.endsWith('/v1/members/count'));
 
-    expect(req.request.urlWithParams).toContain('status=PENDING');
-    expect(req.request.urlWithParams).toContain('size=1');
-    req.flush({
-      success: true,
-      message: null,
-      data: { content: [], totalElements: 7, totalPages: 7, number: 0, size: 1 },
-    });
+    expect(req.request.params.get('status')).toBe('PENDING');
+    req.flush({ success: true, message: null, data: { count: 7 } });
 
     expect(service.pendingCount()).toBe(7);
   });
 
-  it('refreshActiveCount asks for one ACTIVE row only (#131)', () => {
+  it('refreshActiveCount reads /members/count with status ACTIVE (#207)', () => {
     service.refreshActiveCount();
-    const req = http.expectOne(r => r.url.endsWith('/v1/members'));
+    const req = http.expectOne(r => r.url.endsWith('/v1/members/count'));
 
-    expect(req.request.urlWithParams).toContain('status=ACTIVE');
-    expect(req.request.urlWithParams).toContain('size=1');
-    req.flush({
-      success: true,
-      message: null,
-      data: { content: [], totalElements: 184, totalPages: 184, number: 0, size: 1 },
-    });
+    expect(req.request.params.get('status')).toBe('ACTIVE');
+    req.flush({ success: true, message: null, data: { count: 184 } });
 
     expect(service.activeCount()).toBe(184);
   });

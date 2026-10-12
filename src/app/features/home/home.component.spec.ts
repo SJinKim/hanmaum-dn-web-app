@@ -112,6 +112,20 @@ describe('HomeComponent', () => {
       expect(text()).not.toContain('home.longAbsent');
       expect(text()).not.toContain('home.statistics');
     });
+
+    it('drops 순별 참석 and 최근 활동 for a note_taker and loads neither (#207)', () => {
+      const { text, home } = createHarness(['note_taker']);
+      expect(text()).not.toContain('home.attendance.heading');
+      expect(text()).not.toContain('home.recent.heading');
+      expect(text()).toContain('home.overview.heading');
+      expect(home.loadSnapshot).toHaveBeenCalledWith({ recentActivity: false });
+      expect(home.loadGroupAttendance).not.toHaveBeenCalled();
+    });
+
+    it('asks an admin snapshot for 최근 활동 (#207)', () => {
+      const { home } = createHarness(['ADMIN']);
+      expect(home.loadSnapshot).toHaveBeenCalledWith({ recentActivity: true });
+    });
   });
 
   describe('data', () => {

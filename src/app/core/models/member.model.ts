@@ -148,6 +148,12 @@ export interface ChurchGroupSummary {
 /** `MemberSummaryDto.origin` and the `origin` filter of `GET /v1/members` (#46). */
 export type MemberOrigin  = 'MANUAL' | 'NEWCOMER_FORM' | 'APP';
 export type MemberStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'REJECTED';
+
+/** `GET /v1/members/count` (#207). */
+export interface MemberCountDto {
+  count: number;
+}
+
 export type Gender      = 'M' | 'F';
 export type Baptism     = 'UNBAPTIZED' | 'INFANT_BAPTIZED' | 'CONFIRMATION' | 'GENERAL_BAPTIZED';
 
