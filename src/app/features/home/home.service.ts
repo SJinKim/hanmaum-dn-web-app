@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { MemberSummary } from '../../core/models/member.model';
+import { MemberCountService } from '../../core/services/member-count.service';
 import { AttendanceGroupCountsResponse } from '../attendance/attendance.model';
 import { AttendanceService } from '../attendance/attendance.service';
 import { EventRsvpDto } from '../event-rsvps/event-rsvp.model';
@@ -40,6 +41,7 @@ const UPCOMING_EVENT_ROWS = 3;
 @Injectable({ providedIn: 'root' })
 export class HomeService {
   private readonly members = inject(MemberService);
+  private readonly memberCount = inject(MemberCountService);
   private readonly ministries = inject(MinistryService);
   private readonly attendance = inject(AttendanceService);
   private readonly rsvps = inject(EventRsvpService);
@@ -48,27 +50,36 @@ export class HomeService {
    * Everything except 순별 참석 현황. Each source fails on its own (#93): an
    * account without a member profile gets 404 from `/events/rsvps/active`, and
    * that must cost 응답 대기 only — not 승인 대기, 현황 and the lists with it.
+   *
+   * The counts come from `/members/count`, which `note_taker` may read; the
+   * member list may not (#207). So 최근 활동 is fetched only when the caller
+   * renders it — `recentActivity: false` sends no `/members` request at all.
    */
-  loadSnapshot(now = new Date()): Observable<HomeSnapshot> {
+  loadSnapshot(
+    options: { recentActivity: boolean } = { recentActivity: true },
+    now = new Date(),
+  ): Observable<HomeSnapshot> {
     return forkJoin({
-      pending: orNull(this.members.getMembers({ status: 'PENDING', size: 1 })),
-      total: orNull(this.members.getMembers({ size: 1 })),
-      active: orNull(this.members.getMembers({ status: 'ACTIVE', size: 1 })),
+      pending: orNull(this.memberCount.count('PENDING')),
+      total: orNull(this.memberCount.count()),
+      active: orNull(this.memberCount.count('ACTIVE')),
       ministries: orNull(this.ministries.getMinistries(true)),
       activeRsvps: orNull(this.rsvps.getActiveRsvps()),
       events: orNull(this.rsvps.getRsvps()),
       // No `sort` — the server ignores it (hanmaum-dn-server#196); `sortByUpdatedAt`
       // below does the ordering over the pool this fetches.
-      recent: orNull(this.members.getMembers({ size: RECENT_ACTIVITY_POOL })),
+      recent: options.recentActivity
+        ? orNull(this.members.getMembers({ size: RECENT_ACTIVITY_POOL }))
+        : of(null),
     }).pipe(
       map(({ pending, total, active, ministries, activeRsvps, events, recent }) => ({
-        pendingApprovals: pending?.totalElements ?? null,
+        pendingApprovals: pending,
         // `myStatus === null` is the caller's own 응답 대기; the church-wide
         // count needs hanmaum-dn-server#206.
         awaitingRsvps: activeRsvps?.filter(rsvp => rsvp.myStatus === null).length ?? null,
         overview: {
-          totalMembers: total?.totalElements ?? null,
-          activeMembers: active?.totalElements ?? null,
+          totalMembers: total,
+          activeMembers: active,
           ministries: ministries?.length ?? null,
         },
         recentActivity: sortByUpdatedAt(recent?.content ?? []).slice(0, RECENT_ACTIVITY_ROWS),

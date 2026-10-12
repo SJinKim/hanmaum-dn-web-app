@@ -90,9 +90,9 @@ export class RoleService {
   readonly homeBlocks = computed<ReadonlySet<HomeBlockId>>(
     () =>
       new Set(
-        HOME_BLOCKS.filter(block => !block.pending && this.canAny(block.roles)).map(
-          block => block.id,
-        ),
+        HOME_BLOCKS.filter(
+          block => !block.pending && this.canAny(block.roles) && !this.isHiddenFor(block.hiddenForRoles),
+        ).map(block => block.id),
       ),
   );
 
@@ -113,6 +113,14 @@ export class RoleService {
       this.auth.roles().some(granted => granted.toLowerCase() === role),
     );
     return matchesOwnGroupRole ? 'own-group' : 'all';
+  }
+
+  /** A super role keeps every block, whatever else the user holds. */
+  private isHiddenFor(roles: readonly string[] | undefined): boolean {
+    if (!roles || roles.length === 0) {
+      return false;
+    }
+    return this.hasAnyRole(roles) && !this.hasAnyRole(SUPER_ROLES);
   }
 
   /** Any-of, because a matrix row is often 관리자 *and* 목사님. */

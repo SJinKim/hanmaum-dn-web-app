@@ -234,6 +234,24 @@ describe('RoleService', () => {
       });
     });
 
+    it('hides 순별 참석 and 최근 활동 from a note_taker, in any case (#207)', () => {
+      ['note_taker', 'NOTE_TAKER'].forEach(role => {
+        const roles = withRoles([role]);
+        expect(roles.showsHomeBlock('groupAttendance')).toBeFalse();
+        expect(roles.showsHomeBlock('recentActivity')).toBeFalse();
+        expect(roles.showsHomeBlock('overview')).toBeTrue();
+        expect(roles.showsHomeBlock('upcomingEvents')).toBeTrue();
+      });
+    });
+
+    it('keeps every block for a note_taker who is also admin or pastor (#207)', () => {
+      ['ADMIN', 'pastor'].forEach(superRole => {
+        const roles = withRoles(['note_taker', superRole]);
+        expect(roles.showsHomeBlock('groupAttendance')).toBeTrue();
+        expect(roles.showsHomeBlock('recentActivity')).toBeTrue();
+      });
+    });
+
     it('covers every registry entry — no block decides its own visibility', () => {
       const roles = withRoles(['ADMIN']);
       HOME_BLOCKS.forEach(block =>

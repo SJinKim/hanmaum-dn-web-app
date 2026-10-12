@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { PageResponse } from '../../core/models/api-response.model';
 import { MemberSummary } from '../../core/models/member.model';
+import { MemberCountService } from '../../core/services/member-count.service';
 import { EventRsvpService } from '../event-rsvps/event-rsvp.service';
 import { MemberService } from '../members/member.service';
 import { MinistryService } from '../ministry/ministry.service';
@@ -18,6 +19,7 @@ const NO_MEMBER_PROFILE = new HttpErrorResponse({ status: 404, statusText: 'Not 
 describe('HomeService — snapshot (#93)', () => {
   let service: HomeService;
   let members: jasmine.SpyObj<MemberService>;
+  let memberCount: jasmine.SpyObj<MemberCountService>;
   let ministries: jasmine.SpyObj<MinistryService>;
   let rsvps: jasmine.SpyObj<EventRsvpService>;
 
@@ -26,8 +28,10 @@ describe('HomeService — snapshot (#93)', () => {
     ministries = jasmine.createSpyObj<MinistryService>('MinistryService', ['getMinistries']);
     rsvps = jasmine.createSpyObj<EventRsvpService>('EventRsvpService', ['getActiveRsvps', 'getRsvps']);
 
-    members.getMembers.and.callFake(params =>
-      of(page(params.status === 'PENDING' ? 3 : params.status === 'ACTIVE' ? 28 : 32)),
+    memberCount = jasmine.createSpyObj<MemberCountService>('MemberCountService', ['count']);
+    members.getMembers.and.returnValue(of(page(0)));
+    memberCount.count.and.callFake(status =>
+      of(status === 'PENDING' ? 3 : status === 'ACTIVE' ? 28 : 32),
     );
     ministries.getMinistries.and.returnValue(of([]));
     rsvps.getActiveRsvps.and.returnValue(of([]));
@@ -36,6 +40,7 @@ describe('HomeService — snapshot (#93)', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: MemberService, useValue: members },
+        { provide: MemberCountService, useValue: memberCount },
         { provide: MinistryService, useValue: ministries },
         { provide: EventRsvpService, useValue: rsvps },
       ],
@@ -66,14 +71,41 @@ describe('HomeService — snapshot (#93)', () => {
 
   it('falls back to empty lists when their source fails', async () => {
     rsvps.getRsvps.and.returnValue(throwError(() => new Error('boom')));
-    members.getMembers.and.callFake(params =>
-      params.size === 1 ? of(page(3)) : throwError(() => new Error('boom')),
-    );
+    members.getMembers.and.returnValue(throwError(() => new Error('boom')));
 
     const snapshot = await firstValueFrom(service.loadSnapshot());
 
     expect(snapshot.upcomingEvents).toEqual([]);
     expect(snapshot.recentActivity).toEqual([]);
     expect(snapshot.pendingApprovals).toBe(3);
+  });
+
+  it('reads 승인 대기, 전체 and 활동 from /members/count, not from a member page (#207)', async () => {
+    const snapshot = await firstValueFrom(service.loadSnapshot());
+
+    expect(memberCount.count).toHaveBeenCalledWith('PENDING');
+    expect(memberCount.count).toHaveBeenCalledWith();
+    expect(memberCount.count).toHaveBeenCalledWith('ACTIVE');
+    expect(members.getMembers).not.toHaveBeenCalledWith(jasmine.objectContaining({ size: 1 }));
+    expect(snapshot.pendingApprovals).toBe(3);
+  });
+
+  it('marks a failed count as unavailable, the others stay (#207)', async () => {
+    memberCount.count.and.callFake(status =>
+      status === 'PENDING' ? throwError(() => new Error('boom')) : of(28),
+    );
+
+    const snapshot = await firstValueFrom(service.loadSnapshot());
+
+    expect(snapshot.pendingApprovals).toBeNull();
+    expect(snapshot.overview.activeMembers).toBe(28);
+  });
+
+  it('sends no /members request when 최근 활동 is not rendered — the note_taker path (#207)', async () => {
+    const snapshot = await firstValueFrom(service.loadSnapshot({ recentActivity: false }));
+
+    expect(members.getMembers).not.toHaveBeenCalled();
+    expect(snapshot.recentActivity).toEqual([]);
+    expect(snapshot.overview.totalMembers).toBe(32);
   });
 });

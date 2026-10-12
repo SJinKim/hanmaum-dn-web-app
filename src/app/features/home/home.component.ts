@@ -186,7 +186,7 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     this.home
-      .loadSnapshot()
+      .loadSnapshot({ recentActivity: this.showsBlock('recentActivity') })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: snapshot => {
