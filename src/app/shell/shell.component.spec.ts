@@ -70,6 +70,29 @@ describe('ShellComponent', () => {
       expect(shell.sidebarMode()).toBe('expanded');
     });
 
+    it('opens the tablet rail and closes it again (#208)', () => {
+      breakpoint.current.set('tablet');
+      const shell = createShell();
+      shell.toggleSidebar();
+      expect(shell.sidebarMode()).toBe('expanded');
+      shell.toggleSidebar();
+      expect(shell.sidebarMode()).toBe('rail');
+    });
+
+    it('keeps the tablet expansion out of the desktop preference (#208)', () => {
+      breakpoint.current.set('tablet');
+      const shell = createShell();
+      shell.toggleSidebar();
+      expect(localStorage.getItem(COLLAPSED_KEY)).toBeNull();
+
+      breakpoint.current.set('desktop');
+      TestBed.tick();
+      expect(shell.sidebarMode()).toBe('expanded');
+      breakpoint.current.set('tablet');
+      TestBed.tick();
+      expect(shell.sidebarMode()).toBe('rail');
+    });
+
     it('persists the preference for the next shell', () => {
       createShell().toggleSidebar();
       expect(localStorage.getItem(COLLAPSED_KEY)).toBe('true');
