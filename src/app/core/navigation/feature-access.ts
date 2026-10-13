@@ -42,6 +42,10 @@ const LEADER_ROLES = ['group_leader', 'leader'] as const;
 const GENERAL_OPERATIONS_READ = ['general_operations_viewer', 'general_operations_editor'] as const;
 const GENERAL_OPERATIONS_WRITE = ['general_operations_editor'] as const;
 
+/** 양육팀 (#214): the viewer reads 양육, the editor also writes. */
+const TRAINING_READ = ['training_viewer', 'training_editor'] as const;
+const TRAINING_WRITE = ['training_editor'] as const;
+
 /**
  * Extra roles per feature, on top of `SUPER_ROLES`. `read: 'all'` = every
  * authenticated user. A write role should also be a read role.
@@ -58,7 +62,7 @@ export const FEATURE_ACCESS: Readonly<Record<FeatureId, FeatureAccess>> = {
   home: { read: 'all', write: [] },
   members: { read: ['note_taker'], write: [] },
   newcomers: { read: ['newcomer_viewer', 'newcomer_editor'], write: ['newcomer_editor'] },
-  churchGroups: { read: [...LEADER_ROLES, 'note_taker'], write: [] },
+  churchGroups: { read: [...LEADER_ROLES, 'note_taker', ...TRAINING_READ], write: TRAINING_WRITE },
   attendance: GENERAL_OPERATIONS,
   eventRsvps: GENERAL_OPERATIONS,
   ministry: GENERAL_OPERATIONS,

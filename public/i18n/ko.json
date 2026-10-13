@@ -19,7 +19,7 @@
       "members": "청년",
       "newcomers": "새가족",
       "quickRecords": "빠른 기록",
-      "churchGroups": "순",
+      "churchGroups": "양육",
       "attendance": "출석",
       "eventRsvps": "이벤트",
       "ministry": "사역",
@@ -687,8 +687,8 @@
     }
   },
   "groups": {
-    "eyebrow": "순 관리",
-    "title": "순",
+    "eyebrow": "양육 관리",
+    "title": "양육",
     "subtitle": "{{groups}}개 순 · 청년 {{members}}명 · 단계는 누적 (예비순장 ⊃ 제자반수료 ⊃ 일대일 ⊃ 큐베세)",
     "all": "전체",
     "collapseAll": "모두 접기",

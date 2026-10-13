@@ -76,6 +76,8 @@ export interface HomeBlock {
 }
 
 const GENERAL_OPERATIONS_ROLES = ['general_operations_viewer', 'general_operations_editor'] as const;
+/** 양육팀 (#214) reads 양육 only, so the 청년-data blocks are hidden for them. */
+const TRAINING_ROLES = ['training_viewer', 'training_editor'] as const;
 
 export const HOME_BLOCKS: readonly HomeBlock[] = [
   { id: 'pendingApprovals', roles: ['admin', 'pastor'] },
@@ -84,13 +86,17 @@ export const HOME_BLOCKS: readonly HomeBlock[] = [
   {
     id: 'groupAttendance',
     ownGroupRoles: ['leader'],
-    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES],
+    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES, ...TRAINING_ROLES],
   },
-  { id: 'overview', ownGroupRoles: ['leader'], hiddenForRoles: GENERAL_OPERATIONS_ROLES },
+  {
+    id: 'overview',
+    ownGroupRoles: ['leader'],
+    hiddenForRoles: [...GENERAL_OPERATIONS_ROLES, ...TRAINING_ROLES],
+  },
   {
     id: 'recentActivity',
     ownGroupRoles: ['leader'],
-    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES],
+    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES, ...TRAINING_ROLES],
   },
   { id: 'upcomingEvents', hiddenForRoles: GENERAL_OPERATIONS_ROLES },
   { id: 'statistics', roles: ['pastor'], pending: true },
