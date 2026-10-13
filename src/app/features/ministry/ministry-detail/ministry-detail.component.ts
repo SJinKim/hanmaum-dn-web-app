@@ -10,6 +10,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { injectAppLang } from '../../../core/i18n/language';
+import { RoleService } from '../../../core/services/role.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { DataCellDirective } from '../../../core/ui/data-table/data-cell.directive';
 import { DataTableComponent } from '../../../core/ui/data-table/data-table.component';
@@ -71,9 +72,13 @@ export class MinistryDetailComponent implements OnInit {
   private readonly confirmService  = inject(ConfirmationService);
   private readonly messageService  = inject(MessageService);
   private readonly destroyRef      = inject(DestroyRef);
+  private readonly roles           = inject(RoleService);
   private readonly lang            = injectAppLang();
 
   readonly isPhone = inject(BreakpointService).isPhone;
+
+  /** 총괄팀 viewers read the members and the history; every edit, review and deactivate stays absent (#213). */
+  readonly canWrite = computed(() => this.roles.canWrite('ministry'));
 
   readonly ministry         = signal<Ministry | null>(null);
   readonly activeMembers    = signal<ActiveMinistryMemberDto[]>([]);
@@ -108,14 +113,15 @@ export class MinistryDetailComponent implements OnInit {
   readonly columns = computed<DataColumn[]>(() => {
     this.lang();
     const t = (key: string) => this.translate.instant(`ministry.detail.columns.${key}`) as string;
-    return [
+    const columns: DataColumn[] = [
       { type: 'avatar-name', header: t('name') },
       { type: 'text', header: t('role') },
       { type: 'badge', header: t('status') },
       { type: 'date', header: t('startDate') },
       { type: 'custom', key: 'note', header: t('note'), sortKey: 'cells.note' },
-      { type: 'custom', key: 'manage', header: t('actions') },
     ];
+    if (this.canWrite()) columns.push({ type: 'custom', key: 'manage', header: t('actions') });
+    return columns;
   });
 
   /** 대기 first, so a leader sees open applications without scrolling. */
@@ -173,7 +179,7 @@ export class MinistryDetailComponent implements OnInit {
 
   readonly moreItems = computed<MenuItem[]>(() => {
     this.lang();
-    if (!this.ministry()?.isActive) return [];
+    if (!this.canWrite() || !this.ministry()?.isActive) return [];
     return [{
       label: this.translate.instant('ministry.detail.deactivate') as string,
       icon: 'pi pi-ban',
@@ -268,12 +274,16 @@ export class MinistryDetailComponent implements OnInit {
     return `${year.slice(2)}.${month}`;
   }
 
-  openAddMember(): void { this.addDialogVisible.set(true); }
+  openAddMember(): void {
+    if (!this.canWrite()) return;
+    this.addDialogVisible.set(true);
+  }
 
   /** Reload rather than append, so the order and count match the server. */
   onMemberAdded(): void { this.loadMembersAndHistory(); }
 
   openEditMember(publicId: string): void {
+    if (!this.canWrite()) return;
     this.editingMember.set(this.activeMembers().find(m => m.publicId === publicId) ?? null);
     this.editDialogVisible.set(true);
   }
@@ -285,6 +295,7 @@ export class MinistryDetailComponent implements OnInit {
   }
 
   openReview(publicId: string): void {
+    if (!this.canWrite()) return;
     this.reviewingApplicant.set(this.pendingApplications().find(m => m.publicId === publicId) ?? null);
     this.reviewDialogVisible.set(true);
   }
@@ -304,6 +315,7 @@ export class MinistryDetailComponent implements OnInit {
   onMemberEditFailed(): void { this.toastError('ministry.detail.toast.memberUpdateFailed'); }
 
   confirmRemoveMember(publicId: string): void {
+    if (!this.canWrite()) return;
     const member = this.activeMembers().find(m => m.publicId === publicId);
     if (!member) return;
     const t = (key: string) => this.translate.instant(`ministry.detail.removeDialog.${key}`) as string;
@@ -321,6 +333,7 @@ export class MinistryDetailComponent implements OnInit {
   toggleMore(event: Event): void { this.moreMenu()?.toggle(event); }
 
   confirmDeactivate(event: Event): void {
+    if (!this.canWrite()) return;
     const t = (key: string) => this.translate.instant(`ministry.detail.deactivateDialog.${key}`) as string;
     this.confirmService.confirm({
       target: event.target as EventTarget,

@@ -7,13 +7,15 @@
     [eyebrow]="'attendance.eyebrow' | translate"
     [heading]="'attendance.title' | translate"
     [subtitle]="subtitle()">
-    <div appActions>
-      <p-button
-        icon="pi pi-plus"
-        [label]="'attendance.add' | translate"
-        (onClick)="openAdd()"
-        data-testid="add-definition" />
-    </div>
+    @if (canWrite()) {
+      <div appActions>
+        <p-button
+          icon="pi pi-plus"
+          [label]="'attendance.add' | translate"
+          (onClick)="openAdd()"
+          data-testid="add-definition" />
+      </div>
+    }
   </app-page-header>
 
   <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
@@ -38,7 +40,7 @@
             } @else {
               <div class="flex flex-col gap-[var(--space-8)]">
                 @for (r of records(); track r.id) {
-                  <app-list-card [record]="r" (selected)="openEdit($event.id)" />
+                  <app-list-card [record]="r" [selectable]="canWrite()" (selected)="openEdit($event.id)" />
                 }
               </div>
             }

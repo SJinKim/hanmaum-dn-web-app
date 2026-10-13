@@ -5,6 +5,7 @@ import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 
+import { RoleService } from '../../../core/services/role.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { AttendanceService } from '../attendance.service';
 import { AttendanceGroupCountsResponse, AttendanceLogResponse, DefinitionDto } from '../attendance.model';
@@ -59,8 +60,10 @@ const LOGS: AttendanceLogResponse[] = [
 describe('AttendanceDefinitionsComponent', () => {
   let service: jasmine.SpyObj<AttendanceService>;
   let isPhone: ReturnType<typeof signal<boolean>>;
+  let canWrite: boolean;
 
   beforeEach(() => {
+    canWrite = true;
     service = jasmine.createSpyObj<AttendanceService>('AttendanceService', [
       'getDefinitions', 'getGroupCounts', 'deactivateDefinition', 'createDefinition', 'updateDefinition', 'getLogs',
     ]);
@@ -76,6 +79,7 @@ describe('AttendanceDefinitionsComponent', () => {
         provideTranslateService({ fallbackLang: 'ko' }),
         { provide: AttendanceService, useValue: service },
         { provide: BreakpointService, useValue: { isPhone } },
+        { provide: RoleService, useValue: { canWrite: () => canWrite } },
       ],
     });
     const translate = TestBed.inject(TranslateService);
@@ -103,6 +107,18 @@ describe('AttendanceDefinitionsComponent', () => {
   it('uses the Figma columns 제목, 요일, 체크인 시간, 상태, 관리', () => {
     expect(render().componentInstance.columns().map(c => c.header))
       .toEqual(['제목', '요일', '체크인 시간', '상태', '관리']);
+  });
+
+  it('shows a viewer the definitions without 관리 or 추가 (#213)', () => {
+    canWrite = false;
+    const fixture = render();
+    const c = fixture.componentInstance;
+    const el: HTMLElement = fixture.nativeElement;
+    expect(c.columns().map(col => col.header)).toEqual(['제목', '요일', '체크인 시간', '상태']);
+    expect(el.querySelector('[data-testid="add-definition"]')).toBeNull();
+    c.openAdd();
+    c.openEdit('d2');
+    expect(c.dialogVisible()).toBeFalse();
   });
 
   it('opens the dialog empty for 추가 and filled for ✎', () => {

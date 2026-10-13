@@ -8,21 +8,25 @@
     [eyebrow]="'ministry.eyebrow' | translate"
     [heading]="'ministry.title' | translate"
     [subtitle]="'ministry.subtitle' | translate: { total: total(), active: activeCount() }">
+    @if (canWrite()) {
+      <p-button
+        appActions
+        class="hidden tablet:block"
+        size="small"
+        icon="pi pi-plus"
+        [label]="'ministry.addButton' | translate"
+        (onClick)="goToCreate()" />
+    }
+  </app-page-header>
+
+  @if (canWrite()) {
     <p-button
-      appActions
-      class="hidden tablet:block"
-      size="small"
+      class="tablet:hidden"
+      styleClass="w-full"
       icon="pi pi-plus"
       [label]="'ministry.addButton' | translate"
       (onClick)="goToCreate()" />
-  </app-page-header>
-
-  <p-button
-    class="tablet:hidden"
-    styleClass="w-full"
-    icon="pi pi-plus"
-    [label]="'ministry.addButton' | translate"
-    (onClick)="goToCreate()" />
+  }
 
   <app-search-field
     [value]="searchText()"
@@ -49,7 +53,7 @@
     <app-empty-state
       [heading]="'ministry.empty.heading' | translate"
       [description]="'ministry.empty.description' | translate"
-      [actionLabel]="'ministry.addButton' | translate"
+      [actionLabel]="canWrite() ? ('ministry.addButton' | translate) : undefined"
       actionIcon="pi pi-plus"
       (action)="goToCreate()" />
   } @else if (cards().length === 0) {

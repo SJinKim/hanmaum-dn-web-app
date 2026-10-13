@@ -116,6 +116,42 @@ describe('RoleService', () => {
     });
   });
 
+  describe('총괄팀 (#213)', () => {
+    const ALL = Object.keys(FEATURE_ACCESS) as FeatureId[];
+    const GENERAL_OPERATIONS: FeatureId[] = ['attendance', 'eventRsvps', 'ministry', 'bulletin', 'announcements'];
+
+    it('reads 홈, 출석, 이벤트, 사역, 주보 and 공지사항, in any case', () => {
+      ['general_operations_viewer', 'GENERAL_OPERATIONS_EDITOR'].forEach(role => {
+        const roles = withRoles([role]);
+        expect(ALL.filter(feature => roles.canRead(feature)))
+          .withContext(role)
+          .toEqual(jasmine.arrayWithExactContents(['home', ...GENERAL_OPERATIONS]));
+      });
+    });
+
+    it('lets the editor write those five screens and nothing else', () => {
+      const roles = withRoles(['general_operations_editor']);
+      expect(ALL.filter(feature => roles.canWrite(feature)))
+        .toEqual(jasmine.arrayWithExactContents(GENERAL_OPERATIONS));
+    });
+
+    it('never lets the viewer write', () => {
+      const roles = withRoles(['general_operations_viewer']);
+      ALL.forEach(feature => expect(roles.canWrite(feature)).withContext(feature).toBeFalse());
+    });
+
+    it('shows both roles 홈, 출석, 이벤트, 사역, 주보 and 공지사항 in the navigation', () => {
+      ['general_operations_viewer', 'general_operations_editor'].forEach(role => {
+        const routes = withRoles([role])
+          .navGroups()
+          .flatMap(group => group.items.map(item => item.route));
+        expect(routes).withContext(role).toEqual(
+          jasmine.arrayWithExactContents(['/', '/attendance', '/event-rsvps', '/ministry', '/bulletins', '/announcements']),
+        );
+      });
+    });
+  });
+
   describe('canWrite', () => {
     const ALL = Object.keys(FEATURE_ACCESS) as FeatureId[];
 

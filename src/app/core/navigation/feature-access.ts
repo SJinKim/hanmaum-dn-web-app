@@ -38,6 +38,10 @@ export const SUPER_ROLES: readonly string[] = ['admin', 'pastor'];
 
 const LEADER_ROLES = ['group_leader', 'leader'] as const;
 
+/** 총괄팀 (#213): the viewer reads, the editor also writes. */
+const GENERAL_OPERATIONS_READ = ['general_operations_viewer', 'general_operations_editor'] as const;
+const GENERAL_OPERATIONS_WRITE = ['general_operations_editor'] as const;
+
 /**
  * Extra roles per feature, on top of `SUPER_ROLES`. `read: 'all'` = every
  * authenticated user. A write role should also be a read role.
@@ -48,19 +52,23 @@ export interface FeatureAccess {
 }
 
 const NONE: FeatureAccess = { read: [], write: [] };
+const GENERAL_OPERATIONS: FeatureAccess = { read: GENERAL_OPERATIONS_READ, write: GENERAL_OPERATIONS_WRITE };
 
 export const FEATURE_ACCESS: Readonly<Record<FeatureId, FeatureAccess>> = {
   home: { read: 'all', write: [] },
   members: { read: ['note_taker'], write: [] },
   newcomers: { read: ['newcomer_viewer', 'newcomer_editor'], write: ['newcomer_editor'] },
   churchGroups: { read: [...LEADER_ROLES, 'note_taker'], write: [] },
-  attendance: NONE,
-  eventRsvps: NONE,
-  ministry: NONE,
-  announcements: { read: ['note_taker'], write: ['note_taker'] },
+  attendance: GENERAL_OPERATIONS,
+  eventRsvps: GENERAL_OPERATIONS,
+  ministry: GENERAL_OPERATIONS,
+  announcements: {
+    read: ['note_taker', ...GENERAL_OPERATIONS_READ],
+    write: ['note_taker', ...GENERAL_OPERATIONS_WRITE],
+  },
   archive: NONE,
   analytics: NONE,
-  bulletin: NONE,
+  bulletin: GENERAL_OPERATIONS,
 };
 
 /**

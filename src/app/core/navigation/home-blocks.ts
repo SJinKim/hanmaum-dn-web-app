@@ -24,8 +24,9 @@ import { NavRole } from './nav-config';
  *
  * #211 adds a row outside the 254:3 matrix: 일요일 순별 참석 현황 (Figma
  * 1218:121934) for 총무 (`general_operations_viewer` / `_editor`), admin and
- * pastor. 총무 reads no member list and no 행사 list, so every block that needs
- * one is hidden for them — they see 응답 대기 and this block only.
+ * pastor. 총무 reads no member list, so every block that needs one is hidden
+ * for them — they see 응답 대기 and this block only. #213 opens the 행사 list
+ * to 총무, but 다가오는 일정 stays hidden: the 총무 Home in Figma has no such block.
  */
 export type HomeBlockId =
   | 'pendingApprovals'
@@ -60,7 +61,9 @@ export interface HomeBlock {
    * Realm roles that lose the block unless they also hold a `SUPER_ROLES` role.
    * `note_taker` reads no member list (hanmaum-dn-server#305), so 순별 참석 has
    * no roster and 최근 활동 no members to show (#205, #207). 총무 may read
-   * neither the member list nor `/members/count` nor the 행사 list (#211).
+   * neither the member list nor `/members/count` (#211); 다가오는 일정 stays
+   * hidden for them because the 총무 Home in Figma leaves it out, even though
+   * #213 lets them read the 행사 list.
    */
   readonly hiddenForRoles?: readonly string[];
   /**

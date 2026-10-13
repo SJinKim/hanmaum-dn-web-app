@@ -13,6 +13,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { localDateToIso } from '../../../core/models/member-activity.model';
+import { RoleService } from '../../../core/services/role.service';
 import { injectAppLang } from '../../../core/i18n/language';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { DataColumn, DataRecord } from '../../../core/ui/data-record.model';
@@ -92,9 +93,12 @@ export class AttendanceDefinitionsComponent implements OnInit {
   private readonly destroyRef     = inject(DestroyRef);
   private readonly router         = inject(Router);
   private readonly route          = inject(ActivatedRoute);
+  private readonly roles          = inject(RoleService);
   private readonly lang           = injectAppLang();
 
   readonly isPhone = inject(BreakpointService).isPhone;
+  /** 총괄팀 viewers read the definitions; add, edit and deactivate stay absent (#213). */
+  readonly canWrite = computed(() => this.roles.canWrite('attendance'));
 
   readonly definitions   = signal<DefinitionDto[]>([]);
   readonly loading       = signal(true);
@@ -127,13 +131,14 @@ export class AttendanceDefinitionsComponent implements OnInit {
   readonly columns = computed<DataColumn[]>(() => {
     this.lang();
     const t = (key: string) => this.translate.instant(`attendance.columns.${key}`) as string;
-    return [
+    const columns: DataColumn[] = [
       { type: 'text', key: 'title', header: t('title'), tone: 'strong' },
       { type: 'text', key: 'day', header: t('day'), width: '140px' },
       { type: 'text', key: 'window', header: t('window'), width: '180px' },
       { type: 'badge', header: t('status') },
-      { type: 'actions', header: t('actions') },
     ];
+    if (this.canWrite()) columns.push({ type: 'actions', header: t('actions') });
+    return columns;
   });
 
   readonly records = computed<DataRecord[]>(() => {
@@ -300,11 +305,13 @@ export class AttendanceDefinitionsComponent implements OnInit {
   }
 
   openAdd(): void {
+    if (!this.canWrite()) return;
     this.editing.set(null);
     this.dialogVisible.set(true);
   }
 
   openEdit(publicId: string): void {
+    if (!this.canWrite()) return;
     this.editing.set(this.definitions().find(d => d.publicId === publicId) ?? null);
     this.dialogVisible.set(true);
   }
@@ -320,6 +327,7 @@ export class AttendanceDefinitionsComponent implements OnInit {
   }
 
   confirmDeactivate(publicId: string): void {
+    if (!this.canWrite()) return;
     const def = this.definitions().find(d => d.publicId === publicId);
     if (!def) return;
     this.confirmService.confirm({

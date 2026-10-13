@@ -6,13 +6,15 @@
     [eyebrow]="'events.eyebrow' | translate"
     [heading]="'events.title' | translate"
     [subtitle]="'events.subtitle' | translate">
-    <div appActions>
-      <p-button
-        icon="pi pi-plus"
-        [label]="'events.add' | translate"
-        (onClick)="openAdd()"
-        data-testid="add-event" />
-    </div>
+    @if (canWrite()) {
+      <div appActions>
+        <p-button
+          icon="pi pi-plus"
+          [label]="'events.add' | translate"
+          (onClick)="openAdd()"
+          data-testid="add-event" />
+      </div>
+    }
   </app-page-header>
 
   <div class="grid grid-cols-2 gap-gutter lg:grid-cols-4" data-testid="event-stats">
@@ -78,16 +80,18 @@
               tooltipPosition="top"
               (onClick)="openAttendees(record.id)"
               [attr.data-testid]="'attendees-' + record.id" />
-            <p-button
-              icon="pi pi-pencil"
-              [text]="true"
-              [rounded]="true"
-              severity="secondary"
-              [ariaLabel]="'events.edit' | translate"
-              [pTooltip]="'events.edit' | translate"
-              tooltipPosition="top"
-              (onClick)="openEdit(record.id)"
-              [attr.data-testid]="'edit-' + record.id" />
+            @if (canWrite()) {
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                severity="secondary"
+                [ariaLabel]="'events.edit' | translate"
+                [pTooltip]="'events.edit' | translate"
+                tooltipPosition="top"
+                (onClick)="openEdit(record.id)"
+                [attr.data-testid]="'edit-' + record.id" />
+            }
           </span>
         </ng-template>
       </app-data-table>

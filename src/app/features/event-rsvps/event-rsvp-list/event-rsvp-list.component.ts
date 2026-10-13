@@ -9,6 +9,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 
 import { injectAppLang } from '../../../core/i18n/language';
+import { RoleService } from '../../../core/services/role.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { DataColumn, DataRecord } from '../../../core/ui/data-record.model';
 import { DataCellDirective } from '../../../core/ui/data-table/data-cell.directive';
@@ -84,9 +85,13 @@ export class EventRsvpListComponent implements OnInit {
   private readonly translate      = inject(TranslateService);
   private readonly messageService = inject(MessageService);
   private readonly destroyRef     = inject(DestroyRef);
+  private readonly roles          = inject(RoleService);
   private readonly lang           = injectAppLang();
 
   readonly isPhone = inject(BreakpointService).isPhone;
+
+  /** 총괄팀 viewers see the list and the attendees; add and edit stay absent (#213). */
+  readonly canWrite = computed(() => this.roles.canWrite('eventRsvps'));
 
   readonly rsvps   = signal<EventRsvpDto[]>([]);
   readonly loading = signal(true);
@@ -150,11 +155,13 @@ export class EventRsvpListComponent implements OnInit {
   }
 
   openAdd(): void {
+    if (!this.canWrite()) return;
     this.editing.set(null);
     this.dialogVisible.set(true);
   }
 
   openEdit(publicId: string): void {
+    if (!this.canWrite()) return;
     this.editing.set(this.rsvps().find(r => r.publicId === publicId) ?? null);
     this.dialogVisible.set(true);
   }
