@@ -19,7 +19,7 @@
       "members": "Members",
       "newcomers": "Newcomers",
       "quickRecords": "Quick records",
-      "churchGroups": "Groups",
+      "churchGroups": "Training",
       "attendance": "Attendance",
       "eventRsvps": "Events",
       "ministry": "Ministry",
@@ -687,8 +687,8 @@
     }
   },
   "groups": {
-    "eyebrow": "Small groups",
-    "title": "Small groups",
+    "eyebrow": "Training",
+    "title": "Training",
     "subtitle": "{{groups}} groups · {{members}} young adults · stages are cumulative (next leader ⊃ discipleship ⊃ one-on-one ⊃ QBS)",
     "all": "All",
     "collapseAll": "Collapse all",

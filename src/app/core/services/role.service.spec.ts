@@ -152,6 +152,53 @@ describe('RoleService', () => {
     });
   });
 
+  describe('양육팀 (#214)', () => {
+    const ALL = Object.keys(FEATURE_ACCESS) as FeatureId[];
+
+    it('reads only 홈 and 양육, in any case', () => {
+      ['training_viewer', 'TRAINING_EDITOR'].forEach(role => {
+        const roles = withRoles([role]);
+        expect(ALL.filter(feature => roles.canRead(feature)))
+          .withContext(role)
+          .toEqual(jasmine.arrayWithExactContents(['home', 'churchGroups']));
+      });
+    });
+
+    it('lets the editor write 양육 and nothing else', () => {
+      const roles = withRoles(['training_editor']);
+      expect(ALL.filter(feature => roles.canWrite(feature))).toEqual(['churchGroups']);
+    });
+
+    it('never lets the viewer write', () => {
+      const roles = withRoles(['training_viewer']);
+      ALL.forEach(feature => expect(roles.canWrite(feature)).withContext(feature).toBeFalse());
+    });
+
+    it('shows both roles 홈 and 양육 in the navigation', () => {
+      ['training_viewer', 'training_editor'].forEach(role => {
+        const routes = withRoles([role])
+          .navGroups()
+          .flatMap(group => group.items.map(item => item.route));
+        expect(routes).withContext(role).toEqual(jasmine.arrayWithExactContents(['/', '/church-groups']));
+      });
+    });
+
+    it('hides the 청년-data blocks on 홈', () => {
+      ['training_viewer', 'TRAINING_EDITOR'].forEach(role => {
+        const roles = withRoles([role]);
+        expect(roles.showsHomeBlock('groupAttendance')).withContext(role).toBeFalse();
+        expect(roles.showsHomeBlock('overview')).withContext(role).toBeFalse();
+        expect(roles.showsHomeBlock('recentActivity')).withContext(role).toBeFalse();
+      });
+    });
+
+    it('keeps every block for a 양육팀 member who is also admin', () => {
+      const roles = withRoles(['training_editor', 'ADMIN']);
+      expect(roles.showsHomeBlock('overview')).toBeTrue();
+      expect(roles.showsHomeBlock('recentActivity')).toBeTrue();
+    });
+  });
+
   describe('canWrite', () => {
     const ALL = Object.keys(FEATURE_ACCESS) as FeatureId[];
 

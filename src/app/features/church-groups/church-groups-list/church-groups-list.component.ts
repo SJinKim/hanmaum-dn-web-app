@@ -7,6 +7,7 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { MemberSummary, ChurchGroupSummary } from '../../../core/models/member.model';
+import { RoleService } from '../../../core/services/role.service';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
 import { FilterChipComponent } from '../../../core/ui/filter-chip/filter-chip.component';
 import { GroupCardComponent, GroupCardMember } from '../../../core/ui/group-card/group-card.component';
@@ -48,12 +49,14 @@ export interface DivisionView {
 }
 
 /**
- * 순 (#57) — Figma: Desktop 215:7645, 예비순장 filter 218:7765, Phone 734:38582.
+ * 양육 (#57, named 순 until #214) — Figma: Desktop 215:7645, 예비순장 filter
+ * 218:7765, Phone 734:38582.
  *
  * One GroupCard per 순, grouped by division. The stage filter is single-select
  * and lives in `?stage=` so a filtered view can be shared. Filtering never hides
  * a member: non-matching pills are dimmed. With 예비순장 active, 제자반수료
- * pills become dashed candidates and a click sets or clears 예비순장.
+ * pills become dashed candidates and a click sets or clears 예비순장 — only for
+ * a role that may write 양육 (#214); everyone else gets the plain filter.
  */
 @Component({
   selector: 'app-church-groups-list',
@@ -73,6 +76,9 @@ export class ChurchGroupsListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly messages = inject(MessageService);
+  private readonly roles = inject(RoleService);
+
+  readonly canWrite = computed(() => this.roles.canWrite('churchGroups'));
 
   /** Recomputes the translated labels when the language changes. */
   private readonly lang = toSignal(this.translate.onLangChange);
@@ -99,8 +105,8 @@ export class ChurchGroupsListComponent implements OnInit {
       : null;
   });
 
-  /** 예비순장 active: 제자반수료 pills can be promoted, 예비순장 pills cleared. */
-  readonly assignMode = computed(() => this.stageFilter() === 'next-leader');
+  /** 예비순장 active for a writer: 제자반수료 pills can be promoted, 예비순장 pills cleared. */
+  readonly assignMode = computed(() => this.stageFilter() === 'next-leader' && this.canWrite());
 
   readonly totalMembers = computed(() => this.cells().length);
   readonly groupCount = computed(() =>
@@ -125,7 +131,7 @@ export class ChurchGroupsListComponent implements OnInit {
     const stage = this.stageFilter();
     if (!stage) return null;
     const chip = this.stageChips().find(c => c.stage === stage)!;
-    const key = stage === 'next-leader' ? 'groups.hint.assign' : 'groups.hint.filter';
+    const key = this.assignMode() ? 'groups.hint.assign' : 'groups.hint.filter';
     return this.translate.instant(key, { stage: chip.label, count: chip.count });
   });
 
@@ -200,6 +206,7 @@ export class ChurchGroupsListComponent implements OnInit {
 
   /** Optimistic: flips 예비순장 at once and reverts with a toast if the PATCH fails. */
   toggleNextLeader(publicId: string): void {
+    if (!this.canWrite()) return;
     const member = this.members().find(m => m.publicId === publicId);
     if (!member) return;
     const value = !member.isNextGroupLeader;

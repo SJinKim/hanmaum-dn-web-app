@@ -5,6 +5,7 @@ import { MessageService } from 'primeng/api';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 
 import { ChurchGroupSummary, MemberSummary } from '../../../core/models/member.model';
+import { RoleService } from '../../../core/services/role.service';
 import { ChurchGroupMatrix, ChurchGroupsService, MemberCategory } from '../church-groups.service';
 import { ChurchGroupsListComponent } from './church-groups-list.component';
 
@@ -63,8 +64,10 @@ function fakeMatrix(members: MemberSummary[], groups: ChurchGroupSummary[]): Chu
 describe('ChurchGroupsListComponent', () => {
   let service: jasmine.SpyObj<ChurchGroupsService>;
   let queryParamMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let canWrite: boolean;
 
   beforeEach(() => {
+    canWrite = true;
     service = jasmine.createSpyObj<ChurchGroupsService>('ChurchGroupsService', [
       'loadDashboardData', 'buildMatrix', 'patchMemberFlags',
     ]);
@@ -79,6 +82,7 @@ describe('ChurchGroupsListComponent', () => {
         provideTranslateService({ fallbackLang: 'ko' }),
         { provide: ChurchGroupsService, useValue: service },
         { provide: ActivatedRoute, useValue: { queryParamMap } },
+        { provide: RoleService, useValue: { canWrite: () => canWrite } },
       ],
     });
     const translate = TestBed.inject(TranslateService);
@@ -140,6 +144,19 @@ describe('ChurchGroupsListComponent', () => {
       ['a', undefined, true], ['b', 'candidate', true], ['c', 'dimmed', undefined],
     ]);
     expect(c.assignMode()).toBeTrue();
+  });
+
+  it('keeps 예비순장 a plain filter for a 양육 viewer (#214)', () => {
+    canWrite = false;
+    const c = render('next-leader').componentInstance;
+    const card = c.divisions()[0].cards[0];
+    expect(c.assignMode()).toBeFalse();
+    expect(card.members.map(m => [m.id, m.state, m.interactive])).toEqual([
+      ['a', undefined, false], ['b', 'dimmed', undefined], ['c', 'dimmed', undefined],
+    ]);
+    expect(c.filterHint()).toBe('예비순장 1명 강조');
+    c.toggleNextLeader('b');
+    expect(service.patchMemberFlags).not.toHaveBeenCalled();
   });
 
   it('ignores an unknown ?stage=', () => {

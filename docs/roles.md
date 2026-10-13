@@ -5,17 +5,17 @@ Figma: 08 · Roles, Bildschirm-Zugriff (883:164). Im Code lebt die Matrix in
 (`featureGuard`, `webAccessGuard`), Header und CRUD-Buttons lesen nur diese
 Tabelle.
 
-R = lesen, W = lesen und schreiben, – = kein Zugriff.
+R = lesen, W = lesen und schreiben, – = kein Zugriff. 양육 hieß bis #214 순.
 
-| Bildschirm | admin / pastor | note_taker | group_leader / leader | newcomer_viewer | newcomer_editor | general_operations_viewer | general_operations_editor | member |
-|---|---|---|---|---|---|---|---|---|
-| 홈 | W | R | R | R | R | R | R | R |
-| 청년 (members) | W | R | – | – | – | – | – | – |
-| 새가족 (newcomers) | W | – | – | R | W | – | – | – |
-| 순 (church-groups) | W | R | R | – | – | – | – | – |
-| 공지사항 (announcements) | W | W | – | – | – | R | W | – |
-| 출석, 이벤트, 사역, 주보 | W | – | – | – | – | R | W | – |
-| 기록, 통계 | W | – | – | – | – | – | – | – |
+| Bildschirm | admin / pastor | note_taker | group_leader / leader | newcomer_viewer | newcomer_editor | general_operations_viewer | general_operations_editor | training_viewer | training_editor | member |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 홈 | W | R | R | R | R | R | R | R | R | R |
+| 청년 (members) | W | R | – | – | – | – | – | – | – | – |
+| 새가족 (newcomers) | W | – | – | R | W | – | – | – | – | – |
+| 양육 (church-groups) | W | R | R | – | – | – | – | R | W | – |
+| 공지사항 (announcements) | W | W | – | – | – | R | W | – | – | – |
+| 출석, 이벤트, 사역, 주보 | W | – | – | – | – | R | W | – | – | – |
+| 기록, 통계 | W | – | – | – | – | – | – | – | – | – |
 
 - Rollen werden ohne Rücksicht auf Groß- und Kleinschreibung verglichen.
 - `admin` und `pastor` (`SUPER_ROLES`) lesen und schreiben alles.
@@ -61,7 +61,7 @@ Rollen werden über Gruppen vergeben, nie direkt am User (server#240,
 1. **`pastor` ist serverseitig `admin` gleichgestellt** (RoleHierarchy
    `ROLE_PASTOR > ROLE_ADMIN`). Das Web bildet das über `SUPER_ROLES` ab.
 2. **`note_taker`** darf laut Server dasselbe wie in der Matrix oben: 청년 und
-   순 lesen, 공지사항 lesen und schreiben.
+   양육 lesen, 공지사항 lesen und schreiben.
 3. **순장 ist `group_leader`.** Die Matrix nennt die Rolle `leader`; beide
    Namen werden akzeptiert.
 4. **새가족-Rollen** heißen im Realm `NEWCOMER_VIEWER` und `NEWCOMER_EDITOR`.
@@ -69,3 +69,8 @@ Rollen werden über Gruppen vergeben, nie direkt am User (server#240,
    `general_operations_editor` (#213). Der Viewer bekommt einen 403 auf dem
    체크인 명단, solange `attendance/logs` serverseitig nur `ADMIN` erlaubt
    (server#224). Schreiben ohne 403 erst mit server#306.
+6. **양육팀-Rollen** heißen `training_viewer` und `training_editor` (#214).
+   Nur der Editor setzt 예비순장; für den Viewer bleibt der 예비순장-Chip ein
+   reiner Filter. Auf 홈 fehlen ihnen 순별 참석, 현황 und 최근 활동, weil sie
+   keine 청년-Daten lesen. Serverseitig fehlen die Rollen noch (server#307),
+   bis dahin antwortet der Server ihnen mit 403.
