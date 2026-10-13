@@ -37,6 +37,16 @@ Admin-Dashboard von hanmaum D+N. Backend ist `../hanmaum-dn-server`, der Keycloa
 6. Ist etwas unklar, nicht raten: `gh issue comment` mit der Frage, Label `needs-info` setzen, Issue liegen lassen.
 7. Issues werden nie gelöscht, nur geschlossen (`gh issue close`, Board auf `Done`).
 8. Gemerged wird nur mit ausdrücklichem OK des Users, nie eigenmächtig nach `dev` oder `main`.
+9. Standardmäßig keinen Screenshot an die Abschlussnachricht oder das Issue anhängen. Nur bei ausdrücklichem Wunsch oder wenn der Diff die visuelle Änderung nicht ausreichend prüfbar macht.
+
+## Issue-Ablauf
+
+1. Issue erstellen und auf dem richtigen Board auf `Todo` setzen.
+2. Issue aufnehmen, beschreiben/ergänzen und auf `In Progress` setzen.
+3. Branch und PR bearbeiten; währenddessen den Board-Status aktuell halten.
+4. Nach ausdrücklichem Merge-OK des Users mergen.
+5. Nach dem Merge lokale und remote Feature-Branches löschen.
+6. Issue abschließend bearbeiten, den PR am Issue verlinken, Issue schließen und Board auf `Done` setzen.
 
 ## Board pflegen
 
