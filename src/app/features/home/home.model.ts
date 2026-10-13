@@ -135,3 +135,26 @@ export interface SundayGroupCounts {
   date: string | null;
   rows: SundayGroupCountRow[];
 }
+
+/** One 이번 주 순별 체크인 tile (#206). `groupName` `null` = 소속 없음. */
+export interface SundayCheckinTile {
+  groupPublicId: string | null;
+  groupName: string | null;
+  count: number;
+}
+
+/**
+ * This week's Sunday check-ins: the last Sunday on or before today, so the
+ * block turns over on Sunday itself. `date` is `null` when no Sunday service
+ * is defined.
+ */
+export interface SundayCheckins {
+  date: string | null;
+  tiles: SundayCheckinTile[];
+  total: number;
+}
+
+/** On a Sunday the tiles count live check-ins and refresh. */
+export function isSunday(now = new Date()): boolean {
+  return now.getDay() === 0;
+}

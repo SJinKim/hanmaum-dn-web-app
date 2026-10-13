@@ -27,6 +27,10 @@ import { NavRole } from './nav-config';
  * pastor. 총무 reads no member list, so every block that needs one is hidden
  * for them — they see 응답 대기 and this block only. #213 opens the 행사 list
  * to 총무, but 다가오는 일정 stays hidden: the 총무 Home in Figma has no such block.
+ *
+ * #206 adds 이번 주 순별 체크인 (Figma Admin 1212:123108, 순장 1212:122922): the
+ * current week's Sunday check-ins as tiles, refreshed live on a Sunday. 순장,
+ * 총무, admin and pastor see it; the 새가족 roles do not.
  */
 export type HomeBlockId =
   | 'pendingApprovals'
@@ -37,7 +41,8 @@ export type HomeBlockId =
   | 'recentActivity'
   | 'upcomingEvents'
   | 'statistics'
-  | 'sundayGroupCounts';
+  | 'sundayGroupCounts'
+  | 'sundayCheckins';
 
 /**
  * How much data a block shows. `own-group` is the matrix's "자기 순만" / "자기 순
@@ -78,6 +83,7 @@ export interface HomeBlock {
 const GENERAL_OPERATIONS_ROLES = ['general_operations_viewer', 'general_operations_editor'] as const;
 /** 양육팀 (#214) reads 양육 only, so the 청년-data blocks are hidden for them. */
 const TRAINING_ROLES = ['training_viewer', 'training_editor'] as const;
+const LEADER_ROLES = ['group_leader', 'leader'] as const;
 
 export const HOME_BLOCKS: readonly HomeBlock[] = [
   { id: 'pendingApprovals', roles: ['admin', 'pastor'] },
@@ -101,4 +107,5 @@ export const HOME_BLOCKS: readonly HomeBlock[] = [
   { id: 'upcomingEvents', hiddenForRoles: GENERAL_OPERATIONS_ROLES },
   { id: 'statistics', roles: ['pastor'], pending: true },
   { id: 'sundayGroupCounts', roles: ['admin', 'pastor', ...GENERAL_OPERATIONS_ROLES] },
+  { id: 'sundayCheckins', roles: ['admin', 'pastor', ...LEADER_ROLES, ...GENERAL_OPERATIONS_ROLES] },
 ];

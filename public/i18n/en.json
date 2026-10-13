@@ -113,6 +113,15 @@
         "L": "8–10",
         "XL": "11 or more"
       }
+    },
+    "sundayCheckins": {
+      "heading": "This week's check-ins by group",
+      "live": "Live",
+      "noGroup": "No group",
+      "totalAsOf": "Total · as of {{time}}",
+      "total": "{{count}}",
+      "empty": "No check-ins this week yet.",
+      "loadFailed": "Could not load the check-ins."
     }
   },
   "members": {

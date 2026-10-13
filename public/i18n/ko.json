@@ -113,6 +113,15 @@
         "L": "8–10명",
         "XL": "11명 이상"
       }
+    },
+    "sundayCheckins": {
+      "heading": "이번 주 순별 체크인",
+      "live": "실시간",
+      "noGroup": "소속 없음",
+      "totalAsOf": "합계 · {{time}} 기준",
+      "total": "{{count}}명",
+      "empty": "이번 주 체크인 기록이 없습니다.",
+      "loadFailed": "체크인 현황을 불러오지 못했습니다."
     }
   },
   "members": {
