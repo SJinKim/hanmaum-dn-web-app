@@ -13,6 +13,7 @@ import {
   AttendanceRange,
   GroupAttendanceRow,
   HomeSnapshot,
+  SundayCheckins,
   SundayGroupCounts,
   UpcomingEvent,
   daysUntil,
@@ -133,29 +134,62 @@ export class HomeService {
    * 비율, only 인원 and its size class.
    */
   loadSundayGroupCounts(now = new Date()): Observable<SundayGroupCounts> {
+    return this.sundayCounts(now).pipe(
+      map(({ date, response }) => ({
+        date,
+        rows: (response?.groups ?? [])
+          .map(group => ({
+            groupPublicId: group.groupPublicId,
+            groupName: group.groupName ?? '소속 그룹 없음',
+            count: group.attendanceCount,
+            sizeClass: groupSizeClass(group.attendanceCount),
+          }))
+          .sort((left, right) => left.groupName.localeCompare(right.groupName, 'ko')),
+      })),
+    );
+  }
+
+  /**
+   * 이번 주 순별 체크인 (#206): the same counts as tiles plus their total. 소속
+   * 없음 keeps `groupName: null` — the template translates it — and comes last.
+   */
+  loadSundayCheckins(now = new Date()): Observable<SundayCheckins> {
+    return this.sundayCounts(now).pipe(
+      map(({ date, response }) => {
+        const tiles = (response?.groups ?? [])
+          .map(group => ({
+            groupPublicId: group.groupPublicId,
+            groupName: group.groupName,
+            count: group.attendanceCount,
+          }))
+          .sort((left, right) =>
+            (left.groupName === null) !== (right.groupName === null)
+              ? left.groupName === null ? 1 : -1
+              : (left.groupName ?? '').localeCompare(right.groupName ?? '', 'ko'),
+          );
+        return { date, tiles, total: tiles.reduce((sum, tile) => sum + tile.count, 0) };
+      }),
+    );
+  }
+
+  /**
+   * The last Sunday on or before `now`, and its check-ins per 순. Only a Sunday
+   * service counts; another weekday's zeros would read as real. Without one,
+   * `date` and `response` are both `null`.
+   */
+  private sundayCounts(
+    now: Date,
+  ): Observable<{ date: string | null; response: AttendanceGroupCountsResponse | null }> {
     const [date] = recentSundays(1, now);
     return this.attendance.getDefinitions(true).pipe(
       switchMap(definitions => {
-        // Only a Sunday service counts; another weekday's zeros would read as real.
         const sundayService = definitions.find(definition => definition.dayOfWeek === 'SUNDAY');
         if (!sundayService) {
-          return of<SundayGroupCounts>({ date: null, rows: [] });
+          return of({ date: null, response: null });
         }
         return this.attendance
           .getGroupCounts({ definitionId: sundayService.publicId, date })
-          .pipe(
-            map(response => ({
-              date,
-              rows: response.groups
-                .map(group => ({
-                  groupPublicId: group.groupPublicId,
-                  groupName: group.groupName ?? '소속 그룹 없음',
-                  count: group.attendanceCount,
-                  sizeClass: groupSizeClass(group.attendanceCount),
-                }))
-                .sort((left, right) => left.groupName.localeCompare(right.groupName, 'ko')),
-            })),
-          );
+          .pipe(map(response => ({ date, response })));
       }),
     );
   }

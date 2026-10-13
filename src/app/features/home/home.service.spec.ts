@@ -217,6 +217,45 @@ describe('HomeService — 일요일 순별 참석 현황 (#211)', () => {
     expect(result).toEqual({ date: null, rows: [] });
     expect(attendance.getGroupCounts).not.toHaveBeenCalled();
   });
+
+  describe('이번 주 순별 체크인 (#206)', () => {
+    [
+      { today: new Date(2026, 9, 10), sunday: '2026-10-04', label: 'a Saturday reads the Sunday before' },
+      { today: new Date(2026, 9, 11), sunday: '2026-10-11', label: 'a Sunday reads itself' },
+      { today: new Date(2026, 9, 17), sunday: '2026-10-11', label: 'the week runs until the next Sunday' },
+    ].forEach(({ today, sunday, label }) =>
+      it(label, async () => {
+        const result = await firstValueFrom(service.loadSundayCheckins(today));
+        expect(attendance.getGroupCounts).toHaveBeenCalledOnceWith({ definitionId: 'def-sun', date: sunday });
+        expect(result.date).toBe(sunday);
+      }),
+    );
+
+    it('sorts the tiles by name, puts members without a 순 last and sums them', async () => {
+      attendance.getGroupCounts.and.returnValue(
+        of(counts([{ name: null, count: 2 }, { name: '2순', count: 11 }, { name: '1순', count: 4 }])),
+      );
+
+      const result = await firstValueFrom(service.loadSundayCheckins(new Date(2026, 9, 13)));
+
+      expect(result.tiles.map(tile => [tile.groupName, tile.count])).toEqual([
+        ['1순', 4],
+        ['2순', 11],
+        [null, 2],
+      ]);
+      expect(result.total).toBe(17);
+      expect(members.getMembers).not.toHaveBeenCalled();
+    });
+
+    it('answers no tiles when no Sunday service exists', async () => {
+      attendance.getDefinitions.and.returnValue(of([FRIDAY]));
+
+      const result = await firstValueFrom(service.loadSundayCheckins(new Date(2026, 9, 13)));
+
+      expect(result).toEqual({ date: null, tiles: [], total: 0 });
+      expect(attendance.getGroupCounts).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe('groupSizeClass (#211)', () => {

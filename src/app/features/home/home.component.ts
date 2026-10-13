@@ -1,5 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, map, of, switchMap, timer } from 'rxjs';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -29,7 +30,9 @@ import {
   GroupAttendanceRow,
   GroupSizeClass,
   HomeSnapshot,
+  SundayCheckins,
   SundayGroupCounts,
+  isSunday,
   totalAttendanceRow,
 } from './home.model';
 import { HomeService } from './home.service';
@@ -89,6 +92,14 @@ export class HomeComponent implements OnInit {
   readonly sundayCounts = signal<SundayGroupCounts | null>(null);
   /** A failed load is not an empty Sunday — it gets its own error state. */
   readonly sundayCountsFailed = signal(false);
+  readonly checkinsLoading = signal(true);
+  readonly checkins = signal<SundayCheckins | null>(null);
+  readonly checkinsFailed = signal(false);
+  /** `10:42` — when the tiles were last loaded, for 합계 · … 기준. */
+  readonly checkinsUpdatedAt = signal<string | null>(null);
+  /** On a Sunday the tiles refresh and carry the 실시간 badge (#206). */
+  readonly checkinsLive = isSunday(new Date());
+
   /** 확인하기 only for a role that may open `/event-rsvps` — 총괄팀 may since #213. */
   readonly canOpenRsvps = computed(() => this.roles.canRead('eventRsvps'));
   readonly sizeClasses = GROUP_SIZE_CLASSES;
@@ -223,6 +234,12 @@ export class HomeComponent implements OnInit {
     } else {
       this.sundayCountsLoading.set(false);
     }
+
+    if (this.showsBlock('sundayCheckins')) {
+      this.loadCheckins();
+    } else {
+      this.checkinsLoading.set(false);
+    }
   }
 
   showsBlock(id: HomeBlockId): boolean {
@@ -299,6 +316,32 @@ export class HomeComponent implements OnInit {
       });
   }
 
+  /**
+   * Loads once on a weekday. On a Sunday it polls every 30 s while the screen
+   * is open; a failed poll shows the error state but keeps polling.
+   */
+  private loadCheckins(): void {
+    const ticks = this.checkinsLive ? timer(0, CHECKINS_POLL_MS) : of(0);
+    ticks
+      .pipe(
+        switchMap(() =>
+          this.home.loadSundayCheckins().pipe(
+            map(checkins => ({ checkins, failed: false })),
+            catchError(() => of({ checkins: null, failed: true })),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ checkins, failed }) => {
+        this.checkins.set(checkins);
+        this.checkinsFailed.set(failed);
+        if (!failed) {
+          this.checkinsUpdatedAt.set(formatTime(new Date()));
+        }
+        this.checkinsLoading.set(false);
+      });
+  }
+
   private loadAttendance(): void {
     this.attendanceLoading.set(true);
     this.home
@@ -317,6 +360,8 @@ export class HomeComponent implements OnInit {
   }
 }
 
+const CHECKINS_POLL_MS = 30_000;
+
 const SIZE_CLASS_VARIANTS: Readonly<Record<GroupSizeClass, BadgeVariant>> = {
   S: 'neutral',
   M: 'pending',
@@ -327,4 +372,10 @@ const SIZE_CLASS_VARIANTS: Readonly<Record<GroupSizeClass, BadgeVariant>> = {
 /** `2026년 9월 21일`. */
 function formatToday(date: Date): string {
   return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+/** `10:42`. */
+function formatTime(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }

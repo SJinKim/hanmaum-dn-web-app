@@ -341,11 +341,11 @@ describe('RoleService', () => {
       });
     });
 
-    it('gives 총무 only 응답 대기 and 일요일 순별 참석 현황 (#211)', () => {
+    it('gives 총무 only 응답 대기, 일요일 순별 참석 현황 and 순별 체크인 (#211, #206)', () => {
       ['general_operations_viewer', 'GENERAL_OPERATIONS_EDITOR'].forEach(role => {
         const blocks = withRoles([role]).homeBlocks();
         expect([...blocks]).withContext(role).toEqual(
-          jasmine.arrayWithExactContents(['awaitingRsvps', 'sundayGroupCounts']),
+          jasmine.arrayWithExactContents(['awaitingRsvps', 'sundayGroupCounts', 'sundayCheckins']),
         );
       });
     });
@@ -355,6 +355,15 @@ describe('RoleService', () => {
       expect(withRoles(['pastor']).showsHomeBlock('sundayGroupCounts')).toBeTrue();
       expect(withRoles(['group_leader']).showsHomeBlock('sundayGroupCounts')).toBeFalse();
       expect(withRoles(['note_taker']).showsHomeBlock('sundayGroupCounts')).toBeFalse();
+    });
+
+    it('shows 이번 주 순별 체크인 to 순장, 총무, admin and pastor only (#206)', () => {
+      ['group_leader', 'leader', 'general_operations_viewer', 'ADMIN', 'pastor'].forEach(role =>
+        expect(withRoles([role]).showsHomeBlock('sundayCheckins')).withContext(role).toBeTrue(),
+      );
+      ['NEWCOMER_VIEWER', 'NEWCOMER_EDITOR', 'note_taker', 'member'].forEach(role =>
+        expect(withRoles([role]).showsHomeBlock('sundayCheckins')).withContext(role).toBeFalse(),
+      );
     });
 
     it('keeps every block for a 총무 who is also admin (#211)', () => {

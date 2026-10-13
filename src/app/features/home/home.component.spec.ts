@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 import { MemberSummary } from '../../core/models/member.model';
 import { AuthService } from '../../core/services/auth.service';
 import { HomeComponent } from './home.component';
-import { GroupAttendanceRow, HomeSnapshot, SundayGroupCounts } from './home.model';
+import { GroupAttendanceRow, HomeSnapshot, SundayCheckins, SundayGroupCounts } from './home.model';
 import { HomeService } from './home.service';
 
 /**
@@ -37,6 +37,15 @@ const SNAPSHOT: HomeSnapshot = {
   upcomingEvents: [{ publicId: 'e-1', title: '수련회', daysUntil: 5 }],
 };
 
+const CHECKINS: SundayCheckins = {
+  date: '2026-10-11',
+  tiles: [
+    { groupPublicId: 'g-1', groupName: '1순', count: 4 },
+    { groupPublicId: null, groupName: null, count: 2 },
+  ],
+  total: 6,
+};
+
 const SUNDAY_COUNTS: SundayGroupCounts = {
   date: '2026-10-11',
   rows: [
@@ -62,10 +71,12 @@ function createHarness(roles: string[] = ['ADMIN']): Harness {
     'loadSnapshot',
     'loadGroupAttendance',
     'loadSundayGroupCounts',
+    'loadSundayCheckins',
   ]);
   home.loadSnapshot.and.returnValue(of(SNAPSHOT));
   home.loadGroupAttendance.and.returnValue(of(ROWS));
   home.loadSundayGroupCounts.and.returnValue(of(SUNDAY_COUNTS));
+  home.loadSundayCheckins.and.returnValue(of(CHECKINS));
   const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
   router.navigate.and.resolveTo(true);
 
@@ -252,10 +263,12 @@ describe('HomeComponent', () => {
         'loadSnapshot',
         'loadGroupAttendance',
         'loadSundayGroupCounts',
+        'loadSundayCheckins',
       ]);
       home.loadSnapshot.and.returnValue(of(SNAPSHOT));
       home.loadGroupAttendance.and.returnValue(of([]));
       home.loadSundayGroupCounts.and.returnValue(of(SUNDAY_COUNTS));
+      home.loadSundayCheckins.and.returnValue(of(CHECKINS));
       TestBed.configureTestingModule({
         imports: [HomeComponent],
         providers: [
@@ -307,6 +320,57 @@ describe('HomeComponent', () => {
       const { fixture, router } = createHarness();
       fixture.componentInstance.goToMember('m-1');
       expect(router.navigate).toHaveBeenCalledWith(['/members', 'm-1']);
+    });
+  });
+
+  describe('이번 주 순별 체크인 (#206)', () => {
+    afterEach(() => jasmine.clock().uninstall());
+
+    function at(date: Date): void {
+      jasmine.clock().install();
+      jasmine.clock().mockDate(date);
+    }
+
+    it('draws one tile per 순 and the 합계', () => {
+      at(new Date(2026, 9, 13, 10, 42));
+      const { fixture } = createHarness(['group_leader']);
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelectorAll('[data-testid="checkin-tile"]').length).toBe(2);
+      expect(el.querySelector('[data-testid="checkins-total"]')?.textContent).toContain('home.sundayCheckins.total');
+      expect(fixture.componentInstance.checkinsUpdatedAt()).toBe('10:42');
+    });
+
+    it('loads once and shows no 실시간 badge on a weekday', () => {
+      at(new Date(2026, 9, 13, 10, 0));
+      const { fixture, home } = createHarness(['ADMIN']);
+      expect(home.loadSundayCheckins).toHaveBeenCalledTimes(1);
+      expect(fixture.nativeElement.querySelector('[data-testid="checkins-live"]')).toBeNull();
+    });
+
+    it('polls every 30 s on a Sunday and keeps polling after a failure', () => {
+      at(new Date(2026, 9, 11, 10, 0));
+      const { fixture, home } = createHarness(['ADMIN']);
+      home.loadSundayCheckins.and.returnValue(throwError(() => new Error('down')));
+      jasmine.clock().tick(0);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[data-testid="checkins-live"]')).not.toBeNull();
+      expect(home.loadSundayCheckins).toHaveBeenCalledTimes(1);
+
+      jasmine.clock().tick(30_000);
+      expect(home.loadSundayCheckins).toHaveBeenCalledTimes(2);
+      expect(fixture.componentInstance.checkinsFailed()).toBeTrue();
+
+      home.loadSundayCheckins.and.returnValue(of(CHECKINS));
+      jasmine.clock().tick(30_000);
+      expect(home.loadSundayCheckins).toHaveBeenCalledTimes(3);
+      expect(fixture.componentInstance.checkinsFailed()).toBeFalse();
+      fixture.destroy();
+    });
+
+    it('does not load the tiles for a role that may not see them', () => {
+      const { fixture, home } = createHarness(['NEWCOMER_VIEWER']);
+      expect(home.loadSundayCheckins).not.toHaveBeenCalled();
+      expect(fixture.nativeElement.querySelector('[data-testid="sunday-checkins"]')).toBeNull();
     });
   });
 });

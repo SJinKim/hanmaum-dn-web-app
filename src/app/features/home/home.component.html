@@ -113,6 +113,54 @@
     </section>
   }
 
+  @if (showsBlock('sundayCheckins')) {
+    <!-- Figma Admin 1212:123108 · 순장 1212:122922, #206. -->
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+      data-testid="sunday-checkins">
+      <div class="flex items-center justify-between gap-[var(--space-8)]">
+        <app-section-header class="min-w-px flex-1" [heading]="'home.sundayCheckins.heading' | translate" />
+        <span class="inline-flex shrink-0 items-center gap-[var(--space-8)]">
+          @if (checkins()?.date; as date) {
+            <span class="type-caption text-ink-muted">{{ 'home.sundayCounts.date' | translate: sundayDateParams(date) }}</span>
+          }
+          @if (checkinsLive) {
+            <app-badge variant="active" [label]="'home.sundayCheckins.live' | translate" data-testid="checkins-live" />
+          }
+        </span>
+      </div>
+
+      @if (checkinsLoading()) {
+        <app-skeleton variant="card" />
+      } @else if (checkinsFailed()) {
+        <app-empty-state variant="error" [heading]="'home.sundayCheckins.loadFailed' | translate" />
+      } @else if ((checkins()?.tiles ?? []).length === 0) {
+        <app-empty-state variant="no-data" [heading]="'home.sundayCheckins.empty' | translate" />
+      } @else {
+        <ul class="m-0 grid list-none grid-cols-2 gap-[var(--space-8)] p-0 tablet:grid-cols-3 desktop:grid-cols-6">
+          @for (tile of checkins()?.tiles ?? []; track tile.groupPublicId ?? '-') {
+            <li
+              class="bg-surface-subtle flex flex-col gap-[var(--space-4)] rounded-[var(--radius-md)] p-[var(--space-12)]"
+              data-testid="checkin-tile">
+              <span class="type-caption text-ink-muted truncate">{{
+                tile.groupName ?? ('home.sundayCheckins.noGroup' | translate)
+              }}</span>
+              <span class="type-h3 text-ink-strong tabular-nums">{{ tile.count }}</span>
+            </li>
+          }
+        </ul>
+        <div class="border-line-subtle flex items-center justify-between border-t pt-[var(--space-12)]">
+          <span class="type-caption text-ink-muted">{{
+            'home.sundayCheckins.totalAsOf' | translate: { time: checkinsUpdatedAt() }
+          }}</span>
+          <span class="type-h3 text-ink-strong tabular-nums" data-testid="checkins-total">{{
+            'home.sundayCheckins.total' | translate: { count: checkins()?.total ?? 0 }
+          }}</span>
+        </div>
+      }
+    </section>
+  }
+
   <div class="flex flex-col gap-gutter tablet:flex-row">
     @if (showsBlock('groupAttendance')) {
       <section
