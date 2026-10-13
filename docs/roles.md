@@ -23,6 +23,9 @@ R = lesen, W = lesen und schreiben, – = kein Zugriff. 양육 hieß bis #214 �
   (DESIGN.md §9, nie nur deaktiviert). Eine direkte URL führt auf `/forbidden`
   (Figma 745:41755). Schreib-Routen (`new`, `:publicId/edit`) laufen hinter
   `featureGuard('<feature>', 'write')`.
+- 새가족-Rollen sehen auf 홈 nur 빠른 기록 · 최근 방문 (#202, Figma 1210:121909),
+  ohne Bearbeiten oder Löschen. `newcomer_viewer` liest die 대조-Liste und das
+  Detail, verknüpft oder verwirft aber nicht; der Button heißt dort 보기.
 
 ## Wer in die Web-App kommt
 

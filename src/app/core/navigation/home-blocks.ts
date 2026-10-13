@@ -31,6 +31,9 @@ import { NavRole } from './nav-config';
  * #206 adds 이번 주 순별 체크인 (Figma Admin 1212:123108, 순장 1212:122922): the
  * current week's Sunday check-ins as tiles, refreshed live on a Sunday. 순장,
  * 총무, admin and pastor see it; the 새가족 roles do not.
+ *
+ * #202 adds 빠른 기록 · 최근 방문 (Figma 1210:121909) for the 새가족 roles
+ * (`newcomer_viewer` / `_editor`). They see that block and nothing else.
  */
 export type HomeBlockId =
   | 'pendingApprovals'
@@ -42,7 +45,8 @@ export type HomeBlockId =
   | 'upcomingEvents'
   | 'statistics'
   | 'sundayGroupCounts'
-  | 'sundayCheckins';
+  | 'sundayCheckins'
+  | 'quickRecords';
 
 /**
  * How much data a block shows. `own-group` is the matrix's "자기 순만" / "자기 순
@@ -68,7 +72,8 @@ export interface HomeBlock {
    * no roster and 최근 활동 no members to show (#205, #207). 총무 may read
    * neither the member list nor `/members/count` (#211); 다가오는 일정 stays
    * hidden for them because the 총무 Home in Figma leaves it out, even though
-   * #213 lets them read the 행사 list.
+   * #213 lets them read the 행사 list. The 새가족 roles see 빠른 기록 only
+   * (#202), so every other block is hidden for them.
    */
   readonly hiddenForRoles?: readonly string[];
   /**
@@ -84,28 +89,30 @@ const GENERAL_OPERATIONS_ROLES = ['general_operations_viewer', 'general_operatio
 /** 양육팀 (#214) reads 양육 only, so the 청년-data blocks are hidden for them. */
 const TRAINING_ROLES = ['training_viewer', 'training_editor'] as const;
 const LEADER_ROLES = ['group_leader', 'leader'] as const;
+const NEWCOMER_ROLES = ['newcomer_viewer', 'newcomer_editor'] as const;
 
 export const HOME_BLOCKS: readonly HomeBlock[] = [
   { id: 'pendingApprovals', roles: ['admin', 'pastor'] },
-  { id: 'awaitingRsvps' },
+  { id: 'awaitingRsvps', hiddenForRoles: NEWCOMER_ROLES },
   { id: 'longAbsent', roles: ['pastor'], pending: true },
   {
     id: 'groupAttendance',
     ownGroupRoles: ['leader'],
-    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES, ...TRAINING_ROLES],
+    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES, ...TRAINING_ROLES, ...NEWCOMER_ROLES],
   },
   {
     id: 'overview',
     ownGroupRoles: ['leader'],
-    hiddenForRoles: [...GENERAL_OPERATIONS_ROLES, ...TRAINING_ROLES],
+    hiddenForRoles: [...GENERAL_OPERATIONS_ROLES, ...TRAINING_ROLES, ...NEWCOMER_ROLES],
   },
   {
     id: 'recentActivity',
     ownGroupRoles: ['leader'],
-    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES, ...TRAINING_ROLES],
+    hiddenForRoles: ['note_taker', ...GENERAL_OPERATIONS_ROLES, ...TRAINING_ROLES, ...NEWCOMER_ROLES],
   },
-  { id: 'upcomingEvents', hiddenForRoles: GENERAL_OPERATIONS_ROLES },
+  { id: 'upcomingEvents', hiddenForRoles: [...GENERAL_OPERATIONS_ROLES, ...NEWCOMER_ROLES] },
   { id: 'statistics', roles: ['pastor'], pending: true },
   { id: 'sundayGroupCounts', roles: ['admin', 'pastor', ...GENERAL_OPERATIONS_ROLES] },
   { id: 'sundayCheckins', roles: ['admin', 'pastor', ...LEADER_ROLES, ...GENERAL_OPERATIONS_ROLES] },
+  { id: 'quickRecords', roles: ['admin', 'pastor', ...NEWCOMER_ROLES] },
 ];

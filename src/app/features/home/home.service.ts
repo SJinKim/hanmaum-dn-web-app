@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { PageResponse } from '../../core/models/api-response.model';
 import { MemberSummary } from '../../core/models/member.model';
+import { localDateToIso } from '../../core/models/member-activity.model';
+import { NewcomerVisit } from '../../core/models/newcomer-visit.model';
 import { MemberCountService } from '../../core/services/member-count.service';
 import { AttendanceGroupCountsResponse } from '../attendance/attendance.model';
 import { AttendanceService } from '../attendance/attendance.service';
@@ -8,6 +11,7 @@ import { EventRsvpDto } from '../event-rsvps/event-rsvp.model';
 import { EventRsvpService } from '../event-rsvps/event-rsvp.service';
 import { MemberService } from '../members/member.service';
 import { MinistryService } from '../ministry/ministry.service';
+import { NewcomerVisitService } from '../newcomers/newcomer-visit.service';
 import {
   ATTENDANCE_RANGE_SUNDAYS,
   AttendanceRange,
@@ -26,7 +30,7 @@ import {
  * request for that block; an omitted key counts as `true`.
  */
 export type SnapshotBlocks = Partial<
-  Record<'pendingApprovals' | 'overview' | 'recentActivity' | 'upcomingEvents', boolean>
+  Record<'pendingApprovals' | 'awaitingRsvps' | 'overview' | 'recentActivity' | 'upcomingEvents', boolean>
 >;
 
 /** One page of members big enough to stand in for "all of them". */
@@ -38,6 +42,9 @@ const RECENT_ACTIVITY_POOL = 50;
 /** Rows Figma shows in 최근 활동 and 다가오는 일정. */
 const RECENT_ACTIVITY_ROWS = 5;
 const UPCOMING_EVENT_ROWS = 3;
+
+/** Rows per page of 빠른 기록 · 최근 방문 — the same page size as `/quick-records`. */
+export const QUICK_RECORD_PAGE_SIZE = 20;
 
 /**
  * The Home data layer. Every call is an endpoint that exists in
@@ -56,6 +63,7 @@ export class HomeService {
   private readonly ministries = inject(MinistryService);
   private readonly attendance = inject(AttendanceService);
   private readonly rsvps = inject(EventRsvpService);
+  private readonly visits = inject(NewcomerVisitService);
 
   /**
    * Everything except 순별 참석 현황. Each source fails on its own (#93): an
@@ -65,7 +73,8 @@ export class HomeService {
    * The counts come from `/members/count`, which `note_taker` may read; the
    * member list may not (#207). 총무 may read neither, nor the 행사 list (#211).
    * So each block's requests go out only when the caller renders it —
-   * `recentActivity: false` sends no `/members` request at all.
+   * `recentActivity: false` sends no `/members` request at all, and
+   * `awaitingRsvps: false` none to `/events` — the 새가족 roles (#202).
    */
   loadSnapshot(blocks: SnapshotBlocks = {}, now = new Date()): Observable<HomeSnapshot> {
     const shows = (block: keyof SnapshotBlocks) => blocks[block] ?? true;
@@ -76,7 +85,7 @@ export class HomeService {
       total: when('overview', () => this.memberCount.count()),
       active: when('overview', () => this.memberCount.count('ACTIVE')),
       ministries: when('overview', () => this.ministries.getMinistries(true)),
-      activeRsvps: orNull(this.rsvps.getActiveRsvps()),
+      activeRsvps: when('awaitingRsvps', () => this.rsvps.getActiveRsvps()),
       events: when('upcomingEvents', () => this.rsvps.getRsvps()),
       // No `sort` — the server ignores it (hanmaum-dn-server#196); `sortByUpdatedAt`
       // below does the ordering over the pool this fetches.
@@ -96,6 +105,14 @@ export class HomeService {
         upcomingEvents: toUpcomingEvents(events ?? [], now),
       })),
     );
+  }
+
+  /**
+   * 빠른 기록 · 최근 방문 (#202): one page of `/quick-records` up to today,
+   * newest first, over every visit (전체) — the server pages and orders it.
+   */
+  loadQuickRecords(page: number, now = new Date()): Observable<PageResponse<NewcomerVisit>> {
+    return this.visits.getVisits({ to: localDateToIso(now)!, page, size: QUICK_RECORD_PAGE_SIZE });
   }
 
   /**

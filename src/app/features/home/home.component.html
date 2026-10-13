@@ -161,6 +161,67 @@
     </section>
   }
 
+  @if (showsBlock('quickRecords')) {
+    <!-- Figma 1210:121909 (light) · 1210:122534 (dark), #202. -->
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+      data-testid="quick-records">
+      <app-section-header
+        [heading]="'home.quickRecords.heading' | translate"
+        [actionLabel]="'home.quickRecords.viewAll' | translate"
+        (action)="goToQuickRecords()" />
+
+      @if (quickLoading()) {
+        <app-skeleton variant="card" />
+      } @else if (quickFailed()) {
+        <app-empty-state variant="error" [heading]="'home.quickRecords.loadFailed' | translate" />
+      } @else if (quickVisits().length === 0) {
+        <app-empty-state variant="no-data" [heading]="'home.quickRecords.empty' | translate" />
+      } @else if (isPhone()) {
+        <div class="flex flex-col gap-[var(--space-8)]">
+          @for (record of quickRecords(); track record.id) {
+            <app-list-card [record]="record" />
+          }
+        </div>
+      } @else {
+        <app-data-table
+          [rows]="quickRows()"
+          [columns]="quickColumns()"
+          [selectable]="false"
+          [caption]="'home.quickRecords.heading' | translate" />
+      }
+
+      @if (!quickLoading() && !quickFailed() && quickHasPages()) {
+        <div class="flex items-center justify-end gap-[var(--space-8)]" data-testid="quick-records-pager">
+          <span class="type-caption text-ink-muted tabular-nums">
+            {{ 'newcomers.pagination.range' | translate: quickRangeParams() }}
+          </span>
+          <p-button
+            size="small"
+            severity="secondary"
+            icon="pi pi-chevron-left"
+            [text]="true"
+            [disabled]="quickPage() === 0"
+            [label]="'newcomers.pagination.prev' | translate"
+            (onClick)="quickPrev()" />
+          <p-button
+            size="small"
+            severity="secondary"
+            icon="pi pi-chevron-right"
+            iconPos="right"
+            [text]="true"
+            [disabled]="quickPage() >= quickLastPage()"
+            [label]="'newcomers.pagination.next' | translate"
+            (onClick)="quickNext()" />
+        </div>
+      }
+    </section>
+  }
+
+  @if (showsNothing()) {
+    <app-empty-state variant="no-data" [heading]="'home.empty' | translate" />
+  }
+
   <div class="flex flex-col gap-gutter tablet:flex-row">
     @if (showsBlock('groupAttendance')) {
       <section

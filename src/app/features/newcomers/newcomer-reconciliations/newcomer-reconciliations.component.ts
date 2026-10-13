@@ -11,6 +11,7 @@ import {
   ReconciliationStatus,
   reconciliationValue,
 } from '../../../core/models/reconciliation.model';
+import { RoleService } from '../../../core/services/role.service';
 import { BadgeComponent } from '../../../core/ui/badge/badge.component';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
 import { FilterChipComponent } from '../../../core/ui/filter-chip/filter-chip.component';
@@ -60,6 +61,7 @@ export class NewcomerReconciliationsComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly roles = inject(RoleService);
 
   readonly statuses = RECONCILIATION_STATUSES;
   readonly statusBadge = STATUS_BADGE;
@@ -72,6 +74,9 @@ export class NewcomerReconciliationsComponent implements OnInit {
   readonly loading = signal(true);
   readonly loadingMore = signal(false);
   readonly failed = signal(false);
+
+  /** `newcomer_viewer` reads the list (#202) but cannot link or dismiss. */
+  readonly canWrite = computed(() => this.roles.canWrite('newcomers'));
 
   readonly hasMore = computed(() => this.page() + 1 < this.totalPages());
 

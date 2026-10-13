@@ -9,8 +9,9 @@ import { AttendanceService } from '../attendance/attendance.service';
 import { EventRsvpService } from '../event-rsvps/event-rsvp.service';
 import { MemberService } from '../members/member.service';
 import { MinistryService } from '../ministry/ministry.service';
+import { NewcomerVisitService } from '../newcomers/newcomer-visit.service';
 import { groupSizeClass } from './home.model';
-import { HomeService } from './home.service';
+import { HomeService, QUICK_RECORD_PAGE_SIZE } from './home.service';
 
 function page(totalElements: number): PageResponse<MemberSummary> {
   return { content: [], totalElements, totalPages: 1, number: 0, size: 1 };
@@ -46,6 +47,7 @@ describe('HomeService — snapshot (#93)', () => {
         { provide: MemberCountService, useValue: memberCount },
         { provide: MinistryService, useValue: ministries },
         { provide: EventRsvpService, useValue: rsvps },
+        { provide: NewcomerVisitService, useValue: jasmine.createSpyObj('NewcomerVisitService', ['getVisits']) },
       ],
     });
     service = TestBed.inject(HomeService);
@@ -129,6 +131,34 @@ describe('HomeService — snapshot (#93)', () => {
     expect(rsvps.getActiveRsvps).toHaveBeenCalled();
     expect(snapshot.awaitingRsvps).toBe(0);
   });
+
+  it('sends nothing to /events/rsvps/active when 응답 대기 is not rendered — the 새가족 path (#202)', async () => {
+    const snapshot = await firstValueFrom(service.loadSnapshot({ awaitingRsvps: false }));
+
+    expect(rsvps.getActiveRsvps).not.toHaveBeenCalled();
+    expect(snapshot.awaitingRsvps).toBeNull();
+  });
+});
+
+describe('HomeService — 빠른 기록 (#202)', () => {
+  it('reads the visits up to today, newest page first', async () => {
+    const visits = jasmine.createSpyObj<NewcomerVisitService>('NewcomerVisitService', ['getVisits']);
+    visits.getVisits.and.returnValue(of({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 }));
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: NewcomerVisitService, useValue: visits },
+        { provide: MemberService, useValue: jasmine.createSpyObj('MemberService', ['getMembers']) },
+        { provide: MemberCountService, useValue: jasmine.createSpyObj('MemberCountService', ['count']) },
+        { provide: MinistryService, useValue: jasmine.createSpyObj('MinistryService', ['getMinistries']) },
+        { provide: EventRsvpService, useValue: jasmine.createSpyObj('EventRsvpService', ['getActiveRsvps', 'getRsvps']) },
+        { provide: AttendanceService, useValue: jasmine.createSpyObj('AttendanceService', ['getDefinitions', 'getGroupCounts']) },
+      ],
+    });
+
+    await firstValueFrom(TestBed.inject(HomeService).loadQuickRecords(2, new Date(2026, 9, 13)));
+
+    expect(visits.getVisits).toHaveBeenCalledOnceWith({ to: '2026-10-13', page: 2, size: QUICK_RECORD_PAGE_SIZE });
+  });
 });
 
 describe('HomeService — 일요일 순별 참석 현황 (#211)', () => {
@@ -174,6 +204,7 @@ describe('HomeService — 일요일 순별 참석 현황 (#211)', () => {
         { provide: MemberCountService, useValue: jasmine.createSpyObj('MemberCountService', ['count']) },
         { provide: MinistryService, useValue: jasmine.createSpyObj('MinistryService', ['getMinistries']) },
         { provide: EventRsvpService, useValue: jasmine.createSpyObj('EventRsvpService', ['getActiveRsvps', 'getRsvps']) },
+        { provide: NewcomerVisitService, useValue: jasmine.createSpyObj('NewcomerVisitService', ['getVisits']) },
       ],
     });
     service = TestBed.inject(HomeService);

@@ -373,6 +373,27 @@ describe('RoleService', () => {
       expect(roles.showsHomeBlock('sundayGroupCounts')).toBeTrue();
     });
 
+    it('gives the 새가족 roles only 빠른 기록 (#202)', () => {
+      ['newcomer_viewer', 'NEWCOMER_EDITOR'].forEach(role => {
+        const blocks = withRoles([role]).homeBlocks();
+        expect([...blocks]).withContext(role).toEqual(['quickRecords']);
+      });
+    });
+
+    it('shows 빠른 기록 to admin and pastor but not to a 순장 or 총무 (#202)', () => {
+      expect(withRoles(['ADMIN']).showsHomeBlock('quickRecords')).toBeTrue();
+      expect(withRoles(['pastor']).showsHomeBlock('quickRecords')).toBeTrue();
+      expect(withRoles(['group_leader']).showsHomeBlock('quickRecords')).toBeFalse();
+      expect(withRoles(['general_operations_viewer']).showsHomeBlock('quickRecords')).toBeFalse();
+    });
+
+    it('keeps every block for a 새가족 role who is also admin (#202)', () => {
+      const roles = withRoles(['newcomer_editor', 'ADMIN']);
+      expect(roles.showsHomeBlock('overview')).toBeTrue();
+      expect(roles.showsHomeBlock('awaitingRsvps')).toBeTrue();
+      expect(roles.showsHomeBlock('quickRecords')).toBeTrue();
+    });
+
     it('covers every registry entry — no block decides its own visibility', () => {
       const roles = withRoles(['ADMIN']);
       HOME_BLOCKS.forEach(block =>

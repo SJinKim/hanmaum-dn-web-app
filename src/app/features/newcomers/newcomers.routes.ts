@@ -24,7 +24,7 @@ export const NEWCOMERS_ROUTES: Routes = [
   },
   {
     path: 'reconciliations',
-    canActivate: [featureGuard('newcomers', 'write')],
+    canActivate: [featureGuard('newcomers')],
     loadComponent: () =>
       import('./newcomer-reconciliations/newcomer-reconciliations.component').then(
         m => m.NewcomerReconciliationsComponent,
@@ -32,7 +32,7 @@ export const NEWCOMERS_ROUTES: Routes = [
   },
   {
     path: 'reconciliations/:publicId',
-    canActivate: [featureGuard('newcomers', 'write')],
+    canActivate: [featureGuard('newcomers')],
     loadComponent: () =>
       import('./newcomer-reconciliation-detail/newcomer-reconciliation-detail.component').then(
         m => m.NewcomerReconciliationDetailComponent,

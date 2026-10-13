@@ -5,6 +5,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 
 import { Reconciliation } from '../../../core/models/reconciliation.model';
+import { RoleService } from '../../../core/services/role.service';
 import { ReconciliationService } from '../reconciliation.service';
 import { NewcomerReconciliationsComponent } from './newcomer-reconciliations.component';
 
@@ -31,7 +32,7 @@ describe('NewcomerReconciliationsComponent — 계정 연결 확인 (#45)', () =
   let service: jasmine.SpyObj<ReconciliationService>;
   let router: Router;
 
-  function create(fail = false) {
+  function create(fail = false, canWrite = true) {
     service = jasmine.createSpyObj<ReconciliationService>('ReconciliationService', ['list']);
     service.list.and.returnValue(fail ? throwError(() => ({ status: 500 })) : of(page([ITEM])));
     TestBed.configureTestingModule({
@@ -40,6 +41,7 @@ describe('NewcomerReconciliationsComponent — 계정 연결 확인 (#45)', () =
         provideNoopAnimations(),
         provideTranslateService(),
         { provide: ReconciliationService, useValue: service },
+        { provide: RoleService, useValue: { canWrite: () => canWrite } },
       ],
     });
     router = TestBed.inject(Router);
@@ -88,5 +90,15 @@ describe('NewcomerReconciliationsComponent — 계정 연결 확인 (#45)', () =
   it('falls back to the raw value for an unknown reason', () => {
     const { component } = create();
     expect(component.rows()[0].reasons).toBe('PROFILE_VALUE_CONFLICT');
+  });
+
+  it('offers 검토 on an open item to an editor', () => {
+    const { el } = create();
+    expect(el.querySelector('[data-testid="row-open"]')?.textContent).toContain('newcomers.reconciliation.review');
+  });
+
+  it('offers only 보기 to a viewer, even on an open item (#202)', () => {
+    const { el } = create(false, false);
+    expect(el.querySelector('[data-testid="row-open"]')?.textContent).toContain('newcomers.reconciliation.view');
   });
 });
