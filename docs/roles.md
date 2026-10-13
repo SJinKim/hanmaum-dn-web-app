@@ -7,14 +7,15 @@ Tabelle.
 
 R = lesen, W = lesen und schreiben, – = kein Zugriff.
 
-| Bildschirm | admin / pastor | note_taker | group_leader / leader | newcomer_viewer | newcomer_editor | member |
-|---|---|---|---|---|---|---|
-| 홈 | W | R | R | R | R | R |
-| 청년 (members) | W | R | – | – | – | – |
-| 새가족 (newcomers) | W | – | – | R | W | – |
-| 순 (church-groups) | W | R | R | – | – | – |
-| 공지사항 (announcements) | W | W | – | – | – | – |
-| 출석, 이벤트, 사역, 기록, 통계 | W | – | – | – | – | – |
+| Bildschirm | admin / pastor | note_taker | group_leader / leader | newcomer_viewer | newcomer_editor | general_operations_viewer | general_operations_editor | member |
+|---|---|---|---|---|---|---|---|---|
+| 홈 | W | R | R | R | R | R | R | R |
+| 청년 (members) | W | R | – | – | – | – | – | – |
+| 새가족 (newcomers) | W | – | – | R | W | – | – | – |
+| 순 (church-groups) | W | R | R | – | – | – | – | – |
+| 공지사항 (announcements) | W | W | – | – | – | R | W | – |
+| 출석, 이벤트, 사역, 주보 | W | – | – | – | – | R | W | – |
+| 기록, 통계 | W | – | – | – | – | – | – | – |
 
 - Rollen werden ohne Rücksicht auf Groß- und Kleinschreibung verglichen.
 - `admin` und `pastor` (`SUPER_ROLES`) lesen und schreiben alles.
@@ -64,3 +65,7 @@ Rollen werden über Gruppen vergeben, nie direkt am User (server#240,
 3. **순장 ist `group_leader`.** Die Matrix nennt die Rolle `leader`; beide
    Namen werden akzeptiert.
 4. **새가족-Rollen** heißen im Realm `NEWCOMER_VIEWER` und `NEWCOMER_EDITOR`.
+5. **총괄팀-Rollen** heißen `general_operations_viewer` und
+   `general_operations_editor` (#213). Der Viewer bekommt einen 403 auf dem
+   체크인 명단, solange `attendance/logs` serverseitig nur `ADMIN` erlaubt
+   (server#224). Schreiben ohne 403 erst mit server#306.

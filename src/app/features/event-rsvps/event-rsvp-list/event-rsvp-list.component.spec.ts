@@ -5,6 +5,7 @@ import { Router, provideRouter } from '@angular/router';
 import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 
+import { RoleService } from '../../../core/services/role.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { EventRsvpDto } from '../event-rsvp.model';
 import { EventRsvpService } from '../event-rsvp.service';
@@ -31,11 +32,13 @@ const RSVPS: EventRsvpDto[] = [
 describe('EventRsvpListComponent', () => {
   let service: jasmine.SpyObj<EventRsvpService>;
   let isPhone: ReturnType<typeof signal<boolean>>;
+  let canWrite: boolean;
 
   beforeEach(() => {
     service = jasmine.createSpyObj<EventRsvpService>('EventRsvpService', ['getRsvps', 'createRsvp', 'updateRsvp']);
     service.getRsvps.and.returnValue(of(RSVPS));
     isPhone = signal(false);
+    canWrite = true;
     TestBed.configureTestingModule({
       imports: [EventRsvpListComponent],
       providers: [
@@ -44,6 +47,7 @@ describe('EventRsvpListComponent', () => {
         provideTranslateService({ fallbackLang: 'ko' }),
         { provide: EventRsvpService, useValue: service },
         { provide: BreakpointService, useValue: { isPhone } },
+        { provide: RoleService, useValue: { canWrite: () => canWrite } },
       ],
     });
     const translate = TestBed.inject(TranslateService);
@@ -97,6 +101,23 @@ describe('EventRsvpListComponent', () => {
     const el: HTMLElement = render().nativeElement;
     expect(el.querySelectorAll('app-list-card').length).toBe(4);
     expect(el.querySelector('app-data-table')).toBeNull();
+  });
+
+  it('shows 새 이벤트 and 수정 to an editor', () => {
+    const el: HTMLElement = render().nativeElement;
+    expect(el.querySelector('[data-testid="add-event"]')).not.toBeNull();
+    expect(el.querySelector('[data-testid="edit-open"]')).not.toBeNull();
+  });
+
+  it('keeps 참석자 but hides 새 이벤트 and 수정 from a viewer (#213)', () => {
+    canWrite = false;
+    const fixture = render();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('[data-testid="add-event"]')).toBeNull();
+    expect(el.querySelector('[data-testid="edit-open"]')).toBeNull();
+    expect(el.querySelector('[data-testid="attendees-open"]')).not.toBeNull();
+    fixture.componentInstance.openAdd();
+    expect(fixture.componentInstance.dialogVisible()).toBeFalse();
   });
 
   it('stops loading when the list fails', () => {

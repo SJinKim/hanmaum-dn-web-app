@@ -89,7 +89,7 @@ export class HomeComponent implements OnInit {
   readonly sundayCounts = signal<SundayGroupCounts | null>(null);
   /** A failed load is not an empty Sunday — it gets its own error state. */
   readonly sundayCountsFailed = signal(false);
-  /** 총무 sees the RSVP count but may not open `/event-rsvps`. */
+  /** 확인하기 only for a role that may open `/event-rsvps` — 총괄팀 may since #213. */
   readonly canOpenRsvps = computed(() => this.roles.canRead('eventRsvps'));
   readonly sizeClasses = GROUP_SIZE_CLASSES;
 

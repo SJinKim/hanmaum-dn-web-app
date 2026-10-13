@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { catchError, forkJoin, map, of } from 'rxjs';
 
+import { RoleService } from '../../../core/services/role.service';
 import { AvatarComponent } from '../../../core/ui/avatar/avatar.component';
 import { BadgeComponent } from '../../../core/ui/badge/badge.component';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
@@ -43,6 +44,10 @@ export class MinistryListComponent implements OnInit {
   private readonly ministryService = inject(MinistryService);
   private readonly router          = inject(Router);
   private readonly destroyRef      = inject(DestroyRef);
+  private readonly roles           = inject(RoleService);
+
+  /** 총괄팀 viewers browse the ministries; the add button stays absent (#213). */
+  readonly canWrite = computed(() => this.roles.canWrite('ministry'));
 
   readonly ministries = signal<MinistrySummary[]>([]);
   /** Active members per ministry publicId. */

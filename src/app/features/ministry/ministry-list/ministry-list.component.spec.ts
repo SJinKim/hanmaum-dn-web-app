@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 
+import { RoleService } from '../../../core/services/role.service';
 import { MinistryListComponent } from './ministry-list.component';
 import { MinistryService } from '../ministry.service';
 import { ActiveMinistryMemberDto, MinistrySummary } from '../ministry.model';
@@ -28,8 +29,10 @@ function members(names: string[]): ActiveMinistryMemberDto[] {
 
 describe('MinistryListComponent', () => {
   let service: jasmine.SpyObj<MinistryService>;
+  let canWrite: boolean;
 
   beforeEach(() => {
+    canWrite = true;
     service = jasmine.createSpyObj<MinistryService>('MinistryService', ['getMinistries', 'getActiveMembers']);
     service.getMinistries.and.returnValue(of([
       ministry('a', '찬양팀'),
@@ -46,6 +49,7 @@ describe('MinistryListComponent', () => {
       imports: [MinistryListComponent],
       providers: [
         { provide: MinistryService, useValue: service },
+        { provide: RoleService, useValue: { canWrite: () => canWrite } },
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'ko' }),
       ],
@@ -103,6 +107,18 @@ describe('MinistryListComponent', () => {
     fixture.detectChanges();
     expect(cards(el).length).toBe(0);
     expect(el.textContent).toContain('검색 결과가 없습니다');
+  });
+
+  it('offers 사역 추가 to an editor', () => {
+    const el = render().nativeElement as HTMLElement;
+    expect(el.textContent).toContain('사역 추가');
+  });
+
+  it('hides 사역 추가 from a viewer but keeps the cards linked (#213)', () => {
+    canWrite = false;
+    const el = render().nativeElement as HTMLElement;
+    expect(el.textContent).not.toContain('사역 추가');
+    expect(cards(el)[0].getAttribute('href')).toBe('/ministry/a');
   });
 
   it('shows the error state when the list fails', () => {

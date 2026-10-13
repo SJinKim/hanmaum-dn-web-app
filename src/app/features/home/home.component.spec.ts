@@ -174,15 +174,18 @@ describe('HomeComponent', () => {
       expect(leader.home.loadSundayGroupCounts).not.toHaveBeenCalled();
     });
 
-    it('shows 총무 the RSVP count without the 확인하기 action they may not open (#211)', () => {
+    it('shows 총무 the RSVP count with 확인하기, now that they may open 이벤트 (#213)', () => {
       ['general_operations_viewer', 'general_operations_editor'].forEach(role => {
         TestBed.resetTestingModule();
         const { text } = createHarness([role]);
         expect(text()).toContain('home.attention.awaitingRsvps');
-        expect(text()).not.toContain('home.attention.confirm');
+        expect(text()).toContain('home.attention.confirm');
       });
+    });
+
+    it('keeps 확인하기 away from a role that may not open 이벤트 (#211)', () => {
       TestBed.resetTestingModule();
-      expect(createHarness(['ADMIN']).text()).toContain('home.attention.confirm');
+      expect(createHarness(['note_taker']).text()).not.toContain('home.attention.confirm');
     });
 
     it('shows a load error, not an empty Sunday, when the counts fail (#211)', () => {

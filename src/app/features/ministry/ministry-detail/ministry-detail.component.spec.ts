@@ -8,6 +8,7 @@ import { of, throwError } from 'rxjs';
 
 import { localDateToIso } from '../../../core/models/member-activity.model';
 import { Member } from '../../../core/models/member.model';
+import { RoleService } from '../../../core/services/role.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
 import { MinistryAssignmentService } from '../ministry-assignment.service';
 import { MinistryDetailComponent } from './ministry-detail.component';
@@ -62,8 +63,10 @@ describe('MinistryDetailComponent', () => {
   let service: jasmine.SpyObj<MinistryService>;
   let assignments: jasmine.SpyObj<MinistryAssignmentService>;
   let isPhone: ReturnType<typeof signal<boolean>>;
+  let canWrite: boolean;
 
   beforeEach(() => {
+    canWrite = true;
     service = jasmine.createSpyObj<MinistryService>('MinistryService', [
       'getMinistry', 'getActiveMembers', 'getMemberHistory', 'deactivateMinistry', 'getMemberNames', 'addMember',
       'getPendingApplications', 'reviewApplication',
@@ -86,6 +89,7 @@ describe('MinistryDetailComponent', () => {
         { provide: MinistryService, useValue: service },
         { provide: MinistryAssignmentService, useValue: assignments },
         { provide: BreakpointService, useValue: { isPhone } },
+        { provide: RoleService, useValue: { canWrite: () => canWrite } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'min-1' }) } } },
       ],
     });
@@ -224,6 +228,27 @@ describe('MinistryDetailComponent', () => {
 
     expect(service.deactivateMinistry).toHaveBeenCalledWith('min-1');
     expect(c.moreItems()).toEqual([]);
+  });
+
+  it('shows a viewer the members without 관리, 팀원 추가, 수정 or 더보기 (#213)', () => {
+    canWrite = false;
+    const fixture = render();
+    const c = fixture.componentInstance;
+    const el: HTMLElement = fixture.nativeElement;
+    expect(c.columns().some(col => col.key === 'manage')).toBeFalse();
+    expect(c.moreItems()).toEqual([]);
+    expect(el.querySelector('[data-testid="members-card"] p-button')).toBeNull();
+    expect(el.querySelector('.pi-pencil')).toBeNull();
+    c.openEditMember('m1');
+    expect(c.editDialogVisible()).toBeFalse();
+  });
+
+  it('keeps viewer member cards on phone from opening 수정 (#213)', () => {
+    canWrite = false;
+    isPhone.set(true);
+    const el: HTMLElement = render().nativeElement;
+    expect(el.querySelectorAll('[data-testid="members-card"] app-list-card').length).toBe(2);
+    expect(el.querySelector('[data-testid="members-card"] app-list-card button')).toBeNull();
   });
 
   it('opens the edit dialog with the chosen member', () => {
