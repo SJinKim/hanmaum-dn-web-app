@@ -71,7 +71,7 @@
               severity="secondary"
               [outlined]="true"
               data-testid="row-open"
-              [label]="(row.item.status === 'OPEN' ? 'newcomers.reconciliation.review' : 'newcomers.reconciliation.view') | translate"
+              [label]="(row.item.status === 'OPEN' && canWrite() ? 'newcomers.reconciliation.review' : 'newcomers.reconciliation.view') | translate"
               (onClick)="open(row.item)" />
           </li>
         }

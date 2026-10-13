@@ -122,7 +122,14 @@
       "total": "{{count}}",
       "empty": "No check-ins this week yet.",
       "loadFailed": "Could not load the check-ins."
-    }
+    },
+    "quickRecords": {
+      "heading": "Quick records · Recent visits",
+      "viewAll": "View all",
+      "empty": "No visits recorded yet",
+      "loadFailed": "Could not load the visit records"
+    },
+    "empty": "There is nothing on Home for this account"
   },
   "members": {
     "title": "Members",

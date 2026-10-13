@@ -122,7 +122,14 @@
       "total": "{{count}}명",
       "empty": "이번 주 체크인 기록이 없습니다.",
       "loadFailed": "체크인 현황을 불러오지 못했습니다."
-    }
+    },
+    "quickRecords": {
+      "heading": "빠른 기록 · 최근 방문",
+      "viewAll": "전체 보기",
+      "empty": "아직 방문 기록이 없습니다",
+      "loadFailed": "방문 기록을 불러오지 못했습니다"
+    },
+    "empty": "이 계정에 표시할 홈 항목이 없습니다"
   },
   "members": {
     "title": "청년",

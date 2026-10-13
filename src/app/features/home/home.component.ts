@@ -5,11 +5,12 @@ import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { MemberSummary } from '../../core/models/member.model';
+import { NewcomerVisit } from '../../core/models/newcomer-visit.model';
 import { HomeBlockId } from '../../core/navigation/home-blocks';
 import { RoleService } from '../../core/services/role.service';
 import { BadgeComponent } from '../../core/ui/badge/badge.component';
 import { BreakpointService } from '../../core/ui/breakpoint.service';
-import { DataColumn, DataRecord } from '../../core/ui/data-record.model';
+import { DataColumn, DataRecord, DataRecordBadge } from '../../core/ui/data-record.model';
 import { DataTableComponent } from '../../core/ui/data-table/data-table.component';
 import { DefinitionRowComponent } from '../../core/ui/definition-list/definition-row.component';
 import { EmptyStateComponent } from '../../core/ui/empty-state/empty-state.component';
@@ -35,7 +36,7 @@ import {
   isSunday,
   totalAttendanceRow,
 } from './home.model';
-import { HomeService } from './home.service';
+import { HomeService, QUICK_RECORD_PAGE_SIZE } from './home.service';
 
 /**
  * Figma: Home / Desktop 188:169 (light), 188:2520 (dark), 228:171 (tablet),
@@ -104,7 +105,27 @@ export class HomeComponent implements OnInit {
   readonly canOpenRsvps = computed(() => this.roles.canRead('eventRsvps'));
   readonly sizeClasses = GROUP_SIZE_CLASSES;
 
+  /** 빠른 기록 · 최근 방문 (#202). */
+  readonly quickLoading = signal(true);
+  readonly quickFailed = signal(false);
+  readonly quickVisits = signal<readonly NewcomerVisit[]>([]);
+  readonly quickPage = signal(0);
+  readonly quickTotal = signal(0);
+  readonly quickSize = QUICK_RECORD_PAGE_SIZE;
+
+  readonly quickRangeParams = computed(() => {
+    const total = this.quickTotal();
+    const first = total === 0 ? 0 : this.quickPage() * this.quickSize + 1;
+    return { from: first, to: Math.min((this.quickPage() + 1) * this.quickSize, total), total };
+  });
+
+  readonly quickHasPages = computed(() => this.quickTotal() > this.quickSize);
+  readonly quickLastPage = computed(() => Math.max(0, Math.ceil(this.quickTotal() / this.quickSize) - 1));
+
   readonly isPhone = this.breakpoints.isPhone;
+
+  /** No block granted at all — the page says so instead of staying blank. */
+  readonly showsNothing = computed(() => this.roles.homeBlocks().size === 0);
 
   /** Re-resolves on language change — `currentLang()` is the dependency. */
   readonly rangeOptions = computed<readonly SegmentOption[]>(() => {
@@ -201,6 +222,52 @@ export class HomeComponent implements OnInit {
     })),
   );
 
+  /**
+   * 빠른 기록 · 최근 방문: the 방문 기록 columns of `/quick-records`, read-only.
+   * 수정 and 삭제 need the form there, so Home leaves the actions column out.
+   */
+  readonly quickColumns = computed<DataColumn[]>(() => {
+    this.translate.currentLang();
+    const header = (key: string) => this.translate.instant(`newcomers.visits.columns.${key}`) as string;
+    return [
+      { type: 'date', key: 'visitDate', header: header('visitDate'), sortable: false, width: '110px' },
+      { type: 'avatar-name', key: 'name', header: header('name'), sortable: false, width: '150px' },
+      { type: 'text', key: 'gender', header: header('gender'), sortable: false, width: '70px' },
+      { type: 'text', key: 'birthYear', header: header('birthYear'), sortable: false, width: '90px' },
+      { type: 'text', key: 'visitType', header: header('visitType'), sortable: false, width: '90px' },
+      { type: 'text', key: 'source', header: header('source'), sortable: false, width: '120px' },
+      { type: 'text', key: 'note', header: header('note'), sortable: false, tone: 'muted' },
+    ];
+  });
+
+  readonly quickRows = computed<DataRecord[]>(() => {
+    this.translate.currentLang();
+    return this.quickVisits().map(v => ({
+      id: v.publicId,
+      title: v.fullName,
+      cells: {
+        visitDate: v.visitDate,
+        gender: this.visitGender(v) ?? '—',
+        birthYear: v.birthYear != null ? String(v.birthYear) : '—',
+        visitType: this.translate.instant(`newcomers.visits.type.${v.visitType}`) as string,
+        source: this.visitSource(v) ?? '—',
+        note: v.note ?? '—',
+      },
+    }));
+  });
+
+  /** Phone: 성별 · 출생연도 · 경로 as subtitle, 구분 as badge, 방문일 as meta. */
+  readonly quickRecords = computed<readonly DataRecord[]>(() => {
+    this.translate.currentLang();
+    return this.quickVisits().map(v => ({
+      id: v.publicId,
+      title: v.fullName,
+      subtitle: [this.visitGender(v), v.birthYear, this.visitSource(v)].filter(part => part != null).join(' · '),
+      badge: this.visitTypeBadge(v),
+      meta: v.visitDate,
+    }));
+  });
+
   /** The 확인이 필요합니다 section disappears when neither card is granted. */
   readonly showsAttention = computed(
     () => this.showsBlock('pendingApprovals') || this.showsBlock('awaitingRsvps'),
@@ -210,6 +277,7 @@ export class HomeComponent implements OnInit {
     this.home
       .loadSnapshot({
         pendingApprovals: this.showsBlock('pendingApprovals'),
+        awaitingRsvps: this.showsBlock('awaitingRsvps'),
         overview: this.showsBlock('overview'),
         recentActivity: this.showsBlock('recentActivity'),
         upcomingEvents: this.showsBlock('upcomingEvents'),
@@ -239,6 +307,12 @@ export class HomeComponent implements OnInit {
       this.loadCheckins();
     } else {
       this.checkinsLoading.set(false);
+    }
+
+    if (this.showsBlock('quickRecords')) {
+      this.loadQuickRecords();
+    } else {
+      this.quickLoading.set(false);
     }
   }
 
@@ -296,6 +370,57 @@ export class HomeComponent implements OnInit {
 
   goToMember(publicId: string): void {
     void this.router.navigate(['/members', publicId]);
+  }
+
+  goToQuickRecords(): void {
+    void this.router.navigate(['/quick-records']);
+  }
+
+  quickPrev(): void {
+    if (this.quickPage() === 0) return;
+    this.quickPage.update(p => p - 1);
+    this.loadQuickRecords();
+  }
+
+  quickNext(): void {
+    if (this.quickPage() >= this.quickLastPage()) return;
+    this.quickPage.update(p => p + 1);
+    this.loadQuickRecords();
+  }
+
+  private loadQuickRecords(): void {
+    this.quickLoading.set(true);
+    this.quickFailed.set(false);
+    this.home
+      .loadQuickRecords(this.quickPage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: page => {
+          this.quickVisits.set(page.content);
+          this.quickTotal.set(page.totalElements);
+          this.quickLoading.set(false);
+        },
+        error: () => {
+          this.quickVisits.set([]);
+          this.quickFailed.set(true);
+          this.quickLoading.set(false);
+        },
+      });
+  }
+
+  private visitGender(v: NewcomerVisit): string | null {
+    return v.gender ? (this.translate.instant(`newcomers.gender.${v.gender}`) as string) : null;
+  }
+
+  private visitSource(v: NewcomerVisit): string | null {
+    return v.source ? (this.translate.instant(`newcomers.visits.source.${v.source}`) as string) : null;
+  }
+
+  private visitTypeBadge(v: NewcomerVisit): DataRecordBadge {
+    return {
+      variant: v.visitType === 'FIRST' ? 'active' : 'pending',
+      label: this.translate.instant(`newcomers.visits.type.${v.visitType}`) as string,
+    };
   }
 
   private loadSundayCounts(): void {

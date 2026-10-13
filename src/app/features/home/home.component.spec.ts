@@ -3,6 +3,7 @@ import { Router, provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { MemberSummary } from '../../core/models/member.model';
+import { NewcomerVisit } from '../../core/models/newcomer-visit.model';
 import { AuthService } from '../../core/services/auth.service';
 import { HomeComponent } from './home.component';
 import { GroupAttendanceRow, HomeSnapshot, SundayCheckins, SundayGroupCounts } from './home.model';
@@ -54,6 +55,26 @@ const SUNDAY_COUNTS: SundayGroupCounts = {
   ],
 };
 
+const VISIT: NewcomerVisit = {
+  publicId: 'v-1',
+  visitDate: '2026-10-11',
+  lastName: '홍',
+  firstName: '길동',
+  fullName: '홍길동',
+  gender: 'M',
+  birthYear: 2000,
+  visitType: 'FIRST',
+  source: null,
+  note: null,
+  newcomerPublicId: null,
+  newcomerLifecycle: null,
+  createdAt: '2026-10-11T03:00:00Z',
+};
+
+function visitPage(totalElements: number, number = 0) {
+  return { content: [VISIT], totalElements, totalPages: Math.ceil(totalElements / 20), number, size: 20 };
+}
+
 const ROWS: GroupAttendanceRow[] = [
   { groupPublicId: 'g-1', groupName: '1순', attended: 8, total: 10, ratio: 80 },
   { groupPublicId: 'g-2', groupName: '2순', attended: 3, total: 10, ratio: 30 },
@@ -72,11 +93,13 @@ function createHarness(roles: string[] = ['ADMIN']): Harness {
     'loadGroupAttendance',
     'loadSundayGroupCounts',
     'loadSundayCheckins',
+    'loadQuickRecords',
   ]);
   home.loadSnapshot.and.returnValue(of(SNAPSHOT));
   home.loadGroupAttendance.and.returnValue(of(ROWS));
   home.loadSundayGroupCounts.and.returnValue(of(SUNDAY_COUNTS));
   home.loadSundayCheckins.and.returnValue(of(CHECKINS));
+  home.loadQuickRecords.and.returnValue(of(visitPage(1)));
   const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
   router.navigate.and.resolveTo(true);
 
@@ -147,6 +170,7 @@ describe('HomeComponent', () => {
       const { home } = createHarness(['ADMIN']);
       expect(home.loadSnapshot).toHaveBeenCalledWith({
         pendingApprovals: true,
+        awaitingRsvps: true,
         overview: true,
         recentActivity: true,
         upcomingEvents: true,
@@ -167,6 +191,7 @@ describe('HomeComponent', () => {
         expect(rendered).not.toContain('home.events.heading');
         expect(home.loadSnapshot).toHaveBeenCalledWith({
           pendingApprovals: false,
+          awaitingRsvps: true,
           overview: false,
           recentActivity: false,
           upcomingEvents: false,
@@ -197,6 +222,56 @@ describe('HomeComponent', () => {
     it('keeps 확인하기 away from a role that may not open 이벤트 (#211)', () => {
       TestBed.resetTestingModule();
       expect(createHarness(['note_taker']).text()).not.toContain('home.attention.confirm');
+    });
+
+    it('gives the 새가족 roles only 빠른 기록 and asks nothing else (#202)', () => {
+      ['newcomer_viewer', 'NEWCOMER_EDITOR'].forEach(role => {
+        TestBed.resetTestingModule();
+        const { text, home } = createHarness([role]);
+        const rendered = text();
+        expect(rendered).toContain('home.quickRecords.heading');
+        expect(rendered).not.toContain('home.attention.awaitingRsvps');
+        expect(rendered).not.toContain('home.overview.heading');
+        expect(rendered).not.toContain('home.events.heading');
+        expect(rendered).not.toContain('home.empty');
+        expect(home.loadQuickRecords).toHaveBeenCalledOnceWith(0);
+        expect(home.loadSnapshot).toHaveBeenCalledWith(jasmine.objectContaining({ awaitingRsvps: false }));
+        expect(home.loadGroupAttendance).not.toHaveBeenCalled();
+      });
+    });
+
+    it('keeps 빠른 기록 away from a 순장 and never loads it (#202)', () => {
+      TestBed.resetTestingModule();
+      const leader = createHarness(['group_leader']);
+      expect(leader.text()).not.toContain('home.quickRecords.heading');
+      expect(leader.home.loadQuickRecords).not.toHaveBeenCalled();
+    });
+
+    it('lists the visits read-only and pages through them (#202)', () => {
+      TestBed.resetTestingModule();
+      const { fixture, home, router } = createHarness(['newcomer_viewer']);
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-testid="quick-records"]')?.textContent).toContain('홍길동');
+      expect(el.querySelector('[data-testid="quick-records-pager"]')).toBeNull();
+
+      home.loadQuickRecords.and.returnValue(of(visitPage(45, 1)));
+      fixture.componentInstance.quickTotal.set(45);
+      fixture.componentInstance.quickNext();
+      fixture.detectChanges();
+      expect(home.loadQuickRecords).toHaveBeenCalledWith(1);
+      expect(el.querySelector('[data-testid="quick-records-pager"]')).not.toBeNull();
+
+      fixture.componentInstance.goToQuickRecords();
+      expect(router.navigate).toHaveBeenCalledWith(['/quick-records']);
+    });
+
+    it('shows a load error when the visits fail (#202)', () => {
+      TestBed.resetTestingModule();
+      const { fixture, home } = createHarness(['newcomer_viewer']);
+      home.loadQuickRecords.and.returnValue(throwError(() => new Error('boom')));
+      fixture.componentInstance.ngOnInit();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('home.quickRecords.loadFailed');
     });
 
     it('shows a load error, not an empty Sunday, when the counts fail (#211)', () => {
@@ -264,11 +339,13 @@ describe('HomeComponent', () => {
         'loadGroupAttendance',
         'loadSundayGroupCounts',
         'loadSundayCheckins',
+        'loadQuickRecords',
       ]);
       home.loadSnapshot.and.returnValue(of(SNAPSHOT));
       home.loadGroupAttendance.and.returnValue(of([]));
       home.loadSundayGroupCounts.and.returnValue(of(SUNDAY_COUNTS));
       home.loadSundayCheckins.and.returnValue(of(CHECKINS));
+      home.loadQuickRecords.and.returnValue(of(visitPage(0)));
       TestBed.configureTestingModule({
         imports: [HomeComponent],
         providers: [
