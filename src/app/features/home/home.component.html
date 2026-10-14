@@ -22,10 +22,12 @@
                 <span class="type-h2 text-ink-strong">{{ snapshot()?.pendingApprovals ?? '—' }}</span>
               }
             </span>
-            <p-button
-              size="small"
-              [label]="'home.attention.approve' | translate"
-              (onClick)="goToPendingMembers()" />
+            @if (canApprove()) {
+              <p-button
+                size="small"
+                [label]="'home.attention.approve' | translate"
+                (onClick)="goToPendingMembers()" />
+            }
           </div>
         }
 

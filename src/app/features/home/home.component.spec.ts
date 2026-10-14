@@ -221,7 +221,22 @@ describe('HomeComponent', () => {
 
     it('keeps 확인하기 away from a role that may not open 이벤트 (#211)', () => {
       TestBed.resetTestingModule();
-      expect(createHarness(['note_taker']).text()).not.toContain('home.attention.confirm');
+      expect(createHarness(['group_leader']).text()).not.toContain('home.attention.confirm');
+    });
+
+    it('shows a note_taker the 승인 대기 count without 승인하기 (#205)', () => {
+      TestBed.resetTestingModule();
+      const { text, home } = createHarness(['note_taker']);
+      expect(text()).toContain('home.attention.pendingApprovals');
+      expect(text()).not.toContain('home.attention.approve');
+      expect(home.loadSnapshot).toHaveBeenCalledWith(jasmine.objectContaining({ pendingApprovals: true }));
+    });
+
+    it('keeps 승인하기 for admin and pastor (#205)', () => {
+      ['ADMIN', 'pastor'].forEach(role => {
+        TestBed.resetTestingModule();
+        expect(createHarness([role]).text()).toContain('home.attention.approve');
+      });
     });
 
     it('gives the 새가족 roles only 빠른 기록 and asks nothing else (#202)', () => {

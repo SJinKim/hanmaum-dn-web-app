@@ -101,6 +101,9 @@ export class HomeComponent implements OnInit {
   /** On a Sunday the tiles refresh and carry the 실시간 badge (#206). */
   readonly checkinsLive = isSunday(new Date());
 
+  /** 승인하기 opens 청년 — `note_taker` sees the count without it (#205). */
+  readonly canApprove = computed(() => this.roles.canWrite('members'));
+
   /** 확인하기 only for a role that may open `/event-rsvps` — 총괄팀 may since #213. */
   readonly canOpenRsvps = computed(() => this.roles.canRead('eventRsvps'));
   readonly sizeClasses = GROUP_SIZE_CLASSES;

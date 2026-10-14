@@ -57,22 +57,27 @@ export interface FeatureAccess {
 
 const NONE: FeatureAccess = { read: [], write: [] };
 const GENERAL_OPERATIONS: FeatureAccess = { read: GENERAL_OPERATIONS_READ, write: GENERAL_OPERATIONS_WRITE };
+/**
+ * 출석, 이벤트, 주보 (#205) and 공지사항: 총괄팀 plus `note_taker`, who reads and writes
+ * them since hanmaum-dn-server#305. `note_taker` reads no 청년 and no 양육.
+ */
+const GENERAL_OPERATIONS_AND_NOTE_TAKER: FeatureAccess = {
+  read: ['note_taker', ...GENERAL_OPERATIONS_READ],
+  write: ['note_taker', ...GENERAL_OPERATIONS_WRITE],
+};
 
 export const FEATURE_ACCESS: Readonly<Record<FeatureId, FeatureAccess>> = {
   home: { read: 'all', write: [] },
-  members: { read: ['note_taker'], write: [] },
+  members: NONE,
   newcomers: { read: ['newcomer_viewer', 'newcomer_editor'], write: ['newcomer_editor'] },
-  churchGroups: { read: [...LEADER_ROLES, 'note_taker', ...TRAINING_READ], write: TRAINING_WRITE },
-  attendance: GENERAL_OPERATIONS,
-  eventRsvps: GENERAL_OPERATIONS,
+  churchGroups: { read: [...LEADER_ROLES, ...TRAINING_READ], write: TRAINING_WRITE },
+  attendance: GENERAL_OPERATIONS_AND_NOTE_TAKER,
+  eventRsvps: GENERAL_OPERATIONS_AND_NOTE_TAKER,
   ministry: GENERAL_OPERATIONS,
-  announcements: {
-    read: ['note_taker', ...GENERAL_OPERATIONS_READ],
-    write: ['note_taker', ...GENERAL_OPERATIONS_WRITE],
-  },
+  announcements: GENERAL_OPERATIONS_AND_NOTE_TAKER,
   archive: NONE,
   analytics: NONE,
-  bulletin: GENERAL_OPERATIONS,
+  bulletin: GENERAL_OPERATIONS_AND_NOTE_TAKER,
 };
 
 /**

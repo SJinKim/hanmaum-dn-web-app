@@ -31,11 +31,11 @@ describe('featureGuard', () => {
   });
 
   it('lets a read-only role read', () => {
-    expect(run(['note_taker'], 'members')).toBeTrue();
+    expect(run(['general_operations_viewer'], 'attendance')).toBeTrue();
   });
 
   it('sends a read-only role on a write route to /forbidden', () => {
-    const result = run(['note_taker'], 'members', 'write');
+    const result = run(['general_operations_viewer'], 'attendance', 'write');
     expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/forbidden');
   });
 
