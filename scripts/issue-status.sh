@@ -14,17 +14,21 @@ PROJECT_OWNER="${PROJECT_OWNER:-@me}"
 
 if [[ "${1:-}" == "--list" ]]; then
   # gh project item-list liefert in gh 2.88 fuer User-Projects nichts zurueck,
-  # daher direkt ueber GraphQL.
-  gh api graphql -f owner="$(gh api user -q .login)" -F number="$PROJECT_NUMBER" -f query='
-    query($owner: String!, $number: Int!) {
+  # daher direkt ueber GraphQL. Pro Seite kommen hoechstens 100 Items, --paginate
+  # holt die weiteren ueber $endCursor; --jq gibt jedes Item als eigene Zeile aus.
+  gh api graphql --paginate -f owner="$(gh api user -q .login)" -F number="$PROJECT_NUMBER" -f query='
+    query($owner: String!, $number: Int!, $endCursor: String) {
       user(login: $owner) { projectV2(number: $number) {
-        items(first: 100) { nodes {
-          content { ... on Issue { number title state } }
-          fieldValueByName(name: "Status") {
-            ... on ProjectV2ItemFieldSingleSelectValue { name } } } } } } }' |
+        items(first: 100, after: $endCursor) {
+          pageInfo { hasNextPage endCursor }
+          nodes {
+            content { ... on Issue { number title state } }
+            fieldValueByName(name: "Status") {
+              ... on ProjectV2ItemFieldSingleSelectValue { name } } } } } } }' \
+    --jq '.data.user.projectV2.items.nodes[]' |
   python3 -c '
 import json, sys
-for n in json.load(sys.stdin)["data"]["user"]["projectV2"]["items"]["nodes"]:
+for n in map(json.loads, sys.stdin):
     c = n.get("content") or {}
     if not c: continue
     st = (n.get("fieldValueByName") or {}).get("name", "-")
