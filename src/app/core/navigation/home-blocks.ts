@@ -34,6 +34,10 @@ import { NavRole } from './nav-config';
  *
  * #202 adds 빠른 기록 · 최근 방문 (Figma 1210:121909) for the 새가족 roles
  * (`newcomer_viewer` / `_editor`). They see that block and nothing else.
+ *
+ * #205 opens 승인 대기 to `note_taker`: the count only, from `/members/count`.
+ * 승인하기 leads to 청년, which `note_taker` may not read, so the template shows
+ * that button only to a role that may write `members`.
  */
 export type HomeBlockId =
   | 'pendingApprovals'
@@ -92,7 +96,7 @@ const LEADER_ROLES = ['group_leader', 'leader'] as const;
 const NEWCOMER_ROLES = ['newcomer_viewer', 'newcomer_editor'] as const;
 
 export const HOME_BLOCKS: readonly HomeBlock[] = [
-  { id: 'pendingApprovals', roles: ['admin', 'pastor'] },
+  { id: 'pendingApprovals', roles: ['admin', 'pastor', 'note_taker'] },
   { id: 'awaitingRsvps', hiddenForRoles: NEWCOMER_ROLES },
   { id: 'longAbsent', roles: ['pastor'], pending: true },
   {

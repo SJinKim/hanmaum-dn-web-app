@@ -9,13 +9,17 @@ R = lesen, W = lesen und schreiben, – = kein Zugriff. 양육 hieß bis #214 �
 
 | Bildschirm | admin / pastor | note_taker | group_leader / leader | newcomer_viewer | newcomer_editor | general_operations_viewer | general_operations_editor | training_viewer | training_editor | member |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 홈 | W | R | R | R | R | R | R | R | R | R |
-| 청년 (members) | W | R | – | – | – | – | – | – | – | – |
+| 홈 | W | R¹ | R | R | R | R | R | R | R | R |
+| 청년 (members) | W | – | – | – | – | – | – | – | – | – |
 | 새가족 (newcomers) | W | – | – | R | W | – | – | – | – | – |
-| 양육 (church-groups) | W | R | R | – | – | – | – | R | W | – |
+| 양육 (church-groups) | W | – | R | – | – | – | – | R | W | – |
 | 공지사항 (announcements) | W | W | – | – | – | R | W | – | – | – |
-| 출석, 이벤트, 사역, 주보 | W | – | – | – | – | R | W | – | – | – |
+| 출석, 이벤트, 주보 | W | W | – | – | – | R | W | – | – | – |
+| 사역 | W | – | – | – | – | R | W | – | – | – |
 | 기록, 통계 | W | – | – | – | – | – | – | – | – | – |
+
+¹ `note_taker` sieht auf 홈 die 승인 대기-Zahl, aber keinen 승인하기-Button
+  und keinen Link nach 청년 (#205).
 
 - Rollen werden ohne Rücksicht auf Groß- und Kleinschreibung verglichen.
 - `admin` und `pastor` (`SUPER_ROLES`) lesen und schreiben alles.
@@ -63,8 +67,9 @@ Rollen werden über Gruppen vergeben, nie direkt am User (server#240,
 
 1. **`pastor` ist serverseitig `admin` gleichgestellt** (RoleHierarchy
    `ROLE_PASTOR > ROLE_ADMIN`). Das Web bildet das über `SUPER_ROLES` ab.
-2. **`note_taker`** darf laut Server dasselbe wie in der Matrix oben: 청년 und
-   양육 lesen, 공지사항 lesen und schreiben.
+2. **`note_taker`** darf laut Server dasselbe wie in der Matrix oben: 출석,
+   이벤트, 주보 und 공지사항 lesen und schreiben (server#305), dazu
+   `/members/count` für 승인 대기. Die Mitgliederliste und 양육 nicht.
 3. **순장 ist `group_leader`.** Die Matrix nennt die Rolle `leader`; beide
    Namen werden akzeptiert.
 4. **새가족-Rollen** heißen im Realm `NEWCOMER_VIEWER` und `NEWCOMER_EDITOR`.

@@ -95,24 +95,28 @@ describe('RoleService', () => {
   });
 
   describe('note_taker', () => {
-    it('reads 홈, 청년, 순 and 공지사항, in any case', () => {
+    it('reads 홈, 출석, 이벤트, 공지사항 and 주보, in any case (#205)', () => {
       const ALL = Object.keys(FEATURE_ACCESS) as FeatureId[];
       ['note_taker', 'NOTE_TAKER'].forEach(role => {
         const roles = withRoles([role]);
         expect(ALL.filter(feature => roles.canRead(feature))).toEqual([
           'home',
-          'members',
-          'churchGroups',
+          'attendance',
+          'eventRsvps',
           'announcements',
+          'bulletin',
         ]);
       });
     });
 
-    it('writes only 공지사항', () => {
+    it('writes 출석, 이벤트, 주보 and 공지사항, but not 청년 (#205)', () => {
       const roles = withRoles(['note_taker']);
-      expect(roles.canWrite('announcements')).toBeTrue();
+      (['attendance', 'eventRsvps', 'bulletin', 'announcements'] as FeatureId[]).forEach(feature =>
+        expect(roles.canWrite(feature)).withContext(feature).toBeTrue(),
+      );
       expect(roles.canWrite('members')).toBeFalse();
-      expect(roles.canWrite('churchGroups')).toBeFalse();
+      expect(roles.canRead('members')).toBeFalse();
+      expect(roles.canRead('churchGroups')).toBeFalse();
     });
   });
 
@@ -254,11 +258,13 @@ describe('RoleService', () => {
       expect(withRoles(['member']).navGroups()).toEqual([]);
     });
 
-    it('shows a note_taker 홈, 청년, 순 and 공지사항', () => {
+    it('shows a note_taker 홈, 출석, 이벤트, 주보 and 공지사항 (#205)', () => {
       const routes = withRoles(['note_taker'])
         .navGroups()
         .flatMap(group => group.items.map(item => item.route));
-      expect(routes).toEqual(jasmine.arrayWithExactContents(['/', '/members', '/church-groups', '/announcements']));
+      expect(routes).toEqual(
+        jasmine.arrayWithExactContents(['/', '/attendance', '/event-rsvps', '/bulletins', '/announcements']),
+      );
     });
 
     it('shows a 순장 홈 and 순, and drops the empty groups', () => {
