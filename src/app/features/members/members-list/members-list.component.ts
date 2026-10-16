@@ -10,6 +10,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { Subject, debounceTime, firstValueFrom, take } from 'rxjs';
+import { mapApiError } from '../../../core/http/api-error';
 import { injectAppLang } from '../../../core/i18n/language';
 import {
   MinistryCatalogEntry,
@@ -182,6 +183,12 @@ export class MembersListComponent implements OnInit {
   /** `publicId` of the row whose group select is open, and of the row saving. */
   readonly selectingId = signal<string | null>(null);
   readonly approvingId = signal<string | null>(null);
+  /**
+   * The row whose approve the server refused for a field (#225), with the
+   * message key to show under its select. The select stays open until the
+   * next choice or 취소.
+   */
+  readonly approveError = signal<{ publicId: string; messageKey: string } | null>(null);
 
   /** Search text mirrors the service so a reset clears the field too. */
   readonly searchText = signal(this.memberService.search());
@@ -552,27 +559,37 @@ export class MembersListComponent implements OnInit {
       });
       return;
     }
+    this.approveError.set(null);
     this.selectingId.set(member.publicId);
   }
 
   cancelApprove(event: Event): void {
     event.stopPropagation();
+    this.approveError.set(null);
     this.selectingId.set(null);
   }
 
   async chooseGroup(member: MemberSummary, groupPublicId: string | null): Promise<void> {
     if (!groupPublicId) return;
+    this.approveError.set(null);
     this.selectingId.set(null);
     this.approvingId.set(member.publicId);
     try {
       await firstValueFrom(this.memberService.approveMember(member.publicId, groupPublicId));
-    } catch {
+    } catch (err) {
+      this.approvingId.set(null);
+      // A code tied to the 순 field reopens the select with the error under it (#225).
+      const mapped = mapApiError(err);
+      if (mapped?.field === 'groupPublicId') {
+        this.selectingId.set(member.publicId);
+        this.approveError.set({ publicId: member.publicId, messageKey: mapped.messageKey });
+        return;
+      }
       this.messageService.add({
         severity: 'error',
         summary: this.translate.instant('members.toast.error'),
         detail: this.translate.instant('members.toast.approveFailed'),
       });
-      this.approvingId.set(null);
       return;
     }
     this.messageService.add({

@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, provideRouter, convertToParamMap } from '@angular/router';
 import { By } from '@angular/platform-browser';
@@ -623,6 +623,69 @@ describe('MembersListComponent — 거절', () => {
     expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'error' }));
     expect(service.loadMembers).not.toHaveBeenCalled();
     expect(component.approvingId()).toBeNull();
+  });
+});
+
+// #225: a refused 승인 keeps the 순 select open with the mapped error under it.
+describe('MembersListComponent — 승인 error', () => {
+  function setup() {
+    TestBed.configureTestingModule({
+      imports: [MembersListComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap({})) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MembersListComponent);
+    const service = TestBed.inject(MemberService);
+    const messages = fixture.debugElement.injector.get(MessageService);
+    spyOn(messages, 'add');
+    spyOn(service, 'loadMembers');
+    return { component: fixture.componentInstance, service, messages };
+  }
+
+  const pending: MemberSummary = { ...member(undefined), publicId: 'p-1', memberStatus: 'PENDING' };
+  const refused = (code: string) => new HttpErrorResponse({
+    status: 400,
+    error: { status: 400, message: 'MEMBER_GROUP_REQUIRED', code, fieldErrors: { groupPublicId: 'required' } },
+  });
+
+  it('keeps the select open and shows the 순 error on MEMBER_GROUP_REQUIRED, without a toast', async () => {
+    const { component, service, messages } = setup();
+    spyOn(service, 'approveMember').and.returnValue(throwError(() => refused('MEMBER_GROUP_REQUIRED')));
+
+    await component.chooseGroup(pending, 'grp-1');
+
+    expect(component.selectingId()).toBe('p-1');
+    expect(component.approvingId()).toBeNull();
+    expect(component.approveError()).toEqual({ publicId: 'p-1', messageKey: 'members.edit.errors.groupRequired' });
+    expect(messages.add).not.toHaveBeenCalled();
+    expect(service.loadMembers).not.toHaveBeenCalled();
+  });
+
+  it('clears the error on 취소', async () => {
+    const { component, service } = setup();
+    spyOn(service, 'approveMember').and.returnValue(throwError(() => refused('MEMBER_GROUP_REQUIRED')));
+    await component.chooseGroup(pending, 'grp-1');
+
+    component.cancelApprove(new Event('click'));
+
+    expect(component.approveError()).toBeNull();
+    expect(component.selectingId()).toBeNull();
+  });
+
+  it('falls back to the approve toast for an unknown code', async () => {
+    const { component, service, messages } = setup();
+    spyOn(service, 'approveMember').and.returnValue(throwError(() => refused('SOMETHING_ELSE')));
+
+    await component.chooseGroup(pending, 'grp-1');
+
+    expect(component.approveError()).toBeNull();
+    expect(component.selectingId()).toBeNull();
+    expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ detail: 'members.toast.approveFailed' }));
   });
 });
 

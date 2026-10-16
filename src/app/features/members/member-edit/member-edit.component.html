@@ -274,7 +274,11 @@
                   <div class="flex flex-col gap-[var(--space-4)]">
                     <label for="memberChurchGroup" class="type-caption text-ink-muted">
                       {{ 'members.edit.church.group' | translate }}
+                      @if (groupRequired()) {
+                        <span class="text-[var(--color-badge-deleted-fg)]" data-testid="group-required-mark">*</span>
+                      }
                     </label>
+                    @let groupInvalid = form.get('groupPublicId')!.invalid && form.get('groupPublicId')!.touched;
                     <p-select
                       inputId="memberChurchGroup"
                       formControlName="groupPublicId"
@@ -283,8 +287,15 @@
                       optionValue="value"
                       [placeholder]="'members.edit.placeholders.select' | translate"
                       [showClear]="true"
+                      [invalid]="groupInvalid"
+                      [pt]="{ label: { 'aria-invalid': groupInvalid ? 'true' : null, 'aria-describedby': groupInvalid ? 'memberChurchGroup-error' : null } }"
                       appendTo="body"
                       styleClass="w-full" />
+                    @if (groupInvalid) {
+                      <small id="memberChurchGroup-error" class="type-caption text-[var(--color-badge-deleted-fg)]" data-testid="group-required-error">
+                        {{ 'members.edit.errors.groupRequired' | translate }}
+                      </small>
+                    }
                     @if (leaderChangeHintName(); as name) {
                       <small class="type-caption text-[var(--color-badge-inactive-fg)]" data-testid="leader-change-hint">
                         {{ 'members.edit.leaderChangeHint' | translate:{ name } }}

@@ -247,7 +247,8 @@
       "errors": {
         "required": "This field is required.",
         "email": "Invalid email format.",
-        "phone": "Not a valid mobile number."
+        "phone": "Not a valid mobile number.",
+        "groupRequired": "Member group is required. Please choose a member group."
       },
       "church": {
         "group": "Cell group",
