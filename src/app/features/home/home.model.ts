@@ -29,6 +29,8 @@ export interface GroupAttendanceRow {
   attended: number;
   /** Roster size × Sundays in the range — the attendance *opportunities*. */
   total: number;
+  /** 빠른 등록 visitors, already counted in `attended` and `total` (#223). */
+  quickRecords: number;
   /** 0–100, rounded. */
   ratio: number;
 }
@@ -102,6 +104,7 @@ export function totalAttendanceRow(
     groupName: label,
     attended,
     total,
+    quickRecords: rows.reduce((sum, row) => sum + row.quickRecords, 0),
     ratio: total > 0 ? Math.round((attended / total) * 100) : 0,
   };
 }
@@ -126,7 +129,10 @@ export function groupSizeClass(count: number): GroupSizeClass {
 export interface SundayGroupCountRow {
   groupPublicId: string | null;
   groupName: string;
+  /** Includes `quickRecords`; the size class comes from this total. */
   count: number;
+  /** 빠른 등록 visitors, already counted in `count` (#223). */
+  quickRecords: number;
   sizeClass: GroupSizeClass;
 }
 
@@ -140,7 +146,10 @@ export interface SundayGroupCounts {
 export interface SundayCheckinTile {
   groupPublicId: string | null;
   groupName: string | null;
+  /** Includes `quickRecords`. */
   count: number;
+  /** 빠른 등록 visitors, already counted in `count` (#223). */
+  quickRecords: number;
 }
 
 /**

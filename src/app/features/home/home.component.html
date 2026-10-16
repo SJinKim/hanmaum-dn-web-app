@@ -92,7 +92,14 @@
           <tbody>
             @for (row of sundayCounts()?.rows ?? []; track row.groupPublicId ?? row.groupName) {
               <tr class="border-line-subtle h-[var(--size-table-row)] border-b last:border-b-0">
-                <th scope="row" class="type-body text-ink-strong text-left font-normal">{{ row.groupName }}</th>
+                <th scope="row" class="text-left font-normal">
+                  <span class="type-body text-ink-strong block">{{ row.groupName }}</span>
+                  @if (row.quickRecords > 0) {
+                    <span class="type-caption text-ink-muted block" data-testid="quick-records-hint">{{
+                      'home.quickRecordsIncluded' | translate: { count: row.quickRecords }
+                    }}</span>
+                  }
+                </th>
                 <td class="text-right">
                   <span class="inline-flex items-center gap-[var(--space-8)]">
                     <span class="type-h3 text-ink-strong tabular-nums">{{ row.count }}</span>
@@ -148,6 +155,11 @@
                 tile.groupName ?? ('home.sundayCheckins.noGroup' | translate)
               }}</span>
               <span class="type-h3 text-ink-strong tabular-nums">{{ tile.count }}</span>
+              @if (tile.quickRecords > 0) {
+                <span class="type-caption text-ink-muted" data-testid="quick-records-hint">{{
+                  'home.quickRecordsIncluded' | translate: { count: tile.quickRecords }
+                }}</span>
+              }
             </li>
           }
         </ul>
@@ -245,7 +257,16 @@
             [rows]="attendanceRecords()"
             [columns]="attendanceColumns()"
             [footer]="attendanceFooter()"
-            [caption]="'home.attendance.heading' | translate" />
+            [caption]="'home.attendance.heading' | translate">
+            <ng-template appDataCell="group" let-record>
+              <span class="type-body text-ink-strong block">{{ record.title }}</span>
+              @if (attendanceQuickRecords(record.id); as count) {
+                <span class="type-caption text-ink-muted block" data-testid="quick-records-hint">{{
+                  'home.quickRecordsIncluded' | translate: { count }
+                }}</span>
+              }
+            </ng-template>
+          </app-data-table>
         }
       </section>
     }

@@ -100,6 +100,7 @@
       "heading": "Upcoming events",
       "empty": "No upcoming events"
     },
+    "quickRecordsIncluded": "incl. {{count}} quick records",
     "sundayCounts": {
       "heading": "Sunday attendance by group",
       "loadFailed": "Could not load attendance by group.",

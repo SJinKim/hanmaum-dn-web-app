@@ -159,6 +159,7 @@ export class HomeService {
             groupPublicId: group.groupPublicId,
             groupName: group.groupName ?? '소속 그룹 없음',
             count: group.attendanceCount,
+            quickRecords: group.quickRecordCount ?? 0,
             sizeClass: groupSizeClass(group.attendanceCount),
           }))
           .sort((left, right) => left.groupName.localeCompare(right.groupName, 'ko')),
@@ -178,6 +179,7 @@ export class HomeService {
             groupPublicId: group.groupPublicId,
             groupName: group.groupName,
             count: group.attendanceCount,
+            quickRecords: group.quickRecordCount ?? 0,
           }))
           .sort((left, right) =>
             (left.groupName === null) !== (right.groupName === null)
@@ -243,6 +245,8 @@ function toUpcomingEvents(
  * Merges the ACTIVE roster with the per-Sunday counts. A group appears when it
  * has members *or* check-ins; `groupPublicId === null` is 소속 그룹 없음, whose
  * roster the members endpoint cannot give, so 전체 falls back to 참석.
+ * 빠른 등록 visitors (#223) are in 참석 but on no roster, so they add to 전체
+ * too — otherwise 새가족 could pass 100 %.
  */
 function buildAttendanceRows(
   roster: readonly MemberSummary[],
@@ -259,6 +263,7 @@ function buildAttendanceRows(
       groupName: member.groupName ?? '소속 그룹 없음',
       attended: 0,
       total: 0,
+      quickRecords: 0,
       ratio: 0,
     };
     row.total += sundays;
@@ -273,16 +278,19 @@ function buildAttendanceRows(
         groupName: group.groupName ?? '소속 그룹 없음',
         attended: 0,
         total: 0,
+        quickRecords: 0,
         ratio: 0,
       };
       row.attended += group.attendanceCount;
+      row.quickRecords += group.quickRecordCount ?? 0;
       rows.set(key, row);
     }
   }
 
   return [...rows.values()]
     .map(row => {
-      const total = row.total > 0 ? row.total : row.attended;
+      const roster = row.total > 0 ? row.total : row.attended - row.quickRecords;
+      const total = roster + row.quickRecords;
       return { ...row, total, ratio: total > 0 ? Math.round((row.attended / total) * 100) : 0 };
     })
     .sort((left, right) => left.groupName.localeCompare(right.groupName, 'ko'));

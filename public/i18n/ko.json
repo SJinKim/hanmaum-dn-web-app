@@ -100,6 +100,7 @@
       "heading": "다가오는 일정",
       "empty": "예정된 일정이 없습니다"
     },
+    "quickRecordsIncluded": "빠른 등록 {{count}}명 포함",
     "sundayCounts": {
       "heading": "일요일 순별 참석 현황",
       "loadFailed": "순별 참석 현황을 불러오지 못했습니다.",

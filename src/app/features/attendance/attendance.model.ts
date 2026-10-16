@@ -36,6 +36,11 @@ export interface ChurchGroupAttendanceCountResponse {
   inPlaceCount?: number;
   outsideCount?: number;
   unconfirmedCount?: number;
+  /**
+   * 빠른 등록 visitors on this date, already included in `attendanceCount`
+   * (#223). Only the 새가족 row carries more than 0; absent on older servers.
+   */
+  quickRecordCount?: number;
 }
 
 export interface AttendanceGroupCountsResponse {
@@ -47,6 +52,8 @@ export interface AttendanceGroupCountsResponse {
   totalInPlaceCount?: number;
   totalOutsideCount?: number;
   totalUnconfirmedCount?: number;
+  /** Sum of `quickRecordCount`, already included in `totalCount` (#223). */
+  totalQuickRecordCount?: number;
   groups: ChurchGroupAttendanceCountResponse[];
 }
 
