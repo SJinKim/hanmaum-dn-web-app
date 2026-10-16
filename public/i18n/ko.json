@@ -58,8 +58,13 @@
   },
   "home": {
     "title": "홈",
+    "groups": {
+      "attention": "확인 필요",
+      "sunday": "이번 주 일요일",
+      "newcomers": "새가족",
+      "church": "교회 현황"
+    },
     "attention": {
-      "heading": "확인이 필요합니다",
       "pendingApprovals": "승인 대기",
       "approve": "승인하기",
       "awaitingRsvps": "응답 대기",

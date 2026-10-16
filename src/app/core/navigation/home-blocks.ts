@@ -120,3 +120,23 @@ export const HOME_BLOCKS: readonly HomeBlock[] = [
   { id: 'sundayCheckins', roles: ['admin', 'pastor', ...LEADER_ROLES, ...GENERAL_OPERATIONS_ROLES] },
   { id: 'quickRecords', roles: ['admin', 'pastor', ...NEWCOMER_ROLES] },
 ];
+
+export type HomeGroupId = 'attention' | 'sunday' | 'newcomers' | 'church';
+
+export interface HomeGroup {
+  id: HomeGroupId;
+  blocks: readonly HomeBlockId[];
+}
+
+/**
+ * #222: Home folds into four accordion groups. Which blocks a role sees still
+ * comes from `HOME_BLOCKS` alone; a group is a layout bucket and shows when at
+ * least one of its blocks does. A group with no visible block is absent (§9).
+ * Pending blocks keep their home here so they slot in once they ship.
+ */
+export const HOME_GROUPS: readonly HomeGroup[] = [
+  { id: 'attention', blocks: ['pendingApprovals', 'awaitingRsvps', 'longAbsent'] },
+  { id: 'sunday', blocks: ['sundayGroupCounts', 'sundayCheckins', 'groupAttendance'] },
+  { id: 'newcomers', blocks: ['quickRecords'] },
+  { id: 'church', blocks: ['overview', 'recentActivity', 'upcomingEvents', 'statistics'] },
+];

@@ -87,7 +87,11 @@ interface Harness {
   text: () => string;
 }
 
-function createHarness(roles: string[] = ['ADMIN'], setup?: (home: jasmine.SpyObj<HomeService>) => void): Harness {
+function createHarness(
+  roles: string[] = ['ADMIN'],
+  setup?: (home: jasmine.SpyObj<HomeService>) => void,
+  username = '',
+): Harness {
   const home = jasmine.createSpyObj<HomeService>('HomeService', [
     'loadSnapshot',
     'loadGroupAttendance',
@@ -114,6 +118,7 @@ function createHarness(roles: string[] = ['ADMIN'], setup?: (home: jasmine.SpyOb
     ],
   });
   TestBed.inject(AuthService).roles.set(roles);
+  TestBed.inject(AuthService).username.set(username);
 
   const fixture = TestBed.createComponent(HomeComponent);
   fixture.detectChanges();
@@ -126,6 +131,54 @@ function createHarness(roles: string[] = ['ADMIN'], setup?: (home: jasmine.SpyOb
 }
 
 describe('HomeComponent', () => {
+  describe('groups (#222)', () => {
+    const headers = (fixture: ComponentFixture<HomeComponent>) =>
+      Array.from(fixture.nativeElement.querySelectorAll('app-accordion-section [aria-expanded]') as NodeListOf<HTMLElement>);
+
+    beforeEach(() => localStorage.removeItem('dn-home-sections:hong'));
+    afterEach(() => localStorage.removeItem('dn-home-sections:hong'));
+
+    it('shows an admin all four groups, expanded by default', () => {
+      const { fixture, text } = createHarness(['ADMIN'], undefined, 'hong');
+      const rendered = text();
+      for (const id of ['attention', 'sunday', 'newcomers', 'church']) {
+        expect(rendered).toContain(`home.groups.${id}`);
+      }
+      expect(headers(fixture).map(h => h.getAttribute('aria-expanded'))).toEqual(['true', 'true', 'true', 'true']);
+    });
+
+    it('leaves a group out when the role sees none of its blocks', () => {
+      const rendered = createHarness(['group_leader']).text();
+      expect(rendered).not.toContain('home.groups.newcomers');
+    });
+
+    it('renders a single group plain, without a header', () => {
+      const { fixture, text } = createHarness(['newcomer_viewer']);
+      expect(fixture.nativeElement.querySelector('app-accordion-section')).toBeNull();
+      expect(text()).not.toContain('home.groups.newcomers');
+      expect(text()).toContain('home.quickRecords.heading');
+    });
+
+    it('collapses a group on click and remembers it for the same user', () => {
+      const first = createHarness(['ADMIN'], undefined, 'hong');
+      headers(first.fixture)[1].click();
+      first.fixture.detectChanges();
+      expect(headers(first.fixture)[1].getAttribute('aria-expanded')).toBe('false');
+      expect(JSON.parse(localStorage.getItem('dn-home-sections:hong') ?? '[]')).toEqual(['sunday']);
+      first.fixture.destroy();
+      TestBed.resetTestingModule();
+
+      const again = createHarness(['ADMIN'], undefined, 'hong');
+      expect(headers(again.fixture).map(h => h.getAttribute('aria-expanded'))).toEqual(['true', 'false', 'true', 'true']);
+    });
+
+    it('keeps every group expanded when the stored state is unreadable', () => {
+      localStorage.setItem('dn-home-sections:hong', '{not json');
+      const { fixture } = createHarness(['ADMIN'], undefined, 'hong');
+      expect(headers(fixture).every(h => h.getAttribute('aria-expanded') === 'true')).toBeTrue();
+    });
+  });
+
   describe('role variants', () => {
     it('gives an admin every block the Figma matrix grants 관리자', () => {
       const { text } = createHarness(['ADMIN']);

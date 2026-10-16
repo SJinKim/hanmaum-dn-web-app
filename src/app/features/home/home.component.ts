@@ -1,13 +1,16 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, map, of, switchMap, timer } from 'rxjs';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { MemberSummary } from '../../core/models/member.model';
 import { NewcomerVisit } from '../../core/models/newcomer-visit.model';
-import { HomeBlockId } from '../../core/navigation/home-blocks';
+import { HOME_GROUPS, HomeBlockId, HomeGroup, HomeGroupId } from '../../core/navigation/home-blocks';
+import { AuthService } from '../../core/services/auth.service';
 import { RoleService } from '../../core/services/role.service';
+import { AccordionSectionComponent } from '../../core/ui/accordion-section/accordion-section.component';
 import { BadgeComponent } from '../../core/ui/badge/badge.component';
 import { BreakpointService } from '../../core/ui/breakpoint.service';
 import { DataColumn, DataRecord, DataRecordBadge } from '../../core/ui/data-record.model';
@@ -66,6 +69,8 @@ import { HomeService, QUICK_RECORD_PAGE_SIZE } from './home.service';
     ListCardComponent,
     EmptyStateComponent,
     SkeletonComponent,
+    AccordionSectionComponent,
+    NgTemplateOutlet,
   ],
   templateUrl: './home.component.html',
 })
@@ -76,6 +81,18 @@ export class HomeComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly auth = inject(AuthService);
+
+  /** The groups with at least one block this role may see; the rest are absent (#222). */
+  readonly visibleGroups = computed<readonly HomeGroup[]>(() =>
+    HOME_GROUPS.filter(group => group.blocks.some(block => this.showsBlock(block))),
+  );
+
+  /** One group needs no header to tell it apart — it renders plain (#222). */
+  readonly groupsHaveHeaders = computed(() => this.visibleGroups().length > 1);
+
+  /** Collapsed groups, per user and browser; every group starts expanded. */
+  private readonly collapsedGroups = signal<ReadonlySet<HomeGroupId>>(readCollapsed(this.sectionsKey()));
 
   /**
    * The date the PageHeader prints, fixed for the life of the screen. Built by
@@ -283,11 +300,6 @@ export class HomeComponent implements OnInit {
     }));
   });
 
-  /** The 확인이 필요합니다 section disappears when neither card is granted. */
-  readonly showsAttention = computed(
-    () => this.showsBlock('pendingApprovals') || this.showsBlock('awaitingRsvps'),
-  );
-
   ngOnInit(): void {
     this.home
       .loadSnapshot({
@@ -329,6 +341,22 @@ export class HomeComponent implements OnInit {
     } else {
       this.quickLoading.set(false);
     }
+  }
+
+  groupExpanded(id: HomeGroupId): boolean {
+    return !this.collapsedGroups().has(id);
+  }
+
+  setGroupExpanded(id: HomeGroupId, expanded: boolean): void {
+    const next = new Set(this.collapsedGroups());
+    if (expanded) next.delete(id);
+    else next.add(id);
+    this.collapsedGroups.set(next);
+    writeCollapsed(this.sectionsKey(), next);
+  }
+
+  private sectionsKey(): string {
+    return `${HOME_SECTIONS_KEY}:${this.auth.username()}`;
   }
 
   showsBlock(id: HomeBlockId): boolean {
@@ -518,4 +546,25 @@ function formatToday(date: Date): string {
 function formatTime(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0');
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+const HOME_SECTIONS_KEY = 'dn-home-sections';
+
+/** Storage can be absent or throw (private mode, blocked site data) — then everything stays expanded. */
+function readCollapsed(key: string): ReadonlySet<HomeGroupId> {
+  try {
+    const raw = globalThis.localStorage?.getItem(key);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? (parsed as HomeGroupId[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeCollapsed(key: string, collapsed: ReadonlySet<HomeGroupId>): void {
+  try {
+    globalThis.localStorage?.setItem(key, JSON.stringify([...collapsed]));
+  } catch {
+    // Not persisted; the choice still holds for this visit.
+  }
 }

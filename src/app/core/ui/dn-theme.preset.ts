@@ -242,6 +242,25 @@ export const DnPreset = definePreset(Aura, {
   },
 
   components: {
+    // AccordionSection (#222): no chrome of its own — the section sits on the
+    // page background and the blocks inside keep their cards.
+    accordion: {
+      panel: { borderWidth: '0' },
+      header: {
+        padding: 'var(--space-8) 0',
+        fontWeight: '600',
+        background: 'transparent',
+        hoverBackground: 'transparent',
+        activeBackground: 'transparent',
+        activeHoverBackground: 'transparent',
+        borderRadius: 'var(--radius-md)',
+        focusRing: { width: '2px', style: 'solid', color: 'var(--color-focus)', offset: '2px', shadow: 'none' },
+        first: { topBorderRadius: 'var(--radius-md)', borderWidth: '0' },
+        last: { bottomBorderRadius: 'var(--radius-md)', activeBottomBorderRadius: 'var(--radius-md)' },
+      },
+      content: { background: 'transparent', padding: '0' },
+    },
+
     button: {
       root: {
         borderRadius: 'var(--radius-md)',
