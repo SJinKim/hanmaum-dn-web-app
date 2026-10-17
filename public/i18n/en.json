@@ -58,8 +58,13 @@
   },
   "home": {
     "title": "Home",
+    "groups": {
+      "attention": "Needs attention",
+      "sunday": "This Sunday",
+      "newcomers": "Newcomers",
+      "church": "Church overview"
+    },
     "attention": {
-      "heading": "Needs your attention",
       "pendingApprovals": "Pending approvals",
       "approve": "Approve",
       "awaitingRsvps": "Awaiting response",

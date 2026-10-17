@@ -6,9 +6,30 @@
 <div class="flex flex-col gap-gutter">
   <app-page-header [heading]="'home.title' | translate" [subtitle]="todayLabel" />
 
-  @if (showsAttention()) {
-    <section class="flex flex-col gap-[var(--space-12)]">
-      <app-section-header [heading]="'home.attention.heading' | translate" />
+  <!-- #222: the blocks in four groups; a role that sees only one gets it without a header. -->
+  @for (group of visibleGroups(); track group.id) {
+    @if (groupsHaveHeaders()) {
+      <app-accordion-section
+        [heading]="'home.groups.' + group.id | translate"
+        [expanded]="groupExpanded(group.id)"
+        (expandedChange)="setGroupExpanded(group.id, $event)">
+        <ng-container *ngTemplateOutlet="groupBody; context: { $implicit: group.id }" />
+      </app-accordion-section>
+    } @else {
+      <div class="flex flex-col gap-gutter">
+        <ng-container *ngTemplateOutlet="groupBody; context: { $implicit: group.id }" />
+      </div>
+    }
+  }
+
+  @if (showsNothing()) {
+    <app-empty-state variant="no-data" [heading]="'home.empty' | translate" />
+  }
+</div>
+
+<ng-template #groupBody let-id>
+  @switch (id) {
+    @case ('attention') {
       <div class="flex flex-col gap-gutter tablet:flex-row">
         @if (showsBlock('pendingApprovals')) {
           <div
@@ -54,297 +75,298 @@
           </div>
         }
       </div>
-    </section>
-  }
-
-  @if (showsBlock('sundayGroupCounts')) {
-    <!-- Figma 1218:121934 (light) · 1218:122562 (dark), #211. -->
-    <section
-      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
-      <div class="flex items-center justify-between gap-[var(--space-8)]">
-        <app-section-header class="min-w-px flex-1" [heading]="'home.sundayCounts.heading' | translate" />
-        @if (sundayCounts()?.date; as date) {
-          <span class="type-caption text-ink-muted shrink-0">{{
-            'home.sundayCounts.date' | translate: sundayDateParams(date)
-          }}</span>
-        }
-      </div>
-
-      @if (sundayCountsLoading()) {
-        <app-skeleton variant="card" />
-      } @else if (sundayCountsFailed()) {
-        <app-empty-state variant="error" [heading]="'home.sundayCounts.loadFailed' | translate" />
-      } @else if ((sundayCounts()?.rows ?? []).length === 0) {
-        <app-empty-state variant="no-data" [heading]="'home.sundayCounts.empty' | translate" />
-      } @else {
-        <table class="w-full border-collapse">
-          <caption class="sr-only">{{ 'home.sundayCounts.heading' | translate }}</caption>
-          <thead>
-            <tr class="border-line-subtle border-b">
-              <th scope="col" class="type-caption text-ink-muted py-[var(--space-8)] text-left font-normal">
-                {{ 'home.sundayCounts.group' | translate }}
-              </th>
-              <th scope="col" class="type-caption text-ink-muted py-[var(--space-8)] text-right font-normal">
-                {{ 'home.sundayCounts.count' | translate }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of sundayCounts()?.rows ?? []; track row.groupPublicId ?? row.groupName) {
-              <tr class="border-line-subtle h-[var(--size-table-row)] border-b last:border-b-0">
-                <th scope="row" class="text-left font-normal">
-                  <span class="type-body text-ink-strong block">{{ row.groupName }}</span>
-                  @if (row.quickRecords > 0) {
-                    <span class="type-caption text-ink-muted block" data-testid="quick-records-hint">{{
-                      'home.quickRecordsIncluded' | translate: { count: row.quickRecords }
-                    }}</span>
-                  }
-                </th>
-                <td class="text-right">
-                  <span class="inline-flex items-center gap-[var(--space-8)]">
-                    <span class="type-h3 text-ink-strong tabular-nums">{{ row.count }}</span>
-                    <app-badge [variant]="sizeVariant(row.sizeClass)" [label]="row.sizeClass" />
-                  </span>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-
-      <p class="type-caption text-ink-muted m-0">
-        @for (sizeClass of sizeClasses; track sizeClass; let last = $last) {
-          {{ sizeClass }} {{ 'home.sundayCounts.legend.' + sizeClass | translate }}@if (!last) {
-            ·
-          }
-        }
-      </p>
-    </section>
-  }
-
-  @if (showsBlock('sundayCheckins')) {
-    <!-- Figma Admin 1212:123108 · 순장 1212:122922, #206. -->
-    <section
-      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
-      data-testid="sunday-checkins">
-      <div class="flex items-center justify-between gap-[var(--space-8)]">
-        <app-section-header class="min-w-px flex-1" [heading]="'home.sundayCheckins.heading' | translate" />
-        <span class="inline-flex shrink-0 items-center gap-[var(--space-8)]">
-          @if (checkins()?.date; as date) {
-            <span class="type-caption text-ink-muted">{{ 'home.sundayCounts.date' | translate: sundayDateParams(date) }}</span>
-          }
-          @if (checkinsLive) {
-            <app-badge variant="active" [label]="'home.sundayCheckins.live' | translate" data-testid="checkins-live" />
-          }
-        </span>
-      </div>
-
-      @if (checkinsLoading()) {
-        <app-skeleton variant="card" />
-      } @else if (checkinsFailed()) {
-        <app-empty-state variant="error" [heading]="'home.sundayCheckins.loadFailed' | translate" />
-      } @else if ((checkins()?.tiles ?? []).length === 0) {
-        <app-empty-state variant="no-data" [heading]="'home.sundayCheckins.empty' | translate" />
-      } @else {
-        <ul class="m-0 grid list-none grid-cols-2 gap-[var(--space-8)] p-0 tablet:grid-cols-3 desktop:grid-cols-6">
-          @for (tile of checkins()?.tiles ?? []; track tile.groupPublicId ?? '-') {
-            <li
-              class="bg-surface-subtle flex flex-col gap-[var(--space-4)] rounded-[var(--radius-md)] p-[var(--space-12)]"
-              data-testid="checkin-tile">
-              <span class="type-caption text-ink-muted truncate">{{
-                tile.groupName ?? ('home.sundayCheckins.noGroup' | translate)
+    }
+    @case ('sunday') {
+      @if (showsBlock('sundayGroupCounts')) {
+        <!-- Figma 1218:121934 (light) · 1218:122562 (dark), #211. -->
+        <section
+          class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+          <div class="flex items-center justify-between gap-[var(--space-8)]">
+            <app-section-header class="min-w-px flex-1" [heading]="'home.sundayCounts.heading' | translate" />
+            @if (sundayCounts()?.date; as date) {
+              <span class="type-caption text-ink-muted shrink-0">{{
+                'home.sundayCounts.date' | translate: sundayDateParams(date)
               }}</span>
-              <span class="type-h3 text-ink-strong tabular-nums">{{ tile.count }}</span>
-              @if (tile.quickRecords > 0) {
-                <span class="type-caption text-ink-muted" data-testid="quick-records-hint">{{
-                  'home.quickRecordsIncluded' | translate: { count: tile.quickRecords }
-                }}</span>
-              }
-            </li>
-          }
-        </ul>
-        <div class="border-line-subtle flex items-center justify-between border-t pt-[var(--space-12)]">
-          <span class="type-caption text-ink-muted">{{
-            'home.sundayCheckins.totalAsOf' | translate: { time: checkinsUpdatedAt() }
-          }}</span>
-          <span class="type-h3 text-ink-strong tabular-nums" data-testid="checkins-total">{{
-            'home.sundayCheckins.total' | translate: { count: checkins()?.total ?? 0 }
-          }}</span>
-        </div>
-      }
-    </section>
-  }
-
-  @if (showsBlock('quickRecords')) {
-    <!-- Figma 1210:121909 (light) · 1210:122534 (dark), #202. -->
-    <section
-      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
-      data-testid="quick-records">
-      <app-section-header
-        [heading]="'home.quickRecords.heading' | translate"
-        [actionLabel]="'home.quickRecords.viewAll' | translate"
-        (action)="goToQuickRecords()" />
-
-      @if (quickLoading()) {
-        <app-skeleton variant="card" />
-      } @else if (quickFailed()) {
-        <app-empty-state variant="error" [heading]="'home.quickRecords.loadFailed' | translate" />
-      } @else if (quickVisits().length === 0) {
-        <app-empty-state variant="no-data" [heading]="'home.quickRecords.empty' | translate" />
-      } @else if (isPhone()) {
-        <div class="flex flex-col gap-[var(--space-8)]">
-          @for (record of quickRecords(); track record.id) {
-            <app-list-card [record]="record" />
-          }
-        </div>
-      } @else {
-        <app-data-table
-          [rows]="quickRows()"
-          [columns]="quickColumns()"
-          [selectable]="false"
-          [caption]="'home.quickRecords.heading' | translate" />
-      }
-
-      @if (!quickLoading() && !quickFailed() && quickHasPages()) {
-        <div class="flex items-center justify-end gap-[var(--space-8)]" data-testid="quick-records-pager">
-          <span class="type-caption text-ink-muted tabular-nums">
-            {{ 'newcomers.pagination.range' | translate: quickRangeParams() }}
-          </span>
-          <p-button
-            size="small"
-            severity="secondary"
-            icon="pi pi-chevron-left"
-            [text]="true"
-            [disabled]="quickPage() === 0"
-            [label]="'newcomers.pagination.prev' | translate"
-            (onClick)="quickPrev()" />
-          <p-button
-            size="small"
-            severity="secondary"
-            icon="pi pi-chevron-right"
-            iconPos="right"
-            [text]="true"
-            [disabled]="quickPage() >= quickLastPage()"
-            [label]="'newcomers.pagination.next' | translate"
-            (onClick)="quickNext()" />
-        </div>
-      }
-    </section>
-  }
-
-  @if (showsNothing()) {
-    <app-empty-state variant="no-data" [heading]="'home.empty' | translate" />
-  }
-
-  <div class="flex flex-col gap-gutter tablet:flex-row">
-    @if (showsBlock('groupAttendance')) {
-      <section
-        class="bg-surface border-line-subtle shadow-elevation-sm flex min-w-px flex-1 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
-        <app-section-header [heading]="'home.attendance.heading' | translate" />
-        <app-segmented-control
-          [options]="rangeOptions()"
-          [value]="range()"
-          (valueChange)="onRangeChange($event)"
-          [ariaLabel]="'home.attendance.heading' | translate" />
-
-        @if (attendanceLoading()) {
-          <app-skeleton variant="card" />
-        } @else if (attendanceRows().length === 0) {
-          <app-empty-state variant="no-data" [heading]="'home.attendance.empty' | translate" />
-        } @else {
-          <app-data-table
-            [selectable]="false"
-            [rows]="attendanceRecords()"
-            [columns]="attendanceColumns()"
-            [footer]="attendanceFooter()"
-            [caption]="'home.attendance.heading' | translate">
-            <ng-template appDataCell="group" let-record>
-              <span class="type-body text-ink-strong block">{{ record.title }}</span>
-              @if (attendanceQuickRecords(record.id); as count) {
-                <span class="type-caption text-ink-muted block" data-testid="quick-records-hint">{{
-                  'home.quickRecordsIncluded' | translate: { count }
-                }}</span>
-              }
-            </ng-template>
-          </app-data-table>
-        }
-      </section>
-    }
-
-    @if (showsBlock('overview')) {
-      <section
-        class="bg-surface border-line-subtle shadow-elevation-sm flex w-full shrink-0 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card tablet:w-[363px]">
-        <app-section-header [heading]="'home.overview.heading' | translate" />
-        @if (loading()) {
-          <app-skeleton variant="card" />
-        } @else {
-          <dl class="flex flex-col gap-[var(--space-8)]">
-            <app-definition-row
-              layout="inline"
-              [term]="'home.overview.totalMembers' | translate"
-              [value]="(snapshot()?.overview?.totalMembers ?? '—').toString()" />
-            <app-definition-row
-              layout="inline"
-              [term]="'home.overview.activeMembers' | translate"
-              [value]="(snapshot()?.overview?.activeMembers ?? '—').toString()" />
-            <app-definition-row
-              layout="inline"
-              [term]="'home.overview.ministries' | translate"
-              [value]="(snapshot()?.overview?.ministries ?? '—').toString()" />
-          </dl>
-        }
-      </section>
-    }
-  </div>
-
-  <div class="flex flex-col gap-gutter tablet:flex-row">
-    @if (showsBlock('recentActivity')) {
-      <section
-        class="bg-surface border-line-subtle shadow-elevation-sm flex min-w-px flex-1 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
-        <app-section-header
-          [heading]="'home.recent.heading' | translate"
-          [actionLabel]="'home.recent.viewAll' | translate"
-          (action)="goToMembers()" />
-
-        @if (loading()) {
-          <app-skeleton variant="card" />
-        } @else if ((snapshot()?.recentActivity ?? []).length === 0) {
-          <app-empty-state variant="no-data" [heading]="'home.recent.empty' | translate" />
-        } @else if (isPhone()) {
-          <div class="flex flex-col gap-[var(--space-8)]">
-            @for (record of recentRecords(); track record.id) {
-              <app-list-card [record]="record" (selected)="goToMember($event.id)" />
             }
           </div>
-        } @else {
-          <app-data-table
-            [rows]="recentTableRecords()"
-            [columns]="recentColumns()"
-            [caption]="'home.recent.heading' | translate"
-            (rowSelected)="goToMember($event.id)" />
-        }
-      </section>
-    }
 
-    @if (showsBlock('upcomingEvents')) {
-      <section
-        class="bg-surface border-line-subtle shadow-elevation-sm flex w-full shrink-0 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card tablet:w-[363px]">
-        <app-section-header [heading]="'home.events.heading' | translate" />
-        @if (loading()) {
-          <app-skeleton variant="card" />
-        } @else if ((snapshot()?.upcomingEvents ?? []).length === 0) {
-          <app-empty-state variant="no-data" [heading]="'home.events.empty' | translate" />
-        } @else {
-          <ul class="flex list-none flex-col gap-[var(--space-8)] p-0">
-            @for (event of snapshot()?.upcomingEvents ?? []; track event.publicId) {
-              <li class="flex min-h-[var(--size-table-row)] items-center gap-[var(--space-8)]">
-                <span class="type-body text-ink-strong min-w-px flex-1 truncate">{{ event.title }}</span>
-                <app-badge variant="neutral" [label]="'D-' + event.daysUntil" />
-              </li>
+          @if (sundayCountsLoading()) {
+            <app-skeleton variant="card" />
+          } @else if (sundayCountsFailed()) {
+            <app-empty-state variant="error" [heading]="'home.sundayCounts.loadFailed' | translate" />
+          } @else if ((sundayCounts()?.rows ?? []).length === 0) {
+            <app-empty-state variant="no-data" [heading]="'home.sundayCounts.empty' | translate" />
+          } @else {
+            <table class="w-full border-collapse">
+              <caption class="sr-only">{{ 'home.sundayCounts.heading' | translate }}</caption>
+              <thead>
+                <tr class="border-line-subtle border-b">
+                  <th scope="col" class="type-caption text-ink-muted py-[var(--space-8)] text-left font-normal">
+                    {{ 'home.sundayCounts.group' | translate }}
+                  </th>
+                  <th scope="col" class="type-caption text-ink-muted py-[var(--space-8)] text-right font-normal">
+                    {{ 'home.sundayCounts.count' | translate }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of sundayCounts()?.rows ?? []; track row.groupPublicId ?? row.groupName) {
+                  <tr class="border-line-subtle h-[var(--size-table-row)] border-b last:border-b-0">
+                    <th scope="row" class="text-left font-normal">
+                      <span class="type-body text-ink-strong block">{{ row.groupName }}</span>
+                      @if (row.quickRecords > 0) {
+                        <span class="type-caption text-ink-muted block" data-testid="quick-records-hint">{{
+                          'home.quickRecordsIncluded' | translate: { count: row.quickRecords }
+                        }}</span>
+                      }
+                    </th>
+                    <td class="text-right">
+                      <span class="inline-flex items-center gap-[var(--space-8)]">
+                        <span class="type-h3 text-ink-strong tabular-nums">{{ row.count }}</span>
+                        <app-badge [variant]="sizeVariant(row.sizeClass)" [label]="row.sizeClass" />
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+
+          <p class="type-caption text-ink-muted m-0">
+            @for (sizeClass of sizeClasses; track sizeClass; let last = $last) {
+              {{ sizeClass }} {{ 'home.sundayCounts.legend.' + sizeClass | translate }}@if (!last) {
+                ·
+              }
             }
-          </ul>
-        }
-      </section>
+          </p>
+        </section>
+      }
+
+      @if (showsBlock('sundayCheckins')) {
+        <!-- Figma Admin 1212:123108 · 순장 1212:122922, #206. -->
+        <section
+          class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+          data-testid="sunday-checkins">
+          <div class="flex items-center justify-between gap-[var(--space-8)]">
+            <app-section-header class="min-w-px flex-1" [heading]="'home.sundayCheckins.heading' | translate" />
+            <span class="inline-flex shrink-0 items-center gap-[var(--space-8)]">
+              @if (checkins()?.date; as date) {
+                <span class="type-caption text-ink-muted">{{ 'home.sundayCounts.date' | translate: sundayDateParams(date) }}</span>
+              }
+              @if (checkinsLive) {
+                <app-badge variant="active" [label]="'home.sundayCheckins.live' | translate" data-testid="checkins-live" />
+              }
+            </span>
+          </div>
+
+          @if (checkinsLoading()) {
+            <app-skeleton variant="card" />
+          } @else if (checkinsFailed()) {
+            <app-empty-state variant="error" [heading]="'home.sundayCheckins.loadFailed' | translate" />
+          } @else if ((checkins()?.tiles ?? []).length === 0) {
+            <app-empty-state variant="no-data" [heading]="'home.sundayCheckins.empty' | translate" />
+          } @else {
+            <ul class="m-0 grid list-none grid-cols-2 gap-[var(--space-8)] p-0 tablet:grid-cols-3 desktop:grid-cols-6">
+              @for (tile of checkins()?.tiles ?? []; track tile.groupPublicId ?? '-') {
+                <li
+                  class="bg-surface-subtle flex flex-col gap-[var(--space-4)] rounded-[var(--radius-md)] p-[var(--space-12)]"
+                  data-testid="checkin-tile">
+                  <span class="type-caption text-ink-muted truncate">{{
+                    tile.groupName ?? ('home.sundayCheckins.noGroup' | translate)
+                  }}</span>
+                  <span class="type-h3 text-ink-strong tabular-nums">{{ tile.count }}</span>
+                  @if (tile.quickRecords > 0) {
+                    <span class="type-caption text-ink-muted" data-testid="quick-records-hint">{{
+                      'home.quickRecordsIncluded' | translate: { count: tile.quickRecords }
+                    }}</span>
+                  }
+                </li>
+              }
+            </ul>
+            <div class="border-line-subtle flex items-center justify-between border-t pt-[var(--space-12)]">
+              <span class="type-caption text-ink-muted">{{
+                'home.sundayCheckins.totalAsOf' | translate: { time: checkinsUpdatedAt() }
+              }}</span>
+              <span class="type-h3 text-ink-strong tabular-nums" data-testid="checkins-total">{{
+                'home.sundayCheckins.total' | translate: { count: checkins()?.total ?? 0 }
+              }}</span>
+            </div>
+          }
+        </section>
+      }
+
+      @if (showsBlock('groupAttendance')) {
+        <section
+          class="bg-surface border-line-subtle shadow-elevation-sm flex min-w-px flex-1 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+          <app-section-header [heading]="'home.attendance.heading' | translate" />
+          <app-segmented-control
+            [options]="rangeOptions()"
+            [value]="range()"
+            (valueChange)="onRangeChange($event)"
+            [ariaLabel]="'home.attendance.heading' | translate" />
+
+          @if (attendanceLoading()) {
+            <app-skeleton variant="card" />
+          } @else if (attendanceRows().length === 0) {
+            <app-empty-state variant="no-data" [heading]="'home.attendance.empty' | translate" />
+          } @else {
+            <app-data-table
+              [selectable]="false"
+              [rows]="attendanceRecords()"
+              [columns]="attendanceColumns()"
+              [footer]="attendanceFooter()"
+              [caption]="'home.attendance.heading' | translate">
+              <ng-template appDataCell="group" let-record>
+                <span class="type-body text-ink-strong block">{{ record.title }}</span>
+                @if (attendanceQuickRecords(record.id); as count) {
+                  <span class="type-caption text-ink-muted block" data-testid="quick-records-hint">{{
+                    'home.quickRecordsIncluded' | translate: { count }
+                  }}</span>
+                }
+              </ng-template>
+            </app-data-table>
+          }
+        </section>
+      }
     }
-  </div>
-</div>
+    @case ('newcomers') {
+      @if (showsBlock('quickRecords')) {
+        <!-- Figma 1210:121909 (light) · 1210:122534 (dark), #202. -->
+        <section
+          class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
+          data-testid="quick-records">
+          <app-section-header
+            [heading]="'home.quickRecords.heading' | translate"
+            [actionLabel]="'home.quickRecords.viewAll' | translate"
+            (action)="goToQuickRecords()" />
+
+          @if (quickLoading()) {
+            <app-skeleton variant="card" />
+          } @else if (quickFailed()) {
+            <app-empty-state variant="error" [heading]="'home.quickRecords.loadFailed' | translate" />
+          } @else if (quickVisits().length === 0) {
+            <app-empty-state variant="no-data" [heading]="'home.quickRecords.empty' | translate" />
+          } @else if (isPhone()) {
+            <div class="flex flex-col gap-[var(--space-8)]">
+              @for (record of quickRecords(); track record.id) {
+                <app-list-card [record]="record" />
+              }
+            </div>
+          } @else {
+            <app-data-table
+              [rows]="quickRows()"
+              [columns]="quickColumns()"
+              [selectable]="false"
+              [caption]="'home.quickRecords.heading' | translate" />
+          }
+
+          @if (!quickLoading() && !quickFailed() && quickHasPages()) {
+            <div class="flex items-center justify-end gap-[var(--space-8)]" data-testid="quick-records-pager">
+              <span class="type-caption text-ink-muted tabular-nums">
+                {{ 'newcomers.pagination.range' | translate: quickRangeParams() }}
+              </span>
+              <p-button
+                size="small"
+                severity="secondary"
+                icon="pi pi-chevron-left"
+                [text]="true"
+                [disabled]="quickPage() === 0"
+                [label]="'newcomers.pagination.prev' | translate"
+                (onClick)="quickPrev()" />
+              <p-button
+                size="small"
+                severity="secondary"
+                icon="pi pi-chevron-right"
+                iconPos="right"
+                [text]="true"
+                [disabled]="quickPage() >= quickLastPage()"
+                [label]="'newcomers.pagination.next' | translate"
+                (onClick)="quickNext()" />
+            </div>
+          }
+        </section>
+      }
+    }
+    @case ('church') {
+      <div class="flex flex-col gap-gutter tablet:flex-row">
+        @if (showsBlock('recentActivity')) {
+          <section
+            class="bg-surface border-line-subtle shadow-elevation-sm flex min-w-px flex-1 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+            <app-section-header
+              [heading]="'home.recent.heading' | translate"
+              [actionLabel]="'home.recent.viewAll' | translate"
+              (action)="goToMembers()" />
+
+            @if (loading()) {
+              <app-skeleton variant="card" />
+            } @else if ((snapshot()?.recentActivity ?? []).length === 0) {
+              <app-empty-state variant="no-data" [heading]="'home.recent.empty' | translate" />
+            } @else if (isPhone()) {
+              <div class="flex flex-col gap-[var(--space-8)]">
+                @for (record of recentRecords(); track record.id) {
+                  <app-list-card [record]="record" (selected)="goToMember($event.id)" />
+                }
+              </div>
+            } @else {
+              <app-data-table
+                [rows]="recentTableRecords()"
+                [columns]="recentColumns()"
+                [caption]="'home.recent.heading' | translate"
+                (rowSelected)="goToMember($event.id)" />
+            }
+          </section>
+        }
+
+        @if (showsBlock('overview') || showsBlock('upcomingEvents')) {
+          <div class="flex w-full shrink-0 flex-col gap-gutter tablet:w-[363px]">
+          @if (showsBlock('overview')) {
+            <section
+              class="bg-surface border-line-subtle shadow-elevation-sm flex w-full shrink-0 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+              <app-section-header [heading]="'home.overview.heading' | translate" />
+              @if (loading()) {
+                <app-skeleton variant="card" />
+              } @else {
+                <dl class="flex flex-col gap-[var(--space-8)]">
+                  <app-definition-row
+                    layout="inline"
+                    [term]="'home.overview.totalMembers' | translate"
+                    [value]="(snapshot()?.overview?.totalMembers ?? '—').toString()" />
+                  <app-definition-row
+                    layout="inline"
+                    [term]="'home.overview.activeMembers' | translate"
+                    [value]="(snapshot()?.overview?.activeMembers ?? '—').toString()" />
+                  <app-definition-row
+                    layout="inline"
+                    [term]="'home.overview.ministries' | translate"
+                    [value]="(snapshot()?.overview?.ministries ?? '—').toString()" />
+                </dl>
+              }
+            </section>
+          }
+
+          @if (showsBlock('upcomingEvents')) {
+            <section
+              class="bg-surface border-line-subtle shadow-elevation-sm flex w-full shrink-0 flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card">
+              <app-section-header [heading]="'home.events.heading' | translate" />
+              @if (loading()) {
+                <app-skeleton variant="card" />
+              } @else if ((snapshot()?.upcomingEvents ?? []).length === 0) {
+                <app-empty-state variant="no-data" [heading]="'home.events.empty' | translate" />
+              } @else {
+                <ul class="flex list-none flex-col gap-[var(--space-8)] p-0">
+                  @for (event of snapshot()?.upcomingEvents ?? []; track event.publicId) {
+                    <li class="flex min-h-[var(--size-table-row)] items-center gap-[var(--space-8)]">
+                      <span class="type-body text-ink-strong min-w-px flex-1 truncate">{{ event.title }}</span>
+                      <app-badge variant="neutral" [label]="'D-' + event.daysUntil" />
+                    </li>
+                  }
+                </ul>
+              }
+            </section>
+          }
+          </div>
+        }
+      </div>
+    }
+  }
+</ng-template>
