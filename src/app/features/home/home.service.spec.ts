@@ -333,6 +333,27 @@ describe('HomeService — 일요일 순별 참석 현황 (#211)', () => {
       expect(tiles.total).toBe(10);
     });
 
+    it('counts a quick visitor already on the 새가족 roster only once in 전체', async () => {
+      // Codex review of #227: 홍길동 is rostered in 새가족 and came via 빠른 등록.
+      members.getMembers.and.returnValue(
+        of({ content: [rosterMember('g-new', '새가족')], totalElements: 1, totalPages: 1, number: 0, size: 1 }),
+      );
+      attendance.getGroupCounts.and.returnValue(
+        of({
+          ...withNewcomers(),
+          totalCount: 1,
+          totalQuickRecordCount: 1,
+          groups: [{ ...NEWCOMERS, attendanceCount: 1, quickRecordCount: 1, rosteredQuickRecordCount: 1 }],
+        }),
+      );
+
+      const rows = await firstValueFrom(service.loadGroupAttendance('last-sunday', new Date(2026, 9, 13)));
+
+      expect(rows.find(row => row.groupName === '새가족')).toEqual(
+        jasmine.objectContaining({ attended: 1, total: 1, quickRecords: 1, ratio: 100 }),
+      );
+    });
+
     it('keeps the 새가족 row with an empty roster and adds the quick records to 전체', async () => {
       members.getMembers.and.returnValue(
         of({ content: [rosterMember('g-0', '1순')], totalElements: 1, totalPages: 1, number: 0, size: 1 }),

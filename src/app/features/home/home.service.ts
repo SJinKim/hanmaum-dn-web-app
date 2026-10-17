@@ -254,6 +254,7 @@ function buildAttendanceRows(
   sundays: number,
 ): GroupAttendanceRow[] {
   const rows = new Map<string, GroupAttendanceRow>();
+  const rosteredQuickRecords = new Map<string, number>();
   const keyOf = (groupPublicId: string | null) => groupPublicId ?? '';
 
   for (const member of roster) {
@@ -283,14 +284,17 @@ function buildAttendanceRows(
       };
       row.attended += group.attendanceCount;
       row.quickRecords += group.quickRecordCount ?? 0;
+      rosteredQuickRecords.set(key, (rosteredQuickRecords.get(key) ?? 0) + (group.rosteredQuickRecordCount ?? 0));
       rows.set(key, row);
     }
   }
 
-  return [...rows.values()]
-    .map(row => {
+  return [...rows.entries()]
+    .map(([key, row]) => {
+      // A quick record whose member already stands in the roster is counted there (#227).
+      const unrostered = row.quickRecords - (row.total > 0 ? (rosteredQuickRecords.get(key) ?? 0) : 0);
       const roster = row.total > 0 ? row.total : row.attended - row.quickRecords;
-      const total = roster + row.quickRecords;
+      const total = roster + unrostered;
       return { ...row, total, ratio: total > 0 ? Math.round((row.attended / total) * 100) : 0 };
     })
     .sort((left, right) => left.groupName.localeCompare(right.groupName, 'ko'));
