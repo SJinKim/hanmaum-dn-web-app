@@ -13,20 +13,24 @@ transparent PNG).
 
 The monogram is cropped from the original at x=284, y=267, width=654,
 height=524. The small “DANIEL & NEHEMIA” subtitle is omitted for legibility.
-Its alpha silhouette is preserved and tinted white, following the mobile
+Its alpha silhouette is preserved and tinted `#b6cb33`, following the mobile
 login's use of a theme tint. No lettering or cross geometry is redrawn.
 
-The background uses Figma `brand/600` (`#2b3a67`). At 64 × 64 the corner
-radius is 12, the mark is 52 pixels wide, and it is centered horizontally
-and vertically. The same fixed colors work on light and dark browser tabs.
+The background is fully transparent in every export, including the ICO
+and Apple touch icon. The color `#b6cb33` was explicitly requested for
+this logo. At 64 × 64 the mark is 52 pixels wide and centered horizontally
+and vertically.
 
 ## Exports
 
-Export the named size frames from Figma as PNG. Export the 64px frame as
-SVG with its image embedded so it has no external resource dependencies.
-Replace the exported SVG pattern/use wrapper with one direct `<image>`
-element at the same bounds. This avoids pattern tiling seams in Chrome;
-the embedded PNG and artwork remain identical to the Figma source.
+Export the named size frames from Figma as PNG with transparency enabled.
+Normalize PNG RGB channels to exactly 182, 203, 51 while preserving the
+exported alpha channel to avoid color rounding from masked Figma exports.
+For SVG, embed the original cropped PNG in an alpha mask and apply the
+logo color with a masked rectangle. Keep the image at the same bounds
+as the 64px Figma frame. Use a direct `<image>` element rather than a
+pattern/use wrapper to avoid pattern tiling seams in Chrome. The SVG
+has no external resource dependencies or background rectangle.
 
 | File in `public/` | Export |
 | --- | --- |
