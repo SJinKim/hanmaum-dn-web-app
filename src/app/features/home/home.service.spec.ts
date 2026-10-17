@@ -287,6 +287,98 @@ describe('HomeService — 일요일 순별 참석 현황 (#211)', () => {
       expect(attendance.getGroupCounts).not.toHaveBeenCalled();
     });
   });
+  describe('빠른 등록 (#223)', () => {
+    const NEWCOMERS = {
+      groupPublicId: 'g-new',
+      groupDivision: null,
+      groupName: '새가족',
+      attendanceCount: 6,
+      quickRecordCount: 2,
+    };
+
+    function withNewcomers(): AttendanceGroupCountsResponse {
+      const response = counts([{ name: '1순', count: 4 }]);
+      return {
+        ...response,
+        totalCount: response.totalCount + NEWCOMERS.attendanceCount,
+        totalQuickRecordCount: 2,
+        groups: [...response.groups, NEWCOMERS],
+      };
+    }
+
+    function rosterMember(groupPublicId: string, groupName: string): MemberSummary {
+      return {
+        publicId: `m-${groupPublicId}`,
+        lastName: '홍',
+        firstName: '길동',
+        email: null,
+        memberStatus: 'ACTIVE',
+        baptism: null,
+        groupPublicId,
+        groupName,
+      };
+    }
+
+    beforeEach(() => attendance.getGroupCounts.and.returnValue(of(withNewcomers())));
+
+    it('carries the quick records into the Sunday rows and tiles, defaulting to 0', async () => {
+      const table = await firstValueFrom(service.loadSundayGroupCounts(new Date(2026, 9, 13)));
+      const tiles = await firstValueFrom(service.loadSundayCheckins(new Date(2026, 9, 13)));
+
+      expect(table.rows.map(row => [row.groupName, row.count, row.quickRecords])).toEqual([
+        ['1순', 4, 0],
+        ['새가족', 6, 2],
+      ]);
+      expect(tiles.tiles.find(tile => tile.groupName === '새가족')?.quickRecords).toBe(2);
+      expect(tiles.total).toBe(10);
+    });
+
+    it('counts a quick visitor already on the 새가족 roster only once in 전체', async () => {
+      // Codex review of #227: 홍길동 is rostered in 새가족 and came via 빠른 등록.
+      members.getMembers.and.returnValue(
+        of({ content: [rosterMember('g-new', '새가족')], totalElements: 1, totalPages: 1, number: 0, size: 1 }),
+      );
+      attendance.getGroupCounts.and.returnValue(
+        of({
+          ...withNewcomers(),
+          totalCount: 1,
+          totalQuickRecordCount: 1,
+          groups: [{ ...NEWCOMERS, attendanceCount: 1, quickRecordCount: 1, rosteredQuickRecordCount: 1 }],
+        }),
+      );
+
+      const rows = await firstValueFrom(service.loadGroupAttendance('last-sunday', new Date(2026, 9, 13)));
+
+      expect(rows.find(row => row.groupName === '새가족')).toEqual(
+        jasmine.objectContaining({ attended: 1, total: 1, quickRecords: 1, ratio: 100 }),
+      );
+    });
+
+    it('keeps the 새가족 row with an empty roster and adds the quick records to 전체', async () => {
+      members.getMembers.and.returnValue(
+        of({ content: [rosterMember('g-0', '1순')], totalElements: 1, totalPages: 1, number: 0, size: 1 }),
+      );
+
+      const rows = await firstValueFrom(service.loadGroupAttendance('last-sunday', new Date(2026, 9, 13)));
+      const newcomers = rows.find(row => row.groupName === '새가족');
+
+      expect(newcomers).toEqual(
+        jasmine.objectContaining({ attended: 6, total: 6, quickRecords: 2, ratio: 100 }),
+      );
+    });
+
+    it('never lets 새가족 pass 100 % when every rostered newcomer came', async () => {
+      const newcomers = ['a', 'b', 'c', 'd'].map(id => ({ ...rosterMember('g-new', '새가족'), publicId: `m-${id}` }));
+      members.getMembers.and.returnValue(of({ content: newcomers, totalElements: 4, totalPages: 1, number: 0, size: 4 }));
+
+      const rows = await firstValueFrom(service.loadGroupAttendance('last-sunday', new Date(2026, 9, 13)));
+
+      // 4 on the roster + 2 quick records = 6, and all 6 came.
+      expect(rows.find(row => row.groupName === '새가족')).toEqual(
+        jasmine.objectContaining({ attended: 6, total: 6, ratio: 100 }),
+      );
+    });
+  });
 });
 
 describe('groupSizeClass (#211)', () => {

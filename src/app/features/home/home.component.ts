@@ -11,6 +11,7 @@ import { RoleService } from '../../core/services/role.service';
 import { BadgeComponent } from '../../core/ui/badge/badge.component';
 import { BreakpointService } from '../../core/ui/breakpoint.service';
 import { DataColumn, DataRecord, DataRecordBadge } from '../../core/ui/data-record.model';
+import { DataCellDirective } from '../../core/ui/data-table/data-cell.directive';
 import { DataTableComponent } from '../../core/ui/data-table/data-table.component';
 import { DefinitionRowComponent } from '../../core/ui/definition-list/definition-row.component';
 import { EmptyStateComponent } from '../../core/ui/empty-state/empty-state.component';
@@ -60,6 +61,7 @@ import { HomeService, QUICK_RECORD_PAGE_SIZE } from './home.service';
     DefinitionRowComponent,
     BadgeComponent,
     DataTableComponent,
+    DataCellDirective,
     IconTileComponent,
     ListCardComponent,
     EmptyStateComponent,
@@ -159,6 +161,16 @@ export class HomeComponent implements OnInit {
     })),
   );
 
+  /** 빠른 등록 visitors per row id, for the 순 cell's hint (#223). */
+  private readonly attendanceQuickRecordsById = computed(
+    () => new Map(this.attendanceRows().map(row => [row.groupPublicId ?? row.groupName, row.quickRecords])),
+  );
+
+  /** 빠른 등록 visitors in an attendance row; 0 hides the hint. */
+  attendanceQuickRecords(id: string): number {
+    return this.attendanceQuickRecordsById().get(id) ?? 0;
+  }
+
   /** The 합계 row as the table footer — its ratio is text, not a bar. */
   readonly attendanceFooter = computed<DataRecord | null>(() => {
     const total = this.attendanceTotal();
@@ -176,7 +188,7 @@ export class HomeComponent implements OnInit {
     this.translate.currentLang();
     const header = (key: string) => this.translate.instant(`home.attendance.${key}`);
     return [
-      { type: 'text', key: 'group', header: header('group'), tone: 'strong', sortable: false, width: 'auto' },
+      { type: 'custom', key: 'group', header: header('group'), sortable: false, width: 'auto' },
       { type: 'text', key: 'attended', header: header('attended'), align: 'end', sortable: false, width: '96px' },
       { type: 'text', key: 'total', header: header('total'), align: 'end', tone: 'muted', sortable: false, width: '96px' },
       { type: 'progress', key: 'ratio', header: header('ratio'), sortable: false, width: '160px' },

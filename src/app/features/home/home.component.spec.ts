@@ -41,8 +41,8 @@ const SNAPSHOT: HomeSnapshot = {
 const CHECKINS: SundayCheckins = {
   date: '2026-10-11',
   tiles: [
-    { groupPublicId: 'g-1', groupName: '1순', count: 4 },
-    { groupPublicId: null, groupName: null, count: 2 },
+    { groupPublicId: 'g-1', groupName: '1순', count: 4, quickRecords: 0 },
+    { groupPublicId: null, groupName: null, count: 2, quickRecords: 0 },
   ],
   total: 6,
 };
@@ -50,8 +50,8 @@ const CHECKINS: SundayCheckins = {
 const SUNDAY_COUNTS: SundayGroupCounts = {
   date: '2026-10-11',
   rows: [
-    { groupPublicId: 'g-1', groupName: '1순', count: 4, sizeClass: 'S' },
-    { groupPublicId: 'g-2', groupName: '2순', count: 12, sizeClass: 'XL' },
+    { groupPublicId: 'g-1', groupName: '1순', count: 4, sizeClass: 'S', quickRecords: 0 },
+    { groupPublicId: 'g-2', groupName: '2순', count: 12, sizeClass: 'XL', quickRecords: 0 },
   ],
 };
 
@@ -76,8 +76,8 @@ function visitPage(totalElements: number, number = 0) {
 }
 
 const ROWS: GroupAttendanceRow[] = [
-  { groupPublicId: 'g-1', groupName: '1순', attended: 8, total: 10, ratio: 80 },
-  { groupPublicId: 'g-2', groupName: '2순', attended: 3, total: 10, ratio: 30 },
+  { groupPublicId: 'g-1', groupName: '1순', attended: 8, total: 10, ratio: 80, quickRecords: 0 },
+  { groupPublicId: 'g-2', groupName: '2순', attended: 3, total: 10, ratio: 30, quickRecords: 0 },
 ];
 
 interface Harness {
@@ -87,7 +87,7 @@ interface Harness {
   text: () => string;
 }
 
-function createHarness(roles: string[] = ['ADMIN']): Harness {
+function createHarness(roles: string[] = ['ADMIN'], setup?: (home: jasmine.SpyObj<HomeService>) => void): Harness {
   const home = jasmine.createSpyObj<HomeService>('HomeService', [
     'loadSnapshot',
     'loadGroupAttendance',
@@ -100,6 +100,7 @@ function createHarness(roles: string[] = ['ADMIN']): Harness {
   home.loadSundayGroupCounts.and.returnValue(of(SUNDAY_COUNTS));
   home.loadSundayCheckins.and.returnValue(of(CHECKINS));
   home.loadQuickRecords.and.returnValue(of(visitPage(1)));
+  setup?.(home);
   const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
   router.navigate.and.resolveTo(true);
 
@@ -463,6 +464,39 @@ describe('HomeComponent', () => {
       const { fixture, home } = createHarness(['NEWCOMER_VIEWER']);
       expect(home.loadSundayCheckins).not.toHaveBeenCalled();
       expect(fixture.nativeElement.querySelector('[data-testid="sunday-checkins"]')).toBeNull();
+    });
+  });
+
+  describe('빠른 등록 hint (#223)', () => {
+    const hints = (fixture: ComponentFixture<HomeComponent>) =>
+      fixture.nativeElement.querySelectorAll('[data-testid="quick-records-hint"]') as NodeListOf<HTMLElement>;
+
+    it('shows no hint while no row carries quick records', () => {
+      const { fixture } = createHarness(['ADMIN']);
+      expect(hints(fixture).length).toBe(0);
+    });
+
+    it('marks the 새가족 row in all three blocks', () => {
+      const { fixture } = createHarness(['ADMIN'], home => {
+        home.loadSundayGroupCounts.and.returnValue(
+          of({
+            ...SUNDAY_COUNTS,
+            rows: [...SUNDAY_COUNTS.rows, { groupPublicId: 'g-new', groupName: '새가족', count: 6, sizeClass: 'M', quickRecords: 2 }],
+          }),
+        );
+        home.loadSundayCheckins.and.returnValue(
+          of({
+            ...CHECKINS,
+            tiles: [{ groupPublicId: 'g-new', groupName: '새가족', count: 4, quickRecords: 2 }, ...CHECKINS.tiles],
+          }),
+        );
+        home.loadGroupAttendance.and.returnValue(
+          of([...ROWS, { groupPublicId: 'g-new', groupName: '새가족', attended: 9, total: 11, ratio: 82, quickRecords: 3 }]),
+        );
+      });
+      fixture.detectChanges();
+      expect(hints(fixture).length).toBe(3);
+      expect(Array.from(hints(fixture)).every(hint => hint.textContent?.includes('home.quickRecordsIncluded'))).toBeTrue();
     });
   });
 });
