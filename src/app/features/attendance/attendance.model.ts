@@ -41,6 +41,11 @@ export interface ChurchGroupAttendanceCountResponse {
    * (#223). Only the 새가족 row carries more than 0; absent on older servers.
    */
   quickRecordCount?: number;
+  /**
+   * The part of `quickRecordCount` whose member already stands in the 새가족
+   * roster, so 전체 must not add it again (#227); absent on older servers.
+   */
+  rosteredQuickRecordCount?: number;
 }
 
 export interface AttendanceGroupCountsResponse {
