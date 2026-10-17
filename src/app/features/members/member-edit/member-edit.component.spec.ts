@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { By } from '@angular/platform-browser';
@@ -101,7 +101,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
     city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
-    groupPublicId: null, groupName: null,
+    groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, trainings: [],
     ministries: [{ ministryPublicId: 'min1', name: '찬양팀', startDate: '2024-03-01', endDate: null, note: null }],
   };
@@ -179,9 +179,9 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
     expect(req.registrationDate).toBe('2019-11-17');
   });
 
-  it('sends groupPublicId="" when a loaded group is cleared, so the backend removes it', () => {
+  it('sends groupPublicId="" when a PENDING member loses its group, so the backend removes it', () => {
     const updateSpy = jasmine.createSpy('updateMember').and.returnValue(of(memberWithOngoing));
-    const memberWithGroup = { ...memberWithOngoing, groupPublicId: 'grp-1', groupName: '믿음' };
+    const memberWithGroup = { ...memberWithOngoing, memberStatus: 'PENDING' as const, groupPublicId: 'grp-1', groupName: '믿음' };
     const memberServiceStub = {
       getTrainingCatalog: () => of([]),
       getMinistryCatalog: () => of([{ publicId: 'min1', name: '찬양팀' }]),
@@ -529,7 +529,7 @@ describe('MemberEditComponent — training catalog', () => {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null,
     houseNumber: null, zipCode: null, city: null, registrationDate: null,
-    memberStatus: 'ACTIVE' as const, churchRole: null, groupPublicId: null, groupName: null,
+    memberStatus: 'ACTIVE' as const, churchRole: null, groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, ministries: [],
     trainings: [
       { trainingPublicId: 'p-qtbs', name: 'Quiet Time Basic Seminar',
@@ -692,7 +692,7 @@ describe('MemberEditComponent — 양육 / 사역 Zeilen', () => {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null,
     houseNumber: null, zipCode: null, city: null, registrationDate: null,
-    memberStatus: 'ACTIVE' as const, churchRole: null, groupPublicId: null, groupName: null,
+    memberStatus: 'ACTIVE' as const, churchRole: null, groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, trainings: [], ministries: [],
   };
 
@@ -915,7 +915,7 @@ describe('MemberEditComponent — 직업', () => {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null,
     zipCode: null, city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
-    groupPublicId: null, groupName: null, isGroupLeader: false,
+    groupPublicId: 'grp-1', groupName: '믿음', isGroupLeader: false,
     profileImageUrl: null, trainings: [], ministries: [],
     occupation: null as string | null,
   };
@@ -989,5 +989,134 @@ describe('MemberEditComponent — 직업', () => {
     component.form.patchValue({ lastName: '이', firstName: '영희', occupation: '교사' });
     component.save();
     expect(createSpy.calls.mostRecent().args[0].occupation).toBe('교사');
+  });
+});
+
+describe('MemberEditComponent — 순 required (#224, #225)', () => {
+  const member = {
+    publicId: 'm1', lastName: '홍', firstName: '길동', discriminator: null, gender: null,
+    baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
+    city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
+    groupPublicId: 'grp-1', groupName: '믿음', isGroupLeader: false,
+    profileImageUrl: null, trainings: [], ministries: [],
+  };
+
+  function setup(overrides: Partial<typeof member> = {}, spy?: jasmine.Spy) {
+    const loaded = { ...member, ...overrides };
+    const updateMember = spy ?? jasmine.createSpy('updateMember').and.returnValue(of(loaded));
+    const memberServiceStub = {
+      getTrainingCatalog: () => of([]),
+      getMinistryCatalog: () => of([]),
+      getChurchGroups: () => of([{ publicId: 'grp-1', division: 'NEHEMIA', name: '믿음' }]),
+      getMember: () => of(loaded),
+      updateMember,
+      createMember: () => of(loaded),
+      replaceMemberTrainings: () => of(loaded),
+      replaceMemberMinistries: () => of(loaded),
+    };
+    TestBed.configureTestingModule({
+      imports: [MemberEditComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en' }),
+        ConfirmationService,
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ publicId: 'm1' }) } } },
+        { provide: MemberService, useValue: memberServiceStub },
+      ],
+    });
+    const fixture = TestBed.createComponent(MemberEditComponent);
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance, updateMember };
+  }
+
+  const mark = (f: ReturnType<typeof setup>['fixture']) => f.debugElement.query(By.css('[data-testid="group-required-mark"]'));
+  const error = (f: ReturnType<typeof setup>['fixture']) => f.debugElement.query(By.css('[data-testid="group-required-error"]'));
+
+  it('marks the 순 label with * unless the member is 대기중', () => {
+    const { fixture, component } = setup();
+    component.activeTab.set(1);
+    fixture.detectChanges();
+    expect(mark(fixture)).withContext('ACTIVE needs a 순').toBeTruthy();
+
+    component.form.get('memberStatus')!.setValue('PENDING');
+    fixture.detectChanges();
+    expect(mark(fixture)).withContext('PENDING may go without').toBeNull();
+  });
+
+  it('blocks 저장 with an empty 순, opens the 교회 tab and shows the error with aria', () => {
+    const { fixture, component, updateMember } = setup();
+    component.activeTab.set(0);
+    component.form.get('groupPublicId')!.setValue(null);
+
+    component.save();
+    fixture.detectChanges();
+
+    expect(updateMember).not.toHaveBeenCalled();
+    expect(component.activeTab()).toBe(1);
+    expect(component.form.get('lastName')!.touched).withContext('every field is marked').toBeTrue();
+    expect(error(fixture)).toBeTruthy();
+    const combobox = fixture.nativeElement.querySelector('#memberChurchGroup') as HTMLElement;
+    expect(combobox.getAttribute('aria-invalid')).toBe('true');
+    expect(combobox.getAttribute('aria-describedby')).toBe('memberChurchGroup-error');
+    expect(combobox.closest('.p-select')!.classList).toContain('p-invalid');
+  });
+
+  it('clears the error as soon as a 순 is chosen', () => {
+    const { fixture, component } = setup();
+    component.form.get('groupPublicId')!.setValue(null);
+    component.save();
+    fixture.detectChanges();
+    expect(error(fixture)).toBeTruthy();
+
+    component.form.get('groupPublicId')!.setValue('grp-1');
+    fixture.detectChanges();
+    expect(error(fixture)).toBeNull();
+    const combobox = fixture.nativeElement.querySelector('#memberChurchGroup') as HTMLElement;
+    expect(combobox.getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it('lets a 대기중 member be saved without a 순', () => {
+    const { component, updateMember } = setup({ memberStatus: 'PENDING', groupPublicId: null as unknown as string });
+    component.save();
+    expect(updateMember).toHaveBeenCalled();
+  });
+
+  it('on MEMBER_GROUP_REQUIRED marks the 순, keeps the inputs, stays and toasts the mapped text', () => {
+    const updateMember = jasmine.createSpy('updateMember').and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 400,
+      error: { status: 400, message: 'anything', code: 'MEMBER_GROUP_REQUIRED', fieldErrors: { groupPublicId: 'required' } },
+    })));
+    const { fixture, component } = setup({}, updateMember);
+    const router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate');
+    const toast = spyOn(component['messageService'], 'add');
+    component.form.get('firstName')!.setValue('Max');
+
+    component.save();
+    fixture.detectChanges();
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(component.form.get('firstName')!.value).toBe('Max');
+    expect(component.form.get('groupPublicId')!.hasError('groupRequired')).toBeTrue();
+    expect(component.activeTab()).toBe(1);
+    expect(component.saving()).toBeFalse();
+    expect(error(fixture)).toBeTruthy();
+    expect(toast).toHaveBeenCalledWith(jasmine.objectContaining({ detail: 'members.edit.errors.groupRequired' }));
+  });
+
+  it('falls back to the generic toast for an unknown code', () => {
+    const updateMember = jasmine.createSpy('updateMember').and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 400, error: { status: 400, message: 'MEMBER_GROUP_REQUIRED', code: 'SOMETHING_ELSE' },
+    })));
+    const { component } = setup({}, updateMember);
+    const toast = spyOn(component['messageService'], 'add');
+
+    component.save();
+
+    expect(component.form.get('groupPublicId')!.errors).toBeNull();
+    expect(toast).toHaveBeenCalledTimes(1);
+    expect(toast.calls.mostRecent().args[0].detail).not.toBe('members.edit.errors.groupRequired');
   });
 });

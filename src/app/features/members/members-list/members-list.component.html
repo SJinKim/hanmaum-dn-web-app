@@ -228,14 +228,27 @@
                     class="pi pi-spinner pi-spin text-ink-muted"
                     [attr.aria-label]="'members.actions.approving' | translate"></i>
                 } @else if (selectingId() === member.publicId) {
-                  <p-select
-                    size="small"
-                    optionLabel="label"
-                    optionValue="value"
-                    [options]="groupOptions()"
-                    [placeholder]="'members.actions.selectGroupPlaceholder' | translate"
-                    [ariaLabel]="'members.actions.selectGroup' | translate"
-                    (onChange)="chooseGroup(member, $event.value)" />
+                  @let rowError = approveError()?.publicId === member.publicId ? approveError() : null;
+                  <span class="flex flex-col gap-[var(--space-4)]">
+                    <p-select
+                      size="small"
+                      optionLabel="label"
+                      optionValue="value"
+                      [options]="groupOptions()"
+                      [placeholder]="'members.actions.selectGroupPlaceholder' | translate"
+                      [ariaLabel]="'members.actions.selectGroup' | translate"
+                      [invalid]="!!rowError"
+                      [pt]="{ label: { 'aria-invalid': rowError ? 'true' : null, 'aria-describedby': rowError ? 'approve-group-error-' + member.publicId : null } }"
+                      (onChange)="chooseGroup(member, $event.value)" />
+                    @if (rowError) {
+                      <small
+                        [id]="'approve-group-error-' + member.publicId"
+                        class="type-caption whitespace-normal text-[var(--color-badge-deleted-fg)]"
+                        data-testid="approve-group-error">
+                        {{ rowError.messageKey | translate }}
+                      </small>
+                    }
+                  </span>
                   <p-button
                     size="small"
                     severity="secondary"

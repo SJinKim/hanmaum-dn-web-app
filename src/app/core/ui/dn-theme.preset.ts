@@ -291,6 +291,8 @@ input.p-inputtext-sm { height: var(--size-control-sm); }
       css: `
 .p-select { height: var(--size-control-md); }
 .p-select-sm { height: var(--size-control-sm); }
+.p-select.p-invalid, .p-select.p-invalid.p-focus { border-color: var(--color-badge-deleted-fg); }
+.p-select.p-invalid.p-focus { outline: 2px solid var(--color-badge-deleted-fg); outline-offset: 2px; }
 `,
     },
 

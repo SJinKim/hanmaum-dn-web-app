@@ -1,4 +1,4 @@
-import { Component, OnInit, DestroyRef, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, DestroyRef, Injector, afterNextRender, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   AbstractControl,
@@ -65,6 +65,7 @@ import {
   parseE164,
 } from '../../../core/models/phone.util';
 import { HasUnsavedChanges, UNSAVED_CHANGES_DIALOG_KEY } from '../../../core/guards/unsaved-changes.guard';
+import { mapApiError } from '../../../core/http/api-error';
 
 const LEADER_DIALOG_KEY = 'leader-change';
 
@@ -106,6 +107,20 @@ const mobileValidator: ValidatorFn = (control: AbstractControl): ValidationError
   return isValidMobile(country, value) ? null : { invalidMobile: true };
 };
 
+/** Whether a member in `status` must belong to a 순. Only 대기중 may go without (#224). */
+export function groupRequiredFor(status: string | null | undefined): boolean {
+  return !!status && status !== 'PENDING';
+}
+
+/**
+ * 순 is required unless the sibling 상태 is PENDING (hanmaum-dn-web-app#224). The
+ * server enforces the same rule with `MEMBER_GROUP_REQUIRED` (hanmaum-dn-server#314).
+ */
+const groupRequiredValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  if (!groupRequiredFor(control.parent?.get('memberStatus')?.value as string | null)) return null;
+  return control.value ? null : { groupRequired: true };
+};
+
 @Component({
   selector: 'app-member-edit',
   standalone: true,
@@ -137,6 +152,7 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
   private readonly destroyRef    = inject(DestroyRef);
   private readonly translate     = inject(TranslateService);
   private readonly confirmation  = inject(ConfirmationService);
+  private readonly injector      = inject(Injector);
 
   /** Key of the dialog the unsaved-changes guard opens; rendered at the end of the template. */
   readonly unsavedChangesDialogKey = UNSAVED_CHANGES_DIALOG_KEY;
@@ -234,12 +250,18 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
     city:            [''],
     registrationDate: [null as Date | null],
     occupation:      [''],
-    groupPublicId:   [null as string | null],
+    groupPublicId:   [null as string | null, groupRequiredValidator],
     memberStatus:    [null as string | null],
     isGroupLeader:   [{ value: false, disabled: true }],
     trainings:       this.fb.array<FormGroup>([]),
     ministries:      this.fb.array<FormGroup>([]),
   });
+
+  /** Mirror of the 상태 select; drives the `*` on the 순 label. */
+  private readonly memberStatusValue = signal<string | null>(null);
+
+  /** Whether the 순 label shows `*`: only while editing, and never for 대기중. */
+  readonly groupRequired = computed(() => this.isEdit() && groupRequiredFor(this.memberStatusValue()));
 
   /** Name of the sitting 순장 that this save would replace, or null when no hint is needed. */
   readonly leaderChangeHintName = signal<string | null>(null);
@@ -327,6 +349,14 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(group => this.onGroupChange(group));
 
+    // 순 is required or not depending on 상태, so re-check it whenever 상태 changes.
+    this.form.get('memberStatus')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(status => {
+        this.memberStatusValue.set(status);
+        this.form.get('groupPublicId')!.updateValueAndValidity({ emitEvent: false });
+      });
+
     this.form.get('isGroupLeader')!.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(checked => this.onLeaderToggle(!!checked));
@@ -394,6 +424,7 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      if (this.form.get('groupPublicId')!.hasError('groupRequired')) this.focusGroupSelect();
       return;
     }
     this.saving.set(true);
@@ -483,11 +514,37 @@ export class MemberEditComponent implements OnInit, HasUnsavedChanges {
           this.form.markAsPristine();
           this.router.navigate(['/members', saved.publicId]);
         },
-        error: () => {
-          this.messageService.add({ severity: 'error', summary: '오류', detail: errorDetail });
+        error: err => {
           this.saving.set(false);
+          // A known code marks its field and keeps every input; anything else is the generic toast (#225).
+          const mapped = mapApiError(err);
+          const control = mapped?.field ? this.form.get(mapped.field) : null;
+          if (!mapped || !control) {
+            this.messageService.add({ severity: 'error', summary: '오류', detail: errorDetail });
+            return;
+          }
+          this.messageService.add({
+            severity: 'error',
+            summary: '오류',
+            detail: this.translate.instant(mapped.messageKey) as string,
+          });
+          if (mapped.field === 'groupPublicId') {
+            control.setErrors({ ...control.errors, groupRequired: true });
+            control.markAsTouched();
+            this.focusGroupSelect();
+          }
         },
       });
+  }
+
+  /** Opens the 교회 tab, then focuses and scrolls to the 순 select once it is rendered. */
+  private focusGroupSelect(): void {
+    this.activeTab.set(1);
+    afterNextRender(() => {
+      const el = document.getElementById('memberChurchGroup');
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el?.focus({ preventScroll: true });
+    }, { injector: this.injector });
   }
 
   /**
