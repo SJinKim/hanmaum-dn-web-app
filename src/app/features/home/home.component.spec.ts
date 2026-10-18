@@ -521,6 +521,13 @@ describe('HomeComponent', () => {
   });
 
   describe('빠른 등록 hint (#223)', () => {
+    // On a Sunday the check-ins poll and arrive async (#206); pin a weekday (#232).
+    beforeEach(() => {
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 13, 10, 0));
+    });
+    afterEach(() => jasmine.clock().uninstall());
+
     const hints = (fixture: ComponentFixture<HomeComponent>) =>
       fixture.nativeElement.querySelectorAll('[data-testid="quick-records-hint"]') as NodeListOf<HTMLElement>;
 
