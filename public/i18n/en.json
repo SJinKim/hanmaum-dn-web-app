@@ -1854,6 +1854,38 @@
       "reload": "Reload latest record",
       "people": "{{count}}",
       "latestTotal": "Latest service total"
+    },
+    "details": {
+      "title": "Enter attendance",
+      "editTitle": "Edit attendance",
+      "subtitle": "Enter the counts for each counting area and service.",
+      "snapshotHelp": "Edit the areas stored with this report. Current area settings do not change this record.",
+      "area": "Area",
+      "dayTotal": "Day total",
+      "sum": "Sum",
+      "adultCount": "Adults",
+      "schoolCount": "Church school",
+      "youthCount": "Young adults",
+      "compatibleAdultCount": "Adults incl. young adults",
+      "selectService": "Select service",
+      "youthRule": "Service 3 adults total = adults + young adults. Do not also include young adults in the adult input.",
+      "draftHelp": "Incomplete counts can be saved as a draft. Values are kept when switching services.",
+      "save": "Save and return",
+      "refreshAreas": "Reload area settings",
+      "configurationChanged": "Area settings changed. Existing input is preserved by area. Check new areas and totals.",
+      "removedAreas": "An area with input is no longer eligible. Its values are preserved and cannot be submitted. Restore the area settings or confirm removal of these values.",
+      "removeValues": "Remove excluded area values",
+      "removeMessage": "Remove all service values for the excluded areas? Other area values will be kept.",
+      "noAreas": "No eligible counting areas.",
+      "noAreasHelp": "Check active areas and their linked rooms in counting area management.",
+      "configurationError": "Check the input and area settings. Reloading settings preserves your values.",
+      "serverValidation": "The server rejected the input. Check the marked fields and totals.",
+      "overflow": "Each service total must not exceed 2,147,483,647.",
+      "confirmTitle": "Check input",
+      "continue": "Continue",
+      "manageMessage": "Keep your input and open counting area management? Returning restores your values against the latest area settings.",
+      "backToEntry": "Back to attendance entry",
+      "standardRule": "Enter adults and church school separately. Leave unknown counts blank; enter 0 for a recorded zero."
     }
   }
 }

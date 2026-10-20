@@ -1,0 +1,131 @@
+<section class="flex min-w-0 flex-col gap-[var(--space-24)]" [attr.aria-busy]="state.loading()">
+  <header class="flex flex-col gap-[var(--space-8)]">
+    <h1 class="hidden desktop:block type-h1 text-ink-strong">{{ (editing() ? 'guide.details.editTitle' : 'guide.details.title') | translate }}</h1>
+    <h1 class="desktop:hidden type-h2 text-ink-strong">{{ (editing() ? 'guide.details.editTitle' : 'guide.details.title') | translate }}</h1>
+    <p class="type-body-sm text-ink-muted">{{ (editing() ? 'guide.details.snapshotHelp' : 'guide.details.subtitle') | translate }}</p>
+    <div class="flex flex-wrap gap-[var(--space-8)]">
+      <a pButton severity="secondary" [outlined]="true" routerLink="/guide">{{ 'guide.reports.back' | translate }}</a>
+      @if (!editing()) { <p-button severity="secondary" [outlined]="true" [label]="'guide.areas.title' | translate" [disabled]="state.saving() || state.loading()" (onClick)="manage()" /> }
+    </div>
+  </header>
+  @if (navigationBlocked()) { <p role="status" class="type-body-sm text-ink-strong">{{ 'guide.reports.waitForSave' | translate }}</p> }
+  @if (state.loading()) {
+    <div role="status"><span class="sr-only">{{ 'guide.reports.loading' | translate }}</span><app-skeleton variant="chart" /></div>
+  } @else if (state.loadFailed()) {
+    <app-empty-state variant="error" [heading]="(state.failure() === 'notFound' ? 'guide.reports.notFound' : 'guide.reports.loadFailed') | translate" [actionLabel]="'guide.reports.retry' | translate" (action)="reload()" />
+  } @else {
+    <form [formGroup]="state.form" (ngSubmit)="submit()" class="flex min-w-0 flex-col gap-[var(--space-24)]" (keydown)="navigateCounts($event)">
+      <div class="flex flex-wrap items-end gap-[var(--space-12)]">
+        <div class="flex w-full desktop:w-auto flex-col gap-[var(--space-4)]">
+          <label for="guide-detail-date" class="type-caption text-ink-strong">{{ 'guide.reports.date' | translate }}</label>
+          <p-datepicker styleClass="w-full" inputId="guide-detail-date" formControlName="serviceDate" dateFormat="yy.mm.dd" [showIcon]="true" [readonlyInput]="true" [minDate]="minimumDate" [maxDate]="maximumDate" appendTo="body" [invalid]="state.fieldInvalid('serviceDate')" />
+          @if (state.fieldInvalid('serviceDate')) { <small role="alert" class="type-caption text-ink-strong">{{ 'guide.reports.invalidDate' | translate }}</small> }
+        </div>
+        <p class="type-caption text-ink-muted">{{ 'guide.reports.countHelp' | translate }}</p>
+        @if (!editing()) { <p-button type="button" severity="secondary" [text]="true" [label]="'guide.details.refreshAreas' | translate" [disabled]="state.saving()" (onClick)="reload()" /> }
+      </div>
+      @if (state.configurationChanged()) { <p role="status" class="type-body-sm text-ink-strong">{{ 'guide.details.configurationChanged' | translate }}</p> }
+      @if (state.removedAreas().length) {
+        <aside role="alert" class="bg-surface-subtle p-[var(--space-16)] flex flex-col gap-[var(--space-12)]">
+          <p class="type-body-sm text-ink-strong">{{ 'guide.details.removedAreas' | translate }}</p>
+          @for (area of state.removedAreas(); track area.areaPublicId) { <p class="type-caption text-ink-muted">{{ area.label }}</p> }
+          <p-button type="button" severity="danger" [label]="'guide.details.removeValues' | translate" (onClick)="discardRemoved()" />
+        </aside>
+      }
+      @if (!state.areas().length) {
+        <app-empty-state [heading]="'guide.details.noAreas' | translate" [description]="'guide.details.noAreasHelp' | translate" />
+      } @else {
+        <div class="hidden min-w-0 overflow-hidden rounded-[var(--radius-lg)] border border-line-subtle desktop:block">
+          <p-table [value]="state.areas()" dataKey="areaPublicId" tableStyleClass="min-w-[1136px] table-fixed type-body">
+            <ng-template #header>
+              <tr class="type-caption"><th rowspan="2" class="w-28">{{ 'guide.details.area' | translate }}</th>
+                @for (service of services; track service) { <th [attr.colspan]="service === 3 ? 4 : 3" class="!text-center">{{ 'guide.reports.service' | translate:{service} }}</th> }
+                <th colspan="3" class="!text-center">{{ 'guide.details.dayTotal' | translate }}</th>
+              </tr>
+              <tr class="type-caption">@for (service of services; track service) {
+                @for (field of fields(service); track field) { <th class="!text-center">{{ ('guide.details.' + field) | translate }}</th> }
+                <th class="!text-center">{{ 'guide.reports.total' | translate }}</th>
+              }
+              <th class="!text-center !p-[var(--space-8)]">{{ 'guide.details.compatibleAdultCount' | translate }}</th><th class="!text-center">{{ 'guide.details.schoolCount' | translate }}</th><th class="!text-center">{{ 'guide.reports.total' | translate }}</th></tr>
+            </ng-template>
+            <ng-template #body let-area>
+              <tr><th scope="row" class="type-caption text-ink-strong !p-[var(--space-8)] break-words">{{ area.label }}</th>
+                @for (service of services; track service) {
+                  @for (field of fields(service); track field) {
+                    <td class="!p-[var(--space-4)]">
+                      <app-guide-count-field [control]="control(area.areaPublicId,service,field)" [controlId]="'desktop-' + area.areaPublicId + '-' + service + '-' + field" [navigationKey]="service + '-' + field"
+                        [label]="area.label + ' · ' + ('guide.reports.service' | translate:{service}) + ' · ' + (('guide.details.' + field) | translate)"
+                        [invalid]="state.fieldInvalid(path(area.areaPublicId,service,field))" (edited)="state.clearField(path(area.areaPublicId,service,field))" />
+                    </td>
+                  }
+                  <td class="bg-surface-subtle !text-center !p-[var(--space-8)] tabular-nums">{{ count(state.rowTotal(area.areaPublicId,service)) }}</td>
+                }
+                <td class="bg-surface-subtle !text-center !p-[var(--space-8)] tabular-nums">{{ count(state.sum('compatibleAdultCount',area.areaPublicId)) }}</td>
+                <td class="bg-surface-subtle !text-center !p-[var(--space-8)] tabular-nums">{{ count(state.sum('schoolCount',area.areaPublicId)) }}</td>
+                <td class="bg-surface-subtle !text-center !p-[var(--space-8)] tabular-nums">{{ count(state.sum('totalCount',area.areaPublicId)) }}</td>
+              </tr>
+            </ng-template>
+            <ng-template #footer><tr><th scope="row">{{ 'guide.details.sum' | translate }}</th>
+              @for (service of services; track service) {
+                @for (field of fields(service); track field) { <td class="!text-center tabular-nums">{{ count(state.sum(field,undefined,service)) }}</td> }
+                <td class="!text-center tabular-nums">{{ count(state.sum('totalCount',undefined,service)) }}</td>
+              }
+              <td class="!text-center tabular-nums">{{ count(state.sum('compatibleAdultCount')) }}</td><td class="!text-center tabular-nums">{{ count(state.sum('schoolCount')) }}</td><td class="!text-center tabular-nums">{{ count(state.sum('totalCount')) }}</td>
+            </tr></ng-template>
+          </p-table>
+        </div>
+        <div class="flex flex-col gap-[var(--space-20)] desktop:hidden">
+          <div role="tablist" [attr.aria-label]="'guide.details.selectService' | translate" class="grid grid-cols-3 border-b border-line">
+            @for (service of services; track service) {
+              <button type="button" role="tab" [id]="'guide-service-' + service" aria-controls="guide-service-panel" [attr.aria-selected]="selectedService() === service" [attr.tabindex]="selectedService() === service ? 0 : -1" [disabled]="state.saving()"
+                class="min-h-11 type-body text-ink-muted" [class.border-b-2]="selectedService() === service" [class.border-ink-strong]="selectedService() === service" [class.text-ink-strong]="selectedService() === service"
+                (click)="selectedService.set(service)" (keydown)="navigateTabs($event,service)">{{ 'guide.reports.service' | translate:{service} }}</button>
+            }
+          </div>
+          <aside class="bg-surface-subtle p-[var(--space-12)] type-caption text-ink-muted">{{ (selectedService() === 3 ? 'guide.details.youthRule' : 'guide.details.standardRule') | translate }}</aside>
+          <div id="guide-service-panel" role="tabpanel" [attr.aria-labelledby]="'guide-service-' + selectedService()" class="flex flex-col gap-[var(--space-16)]">
+            @for (area of state.areas(); track area.areaPublicId) {
+              <article data-testid="guide-entry-area" class="flex flex-col gap-[var(--space-16)] rounded-[var(--radius-md)] border border-line-subtle bg-surface p-[var(--space-16)]">
+                <header class="flex justify-between items-center gap-[var(--space-8)]"><h2 class="type-h3 text-ink-strong">{{ area.label }}</h2><p class="type-body-sm text-ink-muted">{{ 'guide.reports.total' | translate }} {{ count(state.rowTotal(area.areaPublicId,selectedService())) }}</p></header>
+                <div class="grid gap-[var(--space-12)]" [class.grid-cols-2]="selectedService() !== 3" [class.grid-cols-3]="selectedService() === 3">
+                  @for (field of fields(selectedService()); track field) {
+                    <app-guide-count-field [control]="control(area.areaPublicId,selectedService(),field)" [controlId]="'compact-' + area.areaPublicId + '-' + selectedService() + '-' + field" [navigationKey]="selectedService() + '-' + field"
+                      [showLabel]="true" [label]="('guide.details.' + field) | translate" [invalid]="state.fieldInvalid(path(area.areaPublicId,selectedService(),field))" (edited)="state.clearField(path(area.areaPublicId,selectedService(),field))" />
+                  }
+                </div>
+                @if (selectedService() === 3) { <p class="type-caption text-ink-muted">{{ 'guide.details.compatibleAdultCount' | translate }} {{ count(state.sum('compatibleAdultCount',area.areaPublicId,3)) }}</p> }
+              </article>
+            }
+          </div>
+          <dl class="grid grid-cols-3 gap-[var(--space-12)] bg-surface-subtle p-[var(--space-16)]">
+            @for (service of services; track service) { <div class="min-w-0 break-words"><dt class="type-caption text-ink-muted">{{ 'guide.reports.service' | translate:{service} }}</dt><dd class="type-h3 text-ink-strong">{{ count(state.sum('totalCount',undefined,service)) }}</dd></div> }
+          </dl>
+        </div>
+      }
+      <aside class="hidden desktop:block bg-[var(--color-badge-ministry-active-bg)] text-[var(--color-badge-ministry-active-fg)] rounded-[var(--radius-md)] p-[var(--space-16)] type-body-sm">{{ 'guide.details.youthRule' | translate }}</aside>
+      <p class="type-caption text-ink-muted" aria-live="polite">{{ 'guide.details.dayTotal' | translate }} {{ count(state.sum('totalCount')) }} · {{ 'guide.details.compatibleAdultCount' | translate }} {{ count(state.sum('compatibleAdultCount')) }} · {{ 'guide.details.schoolCount' | translate }} {{ count(state.sum('schoolCount')) }}</p>
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="guide-detail-notes" class="type-caption text-ink-strong">{{ 'guide.reports.notes' | translate }}</label>
+        <textarea id="guide-detail-notes" pTextarea formControlName="notes" rows="3" class="w-full min-h-[72px]" [invalid]="state.fieldInvalid('notes')"></textarea>
+      </div>
+      @if (state.overflow()) { <p role="alert" class="type-body-sm text-ink-strong">{{ 'guide.details.overflow' | translate }}</p> }
+      @if (state.failure(); as failure) {
+        <div role="alert" class="flex flex-col gap-[var(--space-12)]">
+          <p class="type-body-sm text-ink-strong">{{ (failure === 'configuration' ? 'guide.details.configurationError' : 'guide.reports.' + failure) | translate }}</p>
+          @if (failure === 'conflict' || failure === 'notFound') { <p-button type="button" severity="secondary" [label]="'guide.reports.reload' | translate" (onClick)="reload()" /> }
+          @if (hasServerErrors()) { <p class="type-body-sm text-ink-strong">{{ 'guide.details.serverValidation' | translate }}</p> }
+        </div>
+      }
+      <footer class="sticky bottom-0 z-10 -mx-[var(--space-16)] flex flex-col gap-[var(--space-8)] border-t border-line-subtle bg-surface p-[var(--space-16)] desktop:static desktop:mx-0 desktop:border-0 desktop:p-0">
+        <p class="type-caption text-ink-muted">{{ 'guide.details.draftHelp' | translate }}</p>
+        <div class="flex gap-[var(--space-12)] desktop:justify-end">
+          <a pButton severity="secondary" [outlined]="true" routerLink="/guide">{{ 'guide.reports.cancel' | translate }}</a>
+          <p-button type="submit" class="flex-1 desktop:flex-none" styleClass="w-full" [label]="(editing() ? 'guide.reports.saveButton' : 'guide.details.save') | translate" [loading]="state.saving()"
+            [disabled]="state.saving() || state.loading() || !state.areas().length || !!state.removedAreas().length || state.overflow() || state.failure() === 'conflict' || state.failure() === 'notFound'" />
+        </div>
+      </footer>
+    </form>
+  }
+</section>
+<p-confirmdialog key="guide-details-confirm" />
+<p-confirmdialog [key]="unsavedChangesDialogKey" />

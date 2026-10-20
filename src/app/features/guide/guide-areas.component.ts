@@ -1,6 +1,6 @@
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, merge } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
@@ -25,6 +25,7 @@ import { GuideAreaService } from './guide-area.service';
   templateUrl: './guide-areas.component.html',
 })
 export class GuideAreasComponent implements HasUnsavedChanges {
+  readonly returnTo = inject(ActivatedRoute).snapshot.queryParamMap.get('returnTo') === '/guide/attendance/new' ? '/guide/attendance/new' : '/guide';
   readonly state = inject(GuideAreaService);
   private readonly roles = inject(RoleService);
   private readonly fb = inject(FormBuilder);
