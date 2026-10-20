@@ -1,0 +1,102 @@
+<section class="p-page flex min-w-0 flex-col gap-[var(--space-20)]">
+  <header class="flex flex-col gap-[var(--space-16)]">
+    <h1 class="type-h2 text-ink-strong">{{ 'guide.areas.title' | translate }}</h1>
+    <p class="type-body-sm text-ink-muted">{{ 'guide.areas.subtitle' | translate }}</p>
+  </header>
+  @if (canWrite()) {
+    <div class="flex flex-col gap-[var(--space-16)] sm:flex-row">
+      <p-button data-testid="add-area" class="w-full sm:w-auto" styleClass="w-full" [label]="'guide.areas.add' | translate"
+        [disabled]="state.loading() || state.loadFailed() || !state.rooms().length" (onClick)="open()" />
+    </div>
+  }
+  <aside class="bg-surface-subtle p-[var(--space-16)]">
+    <p class="type-caption text-ink-strong">{{ 'guide.areas.futureOnly' | translate }}</p>
+    <p class="type-body-sm text-ink-muted mt-[var(--space-8)]">{{ 'guide.areas.historySafe' | translate }}</p>
+  </aside>
+  @if (state.loading()) {
+    <p role="status" class="type-body text-ink-muted">{{ 'guide.areas.loading' | translate }}</p>
+  } @else if (state.loadFailed()) {
+    <div role="alert" class="flex flex-col gap-[var(--space-12)]">
+      <p class="type-body text-ink-strong">{{ 'guide.areas.loadFailed' | translate }}</p>
+      <p-button [label]="'guide.areas.retry' | translate" severity="secondary" (onClick)="state.load()" />
+    </div>
+  } @else {
+    <p class="type-caption text-ink-muted">{{ 'guide.areas.activeCount' | translate:{ count: activeCount() } }}</p>
+    @if (!state.rooms().length) {
+      <p role="status" class="type-body text-ink-muted">{{ 'guide.areas.noRooms' | translate }}</p>
+    }
+    <div class="flex flex-col gap-[var(--space-8)]">
+      @for (area of state.areas(); track area.areaPublicId) {
+        <article data-testid="area-row" class="flex flex-col gap-[var(--space-16)] rounded-[var(--radius-md)] border border-line-subtle bg-surface p-[var(--space-16)] sm:flex-row sm:items-start">
+          <div class="flex-1 min-w-0">
+            <h2 class="type-body text-ink-strong break-words">{{ area.displayOrder + 1 }}. {{ area.label }}</h2>
+            <p class="type-body-sm text-ink-muted mt-[var(--space-4)]">{{ roomCaption(area) }}</p>
+          </div>
+          <div class="flex items-center gap-[var(--space-16)] sm:w-2/5">
+            <span class="type-body-sm rounded-[var(--radius-md)] border border-line px-[var(--space-16)] py-[var(--space-8)] text-ink-strong">
+              {{ (area.active ? (state.roomIsEligible(area.roomPublicId) ? 'guide.areas.active' : 'guide.areas.unavailableRoom') : 'guide.areas.inactive') | translate }}
+            </span>
+            @if (canWrite()) {
+              <p-button [label]="'guide.areas.edit' | translate" [ariaLabel]="('guide.areas.edit' | translate) + ' ' + area.label"
+                severity="secondary" [outlined]="true" (onClick)="open(area)" />
+            }
+          </div>
+        </article>
+      } @empty {
+        <p class="type-body text-ink-muted">{{ 'guide.areas.empty' | translate }}</p>
+      }
+    </div>
+    <p class="type-body-sm text-ink-muted">{{ 'guide.areas.sharedRoom' | translate }}</p>
+  }
+</section>
+
+<p-dialog [visible]="visible()" (visibleChange)="close()" [modal]="true" [draggable]="false" [resizable]="false"
+  [closable]="false" [closeOnEscape]="false" [style]="{width:'min(100vw, 560px)'}"
+  [pt]="dialogPt" [header]="(original() ? 'guide.areas.editTitle' : 'guide.areas.addTitle') | translate">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-[var(--space-16)]" id="guide-area-form">
+    <p class="type-body-sm text-ink-muted">{{ 'guide.areas.formHelp' | translate }}</p>
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="area-room" class="type-caption text-ink-muted">{{ 'guide.areas.room' | translate }}</label>
+      <p-select inputId="area-room" formControlName="roomPublicId" [options]="roomOptions()" optionLabel="label" optionValue="value"
+        [filter]="true" appendTo="body" [placeholder]="'guide.areas.selectRoom' | translate" class="w-full" />
+      @if (fieldError('roomPublicId') || (form.controls.roomPublicId.touched && invalidRoom())) {
+        <small role="alert" class="type-caption text-ink-strong">{{ 'guide.areas.invalidRoom' | translate }}</small>
+      }
+    </div>
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="area-label" class="type-caption text-ink-muted">{{ 'guide.areas.label' | translate }}</label>
+      <input id="area-label" pInputText formControlName="label" maxlength="200" class="w-full" [invalid]="fieldError('label')" [attr.aria-invalid]="fieldError('label')" />
+      @if (fieldError('label')) { <small role="alert" class="type-caption text-ink-strong">{{ 'guide.areas.invalidLabel' | translate }}</small> }
+    </div>
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="area-order" class="type-caption text-ink-muted">{{ 'guide.areas.order' | translate }}</label>
+      <input id="area-order" pInputText formControlName="order" inputmode="numeric" pattern="[0-9]*" class="w-full"
+        [invalid]="fieldError('order')" [attr.aria-invalid]="fieldError('order')" />
+      @if (fieldError('order')) { <small role="alert" class="type-caption text-ink-strong">{{ 'guide.areas.invalidOrder' | translate }}</small> }
+    </div>
+    <div class="flex justify-between gap-[var(--space-16)] items-center">
+      <label id="area-active-label" class="type-body text-ink-strong" for="area-active">{{ 'guide.areas.useForNew' | translate }}</label>
+      <button pButton type="button" id="area-active" [disabled]="state.saving()"
+        [severity]="form.controls.active.value ? 'primary' : 'secondary'" [outlined]="!form.controls.active.value"
+        [attr.aria-pressed]="form.controls.active.value" aria-labelledby="area-active-label" (click)="toggleActive()">
+        {{ (form.controls.active.value ? 'guide.areas.active' : 'guide.areas.inactive') | translate }}
+      </button>
+    </div>
+    <p class="type-body-sm text-ink-muted">{{ 'guide.areas.futureOnly' | translate }}</p>
+    @if (state.failure(); as failure) {
+      <p role="alert" class="type-body-sm text-ink-strong">{{ (failure === 'save' ? 'guide.areas.saveError' : 'guide.areas.' + failure) | translate }}</p>
+      @if (failure === 'conflict' || failure === 'notFound') {
+        <p-button [label]="'guide.areas.reload' | translate" severity="secondary" (onClick)="reloadConflict()" />
+      }
+    }
+  </form>
+  <ng-template #footer>
+    <div class="flex w-full gap-[var(--space-16)]">
+    <p-button class="w-1/3 tablet:w-1/4" styleClass="w-full" [label]="'guide.areas.cancel' | translate" severity="secondary" [outlined]="true" [disabled]="state.saving()" (onClick)="close()" />
+    <p-button class="flex-1" styleClass="w-full" [label]="(original() ? 'guide.areas.save' : 'guide.areas.add') | translate" [loading]="state.saving()"
+      [disabled]="!canWrite() || state.failure() === 'conflict' || state.failure() === 'notFound'" (onClick)="submit()" />
+    </div>
+  </ng-template>
+</p-dialog>
+<p-confirmdialog key="guide-discard" />
+<p-confirmdialog key="unsaved-changes" />
