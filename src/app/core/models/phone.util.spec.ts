@@ -93,12 +93,12 @@ describe('phone.util', () => {
   });
 
   describe('parseE164', () => {
-    it('splits a German E.164 number and re-adds leading 0', () => {
-      expect(parseE164('+491512345678')).toEqual({ country: 'DE', local: '01512345678' });
+    it('splits a German E.164 number without re-adding the leading 0', () => {
+      expect(parseE164('+491512345678')).toEqual({ country: 'DE', local: '1512345678' });
     });
 
-    it('splits a Korean E.164 number and re-adds leading 0', () => {
-      expect(parseE164('+821012345678')).toEqual({ country: 'KR', local: '01012345678' });
+    it('splits a Korean E.164 number without re-adding the leading 0', () => {
+      expect(parseE164('+821012345678')).toEqual({ country: 'KR', local: '1012345678' });
     });
 
     it('round-trips with normalizeToE164', () => {

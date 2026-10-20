@@ -50,13 +50,17 @@ export function normalizeToE164(country: PhoneCountry, localInput: string): stri
   return RULES[country].dialCode + national;
 }
 
-/** Splits a stored E.164 value into country + local (leading 0 re-added). */
+/**
+ * Splits a stored E.164 value into country + national number. The trunk 0 is
+ * not re-added: the field sits next to the dial-code select, so +49 1631234567
+ * reads as one number (#243). Typing a 0 still works — normalizeToE164 drops it.
+ */
 export function parseE164(stored: string | null): { country: PhoneCountry; local: string } {
   if (stored) {
     for (const country of Object.keys(RULES) as PhoneCountry[]) {
       const { dialCode } = RULES[country];
       if (stored.startsWith(dialCode)) {
-        return { country, local: '0' + stored.slice(dialCode.length) };
+        return { country, local: stored.slice(dialCode.length) };
       }
     }
   }
