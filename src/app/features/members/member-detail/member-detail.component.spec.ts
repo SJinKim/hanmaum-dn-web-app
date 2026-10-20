@@ -15,7 +15,7 @@ describe('MemberDetailComponent — 교회 정보', () => {
   const base = {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
-    city: null, registrationDate: '2023-02-01', memberStatus: 'ACTIVE', churchRole: null,
+    city: null, registrationDate: '2023-02-01', memberStatus: 'ACTIVE',
     groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, trainings: [], ministries: [],
     isGroupLeader: false,
@@ -107,7 +107,7 @@ describe('MemberDetailComponent — 삭제됨 (#144)', () => {
     publicId: 'm1', lastName: '홍', firstName: '길동', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: 'gildong.hong@example.com', street: null,
     houseNumber: null, zipCode: null, city: null, registrationDate: '2023-02-01', memberStatus: 'DELETED',
-    churchRole: null, groupPublicId: null, groupName: null, profileImageUrl: null, trainings: [], ministries: [],
+    groupPublicId: null, groupName: null, profileImageUrl: null, trainings: [], ministries: [],
     isGroupLeader: false,
   } as unknown as Member;
 

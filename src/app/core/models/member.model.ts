@@ -11,7 +11,6 @@ export interface MemberSummary {
   baptism: Baptism | null;
   groupPublicId?: string | null;
   groupName: string | null;
-  churchRole?: string | null;
   role?: 'ADMIN' | 'MEMBER';
   updatedAt?: string;
   /** Latest completed training name (highest sort order), or null. */
@@ -61,7 +60,6 @@ export interface Member {
   registrationDate: string | null;
   memberStatus: MemberStatus;
   role?: 'ADMIN' | 'MEMBER';
-  churchRole: string | null;
   /** publicId of the member's church group — used to pre-select the group on edit. */
   groupPublicId: string | null;
   groupName: string | null;
@@ -101,7 +99,6 @@ export interface CreateMemberRequest {
   city?: string;
   occupation?: string;
   registrationDate?: string;
-  churchRole?: string;
   /** publicId of the church group to assign. */
   groupPublicId?: string;
   profileImageUrl?: string;
@@ -124,7 +121,6 @@ export interface UpdateMemberRequest {
   occupation?: string;
   registrationDate?: string;
   memberStatus?: MemberStatus;
-  churchRole?: string;
   /** publicId of the church group to assign. */
   groupPublicId?: string;
   profileImageUrl?: string;
