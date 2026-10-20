@@ -22,8 +22,9 @@ import { DataRecordBadge } from '../data-record.model';
   imports: [BadgeComponent, IconTileComponent],
   template: `
     <div
+      [class.min-h-36]="!showIcon()"
       class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col items-start gap-[var(--space-8)] rounded-[var(--radius-lg)] border p-card">
-      <app-icon-tile [icon]="icon()" />
+      @if (showIcon()) { <app-icon-tile [icon]="icon()" /> }
       <span class="type-overline text-ink-muted">{{ label() }}</span>
       <div class="flex items-center gap-[var(--space-8)] overflow-clip">
         <span class="type-display text-ink-strong">{{ value() }}</span>
@@ -43,6 +44,7 @@ import { DataRecordBadge } from '../data-record.model';
 export class StatCardComponent {
   /** PrimeIcons class for the IconTile. */
   readonly icon = input('pi pi-users');
+  readonly showIcon = input(true);
   readonly label = input.required<string>();
   /** Already formatted — `'—'` for the Empty variant. */
   readonly value = input.required<string>();

@@ -1,0 +1,60 @@
+<section class="flex min-w-0 flex-col gap-[var(--space-24)]" [attr.aria-busy]="state.loading()">
+  <header class="flex flex-col gap-[var(--space-8)]">
+    <h1 class="type-h2 tablet:type-h1 text-ink-strong">{{ 'guide.reports.editTitle' | translate }}</h1>
+    <p class="type-body-sm text-ink-muted">{{ 'guide.reports.summarySubtitle' | translate }}</p>
+    <a class="self-start" pButton severity="secondary" [outlined]="true" routerLink="/guide">{{ 'guide.reports.back' | translate }}</a>
+  </header>
+  @if (navigationBlocked()) { <p role="status" class="type-body-sm text-ink-strong">{{ 'guide.reports.waitForSave' | translate }}</p> }
+  @if (state.loading()) {
+    <div role="status"><span class="sr-only">{{ 'guide.reports.loading' | translate }}</span><app-skeleton variant="chart" /></div>
+  } @else if (state.loadFailed()) {
+    <app-empty-state variant="error" [heading]="(state.failure() === 'notFound' ? 'guide.reports.notFound' : 'guide.reports.loadFailed') | translate" [actionLabel]="'guide.reports.retry' | translate" (action)="reload()" />
+  } @else if (state.source()?.reportMode !== 'SUMMARY_ONLY') {
+    <app-empty-state variant="error" [heading]="'guide.reports.unsupported' | translate" [description]="'guide.reports.unsupportedHelp' | translate" />
+  } @else {
+    <form [formGroup]="state.form" (ngSubmit)="submit()" class="flex w-full max-w-[800px] flex-col gap-[var(--space-24)] pb-[var(--space-24)] tablet:rounded-[var(--radius-lg)] tablet:border tablet:border-line-subtle tablet:bg-surface tablet:p-card">
+      <aside class="bg-surface-subtle p-[var(--space-12)] type-body-sm text-ink-muted">{{ 'guide.reports.summaryHelp' | translate }}</aside>
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="guide-date" class="type-caption text-ink-strong">{{ 'guide.reports.date' | translate }}</label>
+        <p-datepicker inputId="guide-date" formControlName="serviceDate" dateFormat="yy.mm.dd" [showIcon]="true" [readonlyInput]="true" [minDate]="minimumDate" [maxDate]="maximumDate" [showClear]="true" appendTo="body" styleClass="w-full" [invalid]="state.fieldInvalid('serviceDate')" [ariaLabel]="'guide.reports.date' | translate" />
+        @if (state.fieldInvalid('serviceDate')) { <small role="alert" class="type-caption text-ink-strong">{{ (state.failure() === 'dateConflict' ? 'guide.reports.dateConflict' : 'guide.reports.invalidDate') | translate }}</small> }
+      </div>
+      <div class="grid grid-cols-1 gap-[var(--space-20)] tablet:grid-cols-3">
+        @for (service of services; track service.control) {
+          <div class="flex min-w-0 flex-col gap-[var(--space-4)]">
+            <label [for]="service.control" class="type-caption text-ink-strong">{{ 'guide.reports.service' | translate:{service:service.number} }}</label>
+            <input pInputText appGuideCount type="text" inputmode="numeric" [id]="service.control" [formControlName]="service.control" class="w-full" [invalid]="state.fieldInvalid(service.control)" [attr.aria-invalid]="state.fieldInvalid(service.control)" [attr.aria-describedby]="service.control + '-hint'" />
+            <small [id]="service.control + '-hint'" class="type-caption text-ink-muted">{{ 'guide.reports.countHelp' | translate }}</small>
+            @if (state.fieldInvalid(service.control)) { <small role="alert" class="type-caption text-ink-strong">{{ 'guide.reports.invalidCount' | translate }}</small> }
+          </div>
+        }
+      </div>
+      <div class="flex flex-col gap-[var(--space-8)] bg-surface-subtle p-[var(--space-16)]" aria-live="polite">
+        <p class="type-caption text-ink-muted">{{ 'guide.reports.preview' | translate }}</p>
+        <p class="type-h1 text-ink-strong tabular-nums">{{ count(state.totalPreview()) }}</p>
+        <p class="type-caption text-ink-muted">{{ 'guide.reports.delta' | translate }} {{ delta(state.deltaPreview()) }}</p>
+        @if (state.previousFailed()) { <p role="status" class="type-caption text-ink-muted">{{ 'guide.reports.previousFailed' | translate }}</p> }
+      </div>
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <label for="guide-notes" class="type-caption text-ink-strong">{{ 'guide.reports.notes' | translate }}</label>
+        <textarea id="guide-notes" pTextarea rows="3" formControlName="notes" class="w-full min-h-[72px]" [invalid]="state.fieldInvalid('notes')" [attr.aria-invalid]="state.fieldInvalid('notes')"></textarea>
+        @if (state.fieldInvalid('notes')) { <small role="alert" class="type-caption text-ink-strong">{{ 'guide.reports.invalidNotes' | translate }}</small> }
+      </div>
+      @if (state.failure(); as failure) {
+        <div role="alert" class="flex flex-col gap-[var(--space-12)]">
+          <p class="type-body-sm text-ink-strong">{{ ('guide.reports.' + failure) | translate }}</p>
+          @if (failure === 'conflict' || failure === 'notFound') { <p-button type="button" [label]="'guide.reports.reload' | translate" severity="secondary" (onClick)="reload()" /> }
+        </div>
+      }
+      <footer class="sticky bottom-0 z-10 -mx-[var(--space-16)] flex flex-col gap-[var(--space-8)] border-t border-line-subtle bg-surface p-[var(--space-16)] tablet:static tablet:mx-0 tablet:border-t-0 tablet:p-0">
+        <p class="type-caption text-ink-muted">{{ 'guide.reports.saveHelp' | translate }}</p>
+        <div class="flex gap-[var(--space-12)]">
+          <a pButton severity="secondary" [outlined]="true" routerLink="/guide">{{ 'guide.reports.cancel' | translate }}</a>
+          <p-button type="submit" class="flex-1 tablet:flex-none" styleClass="w-full" [label]="'guide.reports.saveButton' | translate" [loading]="state.saving()" [disabled]="state.saving() || state.failure() === 'conflict' || state.failure() === 'notFound'" />
+        </div>
+      </footer>
+    </form>
+  }
+</section>
+<p-confirmdialog key="guide-summary-discard" />
+<p-confirmdialog [key]="unsavedChangesDialogKey" />

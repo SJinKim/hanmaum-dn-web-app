@@ -1,4 +1,4 @@
-import { CanDeactivateFn } from '@angular/router';
+import { CanDeactivateFn, provideRouter } from '@angular/router';
 import { GUIDE_ROUTES } from './guide.routes';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -18,7 +18,7 @@ describe('Guide area management interactions', () => {
   beforeEach(() => {
     writable = true;
     TestBed.configureTestingModule({ imports: [GuideAreasComponent], providers: [provideHttpClient(), provideHttpClientTesting(),
-      provideNoopAnimations(), provideTranslateService(), ConfirmationService,
+      provideNoopAnimations(), provideTranslateService(), ConfirmationService, provideRouter([]),
       { provide: RoleService, useValue: { canWrite: () => writable } }] });
     TestBed.inject(TranslateService).use('ko');
     http = TestBed.inject(HttpTestingController);

@@ -1,5 +1,6 @@
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, merge } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
@@ -17,7 +18,7 @@ import { GuideAreaService } from './guide-area.service';
 @Component({
   selector: 'app-guide-areas',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe, ButtonModule, DialogModule,
+  imports: [RouterLink, ReactiveFormsModule, TranslatePipe, ButtonModule, DialogModule,
     ConfirmDialogModule, InputTextModule, SelectModule],
   providers: [GuideAreaService],
   host: { class: 'block min-w-0' },

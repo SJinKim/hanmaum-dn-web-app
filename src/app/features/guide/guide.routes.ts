@@ -1,28 +1,20 @@
 import { CanDeactivateFn, Routes } from '@angular/router';
 import { featureGuard } from '../../core/guards/feature.guard';
-import { unsavedChangesGuard } from '../../core/guards/unsaved-changes.guard';
+import { guideFormGuard } from './guide-form.guard';
+import type { GuideHistoryComponent } from './guide-history.component';
 
-import type { GuideAreasComponent } from './guide-areas.component';
-
-const canLeave: CanDeactivateFn<GuideAreasComponent> = (...args) => {
-  const component = args[0];
-  if (component.state.saving()) {
-    component.navigationBlocked.set(true);
-    return false;
-  }
-  component.routeConfirming.set(true);
-  const result = unsavedChangesGuard(...args);
-  if (result instanceof Promise) return result.finally(() => component.routeConfirming.set(false));
-  component.routeConfirming.set(false);
-  return result;
-};
-
+const historyGuard: CanDeactivateFn<GuideHistoryComponent> = component => component.canLeave();
 export const GUIDE_ROUTES: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'counting-areas' },
   {
-    path: 'counting-areas',
-    canActivate: [featureGuard('guide')],
-    canDeactivate: [canLeave],
+    path: '', pathMatch: 'full', canActivate: [featureGuard('guide')], canDeactivate: [historyGuard],
+    loadComponent: () => import('./guide-history.component').then(m => m.GuideHistoryComponent),
+  },
+  {
+    path: 'counting-areas', canActivate: [featureGuard('guide')], canDeactivate: [guideFormGuard],
     loadComponent: () => import('./guide-areas.component').then(m => m.GuideAreasComponent),
+  },
+  {
+    path: 'records/:publicId/edit', canActivate: [featureGuard('guide', 'write')], canDeactivate: [guideFormGuard],
+    loadComponent: () => import('./guide-summary-editor.component').then(m => m.GuideSummaryEditorComponent),
   },
 ];
