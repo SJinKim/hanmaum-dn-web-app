@@ -15,7 +15,7 @@ import { SkeletonComponent } from '../../core/ui/skeleton/skeleton.component';
 import { GuideAttendanceService } from './guide-attendance.service';
 import { GuideCountFieldComponent } from './guide-count-field.component';
 import { GuideCountField, GuideServiceNumber } from './guide-details.model';
-import { guideDateValue } from './guide-report.model';
+import { guideDateString, guideDateValue } from './guide-report.model';
 @Component({
   selector: 'app-guide-attendance', standalone: true,
   imports: [ReactiveFormsModule, RouterLink, TranslatePipe, ButtonModule, ConfirmDialogModule, DatePickerModule,
@@ -43,6 +43,11 @@ export class GuideAttendanceComponent implements HasUnsavedChanges {
   constructor() {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(params => {
       this.id = params.get('publicId'); this.editing.set(!!this.id); this.state.load(this.id);
+      const date = this.route.snapshot.queryParamMap?.get('date');
+      if (!this.id && !this.state.form.controls.serviceDate.value && !this.state.form.dirty
+        && date && /^\d{4}-\d{2}-\d{2}$/.test(date) && guideDateString(guideDateValue(date)) === date) {
+        this.state.form.controls.serviceDate.setValue(guideDateValue(date));
+      }
     });
   }
   fields(service: GuideServiceNumber): GuideCountField[] { return service === 3 ? ['adultCount', 'youthCount', 'schoolCount'] : ['adultCount', 'schoolCount']; }

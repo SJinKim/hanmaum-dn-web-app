@@ -12,6 +12,7 @@ import { GuideAttendanceDraft } from './guide-attendance.service';
 import { GuideReportEditorComponent } from './guide-report-editor.component';
 import { GUIDE_ROUTES } from './guide.routes';
 import { areaFixture, detailFixture } from './guide-details.fixtures.spec';
+import { guideDateString } from './guide-report.model';
 import { reportFixture } from './guide-report.fixtures.spec';
 
 const base = '/api/v1/guide/worship-counts';
@@ -33,6 +34,16 @@ describe('Guide detail entry interactions', () => {
     http.expectOne('/api/v1/guide/counting-areas/rooms').flush({ success: true, data: [{ publicId: 'room' }] });
     f.detectChanges(); return f;
   }
+  it('prefills a valid server Sunday from the Home link without marking the form dirty', () => {
+    Object.defineProperty(TestBed.inject(ActivatedRoute).snapshot, 'queryParamMap', { value: convertToParamMap({ date: '2026-10-25' }) });
+    const fixture = entry();
+    expect(guideDateString(fixture.componentInstance.state.form.controls.serviceDate.value)).toBe('2026-10-25');
+    expect(fixture.componentInstance.state.form.dirty).toBeFalse();
+  });
+  it('ignores a non-calendar date supplied in a new-entry link', () => {
+    Object.defineProperty(TestBed.inject(ActivatedRoute).snapshot, 'queryParamMap', { value: convertToParamMap({ date: '2026-02-30' }) });
+    expect(entry().componentInstance.state.form.controls.serviceDate.value).toBeNull();
+  });
   it('renders five dynamic areas and preserves all service values across tab switches', () => {
     const f = entry(), c = f.componentInstance;
     expect(f.nativeElement.querySelectorAll('[data-testid="guide-entry-area"]').length).toBe(5);
