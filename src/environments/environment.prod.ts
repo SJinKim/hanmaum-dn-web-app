@@ -2,10 +2,10 @@
 // Do not edit deployed values here; set Vercel Environment Variables instead.
 export const environment = {
   "production": true,
-  "apiBaseUrl": "https://api.graceops.de/api",
+  "apiBaseUrl": "/api",
   "keycloak": {
-    "url": "https://auth.graceops.de",
-    "realm": "hanmaum-dn-prod",
+    "url": "http://localhost:8091",
+    "realm": "hanmaum",
     "clientId": "hanmaum-dashboard"
   }
 };

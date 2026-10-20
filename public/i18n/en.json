@@ -1060,7 +1060,7 @@
     },
     "identity": {
       "EMPLOYEE": "Employee",
-      "UNIVERSITY_STUDENT": "University student",
+      "UNIVERSITY_STUDENT": "University/graduate student",
       "EXAM_PREPARATION": "Exam preparation",
       "WORKING_HOLIDAY": "Working holiday",
       "EXCHANGE_STUDENT": "Exchange student",
