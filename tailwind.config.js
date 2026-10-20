@@ -69,6 +69,16 @@ module.exports = {
       letterSpacing: {
         brand: '-0.02em',
       },
+      keyframes: {
+        // A ring in the chip's own colour (currentColor) grows and fades out.
+        'candidate-pulse': {
+          '0%': { boxShadow: '0 0 0 0 currentColor' },
+          '70%, 100%': { boxShadow: '0 0 0 4px transparent' },
+        },
+      },
+      animation: {
+        'candidate-pulse': 'candidate-pulse 1.6s ease-out infinite',
+      },
     },
   },
   plugins: [],
