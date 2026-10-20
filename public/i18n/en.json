@@ -26,7 +26,8 @@
       "announcements": "Announcements",
       "archive": "Archive",
       "analytics": "Analytics",
-      "bulletins": "Bulletin"
+      "bulletins": "Bulletin",
+      "guide": "Counting areas"
     }
   },
   "shell": {
@@ -1757,6 +1758,47 @@
         "referenceTooLong": "References can have up to {{max}} characters.",
         "invalid": "Check the sermon sharing fields."
       }
+    }
+  },
+  "guide": {
+    "areas": {
+      "title": "Counting areas",
+      "subtitle": "Configure spaces and areas for new attendance reports.",
+      "add": "+ Add counting area",
+      "edit": "Edit",
+      "addTitle": "Add counting area",
+      "editTitle": "Edit counting area",
+      "futureOnly": "Changes apply to new reports only.",
+      "historySafe": "Areas, names and counts in saved reports stay unchanged.",
+      "activeCount": "{{count}} active",
+      "sharedRoom": "One room can contain multiple counting areas, such as A and B. Only active areas appear in new reports.",
+      "active": "Active",
+      "inactive": "Inactive",
+      "loading": "Loading areas…",
+      "loadFailed": "Could not load areas. Please try again.",
+      "retry": "Try again",
+      "noRooms": "No eligible rooms are available. Check the church room records.",
+      "empty": "No counting areas configured.",
+      "formHelp": "Select an existing church room and enter the counting area name.",
+      "room": "Room",
+      "selectRoom": "Select room",
+      "label": "Area name",
+      "order": "Display order",
+      "useForNew": "Use in new reports",
+      "unavailableRoom": "Unavailable room",
+      "invalidRoom": "Select an eligible room. An unavailable original room may only be kept when deactivating the area.",
+      "invalidLabel": "Enter an area name of 1–200 characters.",
+      "invalidOrder": "Enter a whole number from 1 to 2147483648.",
+      "conflict": "Someone else changed this area. Your inputs are preserved. Reload and review before saving.",
+      "notFound": "This area is no longer available. Your inputs are preserved. Reload to continue.",
+      "save": "Save changes",
+      "reload": "Reload",
+      "cancel": "Cancel",
+      "saveError": "Could not save. Check the inputs and try again.",
+      "discardTitle": "Discard changes?",
+      "discardMessage": "Your changes to this counting area have not been saved. Discard them and close the dialog?",
+      "discard": "Discard changes",
+      "waitForSave": "Saving is in progress. Please wait before leaving this page."
     }
   }
 }

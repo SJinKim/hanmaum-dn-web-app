@@ -21,6 +21,7 @@
  */
 
 export type FeatureId =
+  | 'guide'
   | 'home'
   | 'members'
   | 'newcomers'
@@ -68,6 +69,7 @@ const GENERAL_OPERATIONS_AND_NOTE_TAKER: FeatureAccess = {
 
 export const FEATURE_ACCESS: Readonly<Record<FeatureId, FeatureAccess>> = {
   home: { read: 'all', write: [] },
+  guide: { read: ['guide_viewer', 'guide_editor'], write: ['guide_editor'] },
   members: NONE,
   newcomers: { read: ['newcomer_viewer', 'newcomer_editor'], write: ['newcomer_editor'] },
   churchGroups: { read: [...LEADER_ROLES, ...TRAINING_READ], write: TRAINING_WRITE },
