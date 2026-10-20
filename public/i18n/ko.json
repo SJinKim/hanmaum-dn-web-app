@@ -1060,7 +1060,7 @@
     },
     "identity": {
       "EMPLOYEE": "직장인",
-      "UNIVERSITY_STUDENT": "대학생",
+      "UNIVERSITY_STUDENT": "대학생/대학원생",
       "EXAM_PREPARATION": "입시 준비",
       "WORKING_HOLIDAY": "워킹홀리데이",
       "EXCHANGE_STUDENT": "교환학생",
