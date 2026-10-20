@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   ElementRef,
+  DestroyRef,
   inject,
   input,
   signal,
@@ -25,7 +26,7 @@ const CHART_JS_TYPE: Record<ChartType, 'line' | 'bar' | 'doughnut'> = {
 /** One series — `label` is what the legend shows, so it is never optional. */
 export interface ChartSeries {
   label: string;
-  data: number[];
+  data: (number | null)[];
   /** Draws the line dashed — the previous year in 성장 추이 (193:3961). */
   dashed?: boolean;
 }
@@ -58,8 +59,8 @@ interface ChartPalette {
  * Chart.js paints onto a canvas and cannot resolve `var(--token)`, so the
  * palette is read with `getComputedStyle` off *this component's own host*, not
  * `document.documentElement` — that way a `[data-theme="dark"]` ancestor wins
- * and the sandbox can show both themes side by side. The read happens once in
- * `ngAfterViewInit` and lands in a signal; never read the DOM inside a
+ * and the sandbox can show both themes side by side. The initial read happens in
+ * `ngAfterViewInit` and theme changes refresh the signal; never read the DOM inside a
  * `computed()`.
  *
  * Empty and loading are States in Figma, not separate components: loading draws
@@ -91,6 +92,7 @@ interface ChartPalette {
 })
 export class ChartComponent implements AfterViewInit {
   readonly type = input<ChartType>('line');
+  readonly horizontal = input(false, { transform: booleanAttribute });
   readonly heading = input.required<string>();
   readonly labels = input<string[]>([]);
   readonly series = input<ChartSeries[]>([]);
@@ -101,13 +103,14 @@ export class ChartComponent implements AfterViewInit {
   readonly valueSuffix = input('');
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroy = inject(DestroyRef);
 
   /** Empty until `ngAfterViewInit` resolves the tokens off the host element. */
   private readonly palette = signal<ChartPalette>({ series: [], text: '', grid: '' });
 
   protected readonly chartType = computed(() => CHART_JS_TYPE[this.type()]);
 
-  protected readonly isEmpty = computed(() => this.series().every(series => series.data.length === 0));
+  protected readonly isEmpty = computed(() => this.series().every(series => series.data.every(value => value === null)));
 
   protected readonly chartData = computed(() => {
     const palette = this.palette();
@@ -127,9 +130,10 @@ export class ChartComponent implements AfterViewInit {
         data: series.data,
         borderColor: palette.series[index % palette.series.length],
         backgroundColor: palette.series[index % palette.series.length],
+        spanGaps: false,
         borderWidth: 2,
         tension: 0.35,
-        pointRadius: 0,
+        pointRadius: this.type() === 'line' ? 2 : 0,
         borderRadius: 4,
         borderDash: series.dashed ? DASH : [],
       })),
@@ -146,6 +150,7 @@ export class ChartComponent implements AfterViewInit {
       border: { display: false },
     };
     return {
+      indexAxis: this.horizontal() ? 'y' as const : 'x' as const,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -164,17 +169,29 @@ export class ChartComponent implements AfterViewInit {
         this.type() === 'donut'
           ? {}
           : {
-              x: axis,
-              y: { ...axis, beginAtZero: true, ticks: { ...axis.ticks, callback: withSuffix } },
+              x: this.horizontal() ? { ...axis, beginAtZero: true, ticks: { ...axis.ticks, callback: withSuffix } } : axis,
+              y: this.horizontal() ? axis : { ...axis, beginAtZero: true, ticks: { ...axis.ticks, callback: withSuffix } },
             },
     };
   });
 
   ngAfterViewInit(): void {
+    this.readPalette();
+    // Themes can change on the root or a local sandbox ancestor after mounting.
+    const observer = new MutationObserver(() => this.readPalette());
+    let ancestor: HTMLElement | null = this.host.nativeElement;
+    while (ancestor) {
+      observer.observe(ancestor, { attributes: true, attributeFilter: ['data-theme'] });
+      ancestor = ancestor.parentElement;
+    }
+    this.destroy.onDestroy(() => observer.disconnect());
+  }
+
+  private readPalette(): void {
     const styles = getComputedStyle(this.host.nativeElement);
     const read = (token: string) => styles.getPropertyValue(token).trim();
     this.palette.set({
-      series: [read('--color-chart-series-1'), read('--color-chart-series-2')],
+      series: [read('--color-chart-series-1'), read('--color-chart-series-2'), read('--color-border-subtle'), read('--color-text-muted')],
       text: read('--color-text-muted'),
       grid: read('--color-border-subtle'),
     });

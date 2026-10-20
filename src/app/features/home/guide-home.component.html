@@ -1,0 +1,79 @@
+<section class="flex min-w-0 flex-col gap-[var(--space-24)]" [attr.aria-busy]="state.loading()">
+  @if (state.loading()) {
+    <div role="status"><span class="sr-only">{{ 'home.guide.loading' | translate }}</span><app-skeleton variant="card" /><app-skeleton variant="chart" /></div>
+  } @else if (!state.snapshot()) {
+    <app-empty-state variant="error" [heading]="'home.guide.loadFailed' | translate" [actionLabel]="'home.guide.retry' | translate" (action)="state.reload()" />
+  }
+  @if (state.failed() && state.snapshot()) {
+    <div role="alert" class="rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card">
+      <p class="type-body text-ink-strong">{{ 'home.guide.stale' | translate }}</p>
+      <p-button severity="secondary" [text]="true" [label]="'home.guide.retry' | translate" (onClick)="state.reload()" />
+    </div>
+  }
+  @if (navigationFailed()) { <p role="alert" class="type-body text-ink-strong">{{ 'home.guide.navigationFailed' | translate }}</p> }
+  @if (state.snapshot(); as data) {
+    <div class="flex flex-wrap items-center justify-between gap-[var(--space-16)] rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card">
+      <div class="flex flex-col gap-[var(--space-8)]">
+        <div class="flex flex-wrap items-center gap-[var(--space-8)]"><strong class="type-h3 text-ink-strong">{{ date(report()?.serviceDate ?? data.currentSunday) }}</strong>
+          <app-badge [variant]="data.waitingForCurrentSunday ? 'neutral' : data.status === 'COMPLETE' ? 'active' : 'pending'" [label]="('home.guide.' + (!data.attendance ? 'EMPTY' : data.waitingForCurrentSunday ? 'waiting' : data.status)) | translate" />
+        </div>
+        <p class="type-body-sm text-ink-muted">{{ (data.waitingForCurrentSunday ? 'home.guide.waitingHelp' : 'home.guide.currentHelp') | translate:{date:date(data.currentSunday)} }}</p>
+      </div>
+      @if (canWrite()) { <p-button data-testid="guide-home-entry" class="w-full tablet:w-auto" [fluid]="true" [label]="actionLabel() | translate" [loading]="navigating()" (onClick)="openCurrent()" /> }
+    </div>
+    @if (report(); as report) {
+      <div class="grid grid-cols-2 gap-[var(--space-16)] desktop:grid-cols-4">
+        <app-stat-card [showIcon]="false" [label]="'home.guide.total' | translate" [value]="number(report.totalCount)" [subtext]="report.reportMode === 'SUMMARY_ONLY' ? ('home.guide.summaryOnly' | translate) : ('home.guide.areaCount' | translate:{count:rooms().length})" />
+        @for (service of services; track service) { <app-stat-card [showIcon]="false" [label]="'home.guide.service' | translate:{service}" [value]="number(serviceCount(service))" [subtext]="composition(service)" /> }
+      </div>
+      <div class="flex flex-col gap-[var(--space-12)]">
+        <div class="flex flex-wrap items-center justify-between gap-[var(--space-8)]">
+          <h2 class="type-h3 text-ink-strong" data-testid="guide-attendance-title">{{ 'home.guide.attendance' | translate }} {{ date(report.serviceDate) }}</h2>
+          @if (canWrite()) { <a pButton severity="secondary" [outlined]="true" [routerLink]="['/guide/records',report.publicId,'edit']">{{ 'home.guide.editDetails' | translate }}</a> }
+        </div>
+        @if (data.waitingForCurrentSunday) { <p class="type-caption text-ink-muted">{{ previousLabel() | translate }} · {{ date(report.serviceDate) }}</p> }
+        @if (report.reportMode === 'SUMMARY_ONLY') {
+          <p class="rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card type-body text-ink-muted">{{ 'home.guide.summaryOnly' | translate }}</p>
+        } @else {
+          <div class="min-w-0 overflow-x-auto rounded-[var(--radius-lg)] border border-line-subtle bg-surface">
+            <table class="w-full type-body-sm">
+              <caption class="sr-only">{{ 'home.guide.attendance' | translate }} {{ date(report.serviceDate) }}</caption>
+              <thead><tr class="border-b border-line-subtle"><th scope="col" class="p-3 text-left">{{ 'home.guide.area' | translate }}</th>@for (service of services; track service) { <th scope="col" class="p-2 text-right whitespace-nowrap">{{ 'home.guide.service' | translate:{service} }}</th> }<th scope="col" class="p-2 text-right">{{ 'home.guide.total' | translate }}</th></tr></thead>
+              <tbody>@for (room of rooms(); track room.areaPublicId) {
+                <tr data-testid="guide-home-area" class="border-b border-line-subtle"><th scope="row" class="max-w-36 break-words p-3 text-left font-normal" [attr.title]="room.roomName">{{ room.label }}</th>@for (service of services; track service) { <td class="p-2 text-right tabular-nums">{{ number(entry(room.areaPublicId,service)) }}</td> }<td class="p-2 text-right tabular-nums">{{ number(room.counts.totalCount) }}</td></tr>
+              }</tbody>
+              <tfoot><tr><th scope="row" class="p-3 text-left">{{ 'home.guide.total' | translate }}</th>@for (service of services; track service) { <td class="p-2 text-right font-bold tabular-nums">{{ number(serviceCount(service)) }}</td> }<td class="p-2 text-right font-bold tabular-nums">{{ number(report.totalCount) }}</td></tr></tfoot>
+            </table>
+          </div>
+          <p class="type-caption text-ink-muted">{{ 'home.guide.youthHelp' | translate }}</p>
+        }
+      </div>
+    } @else {
+      <app-empty-state variant="no-data" [heading]="'home.guide.empty' | translate" [description]="'home.guide.emptyHelp' | translate" />
+    }
+    <div class="flex flex-wrap items-center justify-between gap-[var(--space-8)]"><h2 class="type-h3 text-ink-strong">{{ 'home.guide.metrics' | translate }}</h2><a pButton severity="secondary" [outlined]="true" routerLink="/guide/statistics">{{ 'home.guide.statistics' | translate }}</a></div>
+    <p class="type-caption text-ink-muted">{{ 'home.guide.metricDate' | translate }} {{ date(data.metrics.reportDate) }} · {{ 'home.guide.completeOnly' | translate }}</p>
+    <div class="grid grid-cols-1 gap-[var(--space-16)] tablet:grid-cols-2">
+      <app-stat-card [showIcon]="false" [label]="'home.guide.change' | translate" [value]="delta(data.metrics.absoluteChange)" [subtext]="date(data.metrics.referenceDate) + ' · ' + number(data.metrics.percentChange, true)" />
+      <app-stat-card [showIcon]="false" [label]="'home.guide.mean' | translate" [value]="number(data.metrics.meanLastFour)" [subtext]="date(data.metrics.meanFrom) + ' – ' + date(data.metrics.meanTo) + ' · n=' + data.metrics.meanReportCount" />
+    </div>
+    @if (data.metrics.percentReason) { <p class="type-caption text-ink-muted">{{ ('home.guide.reasons.' + data.metrics.percentReason) | translate }}</p> }
+    <div class="grid min-w-0 grid-cols-1 gap-[var(--space-16)] desktop:grid-cols-2">
+      <app-chart [heading]="'home.guide.trend' | translate" [labels]="lineLabels()" [series]="line()" [emptyHeading]="'home.guide.noChartData' | translate" />
+      <app-chart type="bar" horizontal [heading]="('home.guide.share' | translate) + ' · ' + date(data.sharesReportDate)" [labels]="serviceLabels()" [series]="shareSeries()" valueSuffix="%" [emptyHeading]="'home.guide.noShares' | translate" />
+    </div>
+    <p class="type-caption text-ink-muted">{{ 'home.guide.gaps' | translate }}</p>
+    <details class="rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card"><summary class="cursor-pointer type-body text-ink-strong">{{ 'home.guide.chartValues' | translate }}</summary>
+      <div class="overflow-x-auto"><table class="w-full type-body-sm"><thead><tr><th scope="col" class="p-2 text-left">{{ 'home.guide.date' | translate }}</th><th scope="col" class="p-2 text-right">{{ 'home.guide.total' | translate }}</th></tr></thead><tbody>@for (point of data.timeline; track point.serviceDate) { <tr><th scope="row" class="p-2 text-left font-normal">{{ date(point.serviceDate) }}</th><td class="p-2 text-right">{{ number(point.totalCount) }}</td></tr> }</tbody></table></div>
+      <ul class="mt-3 flex flex-col gap-2">@for (share of data.shares; track share.serviceNumber) { <li class="type-body-sm text-ink-strong">{{ 'home.guide.service' | translate:{service:share.serviceNumber} }}: {{ number(share.count) }} · {{ number(share.percent,true) }}</li> }</ul>
+    </details>
+    <div class="flex flex-wrap items-center justify-between gap-[var(--space-8)]"><h2 class="type-h3 text-ink-strong">{{ 'home.guide.recent' | translate }}</h2><a pButton severity="secondary" [outlined]="true" routerLink="/guide">{{ 'home.guide.history' | translate }}</a></div>
+    <div class="hidden min-w-0 overflow-x-auto rounded-[var(--radius-lg)] border border-line-subtle bg-surface tablet:block">
+      <table class="w-full min-w-[700px] type-body-sm"><thead><tr><th scope="col" class="p-3 text-left">{{ 'home.guide.date' | translate }}</th>@for (service of services; track service) { <th scope="col" class="p-2 text-right">{{ 'home.guide.service' | translate:{service} }}</th> }<th scope="col" class="p-2 text-right">{{ 'home.guide.total' | translate }}</th><th scope="col" class="p-2 text-right">{{ 'home.guide.previousWeek' | translate }}</th><th scope="col" class="p-3 text-left">{{ 'home.guide.notes' | translate }}</th></tr></thead><tbody>@for (row of data.lastFourReports; track row.publicId) { <tr class="border-t border-line-subtle"><th scope="row" class="p-3 text-left font-normal whitespace-nowrap">{{ date(row.serviceDate) }}</th><td class="p-2 text-right">{{ number(row.service1Count) }}</td><td class="p-2 text-right">{{ number(row.service2Count) }}</td><td class="p-2 text-right">{{ number(row.service3Count) }}</td><td class="p-2 text-right font-bold">{{ number(row.totalCount) }}</td><td class="p-2 text-right">{{ delta(row.previousWeekDelta) }}</td><td class="max-w-64 whitespace-pre-wrap break-words p-3">{{ row.notes ?? '—' }}</td></tr> }</tbody></table>
+    </div>
+    <div class="flex flex-col gap-[var(--space-12)] tablet:hidden">@for (row of data.lastFourReports; track row.publicId) {
+      <article class="rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card"><div class="flex items-center justify-between gap-2"><h3 class="type-h3 text-ink-strong">{{ date(row.serviceDate) }}</h3><strong class="type-h3 text-ink-strong">{{ number(row.totalCount) }}</strong></div><dl class="mt-3 grid grid-cols-3 gap-2">@for (service of services; track service) { <div><dt class="type-caption text-ink-muted">{{ 'home.guide.service' | translate:{service} }}</dt><dd class="type-body text-ink-strong">{{ number(rowCount(row,service)) }}</dd></div> }</dl><p class="mt-2 type-caption text-ink-muted">{{ 'home.guide.previousWeek' | translate }} {{ delta(row.previousWeekDelta) }}</p><p class="mt-2 whitespace-pre-wrap break-words type-body-sm text-ink-muted">{{ row.notes ?? '—' }}</p></article>
+    }</div>
+    <p class="type-caption text-ink-muted">{{ 'home.guide.asOf' | translate }} {{ asOfLabel() }} · {{ data.timeZone }} @if (state.refreshing()) { · {{ 'home.guide.refreshing' | translate }} }</p>
+  }
+</section>

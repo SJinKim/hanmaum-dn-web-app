@@ -94,10 +94,18 @@ export class RoleService {
     () =>
       new Set(
         HOME_BLOCKS.filter(
-          block => !block.pending && this.canAny(block.roles) && !this.isHiddenFor(block.hiddenForRoles),
+          block => !block.pending && this.canAny(block.roles) && !this.isHiddenFor(block.hiddenForRoles)
+            && (!this.guideOnly() || block.id === 'guide'),
         ).map(block => block.id),
       ),
   );
+
+  /** A Guide-only account must not trigger legacy Home roster/check-in requests.
+   * Additional feature grants keep their existing Home blocks. */
+  private guideOnly(): boolean {
+    return this.canRead('guide') && !(Object.keys(FEATURE_ACCESS) as FeatureId[])
+      .some(feature => feature !== 'home' && feature !== 'guide' && this.canRead(feature));
+  }
 
   /** DESIGN.md §9: false means the block is absent, never disabled. */
   showsHomeBlock(id: HomeBlockId): boolean {
