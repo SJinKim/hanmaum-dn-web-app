@@ -61,7 +61,7 @@ describe('Guide detail entry interactions', () => {
     const result = TestBed.runInInjectionContext(() => guard(c, {} as never, {} as never, {} as never)) as Promise<boolean>;
     spy.calls.mostRecent().args[0].reject?.(); expect(await result).toBeFalse(); expect(c.state.form.dirty).toBeTrue();
     c.state.saving.set(true); expect(TestBed.runInInjectionContext(() => guard(c, {} as never, {} as never, {} as never))).toBeFalse();
-    expect(c.navigationBlocked()).toBeTrue(); writable = false;
+    expect(c.navigationBlocked()).toBeTrue(); c.state.saving.set(false); TestBed.tick(); expect(c.navigationBlocked()).toBeFalse(); writable = false;
     const writeGuard = GUIDE_ROUTES[3].canActivate![0] as CanActivateFn;
     expect(TestBed.runInInjectionContext(() => writeGuard({} as never, {} as never))).not.toBeTrue();
   });

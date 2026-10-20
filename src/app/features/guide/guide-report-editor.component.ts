@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
@@ -37,6 +37,7 @@ export class GuideReportEditorComponent {
   readonly navigationBlocked = signal(false);
   readonly state = { saving: computed(() => this.summary()?.state.saving() || this.detail()?.state.saving() || false) };
   constructor() {
+    effect(() => { if (!this.state.saving()) this.navigationBlocked.set(false); });
     merge(this.route.paramMap.pipe(map(params => params.get('publicId') ?? '')),
       this.reloads.pipe(map(() => this.route.snapshot.paramMap.get('publicId') ?? ''))).pipe(switchMap(id => {
       this.loading.set(true); this.failed.set(false); this.notFound.set(false); this.mode.set(null);

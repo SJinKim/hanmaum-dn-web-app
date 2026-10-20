@@ -50,6 +50,7 @@ describe('Guide report UI and route protection', () => {
     confirmation.calls.mostRecent().args[0].reject?.(); expect(await result).toBeFalse(); expect(c.state.form.dirty).toBeTrue();
     c.state.saving.set(true);
     expect(TestBed.runInInjectionContext(() => guard(c, {} as never, {} as never, {} as never))).toBeFalse(); expect(c.navigationBlocked()).toBeTrue();
+    c.state.saving.set(false); TestBed.tick(); expect(c.navigationBlocked()).toBeFalse();
     writable = false; const editGuard = GUIDE_ROUTES[2].canActivate![0] as CanActivateFn;
     expect(TestBed.runInInjectionContext(() => editGuard({} as never, {} as never))).not.toBeTrue();
     TestBed.inject(HttpTestingController).verify();

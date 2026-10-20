@@ -50,7 +50,7 @@
           <td class="!text-right font-bold tabular-nums">{{ count(report.totalCount) }}</td><td class="!text-right tabular-nums">{{ delta(report.previousWeekDelta) }}</td>
           <td class="whitespace-pre-wrap break-words">{{ report.notes ?? '—' }}</td>
           @if (canWrite()) { <td><div class="flex items-center">
-            @if (canWrite()) { <p-button icon="pi pi-pencil" [text]="true" severity="secondary" [pTooltip]="'guide.reports.edit' | translate" [ariaLabel]="('guide.reports.edit' | translate) + ' ' + date(report.serviceDate)" [routerLink]="['records',report.publicId,'edit']" [disabled]="state.deleting()" /> }
+            <p-button icon="pi pi-pencil" [text]="true" severity="secondary" [pTooltip]="'guide.reports.edit' | translate" [ariaLabel]="('guide.reports.edit' | translate) + ' ' + date(report.serviceDate)" [routerLink]="['records',report.publicId,'edit']" [disabled]="state.deleting()" />
             <p-button icon="pi pi-trash" [text]="true" severity="danger" [pTooltip]="'guide.reports.delete' | translate" [ariaLabel]="('guide.reports.delete' | translate) + ' ' + date(report.serviceDate)" [disabled]="state.deleting()" (onClick)="confirmDelete(report)" />
           </div></td> }
         </tr></ng-template>
@@ -68,7 +68,7 @@
           <p class="type-body-sm text-ink-muted whitespace-pre-wrap break-words">{{ report.notes ?? '—' }}</p>
           @if (canWrite()) {
             <div class="flex gap-[var(--space-8)]">
-              @if (canWrite()) { <a class="flex-1" pButton severity="secondary" [outlined]="true" [routerLink]="['records',report.publicId,'edit']">{{ 'guide.reports.edit' | translate }}</a> }
+              <a class="flex-1" pButton severity="secondary" [outlined]="true" [routerLink]="['records',report.publicId,'edit']">{{ 'guide.reports.edit' | translate }}</a>
               <p-button icon="pi pi-trash" [text]="true" severity="danger" [pTooltip]="'guide.reports.delete' | translate" [ariaLabel]="('guide.reports.delete' | translate) + ' ' + date(report.serviceDate)" [disabled]="state.deleting()" (onClick)="confirmDelete(report)" />
             </div>
           }
