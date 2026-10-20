@@ -65,12 +65,12 @@
     </div>
     <div class="flex flex-col gap-[var(--space-4)]">
       <label for="area-label" class="type-caption text-ink-muted">{{ 'guide.areas.label' | translate }}</label>
-      <input id="area-label" pInputText formControlName="label" maxlength="200" class="w-full" [invalid]="fieldError('label')" [attr.aria-invalid]="fieldError('label')" />
+      <input id="area-label" pInputText formControlName="label" class="w-full" [invalid]="fieldError('label')" [attr.aria-invalid]="fieldError('label')" />
       @if (fieldError('label')) { <small role="alert" class="type-caption text-ink-strong">{{ 'guide.areas.invalidLabel' | translate }}</small> }
     </div>
     <div class="flex flex-col gap-[var(--space-4)]">
       <label for="area-order" class="type-caption text-ink-muted">{{ 'guide.areas.order' | translate }}</label>
-      <input id="area-order" pInputText formControlName="order" inputmode="numeric" pattern="[0-9]*" class="w-full"
+      <input id="area-order" pInputText formControlName="order" inputmode="numeric" class="w-full"
         [invalid]="fieldError('order')" [attr.aria-invalid]="fieldError('order')" />
       @if (fieldError('order')) { <small role="alert" class="type-caption text-ink-strong">{{ 'guide.areas.invalidOrder' | translate }}</small> }
     </div>
@@ -83,6 +83,9 @@
       </button>
     </div>
     <p class="type-body-sm text-ink-muted">{{ 'guide.areas.futureOnly' | translate }}</p>
+    @if (navigationBlocked()) {
+      <p role="status" class="type-body-sm text-ink-strong">{{ 'guide.areas.waitForSave' | translate }}</p>
+    }
     @if (state.failure(); as failure) {
       <p role="alert" class="type-body-sm text-ink-strong">{{ (failure === 'save' ? 'guide.areas.saveError' : 'guide.areas.' + failure) | translate }}</p>
       @if (failure === 'conflict' || failure === 'notFound') {
@@ -99,4 +102,4 @@
   </ng-template>
 </p-dialog>
 <p-confirmdialog key="guide-discard" />
-<p-confirmdialog key="unsaved-changes" />
+<p-confirmdialog [key]="unsavedChangesDialogKey" />

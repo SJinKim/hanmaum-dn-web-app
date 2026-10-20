@@ -33,6 +33,10 @@ export class GuideAreaService {
 
   roomIsEligible(publicId: string): boolean { return this.rooms().some(r => r.publicId === publicId); }
 
+  clearFieldError(name: string): void {
+    this.fieldErrors.update(errors => Object.fromEntries(Object.entries(errors).filter(([key]) => key !== name)));
+  }
+
   clearFailure(): void { this.failure.set(null); this.fieldErrors.set({}); }
 
   save(settings: GuideAreaSettings, original: GuideArea | null) {

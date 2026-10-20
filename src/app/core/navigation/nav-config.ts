@@ -62,7 +62,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     labelKey: 'nav.groups.activity',
     items: [
-      { labelKey: 'nav.items.guide', feature: 'guide', icon: 'pi pi-users', route: '/guide' },
+      { labelKey: 'nav.items.guide', feature: 'guide', icon: 'pi pi-building', route: '/guide' },
       { labelKey: 'nav.items.attendance', feature: 'attendance', icon: 'pi pi-check-square', route: '/attendance' },
       { labelKey: 'nav.items.eventRsvps', feature: 'eventRsvps', icon: 'pi pi-calendar-plus', route: '/event-rsvps' },
       { labelKey: 'nav.items.ministry', feature: 'ministry', icon: 'pi pi-sitemap', route: '/ministry' },

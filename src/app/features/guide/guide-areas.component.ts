@@ -1,7 +1,7 @@
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, merge } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -10,7 +10,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { RoleService } from '../../core/services/role.service';
-import { HasUnsavedChanges } from '../../core/guards/unsaved-changes.guard';
+import { HasUnsavedChanges, UNSAVED_CHANGES_DIALOG_KEY } from '../../core/guards/unsaved-changes.guard';
 import { GuideArea, parseGuideOrder } from './guide-area.model';
 import { GuideAreaService } from './guide-area.service';
 
@@ -32,6 +32,10 @@ export class GuideAreasComponent implements HasUnsavedChanges {
   private readonly destroy = inject(DestroyRef);
   readonly canWrite = computed(() => this.roles.canWrite('guide'));
   readonly visible = signal(false);
+  readonly unsavedChangesDialogKey = UNSAVED_CHANGES_DIALOG_KEY;
+  readonly routeConfirming = signal(false);
+  readonly navigationBlocked = signal(false);
+  private readonly unavailableRoomLabel = toSignal(merge(this.translate.stream('guide.areas.unavailableRoom'), this.translate.getStreamOnTranslationChange('guide.areas.unavailableRoom')), { initialValue: '' });
   private confirming = false;
   readonly original = signal<GuideArea | null>(null);
   readonly activeCount = computed(() => this.state.areas().filter(a => a.active && this.state.roomIsEligible(a.roomPublicId)).length);
@@ -44,7 +48,7 @@ export class GuideAreasComponent implements HasUnsavedChanges {
     const options = this.state.rooms().map(r => ({ value: r.publicId, label: `${r.floorName} · ${r.name}` }));
     const old = this.original();
     if (old && !options.some(o => o.value === old.roomPublicId)) {
-      options.push({ value: old.roomPublicId, label: `${old.roomName} (${this.translate.instant('guide.areas.unavailableRoom')})` });
+      options.push({ value: old.roomPublicId, label: `${old.roomName} (${this.unavailableRoomLabel()})` });
     }
     return options;
   });
@@ -55,7 +59,14 @@ export class GuideAreasComponent implements HasUnsavedChanges {
     active: [true],
   });
 
-  constructor() { this.state.load(); }
+  constructor() {
+    for (const key of ['roomPublicId', 'label', 'order', 'active'] as const) {
+      const control: AbstractControl = this.form.controls[key];
+      control.valueChanges.pipe(takeUntilDestroyed(this.destroy))
+        .subscribe(() => this.state.clearFieldError(key === 'order' ? 'displayOrder' : key));
+    }
+    this.state.load();
+  }
 
   open(area: GuideArea | null = null): void {
     if (!this.canWrite() || this.state.saving() || this.state.loading() || this.state.loadFailed()) return;
@@ -86,9 +97,10 @@ export class GuideAreasComponent implements HasUnsavedChanges {
     const value = this.form.getRawValue();
     const displayOrder = parseGuideOrder(value.order);
     if (this.form.invalid || this.invalidRoom() || displayOrder === null) return;
+    this.navigationBlocked.set(false);
     this.form.disable({ emitEvent: false });
     this.state.save({ roomPublicId: value.roomPublicId, label: value.label.trim(), displayOrder, active: value.active }, this.original())
-      .pipe(takeUntilDestroyed(this.destroy), finalize(() => this.form.enable({ emitEvent: false }))).subscribe({
+      .pipe(takeUntilDestroyed(this.destroy), finalize(() => { this.form.enable({ emitEvent: false }); this.navigationBlocked.set(false); })).subscribe({
         next: () => { this.form.markAsPristine(); this.visible.set(false); },
         error: () => { /* State owns field errors; keep every user-entered value. */ },
       });
@@ -96,7 +108,11 @@ export class GuideAreasComponent implements HasUnsavedChanges {
 
   close(): void {
     if (this.state.saving()) return;
-    this.confirmDiscard(() => { this.visible.set(false); this.form.markAsPristine(); });
+    this.confirmDiscard(() => {
+      const stale = this.state.failure() === 'conflict' || this.state.failure() === 'notFound';
+      this.visible.set(false); this.form.markAsPristine();
+      if (stale) this.state.load();
+    });
   }
 
   reloadConflict(): void {
@@ -108,9 +124,10 @@ export class GuideAreasComponent implements HasUnsavedChanges {
     if (!this.hasUnsavedChanges()) { action(); return; }
     if (this.confirming) return;
     this.confirming = true;
-    this.confirmation.confirm({ key: 'guide-discard', header: this.translate.instant('common.unsavedChanges.header'),
-      message: this.translate.instant('common.unsavedChanges.message'),
-      acceptLabel: this.translate.instant('common.unsavedChanges.leave'), rejectLabel: this.translate.instant('common.unsavedChanges.stay'),
+    this.confirmation.confirm({ key: 'guide-discard', header: this.translate.instant('guide.areas.discardTitle'),
+      message: this.translate.instant('guide.areas.discardMessage'),
+      icon: 'pi pi-exclamation-triangle', acceptButtonStyleClass: 'p-button-danger',
+      acceptLabel: this.translate.instant('guide.areas.discard'), rejectLabel: this.translate.instant('common.unsavedChanges.stay'),
       accept: () => { this.confirming = false; action(); }, reject: () => { this.confirming = false; } });
   }
 
@@ -123,7 +140,7 @@ export class GuideAreasComponent implements HasUnsavedChanges {
 
   @HostListener('document:keydown.escape', ['$event'])
   escape(event: Event): void {
-    if (this.visible() && !this.confirming && !event.defaultPrevented) this.close();
+    if (this.visible() && !this.confirming && !this.routeConfirming() && !event.defaultPrevented) this.close();
   }
 
   roomCaption(area: GuideArea): string {

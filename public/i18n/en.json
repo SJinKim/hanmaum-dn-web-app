@@ -1794,7 +1794,11 @@
       "save": "Save changes",
       "reload": "Reload",
       "cancel": "Cancel",
-      "saveError": "Could not save. Check the inputs and try again."
+      "saveError": "Could not save. Check the inputs and try again.",
+      "discardTitle": "Discard changes?",
+      "discardMessage": "Your changes to this counting area have not been saved. Discard them and close the dialog?",
+      "discard": "Discard changes",
+      "waitForSave": "Saving is in progress. Please wait before leaving this page."
     }
   }
 }
