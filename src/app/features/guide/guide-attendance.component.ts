@@ -10,6 +10,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
 import { HasUnsavedChanges, UNSAVED_CHANGES_DIALOG_KEY } from '../../core/guards/unsaved-changes.guard';
+import { BreakpointService } from '../../core/ui/breakpoint.service';
 import { EmptyStateComponent } from '../../core/ui/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../core/ui/skeleton/skeleton.component';
 import { GuideAttendanceService } from './guide-attendance.service';
@@ -29,6 +30,7 @@ export class GuideAttendanceComponent implements HasUnsavedChanges {
   private readonly confirmation = inject(ConfirmationService);
   private readonly translate = inject(TranslateService);
   private readonly destroy = inject(DestroyRef);
+  readonly isDesktop = inject(BreakpointService).isDesktop;
   readonly editing = signal(false);
   readonly services = [1, 2, 3] as const;
   readonly selectedService = signal<GuideServiceNumber>(1);

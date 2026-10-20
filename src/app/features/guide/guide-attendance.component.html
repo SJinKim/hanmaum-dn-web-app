@@ -1,7 +1,7 @@
 <section class="flex min-w-0 flex-col gap-[var(--space-24)]" [attr.aria-busy]="state.loading()">
   <header class="flex flex-col gap-[var(--space-8)]">
-    <h1 class="hidden desktop:block type-h1 text-ink-strong">{{ (editing() ? 'guide.details.editTitle' : 'guide.details.title') | translate }}</h1>
-    <h1 class="desktop:hidden type-h2 text-ink-strong">{{ (editing() ? 'guide.details.editTitle' : 'guide.details.title') | translate }}</h1>
+    <h1 [class.hidden]="!isDesktop()" class=" type-h1 text-ink-strong">{{ (editing() ? 'guide.details.editTitle' : 'guide.details.title') | translate }}</h1>
+    <h1 [class.hidden]="isDesktop()" class=" type-h2 text-ink-strong">{{ (editing() ? 'guide.details.editTitle' : 'guide.details.title') | translate }}</h1>
     <p class="type-body-sm text-ink-muted">{{ (editing() ? 'guide.details.snapshotHelp' : 'guide.details.subtitle') | translate }}</p>
     <div class="flex flex-wrap gap-[var(--space-8)]">
       <a pButton severity="secondary" [outlined]="true" routerLink="/guide">{{ 'guide.reports.back' | translate }}</a>
@@ -102,7 +102,7 @@
           </dl>
         </div>
       }
-      <aside class="hidden desktop:block bg-[var(--color-badge-ministry-active-bg)] text-[var(--color-badge-ministry-active-fg)] rounded-[var(--radius-md)] p-[var(--space-16)] type-body-sm">{{ 'guide.details.youthRule' | translate }}</aside>
+      <aside [style.background]="'var(--color-badge-ministry-active-bg)'" [style.color]="'var(--color-badge-ministry-active-fg)'" [class.hidden]="!isDesktop()" class=" rounded-[var(--radius-md)] p-[var(--space-16)] type-body-sm">{{ 'guide.details.youthRule' | translate }}</aside>
       <p class="type-caption text-ink-muted" aria-live="polite">{{ 'guide.details.dayTotal' | translate }} {{ count(state.sum('totalCount')) }} · {{ 'guide.details.compatibleAdultCount' | translate }} {{ count(state.sum('compatibleAdultCount')) }} · {{ 'guide.details.schoolCount' | translate }} {{ count(state.sum('schoolCount')) }}</p>
       <div class="flex flex-col gap-[var(--space-4)]">
         <label for="guide-detail-notes" class="type-caption text-ink-strong">{{ 'guide.reports.notes' | translate }}</label>
@@ -116,11 +116,11 @@
           @if (hasServerErrors()) { <p class="type-body-sm text-ink-strong">{{ 'guide.details.serverValidation' | translate }}</p> }
         </div>
       }
-      <footer class="sticky bottom-0 z-10 -mx-[var(--space-16)] flex flex-col gap-[var(--space-8)] border-t border-line-subtle bg-surface p-[var(--space-16)] desktop:static desktop:mx-0 desktop:border-0 desktop:p-0">
+      <footer class="bottom-0 z-10 flex flex-col gap-[var(--space-8)] border-line-subtle bg-surface" [class]="isDesktop() ? 'mx-0 border-0 p-0' : 'sticky -mx-[var(--space-16)] border-t p-[var(--space-16)]'">
         <p class="type-caption text-ink-muted">{{ 'guide.details.draftHelp' | translate }}</p>
-        <div class="flex gap-[var(--space-12)] desktop:justify-end">
+        <div class="flex gap-[var(--space-12)]" [class.justify-end]="isDesktop()">
           <a pButton severity="secondary" [outlined]="true" routerLink="/guide">{{ 'guide.reports.cancel' | translate }}</a>
-          <p-button type="submit" class="flex-1 desktop:flex-none" styleClass="w-full" [label]="(editing() ? 'guide.reports.saveButton' : 'guide.details.save') | translate" [loading]="state.saving()"
+          <p-button type="submit" [class]="isDesktop() ? 'flex-none' : 'flex-1'" styleClass="w-full" [label]="(editing() ? 'guide.reports.saveButton' : 'guide.details.save') | translate" [loading]="state.saving()"
             [disabled]="state.saving() || state.loading() || !state.areas().length || !!state.removedAreas().length || state.overflow() || state.failure() === 'conflict' || state.failure() === 'notFound'" />
         </div>
       </footer>
