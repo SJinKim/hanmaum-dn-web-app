@@ -4,7 +4,7 @@ import { ChartComponent, ChartSeries, ChartType } from './chart.component';
 
 /** The computed Chart.js config is protected; the spec reads it through this view. */
 interface ChartInternals {
-  chartData(): { datasets: { label?: string; borderDash?: number[] }[] };
+  chartData(): { datasets: { label?: string; borderDash?: number[]; data?: (number | null)[]; spanGaps?: boolean }[] };
   chartOptions(): {
     plugins: { tooltip: { callbacks: { label(item: unknown): string } } };
     scales: { y?: { ticks: { callback(value: number): string } } };
@@ -22,6 +22,12 @@ describe('ChartComponent', () => {
     fixture.detectChanges();
     return fixture.componentInstance as unknown as ChartInternals;
   }
+
+  it('preserves null gaps and explicitly disables spanning them', () => {
+    const chart = render('line', [{ label: 'Total', data: [0, null, 7] }]);
+    expect(chart.chartData().datasets[0].data).toEqual([0, null, 7]);
+    expect(chart.chartData().datasets[0].spanGaps).toBeFalse();
+  });
 
   it('dashes only the series marked dashed', () => {
     const chart = render('line', [

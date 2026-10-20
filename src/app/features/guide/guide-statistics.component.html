@@ -1,0 +1,58 @@
+<section class="flex min-w-0 flex-col gap-[var(--space-24)]" [attr.aria-busy]="state.loading()">
+  <app-page-header [heading]="'guide.reports.title' | translate" [eyebrow]="'guide.reports.ministry' | translate" [subtitle]="'guide.statistics.subtitle' | translate" />
+  <nav class="flex border-b border-line" [attr.aria-label]="'guide.reports.ministry' | translate">
+    <a routerLink="/guide" class="px-[var(--space-16)] py-[var(--space-12)] type-body text-ink-muted">{{ 'guide.reports.records' | translate }}</a>
+    <a routerLink="/guide/statistics" aria-current="page" class="border-b-2 border-ink-strong px-[var(--space-16)] py-[var(--space-12)] type-body text-ink-strong">{{ 'guide.statistics.title' | translate }}</a>
+  </nav>
+  <div class="flex flex-wrap items-end gap-[var(--space-12)]">
+    <label class="flex flex-col gap-[var(--space-4)] type-caption text-ink-muted" for="statistics-year">{{ 'guide.reports.year' | translate }}
+      <p-select inputId="statistics-year" [options]="years" [ngModel]="state.year()" (ngModelChange)="state.load($event, '')" />
+    </label>
+    <label class="flex flex-col gap-[var(--space-4)] type-caption text-ink-muted" for="statistics-date">{{ 'guide.statistics.asOf' | translate }}
+      <p-datepicker inputId="statistics-date" dateFormat="yy.mm.dd" [showIcon]="true" [readonlyInput]="true" [minDate]="yearStart()" [maxDate]="yearEnd()" [ngModel]="cutoff()" (ngModelChange)="cutoffChanged($event)" appendTo="body" />
+    </label>
+    <p-button icon="pi pi-refresh" severity="secondary" [outlined]="true" [ariaLabel]="'guide.reports.retry' | translate" (onClick)="state.load()" />
+  </div>
+  @if (state.loading()) {
+    <div role="status"><span class="sr-only">{{ 'guide.reports.loading' | translate }}</span><app-skeleton variant="chart" /></div>
+  } @else if (state.failed()) {
+    <app-empty-state variant="error" [heading]="'guide.reports.loadFailed' | translate" [actionLabel]="'guide.reports.retry' | translate" (action)="state.load()" />
+  } @else if (state.data(); as data) {
+    <div class="grid grid-cols-2 gap-[var(--space-16)] desktop:grid-cols-4">
+      <app-stat-card [showIcon]="false" [label]="'guide.statistics.mean' | translate" [value]="format(metric(data.current, 'TOTAL')?.average)" [subtext]="'guide.statistics.current' | translate" />
+      <app-stat-card [showIcon]="false" [label]="'guide.statistics.samePercent' | translate" [value]="format(totalChange(), true)" [subtext]="'guide.statistics.previousSamePeriod' | translate" />
+      <app-stat-card [showIcon]="false" [label]="'guide.statistics.sum' | translate" [value]="format(metric(data.current, 'TOTAL')?.sum)" />
+      <app-stat-card [showIcon]="false" [label]="'guide.statistics.complete' | translate" [value]="format(data.current.completeCount)" [subtext]="('guide.statistics.incompleteCount' | translate:{count:data.current.incompleteCount})" />
+    </div>
+    @if (!data.current.reportCount) { <p role="status" class="type-body text-ink-muted">{{ 'guide.statistics.empty' | translate }}</p> }
+    <div class="flex flex-col gap-[var(--space-8)] rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card">
+      <h2 class="type-h3 text-ink-strong">{{ 'guide.statistics.coverage' | translate }}</h2>
+      @for (period of periods; track period) {
+        <p class="type-caption text-ink-muted"><strong>{{ ('guide.statistics.' + period) | translate }}</strong>: {{ date(data[period].from) }} – {{ date(data[period].to) }} · {{ 'guide.statistics.coverageCounts' | translate:{complete:data[period].completeCount, incomplete:data[period].incompleteCount, total:data[period].reportCount} }}
+          · {{ 'guide.statistics.observed' | translate }} {{ data[period].firstCompleteDate ? date(data[period].firstCompleteDate!) : '—' }} – {{ data[period].lastCompleteDate ? date(data[period].lastCompleteDate!) : '—' }}</p>
+      }
+      <p class="type-caption text-ink-muted">{{ 'guide.statistics.method' | translate }} · {{ data.timeZone }}</p>
+    </div>
+    <div role="region" tabindex="0" [attr.aria-label]="'guide.statistics.comparison' | translate" class="min-w-0 overflow-x-auto rounded-[var(--radius-lg)] border border-line-subtle bg-surface">
+      <table class="w-full min-w-[720px] type-body-sm">
+        <caption class="p-card text-left type-h3 text-ink-strong">{{ 'guide.statistics.comparison' | translate }}</caption>
+        <thead><tr class="border-b border-line-subtle"><th scope="col" class="p-3 text-left">{{ 'guide.statistics.category' | translate }}</th><th scope="col" class="p-3 text-left">{{ 'guide.statistics.basis' | translate }}</th>@for (key of keys; track key) { <th scope="col" class="p-3 text-right">{{ label(key) }}</th> }</tr></thead>
+        <tbody>@for (row of rows; track $index) {
+          <tr class="border-b border-line-subtle"><th scope="row" class="p-3 text-left">{{ ('guide.statistics.' + row.label) | translate }}</th><td class="p-3">{{ ('guide.statistics.' + row.field) | translate }}</td>
+            @for (key of keys; track key) { @let item = cell(row,key); <td class="p-3 text-right tabular-nums">{{ format(item.value, row.field === 'sharePercent' || row.field === 'percentChange') }}@if (item.reason) { <span class="block type-caption text-ink-muted">{{ ('guide.statistics.reasons.' + item.reason) | translate }}</span> }</td> }
+          </tr>
+        }</tbody>
+      </table>
+    </div>
+    <fieldset class="flex flex-wrap gap-[var(--space-16)]"><legend class="mb-2 type-caption text-ink-muted">{{ 'guide.statistics.visibleSeries' | translate }}</legend>@for (key of keys; track key) { <label class="flex items-center gap-2 type-body-sm text-ink-strong"><input type="checkbox" [checked]="visible().includes(key)" (change)="toggle(key)" />{{ label(key) }}</label> }</fieldset>
+    <app-chart [heading]="'guide.statistics.trend' | translate" [labels]="labels()" [series]="line()" [emptyHeading]="'guide.statistics.emptyChart' | translate" [emptyDescription]="'guide.statistics.gaps' | translate" />
+    <p class="type-caption text-ink-muted">{{ 'guide.statistics.gaps' | translate }}</p>
+    <div class="grid min-w-0 grid-cols-1 gap-[var(--space-24)] desktop:grid-cols-2">
+      <app-chart type="bar" [heading]="'guide.statistics.means' | translate" [labels]="serviceLabels()" [series]="bars()" [emptyHeading]="'guide.statistics.emptyChart' | translate" />
+      <app-chart type="donut" [heading]="'guide.statistics.shares' | translate" [labels]="shareLabels()" [series]="shares()" valueSuffix="%" [emptyHeading]="'guide.statistics.emptyShares' | translate" />
+    </div>
+    <details class="rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card"><summary class="cursor-pointer type-body text-ink-strong">{{ 'guide.statistics.timelineTable' | translate }}</summary>
+      <div class="overflow-x-auto"><table class="w-full min-w-[500px] type-body-sm"><thead><tr><th scope="col" class="p-2 text-left">{{ 'guide.reports.date' | translate }}</th>@for (key of keys; track key) { <th scope="col" class="p-2 text-right">{{ label(key) }}</th> }</tr></thead><tbody>@for (point of points(); track point.serviceDate) { <tr><th scope="row" class="p-2 text-left">{{ date(point.serviceDate) }}</th><td class="p-2 text-right">{{ format(point.service1Count) }}</td><td class="p-2 text-right">{{ format(point.service2Count) }}</td><td class="p-2 text-right">{{ format(point.service3Count) }}</td><td class="p-2 text-right">{{ format(point.totalCount) }}</td></tr> }</tbody></table></div>
+    </details>
+  }
+</section>

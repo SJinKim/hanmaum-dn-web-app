@@ -25,7 +25,7 @@ const CHART_JS_TYPE: Record<ChartType, 'line' | 'bar' | 'doughnut'> = {
 /** One series — `label` is what the legend shows, so it is never optional. */
 export interface ChartSeries {
   label: string;
-  data: number[];
+  data: (number | null)[];
   /** Draws the line dashed — the previous year in 성장 추이 (193:3961). */
   dashed?: boolean;
 }
@@ -107,7 +107,7 @@ export class ChartComponent implements AfterViewInit {
 
   protected readonly chartType = computed(() => CHART_JS_TYPE[this.type()]);
 
-  protected readonly isEmpty = computed(() => this.series().every(series => series.data.length === 0));
+  protected readonly isEmpty = computed(() => this.series().every(series => series.data.every(value => value === null)));
 
   protected readonly chartData = computed(() => {
     const palette = this.palette();
@@ -127,9 +127,10 @@ export class ChartComponent implements AfterViewInit {
         data: series.data,
         borderColor: palette.series[index % palette.series.length],
         backgroundColor: palette.series[index % palette.series.length],
+        spanGaps: false,
         borderWidth: 2,
         tension: 0.35,
-        pointRadius: 0,
+        pointRadius: this.type() === 'line' ? 2 : 0,
         borderRadius: 4,
         borderDash: series.dashed ? DASH : [],
       })),
@@ -174,7 +175,7 @@ export class ChartComponent implements AfterViewInit {
     const styles = getComputedStyle(this.host.nativeElement);
     const read = (token: string) => styles.getPropertyValue(token).trim();
     this.palette.set({
-      series: [read('--color-chart-series-1'), read('--color-chart-series-2')],
+      series: [read('--color-chart-series-1'), read('--color-chart-series-2'), read('--color-border-subtle'), read('--color-text-muted')],
       text: read('--color-text-muted'),
       grid: read('--color-border-subtle'),
     });

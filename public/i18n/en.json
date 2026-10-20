@@ -1854,6 +1854,57 @@
       "reload": "Reload latest record",
       "people": "{{count}}",
       "latestTotal": "Latest service total"
+    },
+    "statistics": {
+      "title": "Statistics",
+      "subtitle": "Worship counts, period averages and year comparisons",
+      "asOf": "As of",
+      "mean": "Mean attendance",
+      "sum": "Total visits",
+      "complete": "Complete reports",
+      "incompleteCount": "{{count}} incomplete reports",
+      "current": "Selected year to cutoff",
+      "previousSamePeriod": "Previous year, same calendar period",
+      "previousFullYear": "Previous full year",
+      "share": "Service shares",
+      "sameAbsolute": "Change vs same period",
+      "samePercent": "Change vs same period (%)",
+      "fullAbsolute": "Change vs previous full year",
+      "fullPercent": "Change vs previous full year (%)",
+      "coverage": "Reporting coverage",
+      "coverageCounts": "{{complete}} complete · {{incomplete}} incomplete / {{total}} reports",
+      "observed": "Complete reports from/to",
+      "method": "Means and shares include only reports with all three service counts. Real zero is included. Unknown counts remain missing.",
+      "comparison": "Period comparison",
+      "category": "Category",
+      "basis": "Measure",
+      "average": "Mean per complete report",
+      "sharePercent": "Share (%)",
+      "absoluteChange": "Difference in means",
+      "percentChange": "Change (%)",
+      "visibleSeries": "Visible series",
+      "trend": "Attendance by service date",
+      "means": "Mean attendance by service and period",
+      "shares": "Service shares in selected period",
+      "empty": "No reports in this period.",
+      "emptyChart": "No recorded values or no series selected",
+      "emptyShares": "Shares unavailable: no complete reports or total is zero",
+      "gaps": "Missing counts and missing weeks appear as gaps, not zero. Dates use the report date.",
+      "timelineTable": "Show chart values as a table",
+      "keys": {
+        "SERVICE_1": "Service 1",
+        "SERVICE_2": "Service 2",
+        "SERVICE_3": "Service 3",
+        "TOTAL": "Total"
+      },
+      "reasons": {
+        "NO_COMPLETE_REPORTS": "No complete reports",
+        "ZERO_TOTAL": "Total is zero",
+        "NO_CURRENT_DATA": "No current complete reports",
+        "NO_BASELINE_DATA": "No complete comparison reports",
+        "ZERO_BASELINE": "Comparison baseline is zero"
+      },
+      "visits": "visits"
     }
   }
 }
