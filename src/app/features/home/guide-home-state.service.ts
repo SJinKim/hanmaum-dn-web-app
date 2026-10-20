@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, Subject, catchError, switchMap, fromEvent, merge, of, timer, tap, finalize, shareReplay } from 'rxjs';
+import { Observable, Subject, catchError, switchMap, of, timer, tap, finalize, shareReplay } from 'rxjs';
 import { GuideHomeSnapshot } from '../../core/models/guide-home.model';
 import { GuideHomeApi } from '../../core/services/guide-home-api.service';
 
@@ -24,8 +24,13 @@ export class GuideHomeState {
     this.started = true;
     this.refresh.pipe(switchMap(() => this.fresh().pipe(catchError(() => of(null)))), takeUntilDestroyed(this.destroy)).subscribe();
     const window = this.document.defaultView;
-    if (window) merge(fromEvent(window, 'focus'), fromEvent(this.document, 'visibilitychange'))
-      .pipe(takeUntilDestroyed(this.destroy)).subscribe(() => { if (this.document.visibilityState === 'visible') this.reload(); });
+    const onVisible = () => { if (this.document.visibilityState === 'visible') this.reload(); };
+    window?.addEventListener('focus', onVisible);
+    this.document.addEventListener('visibilitychange', onVisible);
+    this.destroy.onDestroy(() => {
+      window?.removeEventListener('focus', onVisible);
+      this.document.removeEventListener('visibilitychange', onVisible);
+    });
     timer(30000, 30000).pipe(takeUntilDestroyed(this.destroy)).subscribe(() => {
       if (this.document.visibilityState === 'visible' && this.isSunday()) this.reload();
     });
