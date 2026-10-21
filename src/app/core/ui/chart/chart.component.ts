@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   ElementRef,
+  DestroyRef,
   inject,
   input,
   signal,
@@ -58,8 +59,8 @@ interface ChartPalette {
  * Chart.js paints onto a canvas and cannot resolve `var(--token)`, so the
  * palette is read with `getComputedStyle` off *this component's own host*, not
  * `document.documentElement` — that way a `[data-theme="dark"]` ancestor wins
- * and the sandbox can show both themes side by side. The read happens once in
- * `ngAfterViewInit` and lands in a signal; never read the DOM inside a
+ * and the sandbox can show both themes side by side. The initial read happens in
+ * `ngAfterViewInit` and theme changes refresh the signal; never read the DOM inside a
  * `computed()`.
  *
  * Empty and loading are States in Figma, not separate components: loading draws
@@ -91,6 +92,7 @@ interface ChartPalette {
 })
 export class ChartComponent implements AfterViewInit {
   readonly type = input<ChartType>('line');
+  readonly horizontal = input(false, { transform: booleanAttribute });
   readonly heading = input.required<string>();
   readonly labels = input<string[]>([]);
   readonly series = input<ChartSeries[]>([]);
@@ -101,6 +103,7 @@ export class ChartComponent implements AfterViewInit {
   readonly valueSuffix = input('');
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroy = inject(DestroyRef);
 
   /** Empty until `ngAfterViewInit` resolves the tokens off the host element. */
   private readonly palette = signal<ChartPalette>({ series: [], text: '', grid: '' });
@@ -147,6 +150,7 @@ export class ChartComponent implements AfterViewInit {
       border: { display: false },
     };
     return {
+      indexAxis: this.horizontal() ? 'y' as const : 'x' as const,
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -165,13 +169,25 @@ export class ChartComponent implements AfterViewInit {
         this.type() === 'donut'
           ? {}
           : {
-              x: axis,
-              y: { ...axis, beginAtZero: true, ticks: { ...axis.ticks, callback: withSuffix } },
+              x: this.horizontal() ? { ...axis, beginAtZero: true, ticks: { ...axis.ticks, callback: withSuffix } } : axis,
+              y: this.horizontal() ? axis : { ...axis, beginAtZero: true, ticks: { ...axis.ticks, callback: withSuffix } },
             },
     };
   });
 
   ngAfterViewInit(): void {
+    this.readPalette();
+    // Themes can change on the root or a local sandbox ancestor after mounting.
+    const observer = new MutationObserver(() => this.readPalette());
+    let ancestor: HTMLElement | null = this.host.nativeElement;
+    while (ancestor) {
+      observer.observe(ancestor, { attributes: true, attributeFilter: ['data-theme'] });
+      ancestor = ancestor.parentElement;
+    }
+    this.destroy.onDestroy(() => observer.disconnect());
+  }
+
+  private readPalette(): void {
     const styles = getComputedStyle(this.host.nativeElement);
     const read = (token: string) => styles.getPropertyValue(token).trim();
     this.palette.set({

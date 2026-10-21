@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
@@ -5,6 +6,7 @@ import { of, throwError } from 'rxjs';
 import { MemberSummary } from '../../core/models/member.model';
 import { NewcomerVisit } from '../../core/models/newcomer-visit.model';
 import { AuthService } from '../../core/services/auth.service';
+import { GuideHomeComponent } from './guide-home.component';
 import { HomeComponent } from './home.component';
 import { GroupAttendanceRow, HomeSnapshot, SundayCheckins, SundayGroupCounts } from './home.model';
 import { HomeService } from './home.service';
@@ -80,6 +82,9 @@ const ROWS: GroupAttendanceRow[] = [
   { groupPublicId: 'g-2', groupName: '2순', attended: 3, total: 10, ratio: 30, quickRecords: 0 },
 ];
 
+@Component({ selector: 'app-guide-home', standalone: true, template: 'Guide Home' })
+class GuideHomeStub {}
+
 interface Harness {
   fixture: ComponentFixture<HomeComponent>;
   home: jasmine.SpyObj<HomeService>;
@@ -108,6 +113,7 @@ function createHarness(
   const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
   router.navigate.and.resolveTo(true);
 
+  TestBed.overrideComponent(HomeComponent, { remove: { imports: [GuideHomeComponent] }, add: { imports: [GuideHomeStub] } });
   TestBed.configureTestingModule({
     imports: [HomeComponent],
     providers: [
@@ -131,6 +137,14 @@ function createHarness(
 }
 
 describe('HomeComponent', () => {
+  it('requests no member, check-in, RSVP or newcomer data for a Guide-only account', () => {
+    const { fixture, home } = createHarness(['GUIDE_EDITOR']);
+    expect(fixture.nativeElement.querySelector('app-guide-home')).not.toBeNull();
+    expect(home.loadSnapshot).toHaveBeenCalledWith({ pendingApprovals: false, awaitingRsvps: false, overview: false, recentActivity: false, upcomingEvents: false });
+    expect(home.loadGroupAttendance).not.toHaveBeenCalled(); expect(home.loadSundayCheckins).not.toHaveBeenCalled();
+    expect(home.loadSundayGroupCounts).not.toHaveBeenCalled(); expect(home.loadQuickRecords).not.toHaveBeenCalled();
+  });
+
   describe('groups (#222)', () => {
     const headers = (fixture: ComponentFixture<HomeComponent>) =>
       Array.from(fixture.nativeElement.querySelectorAll('app-accordion-section [aria-expanded]') as NodeListOf<HTMLElement>);
@@ -138,13 +152,13 @@ describe('HomeComponent', () => {
     beforeEach(() => localStorage.removeItem('dn-home-sections:hong'));
     afterEach(() => localStorage.removeItem('dn-home-sections:hong'));
 
-    it('shows an admin all four groups, expanded by default', () => {
+    it('shows an admin all five groups, expanded by default', () => {
       const { fixture, text } = createHarness(['ADMIN'], undefined, 'hong');
       const rendered = text();
-      for (const id of ['attention', 'sunday', 'newcomers', 'church']) {
+      for (const id of ['guide', 'attention', 'sunday', 'newcomers', 'church']) {
         expect(rendered).toContain(`home.groups.${id}`);
       }
-      expect(headers(fixture).map(h => h.getAttribute('aria-expanded'))).toEqual(['true', 'true', 'true', 'true']);
+      expect(headers(fixture).map(h => h.getAttribute('aria-expanded'))).toEqual(['true', 'true', 'true', 'true', 'true']);
     });
 
     it('leaves a group out when the role sees none of its blocks', () => {
@@ -161,15 +175,15 @@ describe('HomeComponent', () => {
 
     it('collapses a group on click and remembers it for the same user', () => {
       const first = createHarness(['ADMIN'], undefined, 'hong');
-      headers(first.fixture)[1].click();
+      headers(first.fixture)[2].click();
       first.fixture.detectChanges();
-      expect(headers(first.fixture)[1].getAttribute('aria-expanded')).toBe('false');
+      expect(headers(first.fixture)[2].getAttribute('aria-expanded')).toBe('false');
       expect(JSON.parse(localStorage.getItem('dn-home-sections:hong') ?? '[]')).toEqual(['sunday']);
       first.fixture.destroy();
       TestBed.resetTestingModule();
 
       const again = createHarness(['ADMIN'], undefined, 'hong');
-      expect(headers(again.fixture).map(h => h.getAttribute('aria-expanded'))).toEqual(['true', 'false', 'true', 'true']);
+      expect(headers(again.fixture).map(h => h.getAttribute('aria-expanded'))).toEqual(['true', 'true', 'false', 'true', 'true']);
     });
 
     it('keeps every group expanded when the stored state is unreadable', () => {
@@ -415,7 +429,8 @@ describe('HomeComponent', () => {
       home.loadSundayGroupCounts.and.returnValue(of(SUNDAY_COUNTS));
       home.loadSundayCheckins.and.returnValue(of(CHECKINS));
       home.loadQuickRecords.and.returnValue(of(visitPage(0)));
-      TestBed.configureTestingModule({
+      TestBed.overrideComponent(HomeComponent, { remove: { imports: [GuideHomeComponent] }, add: { imports: [GuideHomeStub] } });
+  TestBed.configureTestingModule({
         imports: [HomeComponent],
         providers: [
           provideRouter([{ path: '**', children: [] }]),
