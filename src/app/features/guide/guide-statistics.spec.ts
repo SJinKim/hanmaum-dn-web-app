@@ -1,4 +1,7 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { NgZone, provideZoneChangeDetection } from '@angular/core';
+import { By } from '@angular/platform-browser';
+import { DatePicker } from 'primeng/datepicker';
 import { provideRouter } from '@angular/router';
 import { Subject } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
@@ -81,7 +84,7 @@ describe('Guide statistics presentation uses API aggregates', () => {
         shareReason: null })) };
   }
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideTranslateService(), provideRouter([]),
+    TestBed.configureTestingModule({ providers: [provideZoneChangeDetection({ eventCoalescing: true }), provideTranslateService(), provideRouter([]),
       { provide: ApiService, useValue: { get: () => new Subject<GuideStatistics>() } },
     ] });
     component = TestBed.createComponent(GuideStatisticsComponent).componentInstance;
@@ -89,6 +92,55 @@ describe('Guide statistics presentation uses API aggregates', () => {
       current: period(100), previousSamePeriod: period(90), previousFullYear: period(95),
       changesFromSamePeriod: GUIDE_STATISTIC_KEYS.map(key => ({ key, absoluteChange: 10, absoluteReason: null, percentChange: null, percentReason: 'ZERO_BASELINE' })),
       changesFromFullYear: [], timeline: [point('2026-10-04', 0), point('2026-10-18', 7)] });
+  });
+  it('keeps date filter inputs stable until their source changes', () => {
+    component.state.asOf.set('2026-10-18');
+    expect(component.cutoff()).toBe(component.cutoff());
+    expect(component.yearStart()).toBe(component.yearStart());
+    expect(component.yearEnd()).toBe(component.yearEnd());
+  });
+  it('updates date filter values when changing year, selecting or clearing a cutoff', () => {
+    component.state.load(2025, '');
+    expect(component.cutoff()).toBeNull();
+    expect(component.yearStart()).toEqual(new Date(2025, 0, 1));
+    expect(component.yearEnd()).toEqual(new Date(2025, 11, 31));
+    component.cutoffChanged(new Date(2025, 5, 15));
+    expect(component.state.year()).toBe(2025);
+    expect(component.state.asOf()).toBe('2025-06-15');
+    expect(component.cutoff()).toEqual(new Date(2025, 5, 15, 12));
+    component.cutoffChanged(null);
+    expect(component.cutoff()).toBeNull();
+  });
+  it('does not rewrite the date picker model on unrelated render checks', fakeAsync(() => {
+    const fixture = TestBed.createComponent(GuideStatisticsComponent);
+    fixture.componentInstance.state.asOf.set('2026-10-18');
+    fixture.detectChanges();
+    flushMicrotasks();
+    const picker = fixture.debugElement.query(By.directive(DatePicker)).componentInstance as DatePicker;
+    const write = spyOn(picker, 'writeValue').and.callThrough();
+    fixture.detectChanges();
+    flushMicrotasks();
+    fixture.detectChanges();
+    flushMicrotasks();
+    expect(write).not.toHaveBeenCalled();
+  }));
+  it('settles after rendering a full year with the real date picker and charts', async () => {
+    const response = new Subject<GuideStatistics>();
+    const get = spyOn(TestBed.inject(ApiService), 'get').and.returnValue(response.asObservable());
+    const fixture = TestBed.createComponent(GuideStatisticsComponent);
+    const data = component.state.data()!;
+    const timeline = Array.from({ length: 52 }, (_, week) => {
+      const date = new Date(Date.UTC(2026, 0, 4 + week * 7));
+      return point(date.toISOString().slice(0, 10), week === 20 ? null : week * 10);
+    });
+    fixture.autoDetectChanges();
+    await fixture.whenStable();
+    TestBed.inject(NgZone).run(() => response.next({ ...data, asOf: '2026-12-27', timeline }));
+    await fixture.whenStable();
+    expect(fixture.isStable()).toBeTrue();
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.querySelectorAll('canvas').length).toBe(3);
+    expect(fixture.nativeElement.querySelector('#statistics-date').value).toBe('2026.12.27');
   });
   it('keeps chart input identities stable until source or language changes', () => {
     expect(component.line()).toBe(component.line()); expect(component.bars()).toBe(component.bars());

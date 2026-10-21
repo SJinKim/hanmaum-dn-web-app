@@ -25,14 +25,18 @@ export class GuideStatisticsComponent {
   private readonly language = toSignal(this.translate.onLangChange);
   readonly keys = GUIDE_STATISTIC_KEYS;
   readonly years = Array.from({ length: Math.max(1, new Date().getFullYear() - 2020) }, (_, index) => new Date().getFullYear() - index);
-  cutoff(): Date | null { const value = this.state.asOf(); return value ? new Date(value + 'T12:00:00') : null; }
+  // NgModel schedules another render when its input identity changes.
+  readonly cutoff = computed(() => {
+    const value = this.state.asOf();
+    return value ? new Date(value + 'T12:00:00') : null;
+  });
   cutoffChanged(value: Date | null): void {
     if (!value) { this.state.load(this.state.year(), ''); return; }
     const date = [value.getFullYear(), String(value.getMonth() + 1).padStart(2, '0'), String(value.getDate()).padStart(2, '0')].join('-');
     this.state.load(value.getFullYear(), date);
   }
-  yearStart(): Date { return new Date(this.state.year(), 0, 1); }
-  yearEnd(): Date { return new Date(this.state.year(), 11, 31); }
+  readonly yearStart = computed(() => new Date(this.state.year(), 0, 1));
+  readonly yearEnd = computed(() => new Date(this.state.year(), 11, 31));
   readonly visible = signal<GuideStatisticKey[]>([...GUIDE_STATISTIC_KEYS]);
   readonly periods = ['current', 'previousSamePeriod', 'previousFullYear'] as const;
   readonly rows = [
