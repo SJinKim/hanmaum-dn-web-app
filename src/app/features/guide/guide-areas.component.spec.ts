@@ -1,4 +1,4 @@
-import { CanDeactivateFn, provideRouter } from '@angular/router';
+import { CanDeactivateFn, Router, provideRouter } from '@angular/router';
 import { GUIDE_ROUTES } from './guide.routes';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -9,6 +9,7 @@ import { ConfirmationService } from 'primeng/api';
 import { RoleService } from '../../core/services/role.service';
 import { GuideAreasComponent } from './guide-areas.component';
 import { GuideArea } from './guide-area.model';
+import { GuideAttendanceDraft } from './guide-attendance.service';
 
 const area: GuideArea = { areaPublicId: 'a', roomPublicId: 'room', roomName: 'Sanctuary', label: 'A', displayOrder: 0, active: true, version: 3 };
 
@@ -31,6 +32,14 @@ describe('Guide area management interactions', () => {
       ? [{ publicId: 'room', name: 'Sanctuary', floorPublicId: 'floor', floorName: '1F' }] : [] });
     fixture.detectChanges(); return fixture;
   }
+  it('keeps the attendance draft only when returning to the new-entry form', () => {
+    const draft = TestBed.inject(GuideAttendanceDraft), router = TestBed.inject(Router);
+    draft.value = { dirty: true, date: null, notes: '', areas: [], entries: [] };
+    const back = spyOn(router, 'currentNavigation').and.returnValue({ finalUrl: router.parseUrl('/guide/attendance/new?x=1') } as never);
+    create().destroy(); expect(draft.value).not.toBeNull();
+    back.and.returnValue({ finalUrl: router.parseUrl('/members') } as never);
+    create().destroy(); expect(draft.value).toBeNull();
+  });
   it('hides write controls from viewers and guards imperative open', () => {
     writable = false; const f = create(); expect(f.nativeElement.querySelector('[data-testid="add-area"]')).toBeNull();
     f.componentInstance.open(area); expect(f.componentInstance.visible()).toBeFalse();

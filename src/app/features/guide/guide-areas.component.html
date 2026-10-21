@@ -1,6 +1,6 @@
 <section class="p-page flex min-w-0 flex-col gap-[var(--space-20)]">
   <header class="flex flex-col gap-[var(--space-16)]">
-    <a class="self-start" pButton severity="secondary" [outlined]="true" routerLink="/guide">{{ 'guide.reports.back' | translate }}</a>
+    <a class="self-start" pButton severity="secondary" [outlined]="true" [routerLink]="returnTo">{{ (returnTo === '/guide' ? 'guide.reports.back' : 'guide.details.backToEntry') | translate }}</a>
     <h1 class="type-h2 text-ink-strong">{{ 'guide.areas.title' | translate }}</h1>
     <p class="type-body-sm text-ink-muted">{{ 'guide.areas.subtitle' | translate }}</p>
   </header>

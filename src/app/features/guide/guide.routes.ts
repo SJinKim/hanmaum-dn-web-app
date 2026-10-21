@@ -15,7 +15,11 @@ export const GUIDE_ROUTES: Routes = [
   },
   {
     path: 'records/:publicId/edit', canActivate: [featureGuard('guide', 'write')], canDeactivate: [guideFormGuard],
-    loadComponent: () => import('./guide-summary-editor.component').then(m => m.GuideSummaryEditorComponent),
+    loadComponent: () => import('./guide-report-editor.component').then(m => m.GuideReportEditorComponent),
+  },
+  {
+    path: 'attendance/new', canActivate: [featureGuard('guide', 'write')], canDeactivate: [guideFormGuard],
+    loadComponent: () => import('./guide-attendance.component').then(m => m.GuideAttendanceComponent),
   },
   { path: 'statistics', canActivate: [featureGuard('guide')], loadComponent: () => import('./guide-statistics.component').then(m => m.GuideStatisticsComponent) },
 ];

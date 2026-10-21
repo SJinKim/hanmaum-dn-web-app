@@ -50,17 +50,18 @@ describe('Guide report UI and route protection', () => {
     confirmation.calls.mostRecent().args[0].reject?.(); expect(await result).toBeFalse(); expect(c.state.form.dirty).toBeTrue();
     c.state.saving.set(true);
     expect(TestBed.runInInjectionContext(() => guard(c, {} as never, {} as never, {} as never))).toBeFalse(); expect(c.navigationBlocked()).toBeTrue();
+    c.state.saving.set(false); TestBed.tick(); expect(c.navigationBlocked()).toBeFalse();
     writable = false; const editGuard = GUIDE_ROUTES[2].canActivate![0] as CanActivateFn;
     expect(TestBed.runInInjectionContext(() => editGuard({} as never, {} as never))).not.toBeTrue();
     TestBed.inject(HttpTestingController).verify();
   });
-  it('keeps summary-only and detailed actions distinct and requires confirmation before deletion', () => {
+  it('links both modes to the shared editor and requires confirmation before deletion', () => {
     const state = TestBed.inject(GuideHistoryService); spyOn(state, 'load');
     state.page.set(reportPage([reportFixture, { ...reportFixture, publicId: 'detail', reportMode: 'DETAILED', service1Count: null, service2Count: 0 }]));
     state.years.set([2026]); state.loading.set(false); const remove = spyOn(state, 'remove').and.returnValue(of(undefined));
     const f = TestBed.createComponent(GuideHistoryComponent); f.detectChanges();
-    // Two management links, statistics navigation and summary edit in table/card.
-    expect(f.debugElement.queryAll(By.directive(RouterLink)).length).toBe(5);
+    // Management, statistics, new-entry and both edit modes in table/cards.
+    expect(f.debugElement.queryAll(By.directive(RouterLink)).length).toBe(9);
     const spy = spyOn(TestBed.inject(ConfirmationService), 'confirm'); f.componentInstance.confirmDelete(reportFixture);
     expect(remove).not.toHaveBeenCalled(); spy.calls.mostRecent().args[0].reject?.(); expect(remove).not.toHaveBeenCalled();
     f.componentInstance.confirmDelete(reportFixture); spy.calls.mostRecent().args[0].accept?.(); expect(remove).toHaveBeenCalledOnceWith(reportFixture);
