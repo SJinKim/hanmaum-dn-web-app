@@ -3,7 +3,6 @@
 
   Deviations from the frame, forced by the contract (`CreateNewcomerRequest`):
   - 이름 is two inputs (성 / 이름) — the server keeps lastName and firstName apart.
-  - 주소 is one line bound to `street`; houseNumber, zipCode and city stay as they are.
   - 등반일 is not here: `NewcomerResponse` carries no graduation date, it is set in the 등반 dialog.
 -->
 <div class="flex min-h-px flex-1 flex-col gap-gutter">
@@ -193,11 +192,34 @@
             <input id="newcomerKakao" pInputText formControlName="kakaoId" class="w-full" />
           </div>
 
-          <div class="flex flex-col gap-[var(--space-4)]">
-            <label for="newcomerAddress" class="type-caption text-ink-muted">
-              {{ 'newcomers.fields.address' | translate }}
-            </label>
-            <input id="newcomerAddress" pInputText formControlName="street" class="w-full" />
+          <div class="flex gap-[var(--space-12)]">
+            <div class="flex min-w-0 flex-[7] flex-col gap-[var(--space-4)]">
+              <label for="newcomerStreet" class="type-caption text-ink-muted">
+                {{ 'newcomers.fields.street' | translate }}
+              </label>
+              <input id="newcomerStreet" pInputText formControlName="street" class="w-full" />
+            </div>
+            <div class="flex min-w-0 flex-[3] flex-col gap-[var(--space-4)]">
+              <label for="newcomerHouseNumber" class="type-caption text-ink-muted">
+                {{ 'newcomers.fields.houseNumber' | translate }}
+              </label>
+              <input id="newcomerHouseNumber" pInputText formControlName="houseNumber" class="w-full" />
+            </div>
+          </div>
+
+          <div class="flex gap-[var(--space-12)]">
+            <div class="flex min-w-0 flex-[3] flex-col gap-[var(--space-4)]">
+              <label for="newcomerZipCode" class="type-caption text-ink-muted">
+                {{ 'newcomers.fields.zipCode' | translate }}
+              </label>
+              <input id="newcomerZipCode" pInputText formControlName="zipCode" placeholder="00000" class="w-full" />
+            </div>
+            <div class="flex min-w-0 flex-[7] flex-col gap-[var(--space-4)]">
+              <label for="newcomerCity" class="type-caption text-ink-muted">
+                {{ 'newcomers.fields.city' | translate }}
+              </label>
+              <input id="newcomerCity" pInputText formControlName="city" class="w-full" />
+            </div>
           </div>
 
           <div class="flex flex-col gap-[var(--space-4)]">

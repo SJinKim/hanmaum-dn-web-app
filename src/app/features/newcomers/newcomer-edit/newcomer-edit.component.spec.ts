@@ -127,6 +127,28 @@ describe('NewcomerEditComponent', () => {
     expect(component.notFound()).toBeTrue();
   });
 
+  it('loads and returns all four address fields', () => {
+    const { component } = setup('n-1');
+    service.getNewcomer.and.returnValue(of(newcomerFixture({
+      street: 'Hauptstraße', houseNumber: '12a', zipCode: '60313', city: 'Frankfurt',
+    })));
+    service.updateNewcomer.and.returnValue(of(newcomerFixture()));
+    component.ngOnInit();
+
+    expect(component.form.get('street')!.value).toBe('Hauptstraße');
+    expect(component.form.get('houseNumber')!.value).toBe('12a');
+    expect(component.form.get('zipCode')!.value).toBe('60313');
+    expect(component.form.get('city')!.value).toBe('Frankfurt');
+
+    component.save();
+
+    const [, request] = service.updateNewcomer.calls.mostRecent().args;
+    expect(request.street).toBe('Hauptstraße');
+    expect(request.houseNumber).toBe('12a');
+    expect(request.zipCode).toBe('60313');
+    expect(request.city).toBe('Frankfurt');
+  });
+
   it('syncs the segmented gender control into the form', () => {
     const { component } = setup(null);
     component.onGenderChange('F');
