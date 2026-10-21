@@ -1,5 +1,6 @@
 <section class="flex min-w-0 flex-col gap-[var(--space-24)]" [attr.aria-busy]="state.loading()">
   <app-page-header class="hidden tablet:block" [heading]="'guide.reports.title' | translate" [eyebrow]="'guide.reports.ministry' | translate" [subtitle]="'guide.reports.subtitle' | translate">
+    @if (canWrite()) { <a appActions pButton routerLink="attendance/new">{{ 'guide.details.title' | translate }}</a> }
     <a appActions pButton severity="secondary" [outlined]="true" routerLink="counting-areas">{{ 'guide.areas.title' | translate }}</a>
   </app-page-header>
   <header class="flex flex-col gap-[var(--space-8)] tablet:hidden">
@@ -7,6 +8,7 @@
     <h1 class="type-h2 text-ink-strong">{{ 'guide.reports.title' | translate }}</h1>
     <p class="type-body-sm text-ink-muted">{{ 'guide.reports.subtitle' | translate }}</p>
     <a pButton severity="secondary" [outlined]="true" routerLink="counting-areas">{{ 'guide.areas.title' | translate }}</a>
+    @if (canWrite()) { <a pButton routerLink="attendance/new">{{ 'guide.details.title' | translate }}</a> }
   </header>
   <div class="border-b border-line"><span class="inline-block border-b-2 border-ink-strong px-[var(--space-16)] py-[var(--space-12)] type-body text-ink-strong">{{ 'guide.reports.records' | translate }}</span></div>
   @if (state.notice(); as notice) { <p role="alert" class="type-body-sm text-ink-strong">{{ ('guide.reports.' + notice) | translate }}</p> }
@@ -48,7 +50,7 @@
           <td class="!text-right font-bold tabular-nums">{{ count(report.totalCount) }}</td><td class="!text-right tabular-nums">{{ delta(report.previousWeekDelta) }}</td>
           <td class="whitespace-pre-wrap break-words">{{ report.notes ?? '—' }}</td>
           @if (canWrite()) { <td><div class="flex items-center">
-            @if (report.reportMode === 'SUMMARY_ONLY') { <p-button icon="pi pi-pencil" [text]="true" severity="secondary" [pTooltip]="'guide.reports.edit' | translate" [ariaLabel]="('guide.reports.edit' | translate) + ' ' + date(report.serviceDate)" [routerLink]="['records',report.publicId,'edit']" [disabled]="state.deleting()" /> }
+            <p-button icon="pi pi-pencil" [text]="true" severity="secondary" [pTooltip]="'guide.reports.edit' | translate" [ariaLabel]="('guide.reports.edit' | translate) + ' ' + date(report.serviceDate)" [routerLink]="['records',report.publicId,'edit']" [disabled]="state.deleting()" />
             <p-button icon="pi pi-trash" [text]="true" severity="danger" [pTooltip]="'guide.reports.delete' | translate" [ariaLabel]="('guide.reports.delete' | translate) + ' ' + date(report.serviceDate)" [disabled]="state.deleting()" (onClick)="confirmDelete(report)" />
           </div></td> }
         </tr></ng-template>
@@ -66,7 +68,7 @@
           <p class="type-body-sm text-ink-muted whitespace-pre-wrap break-words">{{ report.notes ?? '—' }}</p>
           @if (canWrite()) {
             <div class="flex gap-[var(--space-8)]">
-              @if (report.reportMode === 'SUMMARY_ONLY') { <a class="flex-1" pButton severity="secondary" [outlined]="true" [routerLink]="['records',report.publicId,'edit']">{{ 'guide.reports.edit' | translate }}</a> }
+              <a class="flex-1" pButton severity="secondary" [outlined]="true" [routerLink]="['records',report.publicId,'edit']">{{ 'guide.reports.edit' | translate }}</a>
               <p-button icon="pi pi-trash" [text]="true" severity="danger" [pTooltip]="'guide.reports.delete' | translate" [ariaLabel]="('guide.reports.delete' | translate) + ' ' + date(report.serviceDate)" [disabled]="state.deleting()" (onClick)="confirmDelete(report)" />
             </div>
           }
