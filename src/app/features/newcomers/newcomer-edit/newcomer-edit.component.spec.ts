@@ -100,6 +100,38 @@ describe('NewcomerEditComponent', () => {
     expect(request.version).toBe(4);
   });
 
+  it('sends an emptied address field as an empty string in edit mode', () => {
+    const { component } = setup('n-1');
+    service.getNewcomer.and.returnValue(of(newcomerFixture({
+      street: 'Hauptstraße', houseNumber: '7a', zipCode: '80331', city: 'München',
+    })));
+    component.ngOnInit();
+    service.updateNewcomer.and.returnValue(of(newcomerFixture()));
+    component.form.patchValue({ street: '', houseNumber: '  ', zipCode: '', city: 'Berlin' });
+
+    component.save();
+
+    const request = service.updateNewcomer.calls.mostRecent().args[1];
+    expect(request.street).toBe('');
+    expect(request.houseNumber).toBe('');
+    expect(request.zipCode).toBe('');
+    expect(request.city).toBe('Berlin');
+  });
+
+  it('leaves an empty address field out of a create', () => {
+    const { component } = setup(null);
+    service.createNewcomer.and.returnValue(of(newcomerFixture({ publicId: 'n-new' })));
+    fillRequired(component);
+
+    component.save();
+
+    const request = service.createNewcomer.calls.mostRecent().args[0];
+    expect(request.street).toBeUndefined();
+    expect(request.houseNumber).toBeUndefined();
+    expect(request.zipCode).toBeUndefined();
+    expect(request.city).toBeUndefined();
+  });
+
   it('shows the conflict toast on 409', () => {
     const { component, messages, router } = setup('n-1');
     service.updateNewcomer.and.returnValue(throwError(() => ({ status: 409 })));
