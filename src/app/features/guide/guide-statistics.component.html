@@ -14,9 +14,9 @@
     <p-button icon="pi pi-refresh" severity="secondary" [outlined]="true" [ariaLabel]="'guide.reports.retry' | translate" (onClick)="state.load()" />
   </div>
   @if (state.loading()) {
-    <div role="status"><span class="sr-only">{{ 'guide.reports.loading' | translate }}</span><app-skeleton variant="chart" /></div>
+    <div role="status"><span class="sr-only">{{ 'guide.statistics.loading' | translate }}</span><app-skeleton variant="chart" /></div>
   } @else if (state.failed()) {
-    <app-empty-state variant="error" [heading]="'guide.reports.loadFailed' | translate" [actionLabel]="'guide.reports.retry' | translate" (action)="state.load()" />
+    <app-empty-state variant="error" [heading]="'guide.statistics.loadFailed' | translate" [actionLabel]="'guide.reports.retry' | translate" (action)="state.load()" />
   } @else if (state.data(); as data) {
     <div class="grid grid-cols-2 gap-[var(--space-16)] desktop:grid-cols-4">
       <app-stat-card [showIcon]="false" [label]="'guide.statistics.mean' | translate" [value]="format(metric(data.current, 'TOTAL')?.average)" [subtext]="'guide.statistics.current' | translate" />

@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -21,6 +22,7 @@ import { GuideStatisticsService } from './guide-statistics.service';
 export class GuideStatisticsComponent {
   readonly state = inject(GuideStatisticsService);
   private readonly translate = inject(TranslateService);
+  private readonly language = toSignal(this.translate.onLangChange);
   readonly keys = GUIDE_STATISTIC_KEYS;
   readonly years = Array.from({ length: Math.max(1, new Date().getFullYear() - 2020) }, (_, index) => new Date().getFullYear() - index);
   cutoff(): Date | null { const value = this.state.asOf(); return value ? new Date(value + 'T12:00:00') : null; }
@@ -42,9 +44,10 @@ export class GuideStatisticsComponent {
   ] as const;
   readonly points = computed(() => guideTimelineWithGaps(this.state.data()?.timeline ?? []));
   constructor() { this.state.load(); }
-  label(key: GuideStatisticKey): string { return this.translate.instant('guide.statistics.keys.' + key); }
-  text(key: string): string { return this.translate.instant('guide.statistics.' + key); }
+  label(key: GuideStatisticKey): string { this.language(); return this.translate.instant('guide.statistics.keys.' + key); }
+  text(key: string): string { this.language(); return this.translate.instant('guide.statistics.' + key); }
   format(value: number | null | undefined, percent = false): string {
+    this.language();
     return value == null ? '—' : value.toLocaleString(this.translate.getCurrentLang() === 'ko' ? 'ko-KR' : 'en-US', { maximumFractionDigits: 1 }) + (percent ? '%' : '');
   }
   metric(period: GuideStatisticPeriod, key: GuideStatisticKey) { return period.metrics.find(metric => metric.key === key); }
@@ -58,27 +61,27 @@ export class GuideStatisticsComponent {
     return { value: change?.[row.field] ?? null, reason: (row.field === 'absoluteChange' ? change?.absoluteReason : change?.percentReason) ?? null };
   }
   toggle(key: GuideStatisticKey): void { this.visible.update(keys => keys.includes(key) ? keys.filter(item => item !== key) : [...keys, key]); }
-  line(): ChartSeries[] {
+  readonly line = computed((): ChartSeries[] => {
     return this.keys.filter(key => this.visible().includes(key)).map(key => ({ label: this.label(key),
       data: this.points().map(point => key === 'TOTAL' ? point.totalCount : point[({ SERVICE_1: 'service1Count', SERVICE_2: 'service2Count', SERVICE_3: 'service3Count' } as const)[key]]) }));
-  }
-  bars(): ChartSeries[] {
+  });
+  readonly bars = computed((): ChartSeries[] => {
     const data = this.state.data(); return data ? this.periods.map(period => ({ label: this.text(period),
       data: this.keys.slice(0, 3).map(key => this.metric(data[period], key)?.average ?? null) })) : [];
-  }
-  shares(): ChartSeries[] {
+  });
+  readonly shares = computed((): ChartSeries[] => {
     const period = this.state.data()?.current;
     return [{ label: this.text('share'), data: this.keys.slice(0, 3).map(key => period ? this.metric(period, key)?.sharePercent ?? null : null) }];
-  }
-  labels(): string[] { return this.points().map(point => point.serviceDate); }
-  shareLabels(): string[] {
+  });
+  readonly labels = computed((): string[] => { return this.points().map(point => point.serviceDate); });
+  readonly shareLabels = computed((): string[] => {
     const period = this.state.data()?.current;
     return this.keys.slice(0, 3).map(key => {
       const metric = period ? this.metric(period, key) : null;
       return `${this.label(key)} · ${this.format(metric?.sharePercent, true)} · ${this.format(metric?.sum)} ${this.text('visits')}`;
     });
-  }
-  serviceLabels(): string[] { return this.keys.slice(0, 3).map(key => this.label(key)); }
+  });
+  readonly serviceLabels = computed((): string[] => { return this.keys.slice(0, 3).map(key => this.label(key)); });
   totalChange(): number | null { return this.state.data()?.changesFromSamePeriod.find(change => change.key === 'TOTAL')?.percentChange ?? null; }
   date(value: string): string { return value.replaceAll('-', '.'); }
 }

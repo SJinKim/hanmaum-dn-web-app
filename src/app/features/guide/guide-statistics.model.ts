@@ -32,7 +32,7 @@ export function guideTimelineWithGaps(points: GuideStatisticPoint[]): GuideStati
     const previous = result.at(-1);
     if (previous) {
       const next = new Date(previous.serviceDate + 'T00:00:00Z');
-      next.setUTCDate(next.getUTCDate() + 7);
+      next.setUTCDate(next.getUTCDate() + (7 - next.getUTCDay()));
       while (next.toISOString().slice(0, 10) < point.serviceDate) {
         result.push({ serviceDate: next.toISOString().slice(0, 10), service1Count: null, service2Count: null,
           service3Count: null, totalCount: null, complete: false });

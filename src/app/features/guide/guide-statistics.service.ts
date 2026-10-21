@@ -10,6 +10,7 @@ export class GuideStatisticsService {
   private readonly requests = new Subject<{ year: number; asOf?: string }>();
   readonly year = signal(new Date().getFullYear());
   readonly asOf = signal('');
+  private readonly requestedAsOf = signal('');
   readonly data = signal<GuideStatistics | null>(null);
   readonly loading = signal(false);
   readonly failed = signal(false);
@@ -22,10 +23,10 @@ export class GuideStatisticsService {
       if (result.data) this.asOf.set(result.data.asOf);
     });
   }
-  load(year = this.year(), asOf = this.asOf()): void {
+  load(year = this.year(), asOf = this.requestedAsOf()): void {
     if (!Number.isInteger(year) || year < 2 || year > 9999) return;
     if (asOf && (!/^\d{4}-\d{2}-\d{2}$/.test(asOf) || Number(asOf.slice(0, 4)) !== year)) return;
-    this.year.set(year); this.asOf.set(asOf); this.data.set(null); this.failed.set(false); this.loading.set(true);
+    this.year.set(year); this.requestedAsOf.set(asOf); this.asOf.set(asOf); this.data.set(null); this.failed.set(false); this.loading.set(true);
     this.requests.next(asOf ? { year, asOf } : { year });
   }
 }

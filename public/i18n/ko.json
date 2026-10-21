@@ -1856,6 +1856,8 @@
       "latestTotal": "최근 예배 합계"
     },
     "statistics": {
+      "loading": "통계를 불러오는 중…",
+      "loadFailed": "통계를 불러오지 못했습니다.",
       "title": "통계",
       "subtitle": "예배 인원 집계 · 기간별 평균 및 전년 비교",
       "asOf": "기준일",

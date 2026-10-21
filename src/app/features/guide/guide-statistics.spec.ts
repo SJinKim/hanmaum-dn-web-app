@@ -19,6 +19,10 @@ describe('Guide statistics data and request lifecycle', () => {
     expect(source.length).toBe(3);
     expect(result[1].complete).toBeFalse();
   });
+  it('anchors missing dates to Sundays across special weekday reports', () => {
+    const result = guideTimelineWithGaps([point('2026-12-20', 3), point('2026-12-25', 4), point('2027-01-10', 5)]);
+    expect(result.map(item => item.serviceDate)).toEqual(['2026-12-20', '2026-12-25', '2026-12-27', '2027-01-03', '2027-01-10']);
+  });
   it('handles empty and consecutive timelines without invented reports', () => {
     expect(guideTimelineWithGaps([])).toEqual([]);
     const source = [point('2026-10-04', 0), point('2026-10-11', null)];
@@ -38,6 +42,12 @@ describe('Guide statistics data and request lifecycle', () => {
     state.load(2026, '');
     expect(api.get).toHaveBeenCalledWith('/v1/guide/worship-counts/statistics', { year: 2026 });
     requests[0].next(response(2026)); expect(state.asOf()).toBe('2026-10-18'); expect(state.loading()).toBeFalse();
+  });
+  it('refreshes and retries automatic cutoffs without pinning the resolved date', () => {
+    state.load(2026, ''); requests[0].next(response(2026)); state.load();
+    expect(api.get.calls.mostRecent().args[1]).toEqual({ year: 2026 });
+    requests[1].error(new Error('offline')); state.load();
+    expect(api.get.calls.mostRecent().args[1]).toEqual({ year: 2026 });
   });
   it('cancels stale responses and clears previous data immediately on filter change', () => {
     state.load(2026, ''); requests[0].next(response(2026));
@@ -79,6 +89,15 @@ describe('Guide statistics presentation uses API aggregates', () => {
       current: period(100), previousSamePeriod: period(90), previousFullYear: period(95),
       changesFromSamePeriod: GUIDE_STATISTIC_KEYS.map(key => ({ key, absoluteChange: 10, absoluteReason: null, percentChange: null, percentReason: 'ZERO_BASELINE' })),
       changesFromFullYear: [], timeline: [point('2026-10-04', 0), point('2026-10-18', 7)] });
+  });
+  it('keeps chart input identities stable until source or language changes', () => {
+    expect(component.line()).toBe(component.line()); expect(component.bars()).toBe(component.bars());
+    expect(component.shares()).toBe(component.shares()); expect(component.labels()).toBe(component.labels());
+    expect(component.shareLabels()).toBe(component.shareLabels()); expect(component.serviceLabels()).toBe(component.serviceLabels());
+    const old = component.line(); component.toggle('TOTAL'); expect(component.line()).not.toBe(old);
+    const labels = component.serviceLabels();
+    const translate = TestBed.inject(TranslateService); translate.setTranslation('ko', { guide: { statistics: { keys: { SERVICE_1: '1부' } } } }); translate.use('ko');
+    expect(component.serviceLabels()).not.toBe(labels); expect(component.serviceLabels()[0]).toBe('1부');
   });
   it('uses identical unrounded server means in table and grouped bars', () => {
     const row = component.rows[0];
