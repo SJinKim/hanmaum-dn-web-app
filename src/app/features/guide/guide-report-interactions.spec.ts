@@ -60,8 +60,8 @@ describe('Guide report UI and route protection', () => {
     state.page.set(reportPage([reportFixture, { ...reportFixture, publicId: 'detail', reportMode: 'DETAILED', service1Count: null, service2Count: 0 }]));
     state.years.set([2026]); state.loading.set(false); const remove = spyOn(state, 'remove').and.returnValue(of(undefined));
     const f = TestBed.createComponent(GuideHistoryComponent); f.detectChanges();
-    // Two management links, two new-entry links, and both reports in table/cards.
-    expect(f.debugElement.queryAll(By.directive(RouterLink)).length).toBe(8);
+    // Management, statistics, new-entry and both edit modes in table/cards.
+    expect(f.debugElement.queryAll(By.directive(RouterLink)).length).toBe(9);
     const spy = spyOn(TestBed.inject(ConfirmationService), 'confirm'); f.componentInstance.confirmDelete(reportFixture);
     expect(remove).not.toHaveBeenCalled(); spy.calls.mostRecent().args[0].reject?.(); expect(remove).not.toHaveBeenCalled();
     f.componentInstance.confirmDelete(reportFixture); spy.calls.mostRecent().args[0].accept?.(); expect(remove).toHaveBeenCalledOnceWith(reportFixture);

@@ -21,4 +21,5 @@ export const GUIDE_ROUTES: Routes = [
     path: 'attendance/new', canActivate: [featureGuard('guide', 'write')], canDeactivate: [guideFormGuard],
     loadComponent: () => import('./guide-attendance.component').then(m => m.GuideAttendanceComponent),
   },
+  { path: 'statistics', canActivate: [featureGuard('guide')], loadComponent: () => import('./guide-statistics.component').then(m => m.GuideStatisticsComponent) },
 ];

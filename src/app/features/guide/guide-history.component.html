@@ -10,7 +10,7 @@
     <a pButton severity="secondary" [outlined]="true" routerLink="counting-areas">{{ 'guide.areas.title' | translate }}</a>
     @if (canWrite()) { <a pButton routerLink="attendance/new">{{ 'guide.details.title' | translate }}</a> }
   </header>
-  <div class="border-b border-line"><span class="inline-block border-b-2 border-ink-strong px-[var(--space-16)] py-[var(--space-12)] type-body text-ink-strong">{{ 'guide.reports.records' | translate }}</span></div>
+  <div class="border-b border-line"><span class="inline-block border-b-2 border-ink-strong px-[var(--space-16)] py-[var(--space-12)] type-body text-ink-strong">{{ 'guide.reports.records' | translate }}</span><a routerLink='/guide/statistics' class='inline-block px-[var(--space-16)] py-[var(--space-12)] type-body text-ink-muted'>{{ 'guide.statistics.title' | translate }}</a></div>
   @if (state.notice(); as notice) { <p role="alert" class="type-body-sm text-ink-strong">{{ ('guide.reports.' + notice) | translate }}</p> }
   @if (!state.loading() && !state.loadFailed()) {
     @if (state.latest(); as latest) {
