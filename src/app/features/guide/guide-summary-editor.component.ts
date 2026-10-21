@@ -1,4 +1,4 @@
-import { Component, DestroyRef, HostListener, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -38,6 +38,7 @@ export class GuideSummaryEditorComponent implements HasUnsavedChanges {
   private confirming = false;
   private id = '';
   constructor() {
+    effect(() => { if (!this.state.saving()) this.navigationBlocked.set(false); });
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(params => {
       this.id = params.get('publicId') ?? ''; this.state.load(this.id);
     });

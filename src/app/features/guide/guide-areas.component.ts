@@ -1,6 +1,6 @@
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, merge } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
@@ -14,6 +14,7 @@ import { RoleService } from '../../core/services/role.service';
 import { HasUnsavedChanges, UNSAVED_CHANGES_DIALOG_KEY } from '../../core/guards/unsaved-changes.guard';
 import { GuideArea, parseGuideOrder } from './guide-area.model';
 import { GuideAreaService } from './guide-area.service';
+import { GuideAttendanceDraft } from './guide-attendance.service';
 
 @Component({
   selector: 'app-guide-areas',
@@ -25,12 +26,15 @@ import { GuideAreaService } from './guide-area.service';
   templateUrl: './guide-areas.component.html',
 })
 export class GuideAreasComponent implements HasUnsavedChanges {
+  readonly returnTo = inject(ActivatedRoute).snapshot.queryParamMap.get('returnTo') === '/guide/attendance/new' ? '/guide/attendance/new' : '/guide';
   readonly state = inject(GuideAreaService);
   private readonly roles = inject(RoleService);
   private readonly fb = inject(FormBuilder);
   private readonly confirmation = inject(ConfirmationService);
   private readonly translate = inject(TranslateService);
   private readonly destroy = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly draft = inject(GuideAttendanceDraft);
   readonly canWrite = computed(() => this.roles.canWrite('guide'));
   readonly visible = signal(false);
   readonly unsavedChangesDialogKey = UNSAVED_CHANGES_DIALOG_KEY;
@@ -61,6 +65,11 @@ export class GuideAreasComponent implements HasUnsavedChanges {
   });
 
   constructor() {
+    // A kept attendance draft is only valid for the immediate return to the new-entry form.
+    this.destroy.onDestroy(() => {
+      const target = this.router.currentNavigation()?.finalUrl;
+      if (!target || this.router.serializeUrl(target).split(/[?#]/)[0] !== '/guide/attendance/new') this.draft.value = null;
+    });
     for (const key of ['roomPublicId', 'label', 'order', 'active'] as const) {
       const control: AbstractControl = this.form.controls[key];
       control.valueChanges.pipe(takeUntilDestroyed(this.destroy))
