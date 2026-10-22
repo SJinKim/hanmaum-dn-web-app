@@ -1839,7 +1839,7 @@
       "editTitle": "집계 구역 수정",
       "futureOnly": "변경사항은 새 기록부터 적용됩니다.",
       "historySafe": "이미 저장한 참석현황의 구역·이름·인원은 바뀌지 않습니다.",
-      "activeCount": "사용 중 {{count}}개",
+      "activeCount": "사용 중 {{count}}개 · 사용 안 함 {{inactive}}개",
       "sharedRoom": "같은 공간을 A·B처럼 여러 구역으로 나눌 수 있습니다. 사용 중인 구역만 새 기록에 표시됩니다.",
       "active": "사용 중",
       "inactive": "사용 안 함",

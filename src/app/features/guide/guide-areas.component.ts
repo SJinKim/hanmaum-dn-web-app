@@ -46,6 +46,7 @@ export class GuideAreasComponent implements HasUnsavedChanges {
   private draggedIndex: number | null = null;
   readonly original = signal<GuideArea | null>(null);
   readonly activeCount = computed(() => this.state.areas().filter(a => a.active && this.state.roomIsEligible(a.roomPublicId)).length);
+  readonly inactiveCount = computed(() => this.state.areas().filter(a => !a.active).length);
   readonly dialogPt = {
     header: { class: '!px-[var(--space-16)] tablet:!px-[var(--space-32)]' },
     content: { class: '!px-[var(--space-16)] tablet:!px-[var(--space-32)]' },

@@ -39,7 +39,7 @@
       <p-button [label]="'guide.areas.retry' | translate" severity="secondary" (onClick)="state.load()" />
     </div>
   } @else {
-    <p class="type-caption text-ink-muted">{{ 'guide.areas.activeCount' | translate:{ count: activeCount() } }}</p>
+    <p class="type-caption text-ink-muted">{{ 'guide.areas.activeCount' | translate:{ count: activeCount(), inactive: inactiveCount() } }}</p>
     @if (!state.rooms().length) {
       <p role="status" class="type-body text-ink-muted">{{ 'guide.areas.noRooms' | translate }}</p>
     }

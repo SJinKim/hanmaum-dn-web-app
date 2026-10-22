@@ -1839,7 +1839,7 @@
       "editTitle": "Edit counting area",
       "futureOnly": "Changes apply to new reports only.",
       "historySafe": "Areas, names and counts in saved reports stay unchanged.",
-      "activeCount": "{{count}} active",
+      "activeCount": "{{count}} active · {{inactive}} inactive",
       "sharedRoom": "One room can contain multiple counting areas, such as A and B. Only active areas appear in new reports.",
       "active": "Active",
       "inactive": "Inactive",
