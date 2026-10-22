@@ -6,10 +6,27 @@
   </header>
   @if (canWrite()) {
     <div class="flex flex-col gap-[var(--space-16)] sm:flex-row">
-      <p-button data-testid="add-area" class="w-full sm:w-auto" styleClass="w-full" [label]="'guide.areas.add' | translate"
-        [disabled]="state.loading() || state.loadFailed() || !state.rooms().length" (onClick)="open()" />
+      @if (state.ordering()) {
+        <p-button data-testid="save-order" [label]="'guide.areas.saveOrder' | translate" [loading]="state.saving()"
+          [disabled]="!state.orderDirty() || state.writeBlocked()" (onClick)="saveOrdering()" />
+        <p-button [label]="'guide.areas.cancel' | translate" severity="secondary" [outlined]="true"
+          [disabled]="state.saving()" (onClick)="cancelOrdering()" />
+      } @else {
+        <p-button data-testid="add-area" class="w-full sm:w-auto" styleClass="w-full" [label]="'guide.areas.add' | translate"
+          [disabled]="state.loading() || state.saving() || state.loadFailed() || !state.rooms().length || state.writeBlocked()" (onClick)="open()" />
+        <p-button data-testid="sort-areas" class="w-full sm:w-auto" styleClass="w-full" [label]="'guide.areas.sort' | translate"
+          severity="secondary" [outlined]="true" [disabled]="state.loading() || state.saving() || state.loadFailed() || state.areas().length < 2 || state.writeBlocked()" (onClick)="startOrdering()" />
+      }
     </div>
   }
+  @if (!visible() && state.failure(); as failure) {
+    <div role="alert" class="flex flex-col items-start gap-[var(--space-8)]">
+      <p class="type-body-sm text-ink-strong">{{ (failure === 'save' ? 'guide.areas.saveError' : 'guide.areas.' + failure) | translate }}</p>
+      @if (state.writeBlocked()) { <p-button [label]="'guide.areas.reload' | translate" severity="secondary" (onClick)="reloadConfiguration()" /> }
+    </div>
+  }
+  @if (state.ordering()) { <p class="type-body-sm text-ink-muted">{{ 'guide.areas.sortHelp' | translate }}</p> }
+  <p class="sr-only" role="status" aria-live="polite">@if (state.moved(); as move) { {{ 'guide.areas.moved' | translate:move }} }</p>
   <aside class="bg-surface-subtle p-[var(--space-16)]">
     <p class="type-caption text-ink-strong">{{ 'guide.areas.futureOnly' | translate }}</p>
     <p class="type-body-sm text-ink-muted mt-[var(--space-8)]">{{ 'guide.areas.historySafe' | translate }}</p>
@@ -22,24 +39,46 @@
       <p-button [label]="'guide.areas.retry' | translate" severity="secondary" (onClick)="state.load()" />
     </div>
   } @else {
-    <p class="type-caption text-ink-muted">{{ 'guide.areas.activeCount' | translate:{ count: activeCount() } }}</p>
+    <p class="type-caption text-ink-muted">{{ 'guide.areas.activeCount' | translate:{ count: activeCount(), inactive: inactiveCount() } }}</p>
     @if (!state.rooms().length) {
       <p role="status" class="type-body text-ink-muted">{{ 'guide.areas.noRooms' | translate }}</p>
     }
-    <div class="flex flex-col gap-[var(--space-8)]">
-      @for (area of state.areas(); track area.areaPublicId) {
-        <article data-testid="area-row" class="flex flex-col gap-[var(--space-16)] rounded-[var(--radius-md)] border border-line-subtle bg-surface p-[var(--space-16)] sm:flex-row sm:items-start">
-          <div class="flex-1 min-w-0">
-            <h2 class="type-body text-ink-strong break-words">{{ area.displayOrder + 1 }}. {{ area.label }}</h2>
-            <p class="type-body-sm text-ink-muted mt-[var(--space-4)]">{{ roomCaption(area) }}</p>
+    <div class="flex flex-col gap-[var(--space-8)]" role="list" [attr.aria-label]="'guide.areas.title' | translate">
+      @for (area of state.displayedAreas(); track area.areaPublicId; let index = $index) {
+        <article data-testid="area-row" role="listitem" pDraggable="guide-areas" pDroppable="guide-areas"
+          dragHandle=".area-drag-handle" [pDraggableDisabled]="!state.ordering() || state.saving() || !canWrite()"
+          [pDroppableDisabled]="!state.ordering() || state.saving() || !canWrite()" (onDragStart)="startDrag(index)" (onDragEnd)="endDrag()" (onDrop)="drop(index)"
+          class="flex flex-col gap-[var(--space-16)] rounded-[var(--radius-md)] border border-line-subtle bg-surface p-[var(--space-16)] sm:flex-row sm:items-center">
+          <div class="flex flex-1 min-w-0 items-center gap-[var(--space-12)]">
+            @if (state.ordering()) {
+              <button type="button" pButton severity="secondary" [text]="true" class="area-drag-handle cursor-grab touch-none shrink-0 min-h-[var(--size-icon-button)] min-w-[var(--size-icon-button)]"
+                [disabled]="state.saving() || !canWrite()" [attr.aria-label]="'guide.areas.drag' | translate:{label:area.label}">
+                <i class="pi pi-bars pointer-events-none" aria-hidden="true"></i>
+              </button>
+            }
+            <div class="flex-1 min-w-0">
+              <h2 class="type-body text-ink-strong break-words">{{ area.label }}</h2>
+              <p class="type-body-sm text-ink-muted mt-[var(--space-4)]">{{ roomCaption(area) }} · {{ (area.active ? (state.roomIsEligible(area.roomPublicId) ? 'guide.areas.active' : 'guide.areas.unavailableRoom') : 'guide.areas.inactive') | translate }}</p>
+            </div>
           </div>
-          <div class="flex items-center gap-[var(--space-16)] sm:w-2/5">
-            <span class="type-body-sm rounded-[var(--radius-md)] border border-line px-[var(--space-16)] py-[var(--space-8)] text-ink-strong">
-              {{ (area.active ? (state.roomIsEligible(area.roomPublicId) ? 'guide.areas.active' : 'guide.areas.unavailableRoom') : 'guide.areas.inactive') | translate }}
-            </span>
+          <div class="flex flex-wrap items-center gap-[var(--space-8)]">
             @if (canWrite()) {
-              <p-button [label]="'guide.areas.edit' | translate" [ariaLabel]="('guide.areas.edit' | translate) + ' ' + area.label"
-                severity="secondary" [outlined]="true" (onClick)="open(area)" />
+              @if (state.ordering()) {
+                <p-button icon="pi pi-arrow-up" severity="secondary" [outlined]="true" [ariaLabel]="'guide.areas.moveUp' | translate:{label:area.label}"
+                  [disabled]="index === 0 || state.saving() || state.writeBlocked()" (onClick)="state.move(index, index - 1)" />
+                <p-button icon="pi pi-arrow-down" severity="secondary" [outlined]="true" [ariaLabel]="'guide.areas.moveDown' | translate:{label:area.label}"
+                  [disabled]="index === state.displayedAreas().length - 1 || state.saving() || state.writeBlocked()" (onClick)="state.move(index, index + 1)" />
+              } @else {
+                <p-button [label]="(area.active ? 'guide.areas.deactivate' : 'guide.areas.activate') | translate"
+                  [ariaLabel]="((area.active ? 'guide.areas.deactivate' : 'guide.areas.activate') | translate) + ' ' + area.label"
+                  severity="secondary" [outlined]="true" [disabled]="state.saving() || state.writeBlocked() || (!area.active && !state.roomIsEligible(area.roomPublicId))" (onClick)="setActive(area)" />
+                <p-button [label]="'guide.areas.edit' | translate" [ariaLabel]="('guide.areas.edit' | translate) + ' ' + area.label"
+                  severity="secondary" [outlined]="true" [disabled]="state.saving() || state.writeBlocked()" (onClick)="open(area)" />
+                @if (!area.active) {
+                  <p-button data-testid="remove-area" [label]="'guide.areas.remove' | translate" [ariaLabel]="('guide.areas.remove' | translate) + ' ' + area.label"
+                    severity="danger" [outlined]="true" [disabled]="state.saving() || state.writeBlocked()" (onClick)="remove(area)" />
+                }
+              }
             }
           </div>
         </article>
@@ -69,12 +108,6 @@
       <input id="area-label" pInputText formControlName="label" class="w-full" [invalid]="fieldError('label')" [attr.aria-invalid]="fieldError('label')" />
       @if (fieldError('label')) { <small role="alert" class="type-caption text-ink-strong">{{ 'guide.areas.invalidLabel' | translate }}</small> }
     </div>
-    <div class="flex flex-col gap-[var(--space-4)]">
-      <label for="area-order" class="type-caption text-ink-muted">{{ 'guide.areas.order' | translate }}</label>
-      <input id="area-order" pInputText formControlName="order" inputmode="numeric" class="w-full"
-        [invalid]="fieldError('order')" [attr.aria-invalid]="fieldError('order')" />
-      @if (fieldError('order')) { <small role="alert" class="type-caption text-ink-strong">{{ 'guide.areas.invalidOrder' | translate }}</small> }
-    </div>
     <div class="flex justify-between gap-[var(--space-16)] items-center">
       <label id="area-active-label" class="type-body text-ink-strong" for="area-active">{{ 'guide.areas.useForNew' | translate }}</label>
       <button pButton type="button" id="area-active" [disabled]="state.saving()"
@@ -83,7 +116,7 @@
         {{ (form.controls.active.value ? 'guide.areas.active' : 'guide.areas.inactive') | translate }}
       </button>
     </div>
-    <p class="type-body-sm text-ink-muted">{{ 'guide.areas.futureOnly' | translate }}</p>
+    <p class="type-body-sm text-ink-muted">{{ (original() ? 'guide.areas.editOrderHelp' : 'guide.areas.appendHelp') | translate }}</p>
     @if (navigationBlocked()) {
       <p role="status" class="type-body-sm text-ink-strong">{{ 'guide.areas.waitForSave' | translate }}</p>
     }
@@ -104,3 +137,5 @@
 </p-dialog>
 <p-confirmdialog key="guide-discard" />
 <p-confirmdialog [key]="unsavedChangesDialogKey" />
+
+<p-confirmdialog key="guide-remove" />

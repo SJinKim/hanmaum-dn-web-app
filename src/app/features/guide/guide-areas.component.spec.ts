@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { CanDeactivateFn, Router, provideRouter } from '@angular/router';
 import { GUIDE_ROUTES } from './guide.routes';
 import { TestBed } from '@angular/core/testing';
@@ -15,12 +16,12 @@ const area: GuideArea = { areaPublicId: 'a', roomPublicId: 'room', roomName: 'Sa
 
 describe('Guide area management interactions', () => {
   let http: HttpTestingController;
-  let writable: boolean;
+  let writable: ReturnType<typeof signal<boolean>>;
   beforeEach(() => {
-    writable = true;
+    writable = signal(true);
     TestBed.configureTestingModule({ imports: [GuideAreasComponent], providers: [provideHttpClient(), provideHttpClientTesting(),
       provideNoopAnimations(), provideTranslateService(), ConfirmationService, provideRouter([]),
-      { provide: RoleService, useValue: { canWrite: () => writable } }] });
+      { provide: RoleService, useValue: { canWrite: () => writable() } }] });
     TestBed.inject(TranslateService).use('ko');
     http = TestBed.inject(HttpTestingController);
   });
@@ -32,6 +33,10 @@ describe('Guide area management interactions', () => {
       ? [{ publicId: 'room', name: 'Sanctuary', floorPublicId: 'floor', floorName: '1F' }] : [] });
     fixture.detectChanges(); return fixture;
   }
+  function refresh(f: ReturnType<typeof create>) {
+    http.expectOne('/api/v1/guide/counting-areas').flush({ success: true, data: f.componentInstance.state.areas() });
+    http.expectOne('/api/v1/guide/counting-areas/rooms').flush({ success: true, data: [] });
+  }
   it('keeps the attendance draft only when returning to the new-entry form', () => {
     const draft = TestBed.inject(GuideAttendanceDraft), router = TestBed.inject(Router);
     draft.value = { dirty: true, date: null, notes: '', areas: [], entries: [] };
@@ -41,7 +46,7 @@ describe('Guide area management interactions', () => {
     create().destroy(); expect(draft.value).toBeNull();
   });
   it('hides write controls from viewers and guards imperative open', () => {
-    writable = false; const f = create(); expect(f.nativeElement.querySelector('[data-testid="add-area"]')).toBeNull();
+    writable.set(false); const f = create(); expect(f.nativeElement.querySelector('[data-testid="add-area"]')).toBeNull();
     f.componentInstance.open(area); expect(f.componentInstance.visible()).toBeFalse();
   });
   it('keeps edits and their original expected version after 409', () => {
@@ -56,7 +61,7 @@ describe('Guide area management interactions', () => {
     const f = create(false); const c = f.componentInstance; c.open(area); expect(c.invalidRoom()).toBeTrue();
     c.form.controls.active.setValue(false); expect(c.invalidRoom()).toBeFalse(); c.submit();
     const request = http.expectOne('/api/v1/guide/counting-areas/a'); expect(request.request.body.roomPublicId).toBe('room');
-    request.flush({ success: true, data: { ...area, active: false, version: 4 } }); expect(c.visible()).toBeFalse();
+    request.flush({ success: true, data: { ...area, active: false, version: 4 } }); refresh(f); expect(c.visible()).toBeFalse();
   });
   it('asks before discarding dirty form values and canceling keeps them', () => {
     const confirmation = TestBed.inject(ConfirmationService); const spy = spyOn(confirmation, 'confirm');
@@ -68,21 +73,21 @@ describe('Guide area management interactions', () => {
     const f = create(); const c = f.componentInstance;
     const before = Array.from({ length: 4 }, (_, i) => ({ ...area, areaPublicId: 'a' + i, displayOrder: i }));
     c.state.areas.set(before); c.open();
-    c.form.setValue({ roomPublicId: 'room', label: 'Fifth', order: '5', active: true }); c.form.markAsDirty(); c.submit();
+    c.form.setValue({ roomPublicId: 'room', label: 'Fifth', active: true }); c.form.markAsDirty(); c.submit();
     const request = http.expectOne('/api/v1/guide/counting-areas');
-    expect(request.request.body).toEqual({ roomPublicId: 'room', label: 'Fifth', displayOrder: 4, active: true });
+    expect(request.request.body).toEqual({ roomPublicId: 'room', label: 'Fifth', active: true });
     c.close(); expect(c.visible()).toBeTrue();
-    request.flush({ success: true, data: { ...area, areaPublicId: 'fifth', label: 'Fifth', displayOrder: 4 } });
+    request.flush({ success: true, data: { ...area, areaPublicId: 'fifth', label: 'Fifth', displayOrder: 4 } }); refresh(f);
     expect(c.state.areas().length).toBe(5); expect(c.state.areas().slice(0, 4)).toEqual(before);
     expect(c.hasUnsavedChanges()).toBeFalse();
   });
-  it('does not submit invalid order or empty labels and Escape preserves dirty inputs until confirmed', () => {
+  it('does not submit empty labels and Escape preserves dirty inputs until confirmed', () => {
     const f = create(); const c = f.componentInstance; c.open();
-    c.form.setValue({ roomPublicId: 'room', label: ' ', order: '1.5', active: true }); c.form.markAsDirty(); c.submit();
+    c.form.setValue({ roomPublicId: 'room', label: ' ', active: true }); c.form.markAsDirty(); c.submit();
     http.expectNone('/api/v1/guide/counting-areas');
     const spy = spyOn(TestBed.inject(ConfirmationService), 'confirm');
     c.escape(new Event('keydown')); expect(spy).toHaveBeenCalled(); expect(c.visible()).toBeTrue();
-    expect(c.form.controls.order.value).toBe('1.5');
+    expect(c.form.controls.label.value).toBe(' ');
   });
 
   it('Escape rejects the route prompt without opening a second discard dialog', async () => {
@@ -114,12 +119,12 @@ describe('Guide area management interactions', () => {
     });
   }
 
-  it('clears only the corrected server field error and maps order to displayOrder', () => {
+  it('clears the corrected field error without reintroducing a numeric order control', () => {
     const f = create(); const c = f.componentInstance; c.open(area); c.submit();
-    http.expectOne('/api/v1/guide/counting-areas/a').flush({ data: { fieldErrors: { label: 'invalid', displayOrder: 'invalid' } } }, { status: 400, statusText: 'invalid' });
+    http.expectOne('/api/v1/guide/counting-areas/a').flush({ data: { fieldErrors: { label: 'invalid' } } }, { status: 400, statusText: 'invalid' });
     expect(c.fieldError('label')).toBeTrue(); c.form.controls.label.setValue('corrected');
-    expect(c.fieldError('label')).toBeFalse(); expect(c.fieldError('order')).toBeTrue();
-    c.form.controls.order.setValue('2'); expect(c.fieldError('order')).toBeFalse();
+    expect(c.fieldError('label')).toBeFalse(); expect(c.form.get('order')).toBeNull();
+    f.detectChanges(); expect(f.nativeElement.querySelector('#area-order')).toBeNull();
   });
 
   it('updates unavailable-room text when changing languages or loading translations', () => {
@@ -138,8 +143,33 @@ describe('Guide area management interactions', () => {
     const guard = GUIDE_ROUTES[1].canDeactivate![0] as CanDeactivateFn<GuideAreasComponent>;
     expect(TestBed.runInInjectionContext(() => guard(c, {} as never, {} as never, {} as never))).toBeFalse();
     expect(c.navigationBlocked()).toBeTrue();
-    http.expectOne('/api/v1/guide/counting-areas/a').flush({ success: true, data: { ...area, version: 4 } });
+    http.expectOne('/api/v1/guide/counting-areas/a').flush({ success: true, data: { ...area, version: 4 } }); refresh(f);
     expect(c.navigationBlocked()).toBeFalse();
   });
 
+  it('protects a changed order on navigation and cancel preserves it until confirmed', () => {
+    const f = create(); const c = f.componentInstance;
+    c.state.areas.set([area, { ...area, areaPublicId: 'b', label: 'B', version: 6 }]);
+    c.startOrdering(); c.state.move(0, 1); expect(c.hasUnsavedChanges()).toBeTrue();
+    const spy = spyOn(TestBed.inject(ConfirmationService), 'confirm'); c.cancelOrdering();
+    spy.calls.mostRecent().args[0].reject?.(); expect(c.state.orderDirty()).toBeTrue();
+    c.cancelOrdering(); spy.calls.mostRecent().args[0].accept?.();
+    expect(c.state.displayedAreas()[0].areaPublicId).toBe('a'); http.expectNone('/api/v1/guide/counting-areas/order');
+  });
+  it('confirms removal separately and never offers it for active areas or viewers', () => {
+    const f = create(); const c = f.componentInstance; const spy = spyOn(TestBed.inject(ConfirmationService), 'confirm');
+    c.remove(area); expect(spy).not.toHaveBeenCalled();
+    c.remove({ ...area, active: false }); expect(spy).toHaveBeenCalledTimes(1);
+    http.expectNone('/api/v1/guide/counting-areas/a?version=3');
+    spy.calls.mostRecent().args[0].accept?.();
+    http.expectOne('/api/v1/guide/counting-areas/a?version=3').flush({ success: true, data: [] });
+    expect(c.state.areas()).toEqual([]);
+    writable.set(false); c.remove({ ...area, active: false }); expect(spy).toHaveBeenCalledTimes(1);
+  });
+  it('routes a drag gesture and move buttons through the same unsaved ordering state', () => {
+    const f = create(); const c = f.componentInstance;
+    c.state.areas.set([area, { ...area, areaPublicId: 'b', label: 'B' }]); c.startOrdering();
+    c.startDrag(0); c.drop(1); expect(c.state.displayedAreas()[1].areaPublicId).toBe('a');
+    c.state.move(1, 0); expect(c.state.orderDirty()).toBeFalse(); http.expectNone('/api/v1/guide/counting-areas/order');
+  });
 });
