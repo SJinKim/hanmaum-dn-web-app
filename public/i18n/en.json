@@ -771,8 +771,6 @@
     "title": "Training",
     "subtitle": "{{groups}} groups · {{members}} young adults · stages are cumulative (next leader ⊃ discipleship ⊃ one-on-one ⊃ QBS)",
     "all": "All",
-    "collapseAll": "Collapse all",
-    "expandAll": "Expand all",
     "stage": {
       "next-leader": "Next leader",
       "discipleship": "Discipleship",
@@ -788,17 +786,28 @@
       "assign": "{{count}} × {{stage}} highlighted · dashed border = discipleship graduates who can be assigned · click a name to assign or unassign"
     },
     "division": {
-      "DANIEL": "Daniel",
       "NEHEMIA": "Nehemiah",
+      "DANIEL": "Daniel",
+      "NEWCOMERS": "Newcomers",
       "none": "Other"
     },
-    "divisionHeading": "{{name}} group",
-    "divisionCaption": "{{groups}} groups · {{members}}",
-    "leaderTerm": "Leader",
-    "countSuffix": "",
-    "candidate": "+ Assign",
+    "error": {
+      "heading": "Couldn't load the training table",
+      "description": "Please try again in a moment.",
+      "retry": "Retry"
+    },
     "empty": "No small groups yet",
-    "saveFailed": "Could not save. Please try again."
+    "saveFailed": "Could not save. Please try again.",
+    "rowLabel": {
+      "group": "Group",
+      "leader": "Leader"
+    },
+    "divisionSwitch": "Division",
+    "tableLabel": "Training table",
+    "action": {
+      "assign": "Make {{name}} next leader",
+      "unassign": "Remove {{name}} as next leader"
+    }
   },
   "attendance": {
     "eyebrow": "Activity",

@@ -1,5 +1,6 @@
 <!--
-  Figma: 양육 (formerly 순, #214) / Desktop 215:7645, 예비순장 filter 218:7765, Phone 734:38582.
+  Figma: 05 · 양육 (930:95171) / Desktop 215:7645, Tablet 762:47957, Phone 734:38582,
+  예비순장 filter 218:7765 / 764:49670 / 764:50638.
 -->
 <div class="flex min-h-px flex-1 flex-col gap-gutter">
   <app-page-header
@@ -8,33 +9,32 @@
     [subtitle]="'groups.subtitle' | translate: { groups: groupCount(), members: totalMembers() }" />
 
   <div class="flex flex-col gap-[var(--space-8)]">
-    <div class="flex flex-wrap items-center gap-[var(--space-8)]" data-testid="stage-filter">
+    <!-- Desktop: one row · Tablet: 전체, then 4 × 2 · Phone: 3 × 3 -->
+    <div
+      data-testid="stage-filter"
+      [attr.data-layout]="layout()"
+      [class]="layout() === 'phone'
+        ? 'grid grid-cols-3 gap-[var(--space-8)]'
+        : layout() === 'tablet'
+          ? 'flex flex-col items-start gap-[var(--space-8)]'
+          : 'flex flex-wrap items-center gap-[var(--space-8)]'">
       <app-filter-chip
         [label]="'groups.all' | translate"
         [count]="totalMembers()"
         [selected]="!stageFilter()"
+        [fill]="layout() === 'phone'"
         (toggled)="selectStage(null)" />
-      @for (chip of stageChips(); track chip.stage) {
-        <button
-          class="rounded-[var(--radius-full)] focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
-          type="button"
-          [attr.aria-pressed]="stageFilter() === chip.stage"
-          [attr.data-stage]="chip.stage"
-          (click)="selectStage(chip.stage)">
-          <app-member-pill
-            [label]="chip.label + ' ' + chip.count"
-            [stage]="chip.stage"
-            [stageLabel]="chip.label"
-            [state]="stageFilter() && stageFilter() !== chip.stage ? 'dimmed' : 'default'" />
-        </button>
+      @if (layout() === 'tablet') {
+        <div class="grid grid-cols-[repeat(4,auto)] justify-start gap-[var(--space-8)]" data-testid="stage-grid">
+          @for (chip of stageChips(); track chip.stage) {
+            <ng-container *ngTemplateOutlet="stageChip; context: { $implicit: chip, fill: false }" />
+          }
+        </div>
+      } @else {
+        @for (chip of stageChips(); track chip.stage) {
+          <ng-container *ngTemplateOutlet="stageChip; context: { $implicit: chip, fill: layout() === 'phone' }" />
+        }
       }
-      <button
-        class="type-body-sm text-ink-muted hover:text-ink-strong ml-auto focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
-        type="button"
-        data-testid="toggle-all"
-        (click)="toggleAll()">
-        {{ (allCollapsed() ? 'groups.expandAll' : 'groups.collapseAll') | translate }}
-      </button>
     </div>
     @if (filterHint(); as hint) {
       <p class="type-caption text-ink-muted" data-testid="filter-hint">{{ hint }}</p>
@@ -42,39 +42,54 @@
   </div>
 
   @if (loading()) {
-    <div class="grid grid-cols-1 gap-[var(--space-12)] md:grid-cols-2 lg:grid-cols-3 lg:gap-[var(--space-24)]">
-      @for (i of [1, 2, 3]; track i) {
-        <app-skeleton variant="card" />
-      }
-    </div>
+    <app-skeleton variant="card" />
+  } @else if (failed()) {
+    <app-empty-state
+      variant="error"
+      [heading]="'groups.error.heading' | translate"
+      [description]="'groups.error.description' | translate"
+      [actionLabel]="'groups.error.retry' | translate"
+      actionIcon="pi pi-refresh"
+      (action)="retry()" />
   } @else if (divisions().length === 0) {
     <app-empty-state [heading]="'groups.empty' | translate" />
   } @else {
-    @for (division of divisions(); track division.key) {
-      <section class="flex flex-col gap-[var(--space-12)]" [attr.data-division]="division.key">
-        <div class="flex items-baseline gap-[var(--space-8)]">
-          <h2 class="type-h3 text-ink-strong">{{ division.heading }}</h2>
-          <span class="type-caption text-ink-muted">{{ division.caption }}</span>
+    <div class="flex flex-col gap-[var(--space-12)]">
+      @if (layout() !== 'desktop') {
+        <div [class.max-w-[360px]]="layout() === 'tablet'" data-testid="division-switch">
+          <app-segmented-control
+            [options]="divisionOptions()"
+            [value]="activeDivision()"
+            [ariaLabel]="'groups.divisionSwitch' | translate"
+            (valueChange)="selectedDivision.set($event)" />
         </div>
-        <div class="grid grid-cols-1 items-start gap-[var(--space-12)] md:grid-cols-2 lg:grid-cols-3 lg:gap-[var(--space-24)]">
-          @for (card of division.cards; track card.publicId) {
-            <app-group-card
-              [groupName]="card.name"
-              [leaderName]="card.leader"
-              [members]="card.members"
-              [matchCount]="card.matchCount"
-              [matchLabel]="stageFilter() ? ('groups.stage.' + stageFilter() | translate) : ''"
-              [leaderTermLabel]="'groups.leaderTerm' | translate"
-              [countSuffix]="'groups.countSuffix' | translate"
-              [candidateLabel]="'groups.candidate' | translate"
-              [expanded]="isExpanded(card.publicId)"
-              (expandedChange)="setExpanded(card.publicId, $event)"
-              (memberClicked)="onMemberClicked($event)" />
-          }
-        </div>
-      </section>
-    }
+      }
+      <app-training-table
+        [divisions]="visibleDivisions()"
+        [mode]="layout() === 'desktop' ? 'all' : 'single'"
+        [groupLabel]="'groups.rowLabel.group' | translate"
+        [leaderLabel]="'groups.rowLabel.leader' | translate"
+        [ariaLabel]="'groups.tableLabel' | translate"
+        (cellActivated)="onCellActivated($event)" />
+    </div>
   }
 </div>
+
+<ng-template #stageChip let-chip let-fill="fill">
+  <button
+    class="rounded-[var(--radius-full)] focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
+    type="button"
+    [class.w-full]="fill"
+    [attr.aria-pressed]="stageFilter() === chip.stage"
+    [attr.data-stage]="chip.stage"
+    (click)="selectStage(chip.stage)">
+    <app-member-pill
+      [label]="chip.label + ' ' + chip.count"
+      [stage]="chip.stage"
+      [stageLabel]="chip.label"
+      [fill]="fill"
+      [state]="stageFilter() && stageFilter() !== chip.stage ? 'dimmed' : 'default'" />
+  </button>
+</ng-template>
 
 <p-toast />

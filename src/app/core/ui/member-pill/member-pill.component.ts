@@ -25,7 +25,8 @@ export type MemberPillState = 'default' | 'dimmed' | 'candidate';
   standalone: true,
   template: `
     <span
-      class="type-body-sm relative inline-flex w-fit items-center gap-[var(--space-6)] whitespace-nowrap rounded-[var(--radius-full)] border px-[var(--space-10)] py-[var(--space-4)]"
+      class="type-body-sm relative inline-flex items-center gap-[var(--space-6)] whitespace-nowrap rounded-[var(--radius-full)] border px-[var(--space-10)] py-[var(--space-4)]"
+      [class]="fill() ? 'w-full justify-center' : 'w-fit'"
       [style.background]="tokens().background"
       [style.color]="tokens().color"
       [style.border-style]="state() === 'candidate' ? 'dashed' : 'solid'"
@@ -49,6 +50,8 @@ export class MemberPillComponent {
   readonly stageLabel = input.required<string>();
   readonly state = input<MemberPillState>('default');
   readonly candidateLabel = input('+ 지정');
+  /** Stretch to the parent's width, label centred — for a chip grid. */
+  readonly fill = input(false);
 
   protected readonly tokens = computed(() => memberPillTokens(this.stage()));
 }

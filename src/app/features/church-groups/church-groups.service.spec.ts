@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ChurchGroupsService } from './church-groups.service';
 import { MemberSummary, ChurchGroupSummary } from '../../core/models/member.model';
@@ -144,6 +144,37 @@ describe('ChurchGroupsService', () => {
     });
   });
 
+  describe('computeCategory with an empty catalog', () => {
+    // The catalog is its own request. While `/v1/trainings/catalog` was
+    // ADMIN-only a 양육 role got a 403 there and the matrix was built with an
+    // empty catalog (#214) — the stages are keyed on catalog codes, so every
+    // training match silently missed. The endpoint is TRAINING_READ now; the
+    // degradation is pinned here so a regression shows up as a failing spec
+    // and not as a table that quietly reports the wrong stage.
+    beforeEach(() => TestBed.inject(TrainingCatalogService).entries.set([]));
+
+    it('keeps the stages that come from a flag', () => {
+      expect(service.computeCategory(makeMember({ isNextGroupLeader: true }))).toBe('NEXT_LEADER');
+      expect(service.computeCategory(makeMember({ baptism: 'UNBAPTIZED' }))).toBe('UNBAPTIZED');
+    });
+
+    it('cannot tell a completed 제자반 from nothing at all', () => {
+      const m = makeMember({ trainings: [{ name: DISCIPLESHIP, status: 'COMPLETED' }] });
+      expect(service.computeCategory(m)).toBe('DEFAULT');
+    });
+
+    it('still builds a matrix, so the table renders rather than breaking', () => {
+      const groups: ChurchGroupSummary[] = [{ publicId: 'g1', division: '느헤미야', name: '믿음' }];
+      const matrix = service.buildMatrix(
+        [makeMember({ publicId: 'm1', groupPublicId: 'g1', trainings: [{ name: QTBS, status: 'COMPLETED' }] })],
+        groups,
+      );
+      expect(matrix.divisions[0].groups[0].members).toEqual([
+        { publicId: 'm1', displayName: '김철수', category: 'DEFAULT' },
+      ]);
+    });
+  });
+
   describe('buildMatrix', () => {
     const group1: ChurchGroupSummary = { publicId: 'g1', division: '느헤미야', name: '믿음' };
     const group2: ChurchGroupSummary = { publicId: 'g2', division: '느헤미야', name: '소망' };
@@ -164,11 +195,30 @@ describe('ChurchGroupsService', () => {
       expect(m.divisions[1].groups.map(g => g.name)).toEqual(['온유']);
     });
 
-    it('orders DANIEL before NEHEMIA regardless of input order', () => {
+    it('orders 느헤미야 before 다니엘 regardless of input order (#234)', () => {
+      const daniel: ChurchGroupSummary = { publicId: 'd1', division: '다니엘', name: '온유' };
+      const nehemia: ChurchGroupSummary = { publicId: 'n1', division: '느헤미야', name: '믿음' };
+      const m = service.buildMatrix([], [daniel, nehemia]);
+      expect(m.divisions.map(d => d.kind)).toEqual(['NEHEMIA', 'DANIEL']);
+    });
+
+    it('recognises the division codes as well as the Korean names', () => {
       const daniel: ChurchGroupSummary = { publicId: 'd1', division: 'DANIEL', name: '온유' };
       const nehemia: ChurchGroupSummary = { publicId: 'n1', division: 'NEHEMIA', name: '믿음' };
       const m = service.buildMatrix([], [daniel, nehemia]);
-      expect(m.divisions.map(d => d.division)).toEqual(['DANIEL', 'NEHEMIA']);
+      expect(m.divisions.map(d => [d.kind, d.division])).toEqual([['NEHEMIA', 'NEHEMIA'], ['DANIEL', 'DANIEL']]);
+    });
+
+    it('puts an unknown division after 다니엘 and before 새가족', () => {
+      const other: ChurchGroupSummary = { publicId: 'o1', division: '청년부', name: '기쁨' };
+      const m = service.buildMatrix([], [newFamily, other, group3, group1]);
+      expect(m.divisions.map(d => d.key)).toEqual(['NEHEMIA', 'DANIEL', 'OTHER:청년부', 'NEWCOMERS']);
+    });
+
+    it('treats the 새가족 group as 새가족 even with an empty division', () => {
+      const bare: ChurchGroupSummary = { publicId: 'nf', division: '', name: '새가족' };
+      const m = service.buildMatrix([], [bare, group1]);
+      expect(m.divisions.map(d => d.kind)).toEqual(['NEHEMIA', 'NEWCOMERS']);
     });
 
     it('renders the 새가족 group as an ordinary table-driven column', () => {
@@ -186,7 +236,7 @@ describe('ChurchGroupsService', () => {
       const daniel: ChurchGroupSummary = { publicId: 'd1', division: 'DANIEL', name: '온유' };
       const nehemia: ChurchGroupSummary = { publicId: 'n1', division: 'NEHEMIA', name: '믿음' };
       const m = service.buildMatrix([], [newFamily, daniel, nehemia]);
-      expect(m.divisions.map(d => d.division)).toEqual(['DANIEL', 'NEHEMIA', '새가족']);
+      expect(m.divisions.map(d => d.division)).toEqual(['NEHEMIA', 'DANIEL', '새가족']);
     });
 
     it('places members in the correct group column', () => {
@@ -255,6 +305,29 @@ describe('ChurchGroupsService', () => {
       const member = makeMember({ publicId: 'x', groupPublicId: 'g1', lastName: '이', firstName: '영희' });
       const m = service.buildMatrix([member], [group1]);
       expect(m.divisions[0].groups[0].members[0].displayName).toBe('이영희');
+    });
+  });
+
+  describe('endpoints', () => {
+    it('reads the 양육 member list and the groups, not the admin /v1/members', () => {
+      const http = TestBed.inject(HttpTestingController);
+      let result: unknown;
+      service.loadDashboardData().subscribe(r => (result = r));
+      http.expectOne(r => r.url === '/api/v1/church-groups/members' && r.params.get('size') === '10000')
+        .flush({ success: true, data: { content: [makeMember()], totalElements: 1, totalPages: 1, number: 0, size: 10000 } });
+      http.expectOne('/api/v1/church-groups').flush({ success: true, data: [] });
+      http.match(r => r.url.includes('/trainings/catalog')).forEach(r => r.flush({ success: true, data: CATALOG }));
+      expect(result).toEqual({ members: [makeMember()], groups: [] });
+      http.expectNone('/api/v1/members');
+    });
+
+    it('sets 예비순장 through the 양육 endpoint', () => {
+      const http = TestBed.inject(HttpTestingController);
+      service.setNextGroupLeader('pub-1', true).subscribe();
+      const req = http.expectOne('/api/v1/church-groups/members/pub-1/next-leader');
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ isNextGroupLeader: true });
+      req.flush({ success: true, data: { publicId: 'pub-1', isNextGroupLeader: true } });
     });
   });
 });

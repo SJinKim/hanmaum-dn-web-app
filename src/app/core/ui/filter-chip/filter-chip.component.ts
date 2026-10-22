@@ -17,6 +17,7 @@ import { booleanAttribute, Component, input, output } from '@angular/core';
   template: `
     <span
       class="type-body-sm inline-flex items-center justify-center gap-[var(--space-8)] rounded-[var(--radius-full)] border px-[var(--space-12)] [height:var(--size-control-sm)] focus-within:[outline:2px_solid_var(--color-focus)] focus-within:[outline-offset:2px]"
+      [class.w-full]="fill()"
       [class]="chipClass()">
       <button
         class="inline-flex items-center gap-[var(--space-8)] outline-none"
@@ -47,6 +48,8 @@ export class FilterChipComponent {
   readonly selected = input(false, { transform: booleanAttribute });
   readonly removable = input(false, { transform: booleanAttribute });
   readonly count = input<number | undefined>(undefined);
+  /** Stretch to the parent's width — for a chip grid. */
+  readonly fill = input(false, { transform: booleanAttribute });
   /** Accessible name for the trailing remove button. */
   readonly removeLabel = input('필터 제거');
 

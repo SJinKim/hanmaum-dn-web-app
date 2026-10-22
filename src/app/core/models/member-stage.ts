@@ -19,6 +19,12 @@ import { MemberPillStage } from '../ui/variant-tokens';
 import { SummaryTraining, TrainingCatalogEntry, catalogEntryByName } from './member-activity.model';
 import { MemberSummary } from './member.model';
 
+/**
+ * The fields the rule reads. Both the administrative member summary and the
+ * 양육 screen's slimmer `GET /v1/church-groups/members` row carry them.
+ */
+export type MemberStageInput = Pick<MemberSummary, 'isNextGroupLeader' | 'trainings' | 'oneOnOneSignupFilled' | 'baptism'>;
+
 /** Catalog codes the stages are built on. */
 const QT_BASIC_SEMINAR = 'QT_BASIC_SEMINAR';
 const ONE_ON_ONE = 'ONE_ON_ONE';
@@ -29,7 +35,7 @@ const YOUTH_POWER_DISCIPLESHIP = 'YOUTH_POWER_DISCIPLESHIP';
  * finished 제자반 is shown as 제자반, not as the 큐베세 they also hold.
  */
 export function memberPillStage(
-  member: MemberSummary,
+  member: MemberStageInput,
   catalog: TrainingCatalogEntry[],
 ): MemberPillStage {
   if (member.isNextGroupLeader) return 'next-leader';

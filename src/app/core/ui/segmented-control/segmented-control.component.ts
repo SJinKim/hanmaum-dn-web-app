@@ -1,4 +1,4 @@
-import { Component, input, model } from '@angular/core';
+import { Component, computed, input, model } from '@angular/core';
 
 export interface SegmentOption {
   readonly value: string;
@@ -12,18 +12,22 @@ export interface SegmentOption {
  * lifts onto bg/surface with Elevation/sm; the others stay transparent on the
  * subtle track. Segment is not used standalone, so it has no component of its
  * own here. Track 40 / segment 32 are literal — Density has no token for either.
+ *
+ * A label may contain a line break; the track then
+ * grows and every segment stretches to the tallest one.
  */
 @Component({
   selector: 'app-segmented-control',
   standalone: true,
   template: `
     <div
-      class="flex h-[40px] items-center gap-[var(--space-2)] rounded-[var(--radius-md)] bg-surface-subtle p-[var(--space-2)]"
+      class="flex min-h-[40px] items-center gap-[var(--space-2)] rounded-[var(--radius-md)] bg-surface-subtle p-[var(--space-2)]"
       role="group"
       [attr.aria-label]="ariaLabel()">
       @for (option of options(); track option.value) {
         <button
-          class="type-body-sm flex h-[32px] min-w-px flex-1 items-center justify-center rounded-[var(--radius-sm)] px-[var(--space-12)] focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
+          class="type-body-sm flex min-h-[32px] min-w-px flex-1 items-center justify-center whitespace-pre-line rounded-[var(--radius-sm)] px-[var(--space-12)] text-center focus-visible:[outline:2px_solid_var(--color-focus)] focus-visible:[outline-offset:2px]"
+          [class.self-stretch]="multiline()"
           type="button"
           [class]="segmentClass(option.value)"
           [attr.aria-pressed]="option.value === value()"
@@ -38,6 +42,8 @@ export class SegmentedControlComponent {
   readonly options = input.required<readonly SegmentOption[]>();
   readonly value = model<string>('');
   readonly ariaLabel = input<string>();
+
+  protected readonly multiline = computed(() => this.options().some(o => o.label.includes('\n')));
 
   /** Figma states: Selected False/True × Default/Hover. */
   protected segmentClass(value: string): string {
