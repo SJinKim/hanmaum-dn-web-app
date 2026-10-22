@@ -43,6 +43,14 @@
 
   @if (loading()) {
     <app-skeleton variant="card" />
+  } @else if (failed()) {
+    <app-empty-state
+      variant="error"
+      [heading]="'groups.error.heading' | translate"
+      [description]="'groups.error.description' | translate"
+      [actionLabel]="'groups.error.retry' | translate"
+      actionIcon="pi pi-refresh"
+      (action)="retry()" />
   } @else if (divisions().length === 0) {
     <app-empty-state [heading]="'groups.empty' | translate" />
   } @else {

@@ -734,6 +734,11 @@
       "NEWCOMERS": "새가족순",
       "none": "기타"
     },
+    "error": {
+      "heading": "양육 명단을 불러오지 못했습니다",
+      "description": "잠시 후 다시 시도해 주세요.",
+      "retry": "다시 시도"
+    },
     "empty": "등록된 순이 없습니다",
     "saveFailed": "저장 실패. 다시 시도해주세요.",
     "rowLabel": {

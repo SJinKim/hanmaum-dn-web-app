@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 
 import { ChurchGroupSummary } from '../../../core/models/member.model';
 import { RoleService } from '../../../core/services/role.service';
@@ -35,6 +35,11 @@ const KO = {
     tableLabel: '양육 표',
     action: { assign: '{{name}} 지정', unassign: '{{name}} 해제' },
     empty: '등록된 순이 없습니다',
+    error: {
+      heading: '양육 명단을 불러오지 못했습니다',
+      description: '잠시 후 다시 시도해 주세요.',
+      retry: '다시 시도',
+    },
     saveFailed: '저장 실패',
   },
 };
@@ -230,6 +235,47 @@ describe('ChurchGroupsListComponent', () => {
     expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'error', summary: '저장 실패' }));
   });
 
+  it('ignores a second click while the 예비순장 PATCH is in flight (#254)', () => {
+    const patch = new Subject<void>();
+    service.setNextGroupLeader.and.returnValue(patch.asObservable());
+    const fixture = render('next-leader');
+    const c = fixture.componentInstance;
+    const messages = fixture.debugElement.injector.get(MessageService);
+    spyOn(messages, 'add');
+    const assigned = () => c.stageChips().find(ch => ch.stage === 'next-leader')!.count;
+
+    c.toggleNextLeader('b');
+    c.toggleNextLeader('b');
+    expect(service.setNextGroupLeader).toHaveBeenCalledOnceWith('b', true);
+    expect(assigned()).toBe(2);
+
+    // The rollback restores the value the server still holds, not the flip of a flip.
+    patch.error(new Error('500'));
+    expect(assigned()).toBe(1);
+    expect(messages.add).toHaveBeenCalledTimes(1);
+
+    // Once the PATCH has settled the member can be clicked again.
+    service.setNextGroupLeader.and.returnValue(of(void 0));
+    c.toggleNextLeader('b');
+    expect(service.setNextGroupLeader).toHaveBeenCalledTimes(2);
+    expect(assigned()).toBe(2);
+  });
+
+  it('renders a write control for every candidate when the role may write (#254)', () => {
+    const el: HTMLElement = render('next-leader').nativeElement;
+    expect(el.querySelectorAll('[data-member]').length).toBe(5);
+    // 예비순장 a plus the 제자반수료 candidates b and d.
+    expect(el.querySelectorAll('[data-member] button').length).toBe(3);
+  });
+
+  it('renders no write control at all for a 양육 viewer (#214, #254)', () => {
+    canWrite = false;
+    const el: HTMLElement = render('next-leader').nativeElement;
+    // Every member is still shown — a viewer gets no control, not a disabled one.
+    expect(el.querySelectorAll('[data-member]').length).toBe(5);
+    expect(el.querySelectorAll('[data-member] button').length).toBe(0);
+  });
+
   it('renders one table with every division and no switch on desktop', () => {
     const el: HTMLElement = render('next-leader').nativeElement;
     expect(el.querySelectorAll('app-training-table').length).toBe(1);
@@ -268,6 +314,24 @@ describe('ChurchGroupsListComponent', () => {
   it('shows the empty state when there are no groups', () => {
     service.loadDashboardData.and.returnValue(of({ members: [], groups: [] }));
     const el: HTMLElement = render().nativeElement;
-    expect(el.querySelector('app-empty-state')).not.toBeNull();
+    expect(el.querySelector('app-empty-state h3')!.textContent).toContain('등록된 순이 없습니다');
+    expect(el.querySelector('app-empty-state .pi-exclamation-triangle')).toBeNull();
+  });
+
+  it('offers a retry instead of the empty state when the load fails (#254)', () => {
+    service.loadDashboardData.and.returnValue(throwError(() => new Error('403')));
+    const fixture = render();
+    const c = fixture.componentInstance;
+    const el: HTMLElement = fixture.nativeElement;
+    expect(c.failed()).toBeTrue();
+    expect(el.querySelector('app-empty-state h3')!.textContent).toContain('양육 명단을 불러오지 못했습니다');
+    expect(el.querySelector('app-empty-state .pi-exclamation-triangle')).not.toBeNull();
+    expect(el.querySelector('app-training-table')).toBeNull();
+
+    service.loadDashboardData.and.returnValue(of({ members: MEMBERS, groups: GROUPS }));
+    el.querySelector<HTMLButtonElement>('app-empty-state button')!.click();
+    fixture.detectChanges();
+    expect(c.failed()).toBeFalse();
+    expect(el.querySelectorAll('app-training-table').length).toBe(1);
   });
 });

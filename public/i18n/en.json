@@ -734,6 +734,11 @@
       "NEWCOMERS": "Newcomers",
       "none": "Other"
     },
+    "error": {
+      "heading": "Couldn't load the training table",
+      "description": "Please try again in a moment.",
+      "retry": "Retry"
+    },
     "empty": "No small groups yet",
     "saveFailed": "Could not save. Please try again.",
     "rowLabel": {

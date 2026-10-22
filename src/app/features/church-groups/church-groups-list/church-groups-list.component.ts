@@ -88,6 +88,11 @@ export class ChurchGroupsListComponent implements OnInit {
   private readonly queryParams = toSignal(this.route.queryParamMap);
 
   readonly loading = signal(true);
+  /** The load failed — a 403 for a role the server does not know yet, or a 500. */
+  readonly failed = signal(false);
+
+  /** 예비순장 PATCHes in flight, so a second click cannot race the first. */
+  private readonly pending = new Set<string>();
 
   private readonly members = signal<TrainingMatrixMember[]>([]);
   private readonly groups = signal<ChurchGroupSummary[]>([]);
@@ -176,6 +181,16 @@ export class ChurchGroupsListComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    this.load();
+  }
+
+  retry(): void {
+    this.load();
+  }
+
+  private load(): void {
+    this.loading.set(true);
+    this.failed.set(false);
     this.service
       .loadDashboardData()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -185,7 +200,14 @@ export class ChurchGroupsListComponent implements OnInit {
           this.groups.set(groups);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        // Without a 순 the table would render the "no groups yet" empty state,
+        // which reads as "nothing here" instead of "we could not load it".
+        error: () => {
+          this.members.set([]);
+          this.groups.set([]);
+          this.failed.set(true);
+          this.loading.set(false);
+        },
       });
   }
 
@@ -203,19 +225,26 @@ export class ChurchGroupsListComponent implements OnInit {
     if (this.assignMode() && cell.interactive && cell.id) this.toggleNextLeader(cell.id);
   }
 
-  /** Optimistic: flips 예비순장 at once and reverts with a toast if the PATCH fails. */
+  /**
+   * Optimistic: flips 예비순장 at once and restores the value the server still
+   * holds if the PATCH fails. A click while a PATCH for that member is in flight
+   * is ignored — two optimistic flips would otherwise roll back onto each other.
+   */
   toggleNextLeader(publicId: string): void {
-    if (!this.canWrite()) return;
+    if (!this.canWrite() || this.pending.has(publicId)) return;
     const member = this.members().find(m => m.publicId === publicId);
     if (!member) return;
-    const value = !member.isNextGroupLeader;
-    this.setNextLeader(publicId, value);
+    const previous = member.isNextGroupLeader ?? false;
+    this.pending.add(publicId);
+    this.setNextLeader(publicId, !previous);
 
-    this.service.setNextGroupLeader(publicId, value)
+    this.service.setNextGroupLeader(publicId, !previous)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
+        next: () => this.pending.delete(publicId),
         error: () => {
-          this.setNextLeader(publicId, !value);
+          this.pending.delete(publicId);
+          this.setNextLeader(publicId, previous);
           this.messages.add({
             severity: 'error',
             summary: this.translate.instant('groups.saveFailed'),

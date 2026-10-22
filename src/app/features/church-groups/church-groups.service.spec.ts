@@ -144,6 +144,37 @@ describe('ChurchGroupsService', () => {
     });
   });
 
+  describe('computeCategory with an empty catalog', () => {
+    // The catalog is its own request. While `/v1/trainings/catalog` was
+    // ADMIN-only a 양육 role got a 403 there and the matrix was built with an
+    // empty catalog (#214) — the stages are keyed on catalog codes, so every
+    // training match silently missed. The endpoint is TRAINING_READ now; the
+    // degradation is pinned here so a regression shows up as a failing spec
+    // and not as a table that quietly reports the wrong stage.
+    beforeEach(() => TestBed.inject(TrainingCatalogService).entries.set([]));
+
+    it('keeps the stages that come from a flag', () => {
+      expect(service.computeCategory(makeMember({ isNextGroupLeader: true }))).toBe('NEXT_LEADER');
+      expect(service.computeCategory(makeMember({ baptism: 'UNBAPTIZED' }))).toBe('UNBAPTIZED');
+    });
+
+    it('cannot tell a completed 제자반 from nothing at all', () => {
+      const m = makeMember({ trainings: [{ name: DISCIPLESHIP, status: 'COMPLETED' }] });
+      expect(service.computeCategory(m)).toBe('DEFAULT');
+    });
+
+    it('still builds a matrix, so the table renders rather than breaking', () => {
+      const groups: ChurchGroupSummary[] = [{ publicId: 'g1', division: '느헤미야', name: '믿음' }];
+      const matrix = service.buildMatrix(
+        [makeMember({ publicId: 'm1', groupPublicId: 'g1', trainings: [{ name: QTBS, status: 'COMPLETED' }] })],
+        groups,
+      );
+      expect(matrix.divisions[0].groups[0].members).toEqual([
+        { publicId: 'm1', displayName: '김철수', category: 'DEFAULT' },
+      ]);
+    });
+  });
+
   describe('buildMatrix', () => {
     const group1: ChurchGroupSummary = { publicId: 'g1', division: '느헤미야', name: '믿음' };
     const group2: ChurchGroupSummary = { publicId: 'g2', division: '느헤미야', name: '소망' };
