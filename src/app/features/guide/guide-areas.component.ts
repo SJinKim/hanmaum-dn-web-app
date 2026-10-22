@@ -9,10 +9,11 @@ import { DialogModule } from 'primeng/dialog';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { DragDropModule } from 'primeng/dragdrop';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { RoleService } from '../../core/services/role.service';
 import { HasUnsavedChanges, UNSAVED_CHANGES_DIALOG_KEY } from '../../core/guards/unsaved-changes.guard';
-import { GuideArea, parseGuideOrder } from './guide-area.model';
+import { GuideArea } from './guide-area.model';
 import { GuideAreaService } from './guide-area.service';
 import { GuideAttendanceDraft } from './guide-attendance.service';
 
@@ -20,7 +21,7 @@ import { GuideAttendanceDraft } from './guide-attendance.service';
   selector: 'app-guide-areas',
   standalone: true,
   imports: [RouterLink, ReactiveFormsModule, TranslatePipe, ButtonModule, DialogModule,
-    ConfirmDialogModule, InputTextModule, SelectModule],
+    ConfirmDialogModule, InputTextModule, SelectModule, DragDropModule],
   providers: [GuideAreaService],
   host: { class: 'block min-w-0' },
   templateUrl: './guide-areas.component.html',
@@ -42,6 +43,7 @@ export class GuideAreasComponent implements HasUnsavedChanges {
   readonly navigationBlocked = signal(false);
   private readonly unavailableRoomLabel = toSignal(merge(this.translate.stream('guide.areas.unavailableRoom'), this.translate.getStreamOnTranslationChange('guide.areas.unavailableRoom')), { initialValue: '' });
   private confirming = false;
+  private draggedIndex: number | null = null;
   readonly original = signal<GuideArea | null>(null);
   readonly activeCount = computed(() => this.state.areas().filter(a => a.active && this.state.roomIsEligible(a.roomPublicId)).length);
   readonly dialogPt = {
@@ -60,7 +62,6 @@ export class GuideAreasComponent implements HasUnsavedChanges {
   readonly form = this.fb.nonNullable.group({
     roomPublicId: ['', Validators.required],
     label: ['', [Validators.required, Validators.maxLength(200), Validators.pattern(/\S/)]],
-    order: ['1', [Validators.required, (control: AbstractControl<string>) => parseGuideOrder(control.value) === null ? { integer: true } : null]],
     active: [true],
   });
 
@@ -70,20 +71,19 @@ export class GuideAreasComponent implements HasUnsavedChanges {
       const target = this.router.currentNavigation()?.finalUrl;
       if (!target || this.router.serializeUrl(target).split(/[?#]/)[0] !== '/guide/attendance/new') this.draft.value = null;
     });
-    for (const key of ['roomPublicId', 'label', 'order', 'active'] as const) {
+    for (const key of ['roomPublicId', 'label', 'active'] as const) {
       const control: AbstractControl = this.form.controls[key];
       control.valueChanges.pipe(takeUntilDestroyed(this.destroy))
-        .subscribe(() => this.state.clearFieldError(key === 'order' ? 'displayOrder' : key));
+        .subscribe(() => this.state.clearFieldError(key));
     }
     this.state.load();
   }
 
   open(area: GuideArea | null = null): void {
-    if (!this.canWrite() || this.state.saving() || this.state.loading() || this.state.loadFailed()) return;
+    if (!this.canWrite() || this.state.saving() || this.state.loading() || this.state.loadFailed() || this.state.ordering()) return;
     this.original.set(area);
     this.state.clearFailure();
     this.form.reset({ roomPublicId: area?.roomPublicId ?? '', label: area?.label ?? '',
-      order: String(area ? area.displayOrder + 1 : Math.max(0, ...this.state.areas().map(a => a.displayOrder + 1)) + 1),
       active: area?.active ?? true });
     this.visible.set(true);
   }
@@ -105,11 +105,10 @@ export class GuideAreasComponent implements HasUnsavedChanges {
     if (!this.canWrite() || this.state.saving()) return;
     this.form.markAllAsTouched();
     const value = this.form.getRawValue();
-    const displayOrder = parseGuideOrder(value.order);
-    if (this.form.invalid || this.invalidRoom() || displayOrder === null) return;
+    if (this.form.invalid || this.invalidRoom()) return;
     this.navigationBlocked.set(false);
     this.form.disable({ emitEvent: false });
-    this.state.save({ roomPublicId: value.roomPublicId, label: value.label.trim(), displayOrder, active: value.active }, this.original())
+    this.state.save({ roomPublicId: value.roomPublicId, label: value.label.trim(), active: value.active }, this.original())
       .pipe(takeUntilDestroyed(this.destroy), finalize(() => { this.form.enable({ emitEvent: false }); this.navigationBlocked.set(false); })).subscribe({
         next: () => { this.form.markAsPristine(); this.visible.set(false); },
         error: () => { /* State owns field errors; keep every user-entered value. */ },
@@ -135,7 +134,7 @@ export class GuideAreasComponent implements HasUnsavedChanges {
     if (this.confirming) return;
     this.confirming = true;
     this.confirmation.confirm({ key: 'guide-discard', header: this.translate.instant('guide.areas.discardTitle'),
-      message: this.translate.instant('guide.areas.discardMessage'),
+      message: this.translate.instant(this.state.ordering() ? 'guide.areas.discardOrderMessage' : 'guide.areas.discardMessage'),
       icon: 'pi pi-exclamation-triangle', acceptButtonStyleClass: 'p-button-danger',
       acceptLabel: this.translate.instant('guide.areas.discard'), rejectLabel: this.translate.instant('common.unsavedChanges.stay'),
       accept: () => { this.confirming = false; action(); }, reject: () => { this.confirming = false; } });
@@ -143,14 +142,61 @@ export class GuideAreasComponent implements HasUnsavedChanges {
 
   fieldError(name: string): boolean {
     const control = this.form.get(name);
-    return !!(control?.touched && control.invalid) || !!this.state.fieldErrors()[name === 'order' ? 'displayOrder' : name];
+    return !!(control?.touched && control.invalid) || !!this.state.fieldErrors()[name];
   }
 
-  hasUnsavedChanges(): boolean { return this.state.saving() || (this.visible() && this.form.dirty); }
+  hasUnsavedChanges(): boolean { return this.state.saving() || (this.visible() && this.form.dirty) || this.state.orderDirty(); }
 
   @HostListener('document:keydown.escape', ['$event'])
   escape(event: Event): void {
-    if (this.visible() && !this.confirming && !this.routeConfirming() && !event.defaultPrevented) this.close();
+    if (!this.confirming && !this.routeConfirming() && !event.defaultPrevented) {
+      if (this.visible()) this.close();
+      else if (this.state.ordering()) this.cancelOrdering();
+    }
+  }
+
+  startOrdering(): void {
+    if (!this.visible()) this.state.beginOrdering();
+  }
+
+  cancelOrdering(): void {
+    if (this.state.saving()) return;
+    this.confirmDiscard(() => {
+      const stale = this.state.failure() === 'conflict' || this.state.failure() === 'notFound';
+      this.state.cancelOrdering();
+      if (stale) this.state.load();
+    });
+  }
+
+  saveOrdering(): void {
+    this.state.saveOrder().pipe(takeUntilDestroyed(this.destroy)).subscribe({ error: () => undefined });
+  }
+
+  startDrag(index: number): void { this.draggedIndex = this.state.ordering() && this.canWrite() ? index : null; }
+  endDrag(): void { this.draggedIndex = null; }
+  drop(index: number): void {
+    if (this.draggedIndex !== null) this.state.move(this.draggedIndex, index);
+    this.endDrag();
+  }
+
+  setActive(area: GuideArea): void {
+    if (this.visible() || this.state.ordering()) return;
+    this.state.save({ roomPublicId: area.roomPublicId, label: area.label, active: !area.active }, area)
+      .pipe(takeUntilDestroyed(this.destroy)).subscribe({ error: () => undefined });
+  }
+
+  remove(area: GuideArea): void {
+    if (!this.canWrite() || area.active || this.visible() || this.state.ordering() || this.state.saving() || this.state.loading() || this.state.loadFailed()) return;
+    this.confirmation.confirm({ key: 'guide-remove', header: this.translate.instant('guide.areas.removeTitle', { label: area.label }),
+      message: this.translate.instant('guide.areas.removeMessage'), icon: 'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger', acceptLabel: this.translate.instant('guide.areas.remove'),
+      rejectLabel: this.translate.instant('guide.areas.cancel'),
+      accept: () => this.state.remove(area).pipe(takeUntilDestroyed(this.destroy)).subscribe({ error: () => undefined }) });
+  }
+
+  reloadConfiguration(): void {
+    if (this.state.saving()) return;
+    this.confirmDiscard(() => { this.state.cancelOrdering(); this.state.load(); });
   }
 
   roomCaption(area: GuideArea): string {
