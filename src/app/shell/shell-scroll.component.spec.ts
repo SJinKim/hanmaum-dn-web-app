@@ -4,6 +4,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
+import { NAV_GROUPS } from '../core/navigation/nav-config';
+import { RoleService } from '../core/services/role.service';
 import { Breakpoint, BreakpointService } from '../core/ui/breakpoint.service';
 import { ShellComponent } from './shell.component';
 
@@ -26,6 +28,7 @@ describe('Shell scroll containment (#263)', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en' }),
+        { provide: RoleService, useValue: { navGroups: () => NAV_GROUPS, canWrite: () => false } },
         {
           provide: BreakpointService,
           useValue: {
@@ -122,6 +125,12 @@ describe('Shell scroll containment (#263)', () => {
         expect(dialog.getBoundingClientRect().top).toBe(0);
         expect(dialog.getBoundingClientRect().bottom).toBe(height);
         expect(doc.documentElement.scrollHeight).toBe(height);
+        const nav = dialog.querySelector('nav')!;
+        expect(nav.scrollHeight).withContext('full menu needs its own scroller').toBeGreaterThan(nav.clientHeight);
+        nav.scrollTop = nav.scrollHeight;
+        expect(nav.scrollTop).withContext('last navigation item must be reachable').toBeGreaterThan(0);
+        expect(nav.querySelector('a:last-child')!.getBoundingClientRect().bottom)
+          .toBeLessThanOrEqual(dialog.getBoundingClientRect().bottom);
       }
     });
   }
