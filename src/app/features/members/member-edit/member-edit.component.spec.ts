@@ -100,7 +100,7 @@ describe('MemberEditComponent — ongoing→finished (rendered, reported bug)', 
   const memberWithOngoing = {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
-    city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
+    city: null, registrationDate: null, memberStatus: 'ACTIVE',
     groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, trainings: [],
     ministries: [{ ministryPublicId: 'min1', name: '찬양팀', startDate: '2024-03-01', endDate: null, note: null }],
@@ -258,7 +258,7 @@ describe('MemberEditComponent — 순장', () => {
   const member = {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
-    city: null, registrationDate: null, memberStatus: 'ACTIVE' as const, churchRole: null,
+    city: null, registrationDate: null, memberStatus: 'ACTIVE' as const,
     groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, trainings: [], ministries: [],
     isGroupLeader: false as boolean,
@@ -529,7 +529,7 @@ describe('MemberEditComponent — training catalog', () => {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null,
     houseNumber: null, zipCode: null, city: null, registrationDate: null,
-    memberStatus: 'ACTIVE' as const, churchRole: null, groupPublicId: 'grp-1', groupName: '믿음',
+    memberStatus: 'ACTIVE' as const, groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, ministries: [],
     trainings: [
       { trainingPublicId: 'p-qtbs', name: 'Quiet Time Basic Seminar',
@@ -692,7 +692,7 @@ describe('MemberEditComponent — 양육 / 사역 Zeilen', () => {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null,
     houseNumber: null, zipCode: null, city: null, registrationDate: null,
-    memberStatus: 'ACTIVE' as const, churchRole: null, groupPublicId: 'grp-1', groupName: '믿음',
+    memberStatus: 'ACTIVE' as const, groupPublicId: 'grp-1', groupName: '믿음',
     profileImageUrl: null, trainings: [], ministries: [],
   };
 
@@ -813,7 +813,7 @@ describe('MemberEditComponent — unsaved changes', () => {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: 'MALE',
     baptism: null, birthDate: '1995-04-12', phoneNumber: '+4917647384957', email: 'a@b.de',
     street: null, houseNumber: null, zipCode: null, city: 'Düsseldorf',
-    registrationDate: '2023-09-01', memberStatus: 'ACTIVE', churchRole: null,
+    registrationDate: '2023-09-01', memberStatus: 'ACTIVE',
     groupPublicId: 'grp-1', groupName: '믿음', isGroupLeader: true,
     profileImageUrl: null, trainings: [],
     ministries: [{ ministryPublicId: 'min1', name: '찬양팀', startDate: '2024-03-01', endDate: null, note: null }],
@@ -914,7 +914,7 @@ describe('MemberEditComponent — 직업', () => {
   const member = {
     publicId: 'm1', lastName: '김', firstName: '철수', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null,
-    zipCode: null, city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
+    zipCode: null, city: null, registrationDate: null, memberStatus: 'ACTIVE',
     groupPublicId: 'grp-1', groupName: '믿음', isGroupLeader: false,
     profileImageUrl: null, trainings: [], ministries: [],
     occupation: null as string | null,
@@ -996,7 +996,7 @@ describe('MemberEditComponent — 순 required (#224, #225)', () => {
   const member = {
     publicId: 'm1', lastName: '홍', firstName: '길동', discriminator: null, gender: null,
     baptism: null, birthDate: null, phoneNumber: null, email: null, street: null, houseNumber: null, zipCode: null,
-    city: null, registrationDate: null, memberStatus: 'ACTIVE', churchRole: null,
+    city: null, registrationDate: null, memberStatus: 'ACTIVE',
     groupPublicId: 'grp-1', groupName: '믿음', isGroupLeader: false,
     profileImageUrl: null, trainings: [], ministries: [],
   };

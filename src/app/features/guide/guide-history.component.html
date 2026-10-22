@@ -1,0 +1,83 @@
+<section class="flex min-w-0 flex-col gap-[var(--space-24)]" [attr.aria-busy]="state.loading()">
+  <app-page-header class="hidden tablet:block" [heading]="'guide.reports.title' | translate" [eyebrow]="'guide.reports.ministry' | translate" [subtitle]="'guide.reports.subtitle' | translate">
+    @if (canWrite()) { <a appActions pButton routerLink="attendance/new">{{ 'guide.details.title' | translate }}</a> }
+    <a appActions pButton severity="secondary" [outlined]="true" routerLink="counting-areas">{{ 'guide.areas.title' | translate }}</a>
+  </app-page-header>
+  <header class="flex flex-col gap-[var(--space-8)] tablet:hidden">
+    <p class="type-overline text-ink-muted">{{ 'guide.reports.ministry' | translate }}</p>
+    <h1 class="type-h2 text-ink-strong">{{ 'guide.reports.title' | translate }}</h1>
+    <p class="type-body-sm text-ink-muted">{{ 'guide.reports.subtitle' | translate }}</p>
+    <a pButton severity="secondary" [outlined]="true" routerLink="counting-areas">{{ 'guide.areas.title' | translate }}</a>
+    @if (canWrite()) { <a pButton routerLink="attendance/new">{{ 'guide.details.title' | translate }}</a> }
+  </header>
+  <div class="border-b border-line"><span class="inline-block border-b-2 border-ink-strong px-[var(--space-16)] py-[var(--space-12)] type-body text-ink-strong">{{ 'guide.reports.records' | translate }}</span><a routerLink='/guide/statistics' class='inline-block px-[var(--space-16)] py-[var(--space-12)] type-body text-ink-muted'>{{ 'guide.statistics.title' | translate }}</a></div>
+  @if (state.notice(); as notice) { <p role="alert" class="type-body-sm text-ink-strong">{{ ('guide.reports.' + notice) | translate }}</p> }
+  @if (!state.loading() && !state.loadFailed()) {
+    @if (state.latest(); as latest) {
+      <div class="hidden tablet:grid tablet:grid-cols-2 desktop:grid-cols-4 gap-[var(--space-16)]" data-testid="guide-overview">
+        <app-stat-card [showIcon]="false" [label]="'guide.reports.latestTotal' | translate" [value]="people(latest.totalCount)" [subtext]="date(latest.serviceDate) + ' · ' + ('guide.reports.delta' | translate) + ' ' + delta(latest.previousWeekDelta)" />
+        @for (service of services; track service) {
+          <app-stat-card [showIcon]="false" [label]="'guide.reports.service' | translate:{service}" [value]="people(serviceCount(latest,service))" [subtext]="('guide.reports.delta' | translate) + ' ' + delta(serviceDelta(latest,service))" />
+        }
+      </div>
+    }
+  }
+  <div class="flex flex-wrap items-center gap-[var(--space-12)]">
+    <label for="guide-year" class="type-caption text-ink-muted">{{ 'guide.reports.year' | translate }}</label>
+    <p-select inputId="guide-year" [options]="state.years()" [ngModel]="state.query().year" (ngModelChange)="changeYear($event)" [disabled]="state.deleting()" />
+    <span class="type-caption text-ink-muted">{{ state.query().year }}.01.01 – {{ state.query().year }}.12.31</span>
+    @if (!state.loading() && !state.loadFailed()) { <span class="type-caption text-ink-muted tablet:ml-auto">{{ 'guide.reports.recordCount' | translate:{count:state.page().totalElements} }}</span> }
+  </div>
+  @if (state.loading()) {
+    <div role="status" class="flex flex-col gap-[var(--space-16)]"><span class="sr-only">{{ 'guide.reports.loading' | translate }}</span><app-skeleton variant="card" /><app-skeleton variant="chart" /></div>
+  } @else if (state.loadFailed()) {
+    <app-empty-state variant="error" [heading]="'guide.reports.loadFailed' | translate" [description]="'guide.reports.retryHelp' | translate" [actionLabel]="'guide.reports.retry' | translate" (action)="state.load()" />
+  } @else if (!state.page().content.length) {
+    <app-empty-state [variant]="state.hasAnyRecords() ? 'no-results' : 'no-data'" [heading]="'guide.reports.empty' | translate" [description]="(state.hasAnyRecords() ? 'guide.reports.emptyYear' : 'guide.reports.emptyAll') | translate" />
+  } @else {
+    <div class="hidden min-w-0 overflow-hidden rounded-[var(--radius-lg)] border border-line-subtle tablet:block">
+      <p-table [value]="state.page().content" dataKey="publicId" tableStyleClass="min-w-[1136px] type-body" [rowHover]="true">
+        <ng-template #header><tr>
+          <th class="w-40">{{ 'guide.reports.date' | translate }}</th>
+          @for (service of services; track service) { <th class="w-28 !text-right">{{ 'guide.reports.service' | translate:{service} }}</th> }
+          <th class="w-28 !text-right">{{ 'guide.reports.total' | translate }}</th><th class="w-28 !text-right">{{ 'guide.reports.delta' | translate }}</th>
+          <th class="w-72">{{ 'guide.reports.notes' | translate }}</th>
+          @if (canWrite()) { <th class="w-28"><span class="sr-only">{{ 'guide.reports.actions' | translate }}</span></th> }
+        </tr></ng-template>
+        <ng-template #body let-report><tr data-testid="guide-report-row">
+          <td class="whitespace-nowrap">{{ date(report.serviceDate) }}</td>
+          @for (service of services; track service) { <td class="!text-right tabular-nums">{{ count(serviceCount(report,service)) }}</td> }
+          <td class="!text-right font-bold tabular-nums">{{ count(report.totalCount) }}</td><td class="!text-right tabular-nums">{{ delta(report.previousWeekDelta) }}</td>
+          <td class="whitespace-pre-wrap break-words">{{ report.notes ?? '—' }}</td>
+          @if (canWrite()) { <td><div class="flex items-center">
+            <p-button icon="pi pi-pencil" [text]="true" severity="secondary" [pTooltip]="'guide.reports.edit' | translate" [ariaLabel]="('guide.reports.edit' | translate) + ' ' + date(report.serviceDate)" [routerLink]="['records',report.publicId,'edit']" [disabled]="state.deleting()" />
+            <p-button icon="pi pi-trash" [text]="true" severity="danger" [pTooltip]="'guide.reports.delete' | translate" [ariaLabel]="('guide.reports.delete' | translate) + ' ' + date(report.serviceDate)" [disabled]="state.deleting()" (onClick)="confirmDelete(report)" />
+          </div></td> }
+        </tr></ng-template>
+      </p-table>
+    </div>
+    <div class="flex flex-col gap-[var(--space-16)] tablet:hidden">
+      @for (report of state.page().content; track report.publicId) {
+        <article data-testid="guide-report-card" class="flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card">
+          <h2 class="type-h3 text-ink-strong">{{ date(report.serviceDate) }}</h2>
+          <div class="flex items-center justify-between"><span class="type-body text-ink-muted">{{ 'guide.reports.total' | translate }}</span><strong class="type-h1 text-ink-strong tabular-nums">{{ people(report.totalCount) }}</strong></div>
+          <dl class="grid grid-cols-3 gap-[var(--space-8)]">
+            @for (service of services; track service) { <div class="min-w-0 break-words"><dt class="type-caption text-ink-muted">{{ 'guide.reports.service' | translate:{service} }}</dt><dd class="type-h3 text-ink-strong mt-[var(--space-4)] tabular-nums">{{ count(serviceCount(report,service)) }}</dd></div> }
+          </dl>
+          <p class="type-caption text-ink-muted">{{ 'guide.reports.delta' | translate }} <span class="text-ink-strong">{{ delta(report.previousWeekDelta) }}</span></p>
+          <p class="type-body-sm text-ink-muted whitespace-pre-wrap break-words">{{ report.notes ?? '—' }}</p>
+          @if (canWrite()) {
+            <div class="flex gap-[var(--space-8)]">
+              <a class="flex-1" pButton severity="secondary" [outlined]="true" [routerLink]="['records',report.publicId,'edit']">{{ 'guide.reports.edit' | translate }}</a>
+              <p-button icon="pi pi-trash" [text]="true" severity="danger" [pTooltip]="'guide.reports.delete' | translate" [ariaLabel]="('guide.reports.delete' | translate) + ' ' + date(report.serviceDate)" [disabled]="state.deleting()" (onClick)="confirmDelete(report)" />
+            </div>
+          }
+        </article>
+      }
+    </div>
+    <p-paginator [first]="state.page().number * state.page().size" [rows]="state.page().size" [totalRecords]="state.page().totalElements" [rowsPerPageOptions]="[6,12,24]" (onPageChange)="changePage($event)" />
+  }
+  <p class="type-caption text-ink-muted">{{ 'guide.reports.unknownHelp' | translate }}</p>
+  @if (!canWrite()) { <p class="type-caption text-ink-muted">{{ 'guide.reports.readOnly' | translate }}</p> }
+</section>
+<p-confirmdialog key="guide-delete" />

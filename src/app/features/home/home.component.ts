@@ -40,6 +40,7 @@ import {
   isSunday,
   totalAttendanceRow,
 } from './home.model';
+import { GuideHomeComponent } from './guide-home.component';
 import { HomeService, QUICK_RECORD_PAGE_SIZE } from './home.service';
 
 /**
@@ -71,6 +72,7 @@ import { HomeService, QUICK_RECORD_PAGE_SIZE } from './home.service';
     SkeletonComponent,
     AccordionSectionComponent,
     NgTemplateOutlet,
+    GuideHomeComponent,
   ],
   templateUrl: './home.component.html',
 })

@@ -18,6 +18,7 @@ export const APP_ROUTES: Routes = [
     canActivate: [authGuard],
     canActivateChild: [webAccessGuard],
     children: [
+      { path: 'guide', loadChildren: () => import('./features/guide/guide.routes').then(m => m.GUIDE_ROUTES) },
       {
         path: '',
         pathMatch: 'full',

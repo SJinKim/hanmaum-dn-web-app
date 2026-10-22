@@ -4,10 +4,11 @@ import { ChartComponent, ChartSeries, ChartType } from './chart.component';
 
 /** The computed Chart.js config is protected; the spec reads it through this view. */
 interface ChartInternals {
-  chartData(): { datasets: { label?: string; borderDash?: number[] }[] };
+  chartData(): { datasets: { label?: string; borderDash?: number[]; data?: (number | null)[]; spanGaps?: boolean; pointRadius?: number; borderColor?: string }[] };
   chartOptions(): {
+    indexAxis: string;
     plugins: { tooltip: { callbacks: { label(item: unknown): string } } };
-    scales: { y?: { ticks: { callback(value: number): string } } };
+    scales: { x?: { ticks: { callback(value: number): string } }; y?: { ticks: { callback(value: number): string } } };
   };
 }
 
@@ -22,6 +23,33 @@ describe('ChartComponent', () => {
     fixture.detectChanges();
     return fixture.componentInstance as unknown as ChartInternals;
   }
+
+  it('preserves null gaps and explicitly disables spanning them', () => {
+    const chart = render('line', [{ label: 'Total', data: [0, null, 7] }]);
+    expect(chart.chartData().datasets[0].data).toEqual([0, null, 7]);
+    expect(chart.chartData().datasets[0].spanGaps).toBeFalse();
+    expect(chart.chartData().datasets[0].pointRadius).toBeGreaterThan(0);
+  });
+
+  it('uses the value axis for horizontal service-share bars', () => {
+    const fixture = TestBed.createComponent(ChartComponent);
+    fixture.componentRef.setInput('type', 'bar'); fixture.componentRef.setInput('heading', 'Shares');
+    fixture.componentRef.setInput('horizontal', true); fixture.componentRef.setInput('valueSuffix', '%');
+    fixture.componentRef.setInput('series', [{ label: 'Share', data: [25] }]); fixture.detectChanges();
+    const options = (fixture.componentInstance as unknown as ChartInternals).chartOptions();
+    expect(options.indexAxis).toBe('y'); expect(options.scales.x?.ticks.callback(25)).toBe('25%');
+  });
+
+  it('refreshes canvas colors after a mounted theme changes', async () => {
+    const fixture = TestBed.createComponent(ChartComponent);
+    fixture.componentRef.setInput('heading', 'Theme'); fixture.componentRef.setInput('series', [{ label: 'Total', data: [1] }]);
+    fixture.nativeElement.style.setProperty('--color-chart-series-1', '#111111'); fixture.detectChanges();
+    const chart = fixture.componentInstance as unknown as ChartInternals;
+    expect(chart.chartData().datasets[0].borderColor).toBe('#111111');
+    fixture.nativeElement.style.setProperty('--color-chart-series-1', '#eeeeee'); fixture.nativeElement.setAttribute('data-theme', 'dark');
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(chart.chartData().datasets[0].borderColor).toBe('#eeeeee');
+  });
 
   it('dashes only the series marked dashed', () => {
     const chart = render('line', [

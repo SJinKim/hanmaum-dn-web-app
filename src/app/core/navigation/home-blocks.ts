@@ -50,7 +50,8 @@ export type HomeBlockId =
   | 'statistics'
   | 'sundayGroupCounts'
   | 'sundayCheckins'
-  | 'quickRecords';
+  | 'quickRecords'
+  | 'guide';
 
 /**
  * How much data a block shows. `own-group` is the matrix's "자기 순만" / "자기 순
@@ -96,6 +97,7 @@ const LEADER_ROLES = ['group_leader', 'leader'] as const;
 const NEWCOMER_ROLES = ['newcomer_viewer', 'newcomer_editor'] as const;
 
 export const HOME_BLOCKS: readonly HomeBlock[] = [
+  { id: 'guide', roles: ['admin', 'pastor', 'guide_viewer', 'guide_editor'] },
   { id: 'pendingApprovals', roles: ['admin', 'pastor', 'note_taker'] },
   { id: 'awaitingRsvps', hiddenForRoles: NEWCOMER_ROLES },
   { id: 'longAbsent', roles: ['pastor'], pending: true },
@@ -121,7 +123,7 @@ export const HOME_BLOCKS: readonly HomeBlock[] = [
   { id: 'quickRecords', roles: ['admin', 'pastor', ...NEWCOMER_ROLES] },
 ];
 
-export type HomeGroupId = 'attention' | 'sunday' | 'newcomers' | 'church';
+export type HomeGroupId = 'attention' | 'sunday' | 'newcomers' | 'church' | 'guide';
 
 export interface HomeGroup {
   id: HomeGroupId;
@@ -135,6 +137,7 @@ export interface HomeGroup {
  * Pending blocks keep their home here so they slot in once they ship.
  */
 export const HOME_GROUPS: readonly HomeGroup[] = [
+  { id: 'guide', blocks: ['guide'] },
   { id: 'attention', blocks: ['pendingApprovals', 'awaitingRsvps', 'longAbsent'] },
   { id: 'sunday', blocks: ['sundayGroupCounts', 'sundayCheckins', 'groupAttendance'] },
   { id: 'newcomers', blocks: ['quickRecords'] },

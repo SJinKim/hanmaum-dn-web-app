@@ -29,6 +29,7 @@
 
 <ng-template #groupBody let-id>
   @switch (id) {
+    @case ('guide') { @if (showsBlock('guide')) { <app-guide-home /> } }
     @case ('attention') {
       <div class="flex flex-col gap-gutter tablet:flex-row">
         @if (showsBlock('pendingApprovals')) {

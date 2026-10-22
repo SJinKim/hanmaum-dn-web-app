@@ -300,6 +300,14 @@ describe('RoleService', () => {
   });
 
   describe('homeBlocks', () => {
+    it('shows only Guide Home to a Guide-only reader or editor and preserves additional role blocks', () => {
+      for (const role of ['GUIDE_VIEWER', 'guide_editor']) expect([...withRoles([role]).homeBlocks()]).toEqual(['guide']);
+      const newcomer = withRoles(['GUIDE_VIEWER', 'NEWCOMER_EDITOR']);
+      expect([...newcomer.homeBlocks()]).toEqual(jasmine.arrayWithExactContents(['guide', 'quickRecords']));
+      const leader = withRoles(['GUIDE_EDITOR', 'GROUP_LEADER']);
+      expect(leader.showsHomeBlock('guide')).toBeTrue(); expect(leader.showsHomeBlock('sundayCheckins')).toBeTrue();
+    });
+
     it('gives an admin every block the matrix grants 관리자', () => {
       const blocks = withRoles(['ADMIN']).homeBlocks();
       expect(blocks.has('pendingApprovals')).toBeTrue();

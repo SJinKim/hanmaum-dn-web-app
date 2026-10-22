@@ -67,6 +67,14 @@ function text(value: string | null | undefined): string | undefined {
 }
 
 /**
+ * Keeps an emptied field in the body as `''`. The server reads `''` as "clear" and cannot
+ * tell a cleared field from an omitted one, so only this form can say which it is (#255).
+ */
+function clearable(value: string | null | undefined): string {
+  return (value ?? '').trim();
+}
+
+/**
  * Figma: 새가족 수정 / 추가 (324:23444) — one card 새가족 정보 in three columns
  * plus 특이사항 across. Both routes (`new`, `:publicId/edit`) share this component.
  */
@@ -128,6 +136,9 @@ export class NewcomerEditComponent implements OnInit, HasUnsavedChanges {
     email:                    ['', Validators.email],
     kakaoId:                  [''],
     street:                   [''],
+    houseNumber:              [''],
+    zipCode:                  [''],
+    city:                     [''],
     baptism:                  [null as Baptism | null],
     churchExperience:         [null as ChurchExperience | null],
     registrationDate:         [null as Date | null],
@@ -309,6 +320,9 @@ export class NewcomerEditComponent implements OnInit, HasUnsavedChanges {
       email:                    n.email ?? '',
       kakaoId:                  n.kakaoId ?? '',
       street:                   n.street ?? '',
+      houseNumber:              n.houseNumber ?? '',
+      zipCode:                  n.zipCode ?? '',
+      city:                     n.city ?? '',
       baptism:                  n.baptism,
       churchExperience:         n.churchExperience,
       registrationDate:         n.registrationDate ? isoToLocalDate(n.registrationDate) : null,
@@ -326,6 +340,8 @@ export class NewcomerEditComponent implements OnInit, HasUnsavedChanges {
   private toRequest(): CreateNewcomerRequest {
     const v = this.form.getRawValue();
     const local = text(v.phoneLocal);
+    // Only an edit can clear an address field; a create has nothing to clear and leaves it out.
+    const address = this.isEdit() ? clearable : text;
     return {
       lastName:                 v.lastName!.trim(),
       firstName:                v.firstName!.trim(),
@@ -336,7 +352,10 @@ export class NewcomerEditComponent implements OnInit, HasUnsavedChanges {
       phoneNumber:              local ? normalizeToE164(v.phoneCountry!, local) ?? undefined : undefined,
       email:                    text(v.email),
       kakaoId:                  text(v.kakaoId),
-      street:                   text(v.street),
+      street:                   address(v.street),
+      houseNumber:              address(v.houseNumber),
+      zipCode:                  address(v.zipCode),
+      city:                     address(v.city),
       baptism:                  v.baptism ?? undefined,
       churchExperience:         v.churchExperience ?? undefined,
       registrationDate:         localDateToIso(v.registrationDate) ?? undefined,

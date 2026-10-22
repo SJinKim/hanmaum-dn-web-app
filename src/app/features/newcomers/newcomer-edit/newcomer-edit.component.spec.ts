@@ -100,6 +100,38 @@ describe('NewcomerEditComponent', () => {
     expect(request.version).toBe(4);
   });
 
+  it('sends an emptied address field as an empty string in edit mode', () => {
+    const { component } = setup('n-1');
+    service.getNewcomer.and.returnValue(of(newcomerFixture({
+      street: 'Hauptstraße', houseNumber: '7a', zipCode: '80331', city: 'München',
+    })));
+    component.ngOnInit();
+    service.updateNewcomer.and.returnValue(of(newcomerFixture()));
+    component.form.patchValue({ street: '', houseNumber: '  ', zipCode: '', city: 'Berlin' });
+
+    component.save();
+
+    const request = service.updateNewcomer.calls.mostRecent().args[1];
+    expect(request.street).toBe('');
+    expect(request.houseNumber).toBe('');
+    expect(request.zipCode).toBe('');
+    expect(request.city).toBe('Berlin');
+  });
+
+  it('leaves an empty address field out of a create', () => {
+    const { component } = setup(null);
+    service.createNewcomer.and.returnValue(of(newcomerFixture({ publicId: 'n-new' })));
+    fillRequired(component);
+
+    component.save();
+
+    const request = service.createNewcomer.calls.mostRecent().args[0];
+    expect(request.street).toBeUndefined();
+    expect(request.houseNumber).toBeUndefined();
+    expect(request.zipCode).toBeUndefined();
+    expect(request.city).toBeUndefined();
+  });
+
   it('shows the conflict toast on 409', () => {
     const { component, messages, router } = setup('n-1');
     service.updateNewcomer.and.returnValue(throwError(() => ({ status: 409 })));
@@ -125,6 +157,28 @@ describe('NewcomerEditComponent', () => {
     service.getNewcomer.and.returnValue(throwError(() => ({ status: 404 })));
     component.ngOnInit();
     expect(component.notFound()).toBeTrue();
+  });
+
+  it('loads and returns all four address fields', () => {
+    const { component } = setup('n-1');
+    service.getNewcomer.and.returnValue(of(newcomerFixture({
+      street: 'Hauptstraße', houseNumber: '12a', zipCode: '60313', city: 'Frankfurt',
+    })));
+    service.updateNewcomer.and.returnValue(of(newcomerFixture()));
+    component.ngOnInit();
+
+    expect(component.form.get('street')!.value).toBe('Hauptstraße');
+    expect(component.form.get('houseNumber')!.value).toBe('12a');
+    expect(component.form.get('zipCode')!.value).toBe('60313');
+    expect(component.form.get('city')!.value).toBe('Frankfurt');
+
+    component.save();
+
+    const [, request] = service.updateNewcomer.calls.mostRecent().args;
+    expect(request.street).toBe('Hauptstraße');
+    expect(request.houseNumber).toBe('12a');
+    expect(request.zipCode).toBe('60313');
+    expect(request.city).toBe('Frankfurt');
   });
 
   it('syncs the segmented gender control into the form', () => {

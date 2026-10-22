@@ -295,15 +295,8 @@ describe('ChurchGroupsService', () => {
       expect(m.rowCount).toBe(1);
     });
 
-    it('ignores churchRole when resolving the 순장', () => {
-      const member = makeMember({ publicId: 'x', groupPublicId: 'g1', lastName: '이', firstName: '영희', churchRole: '순장' });
-      const m = service.buildMatrix([member], [group1]);
-      expect(m.divisions[0].groups[0].leader).toBe('');
-      expect(m.divisions[0].groups[0].members.length).toBe(1);
-    });
-
     it('leader is empty string when no 순장 in the group', () => {
-      const member = makeMember({ publicId: 'x', groupPublicId: 'g1', churchRole: null });
+      const member = makeMember({ publicId: 'x', groupPublicId: 'g1' });
       const m = service.buildMatrix([member], [group1]);
       expect(m.divisions[0].groups[0].leader).toBe('');
     });
