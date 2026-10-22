@@ -8,7 +8,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:scripts": "node --test scripts/",
+    "test:scripts": "node --test scripts/*.test.mjs",
     "prebuild": "node scripts/generate-vercel-env.mjs",
     "lint": "ng lint"
   },
