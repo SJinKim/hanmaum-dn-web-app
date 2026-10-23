@@ -1,4 +1,4 @@
-<!-- Figma: 이벤트 참석자 · Desktop (220:11145); on Phone the table becomes list cards. -->
+<!-- Figma: 이벤트 응답 현황 (220:11145); Phone uses the same response badges in list cards. -->
 <p-toast />
 
 <div class="flex flex-col gap-gutter">
@@ -36,44 +36,53 @@
     </div>
   </app-page-header>
 
-  <div class="grid grid-cols-1 gap-gutter sm:grid-cols-3" data-testid="attendee-stats">
-    <app-stat-card
-      icon="pi pi-users"
-      [label]="'events.attendeeStats.total' | translate"
-      [value]="'' + totalCount()"
-      [subtext]="'events.attendeeStats.totalSub' | translate" />
-    <app-stat-card
-      icon="pi pi-sitemap"
-      [label]="'events.attendeeStats.groups' | translate"
-      [value]="'' + groups().total"
-      [subtext]="groups().byDivision" />
-    <section
-      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-8)] rounded-[var(--radius-lg)] border p-card"
-      data-testid="linked-announcement">
-      <span class="type-body-sm text-ink-muted flex items-center gap-[var(--space-8)]">
-        <i class="pi pi-megaphone" aria-hidden="true"></i>
-        {{ 'events.attendeeStats.announcement' | translate }}
-      </span>
-      @if (linkedAnnouncement(); as announcement) {
-        <button
-          type="button"
-          class="type-h3 text-ink-strong flex cursor-pointer items-center gap-[var(--space-4)] text-left hover:underline"
-          (click)="viewAnnouncement()">
-          <span class="truncate">{{ announcement.title }}</span>
-          <i class="pi pi-angle-right" aria-hidden="true"></i>
-        </button>
-      } @else {
-        <span class="type-h3 text-ink-muted">{{ 'events.attendeeStats.noAnnouncement' | translate }}</span>
-      }
-    </section>
+  <div class="grid grid-cols-2 gap-gutter lg:grid-cols-4" data-testid="attendee-stats">
+    @for (filter of filters().slice(1); track filter.value) {
+      <app-stat-card
+        icon="pi pi-users"
+        [label]="filter.label"
+        [value]="'' + filter.count"
+        [subtext]="(filter.value === 'PENDING' ? 'events.pendingHint' : 'events.respondedHint') | translate" />
+    }
   </div>
+  <section
+    class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-8)] rounded-[var(--radius-lg)] border p-card"
+    data-testid="linked-announcement">
+    <span class="type-body-sm text-ink-muted flex items-center gap-[var(--space-8)]">
+      <i class="pi pi-megaphone" aria-hidden="true"></i>
+      {{ 'events.attendeeStats.announcement' | translate }}
+    </span>
+    @if (linkedAnnouncement(); as announcement) {
+      <button
+        type="button"
+        class="type-h3 text-ink-strong flex cursor-pointer items-center gap-[var(--space-4)] text-left hover:underline"
+        (click)="viewAnnouncement()">
+        <span class="truncate">{{ announcement.title }}</span>
+        <i class="pi pi-angle-right" aria-hidden="true"></i>
+      </button>
+    } @else {
+      <span class="type-h3 text-ink-muted">{{ 'events.attendeeStats.noAnnouncement' | translate }}</span>
+    }
+  </section>
 
   <section
     class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-card"
     data-testid="attendees-card">
     <app-section-header [heading]="'events.attendeeList' | translate" />
+    <p class="type-body-sm text-ink-muted" data-testid="response-summary">{{ summary() }}</p>
+    <div class="flex flex-wrap gap-[var(--space-8)]" data-testid="response-filters">
+      @for (filter of filters(); track filter.value) {
+        <app-filter-chip
+          [label]="filter.label"
+          [count]="filter.count"
+          [selected]="responseFilter() === filter.value"
+          (toggled)="responseFilter.set(filter.value)" />
+      }
+    </div>
 
-    @if (isPhone()) {
+    @if (loadFailed() && !result()) {
+      <app-empty-state [heading]="'events.errors.attendees' | translate" [description]="'events.retryHint' | translate" />
+    } @else if (isPhone()) {
       @if (loading()) {
         <app-skeleton variant="card" />
       } @else if (records().length === 0) {

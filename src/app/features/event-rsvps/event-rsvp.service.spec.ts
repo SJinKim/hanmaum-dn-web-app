@@ -110,4 +110,13 @@ describe('EventRsvpService', () => {
       done();
     });
   });
+
+  it('loads the complete response overview including pending members', done => {
+    api.get.and.returnValue(of({ responses: [{ memberPublicId: 'm1', status: null, respondedAt: null }] }));
+    service.getResponses(rsvp.publicId).subscribe(result => {
+      expect(result.responses[0].status).toBeNull();
+      expect(api.get).toHaveBeenCalledOnceWith('/v1/events/rsvps/rsvp-1/responses');
+      done();
+    });
+  });
 });
