@@ -11,7 +11,7 @@
   role="dialog"
   aria-modal="true"
   [attr.aria-label]="'shell.nav.aria' | translate"
-  class="fixed bottom-0 left-0 top-0 z-50 w-[var(--size-sidebar)] border-r border-line bg-surface shadow-elevation-lg"
+  class="fixed bottom-0 left-0 top-0 z-50 flex w-[var(--size-sidebar)] border-r border-line bg-surface shadow-elevation-lg"
 >
   <app-sidebar mode="drawer" (navigate)="dismiss.emit()" />
 </div>

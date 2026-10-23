@@ -1,4 +1,4 @@
-<div class="flex h-screen overflow-hidden bg-surface-base">
+<div class="flex h-dvh overflow-hidden bg-surface-base">
   @if (showSidebar()) {
     <app-sidebar [mode]="sidebarMode()" (modeToggle)="toggleSidebar()" />
   }
@@ -6,7 +6,8 @@
   <div class="flex min-w-px flex-1 flex-col overflow-hidden">
     <app-header (drawerToggle)="openDrawer()" />
 
-    <main class="flex-1 overflow-auto p-page">
+    <!-- Contain absolute descendants (including sr-only captions) in this scroller. -->
+    <main class="relative min-h-0 min-w-0 flex-1 overflow-auto p-page">
       <router-outlet />
     </main>
   </div>
