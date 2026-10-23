@@ -75,3 +75,27 @@ export function eventRsvpStatus(
   if (now >= new Date(rsvp.windowEnd)) return 'CLOSED';
   return 'OPEN';
 }
+
+/** null is no response; MAYBE is an explicit answer. */
+export type EventResponseStatus = 'GOING' | 'NOT_GOING' | 'MAYBE';
+
+export interface EventMemberResponse {
+  memberPublicId: string;
+  memberName: string;
+  groupName: string | null;
+  groupDivision: string | null;
+  status: EventResponseStatus | null;
+  respondedAt: string | null;
+}
+
+export interface EventResponses {
+  eventPublicId: string;
+  eventTitle: string;
+  expectedCount: number;
+  respondedCount: number;
+  goingCount: number;
+  notGoingCount: number;
+  maybeCount: number;
+  pendingCount: number;
+  responses: EventMemberResponse[];
+}

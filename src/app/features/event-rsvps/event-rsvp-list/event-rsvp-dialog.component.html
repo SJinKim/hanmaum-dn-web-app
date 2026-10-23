@@ -99,6 +99,29 @@
     } @else if (hasError('windowStart') || hasError('windowEnd')) {
       <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'events.dialog.required' | translate }}</small>
     }
+    <div class="flex flex-col gap-[var(--space-4)]">
+      <label for="event-announcement" class="type-caption text-ink-muted">{{ 'events.dialog.announcement' | translate }}</label>
+      <p-select
+        inputId="event-announcement"
+        formControlName="announcementId"
+        [options]="announcementOptions()"
+        optionLabel="title"
+        optionValue="id"
+        [placeholder]="'events.dialog.announcementPlaceholder' | translate"
+        [loading]="announcementsLoading()"
+        [filter]="true"
+        filterBy="title"
+        appendTo="body"
+        class="w-full"
+        data-testid="event-announcement" />
+      <small class="type-caption text-ink-muted">{{ 'events.dialog.announcementHint' | translate }}</small>
+      @if (announcementsFailed()) {
+        <div role="alert" class="flex items-center gap-[var(--space-8)]">
+          <small class="type-caption text-[var(--color-badge-deleted-fg)]">{{ 'events.errors.announcements' | translate }}</small>
+          <p-button [label]="'events.refresh' | translate" [text]="true" (onClick)="loadAnnouncements()" />
+        </div>
+      }
+    </div>
   </form>
 
   <ng-template #footer>

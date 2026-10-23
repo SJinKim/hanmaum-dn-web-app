@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideTranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { EventRsvpDto } from '../event-rsvp.model';
 import { EventRsvpService } from '../event-rsvp.service';
@@ -16,7 +16,8 @@ describe('EventRsvpDialogComponent', () => {
   let service: jasmine.SpyObj<EventRsvpService>;
 
   beforeEach(() => {
-    service = jasmine.createSpyObj<EventRsvpService>('EventRsvpService', ['createRsvp', 'updateRsvp']);
+    service = jasmine.createSpyObj<EventRsvpService>('EventRsvpService', ['createRsvp', 'updateRsvp', 'getEventAnnouncements']);
+    service.getEventAnnouncements.and.returnValue(of([{ id: 'a1', title: '수련회 안내' }, { id: 'a2', title: '다른 행사' }]));
     TestBed.configureTestingModule({
       imports: [EventRsvpDialogComponent],
       providers: [
@@ -88,5 +89,55 @@ describe('EventRsvpDialogComponent', () => {
     const [id, req] = service.updateRsvp.calls.mostRecent().args;
     expect(id).toBe('e1');
     expect('announcementId' in req).toBeFalse();
+  });
+
+  it('links the selected EVENT announcement when creating', () => {
+    service.createRsvp.and.returnValue(of(RSVP));
+    const c = render(null);
+    c.form.patchValue({ title: '행사', announcementId: 'a1', windowStart: new Date(2026, 8, 1), windowEnd: new Date(2026, 8, 2) });
+    c.submit();
+    expect(service.createRsvp.calls.mostRecent().args[0].announcementId).toBe('a1');
+  });
+
+  it('loads the current announcement and saves a replacement on edit', () => {
+    service.updateRsvp.and.returnValue(of(RSVP));
+    const c = render(RSVP);
+    expect(c.form.controls.announcementId.value).toBe('a1');
+    expect(c.announcementOptions().length).toBe(2);
+    c.form.patchValue({ announcementId: 'a2' });
+    c.submit();
+    expect(service.updateRsvp.calls.mostRecent().args[1].announcementId).toBe('a2');
+  });
+
+  it('preserves the linked announcement when loading choices fails and supports retry', () => {
+    service.getEventAnnouncements.and.returnValue(throwError(() => new Error('offline')));
+    service.updateRsvp.and.returnValue(of(RSVP));
+    const c = render(RSVP);
+    expect(c.announcementsFailed()).toBeTrue();
+    expect(c.announcementOptions()[0].id).toBe('a1');
+    service.getEventAnnouncements.and.returnValue(of([{ id: 'a1', title: '수련회 안내' }]));
+    c.loadAnnouncements();
+    expect(c.announcementsFailed()).toBeFalse();
+    c.submit();
+    expect(service.updateRsvp.calls.mostRecent().args[1].announcementId).toBeUndefined();
+  });
+
+  it('keeps the announcement chosen through the PrimeNG dropdown after change detection', async () => {
+    const fixture = TestBed.createComponent(EventRsvpDialogComponent);
+    fixture.componentRef.setInput('rsvp', RSVP);
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const c = fixture.componentInstance;
+    fixture.nativeElement.querySelector('[data-testid="event-announcement"] [role="combobox"]').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const option = Array.from(document.querySelectorAll<HTMLElement>('[role="option"]'))
+      .find(element => element.textContent?.includes('다른 행사'));
+    expect(option).toBeDefined();
+    option!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(c.form.controls.announcementId.value).toBe('a2');
   });
 });
