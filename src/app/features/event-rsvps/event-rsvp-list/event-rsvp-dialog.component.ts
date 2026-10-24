@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, input, model, output, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -13,7 +13,7 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 
 import { injectAppLang } from '../../../core/i18n/language';
-import { EventRsvpDto, EventRsvpStatus, eventRsvpStatus } from '../event-rsvp.model';
+import { EventRsvpDto, EventAnnouncementOption, EventRsvpStatus, eventRsvpStatus } from '../event-rsvp.model';
 import { EventRsvpService } from '../event-rsvp.service';
 
 export const TITLE_MAX = 100;
@@ -25,7 +25,7 @@ export const DESCRIPTION_MAX = 500;
  *
  * 상태 is not a field of its own on the server — it follows from 바로 공개
  * (`isActive`) and the dates, so the select only shows the result.
- * The linked 공지 is not in the form; editing keeps whatever link exists.
+ * An optional EVENT 공지 can be linked on create or changed on edit.
  */
 @Component({
   selector: 'app-event-rsvp-dialog',
@@ -53,6 +53,17 @@ export class EventRsvpDialogComponent {
   readonly titleMax = TITLE_MAX;
   readonly descriptionMax = DESCRIPTION_MAX;
   readonly saving = signal(false);
+  readonly announcements = signal<EventAnnouncementOption[]>([]);
+  readonly announcementsLoading = signal(false);
+  readonly announcementsFailed = signal(false);
+  readonly announcementOptions = computed(() => {
+    this.lang();
+    const options = this.announcements();
+    const id = this.rsvp()?.announcementPublicId;
+    return id && !options.some(option => option.id === id)
+      ? [{ id, title: this.translate.instant('events.dialog.existingAnnouncement') as string }, ...options]
+      : options;
+  });
 
   readonly isEdit = computed(() => this.rsvp() !== null);
 
@@ -65,6 +76,7 @@ export class EventRsvpDialogComponent {
     title:       ['', [Validators.required, Validators.maxLength(TITLE_MAX)]],
     description: ['', Validators.maxLength(DESCRIPTION_MAX)],
     isActive:    [true],
+    announcementId: [null as string | null],
     windowStart: [null as Date | null, Validators.required],
     windowEnd:   [null as Date | null, Validators.required],
   }, { validators: endNotBeforeStart });
@@ -97,14 +109,34 @@ export class EventRsvpDialogComponent {
   constructor() {
     effect(() => {
       const r = this.rsvp();
-      this.visible();
-      this.form.reset({
-        title: r?.title ?? '',
-        description: r?.description ?? '',
-        isActive: r?.isActive ?? true,
-        windowStart: r ? new Date(r.windowStart) : null,
-        windowEnd: r ? new Date(r.windowEnd) : null,
+      if (!this.visible()) return;
+      // PrimeNG reads internal signals during writeValue; only inputs reset this form.
+      untracked(() => {
+        this.form.reset({
+          title: r?.title ?? '',
+          description: r?.description ?? '',
+          isActive: r?.isActive ?? true,
+          announcementId: r?.announcementPublicId ?? null,
+          windowStart: r ? new Date(r.windowStart) : null,
+          windowEnd: r ? new Date(r.windowEnd) : null,
+        });
+        this.loadAnnouncements();
       });
+    });
+  }
+
+  loadAnnouncements(): void {
+    this.announcementsLoading.set(true);
+    this.announcementsFailed.set(false);
+    this.service.getEventAnnouncements().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: options => {
+        this.announcements.set(options);
+        this.announcementsLoading.set(false);
+      },
+      error: () => {
+        this.announcementsLoading.set(false);
+        this.announcementsFailed.set(true);
+      },
     });
   }
 
@@ -126,10 +158,12 @@ export class EventRsvpDialogComponent {
     const windowEnd = endOfDay(v.windowEnd!).toISOString();
 
     const r = this.rsvp();
+    const announcement = v.announcementId && v.announcementId !== r?.announcementPublicId
+      ? { announcementId: v.announcementId } : {};
     const request$: Observable<EventRsvpDto> = r
-      ? this.service.updateRsvp(r.publicId, { title, description, isActive, windowStart, windowEnd })
+      ? this.service.updateRsvp(r.publicId, { title, description, isActive, windowStart, windowEnd, ...announcement })
       : this.service
-          .createRsvp({ title, description: description || null, isActive, windowStart, windowEnd })
+          .createRsvp({ title, description: description || null, isActive, windowStart, windowEnd, ...announcement })
           // A server without #226 ignores `isActive` and opens every new event.
           .pipe(switchMap(created => created.isActive === isActive
             ? of(created)

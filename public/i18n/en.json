@@ -690,7 +690,7 @@
     "subtitle": "Manage each event's sign-up window and review who attended.",
     "add": "New event",
     "list": "Events",
-    "attendees": "View attendees",
+    "attendees": "View responses",
     "edit": "Edit",
     "saved": "Event saved",
     "stats": {
@@ -734,14 +734,18 @@
       "endBeforeStart": "The window cannot close before it opens.",
       "required": "Required.",
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "announcement": "Linked announcement",
+      "announcementPlaceholder": "Select an announcement (optional)",
+      "announcementHint": "Only announcements in the Event category can be linked.",
+      "existingAnnouncement": "Currently linked announcement"
     },
     "breadcrumb": "Breadcrumb",
     "back": "Back to events",
-    "attendeesEyebrow": "Event attendees",
-    "attendeesSubtitle": "Shows check-in order and each member's 순 at sign-up.",
+    "attendeesEyebrow": "Event responses",
+    "attendeesSubtitle": "See each member’s answer and who has not responded yet.",
     "refresh": "Refresh",
-    "attendeeList": "Attendees",
+    "attendeeList": "Response list",
     "attendeeStats": {
       "total": "Attendees",
       "totalSub": "Checked in",
@@ -753,18 +757,32 @@
       "order": "#",
       "name": "Name",
       "group": "순",
-      "checkedInAt": "Checked in"
+      "checkedInAt": "Checked in",
+      "status": "Response",
+      "respondedAt": "Responded at"
     },
     "attendeeEmpty": {
-      "heading": "No attendees yet",
-      "description": "Members appear here once they check in."
+      "heading": "No matching responses",
+      "description": "Select another response status."
     },
     "errors": {
       "summary": "Error",
       "load": "Could not load events.",
       "save": "Could not save the event.",
-      "attendees": "Could not load the attendee list."
-    }
+      "attendees": "Could not load event responses.",
+      "announcements": "Could not load announcements."
+    },
+    "responseStatus": {
+      "ALL": "All",
+      "GOING": "Going",
+      "NOT_GOING": "Not going",
+      "MAYBE": "Maybe",
+      "PENDING": "No response"
+    },
+    "responseSummary": "{{responded}} of {{expected}} members have responded",
+    "pendingHint": "Has not answered yet",
+    "respondedHint": "Answer selected in the app",
+    "retryHint": "Select Refresh to try again."
   },
   "groups": {
     "eyebrow": "Training",

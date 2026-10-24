@@ -7,6 +7,7 @@ import {
   EventAnnouncementOption,
   EventRsvpAttendeesResponse,
   EventRsvpDto,
+  EventResponses,
   UpdateEventRsvpRequest,
 } from './event-rsvp.model';
 
@@ -54,5 +55,9 @@ export class EventRsvpService {
 
   getAttendees(publicId: string): Observable<EventRsvpAttendeesResponse> {
     return this.api.get<EventRsvpAttendeesResponse>(`${this.basePath}/${publicId}/attendees`);
+  }
+
+  getResponses(publicId: string): Observable<EventResponses> {
+    return this.api.get<EventResponses>(`${this.basePath}/${publicId}/responses`);
   }
 }

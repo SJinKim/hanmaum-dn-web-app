@@ -10,9 +10,10 @@ import { ToastModule } from 'primeng/toast';
 
 import { injectAppLang } from '../../../core/i18n/language';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
-import { DataColumn, DataRecord } from '../../../core/ui/data-record.model';
+import { DataColumn, DataRecord, DataRecordBadge } from '../../../core/ui/data-record.model';
 import { DataTableComponent } from '../../../core/ui/data-table/data-table.component';
 import { EmptyStateComponent } from '../../../core/ui/empty-state/empty-state.component';
+import { FilterChipComponent } from '../../../core/ui/filter-chip/filter-chip.component';
 import { ListCardComponent } from '../../../core/ui/list-card/list-card.component';
 import { PageHeaderComponent } from '../../../core/ui/page-header/page-header.component';
 import { SectionHeaderComponent } from '../../../core/ui/section-header/section-header.component';
@@ -20,11 +21,11 @@ import { SkeletonComponent } from '../../../core/ui/skeleton/skeleton.component'
 import { StatCardComponent } from '../../../core/ui/stat-card/stat-card.component';
 import { DIVISION_LABELS } from '../../attendance/attendance.model';
 import { formatCheckInTime } from '../event-rsvp-format';
-import { EventRsvpAttendee, EventRsvpAttendeesResponse } from '../event-rsvp.model';
+import { EventMemberResponse, EventResponses, EventResponseStatus } from '../event-rsvp.model';
 import { EventRsvpService } from '../event-rsvp.service';
 
-/** "다니엘 1순" — the 순 as it was when the member checked in. */
-export function attendeeGroupLabel(attendee: Pick<EventRsvpAttendee, 'groupName' | 'groupDivision'>): string {
+/** Response-time group for an answer; current group for an unanswered member. */
+export function attendeeGroupLabel(attendee: Pick<EventMemberResponse, 'groupName' | 'groupDivision'>): string {
   if (!attendee.groupName) return '';
   const division = attendee.groupDivision
     ? DIVISION_LABELS[attendee.groupDivision] ?? attendee.groupDivision
@@ -32,34 +33,12 @@ export function attendeeGroupLabel(attendee: Pick<EventRsvpAttendee, 'groupName'
   return division ? `${division} ${attendee.groupName}` : attendee.groupName;
 }
 
-export interface GroupBreakdown {
-  /** Distinct 순 among the attendees. */
-  total: number;
-  /** "다니엘 4 · 느헤미야 4" — distinct 순 per 부서, in first-seen order. */
-  byDivision: string;
-}
+type ResponseFilter = EventResponseStatus | 'PENDING' | 'ALL';
+const RESPONSE_VARIANTS: Record<Exclude<ResponseFilter, 'ALL'>, DataRecordBadge['variant']> = {
+  GOING: 'active', NOT_GOING: 'deleted', MAYBE: 'inactive', PENDING: 'neutral',
+};
 
-export function groupBreakdown(attendees: EventRsvpAttendee[]): GroupBreakdown {
-  const groups = new Map<string, Set<string>>();
-  for (const a of attendees) {
-    if (!a.groupName) continue;
-    const division = a.groupDivision ? DIVISION_LABELS[a.groupDivision] ?? a.groupDivision : '';
-    const set = groups.get(division) ?? new Set<string>();
-    set.add(a.groupName);
-    groups.set(division, set);
-  }
-  const total = [...groups.values()].reduce((sum, s) => sum + s.size, 0);
-  const byDivision = [...groups.entries()]
-    .filter(([division]) => division)
-    .map(([division, set]) => `${division} ${set.size}`)
-    .join(' · ');
-  return { total, byDivision };
-}
-
-/**
- * Figma: 이벤트 참석자 · Desktop (220:11145). Check-in order, with the 순 the
- * member belonged to when they checked in, and a link to the 이벤트 공지.
- */
+/** Figma: 이벤트 응답 현황, with explicit answers separate from unanswered members. */
 @Component({
   selector: 'app-event-rsvp-attendees',
   standalone: true,
@@ -70,6 +49,7 @@ export function groupBreakdown(attendees: EventRsvpAttendee[]): GroupBreakdown {
     DataTableComponent,
     EmptyStateComponent,
     ListCardComponent,
+    FilterChipComponent,
     PageHeaderComponent,
     SectionHeaderComponent,
     SkeletonComponent,
@@ -90,13 +70,32 @@ export class EventRsvpAttendeesComponent implements OnInit {
   readonly isPhone = inject(BreakpointService).isPhone;
 
   readonly eventPublicId = this.route.snapshot.paramMap.get('id') ?? '';
-  readonly result = signal<EventRsvpAttendeesResponse | null>(null);
+  readonly result = signal<EventResponses | null>(null);
   readonly loading = signal(false);
+  readonly loadFailed = signal(false);
+  readonly responseFilter = signal<ResponseFilter>('ALL');
   readonly linkedAnnouncement = signal<{ id: string; title: string } | null>(null);
 
   readonly title = computed(() => this.result()?.eventTitle ?? '');
-  readonly totalCount = computed(() => this.result()?.totalCount ?? 0);
-  readonly groups = computed(() => groupBreakdown(this.result()?.attendees ?? []));
+  readonly filters = computed(() => {
+    this.lang();
+    const result = this.result();
+    return [
+      { value: 'ALL', count: result?.expectedCount ?? 0 },
+      { value: 'GOING', count: result?.goingCount ?? 0 },
+      { value: 'NOT_GOING', count: result?.notGoingCount ?? 0 },
+      { value: 'MAYBE', count: result?.maybeCount ?? 0 },
+      { value: 'PENDING', count: result?.pendingCount ?? 0 },
+    ].map(filter => ({ ...filter, value: filter.value as ResponseFilter,
+      label: this.translate.instant(`events.responseStatus.${filter.value}`) as string }));
+  });
+  readonly summary = computed(() => {
+    this.lang();
+    const result = this.result();
+    return this.translate.instant('events.responseSummary', {
+      responded: result?.respondedCount ?? 0, expected: result?.expectedCount ?? 0,
+    }) as string;
+  });
 
   readonly columns = computed<DataColumn[]>(() => {
     this.lang();
@@ -105,24 +104,29 @@ export class EventRsvpAttendeesComponent implements OnInit {
       { type: 'text', key: 'order', header: t('order'), width: '64px', sortKey: 'cells.order' },
       { type: 'avatar-name', header: t('name') },
       { type: 'text', key: 'group', header: t('group') },
-      { type: 'date', header: t('checkedInAt'), sortKey: 'cells.checkedInAt' },
+      { type: 'badge', header: t('status') },
+      { type: 'date', header: t('respondedAt'), sortKey: 'cells.respondedAt' },
     ];
   });
 
   readonly records = computed<DataRecord[]>(() => {
     const lang = this.lang();
-    return (this.result()?.attendees ?? []).map((a, i) => {
-      const group = attendeeGroupLabel(a);
-      const time = formatCheckInTime(a.checkedInAt, lang);
-      return {
-        id: `${i + 1}`,
-        title: a.memberName,
-        initials: a.memberName.slice(-2),
-        subtitle: group ? `${group} · ${time}` : time,
-        meta: time,
-        cells: { order: i + 1, group, checkedInAt: a.checkedInAt },
-      };
-    });
+    const filter = this.responseFilter();
+    return (this.result()?.responses ?? [])
+      .filter(a => filter === 'ALL' || (a.status ?? 'PENDING') === filter)
+      .map((a, i) => {
+        const status = a.status ?? 'PENDING';
+        return {
+          id: a.memberPublicId,
+          title: a.memberName,
+          initials: a.memberName.slice(-2),
+          subtitle: attendeeGroupLabel(a),
+          badge: { variant: RESPONSE_VARIANTS[status],
+            label: this.translate.instant(`events.responseStatus.${status}`) as string },
+          meta: a.respondedAt ? formatCheckInTime(a.respondedAt, lang) : '—',
+          cells: { order: i + 1, group: attendeeGroupLabel(a), respondedAt: a.respondedAt ?? '' },
+        };
+      });
   });
 
   ngOnInit(): void {
@@ -133,7 +137,8 @@ export class EventRsvpAttendeesComponent implements OnInit {
   load(): void {
     if (!this.eventPublicId) return;
     this.loading.set(true);
-    this.service.getAttendees(this.eventPublicId)
+    this.loadFailed.set(false);
+    this.service.getResponses(this.eventPublicId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: result => {
@@ -142,6 +147,7 @@ export class EventRsvpAttendeesComponent implements OnInit {
         },
         error: () => {
           this.loading.set(false);
+          this.loadFailed.set(true);
           this.messageService.add({
             severity: 'error',
             summary: this.translate.instant('events.errors.summary') as string,

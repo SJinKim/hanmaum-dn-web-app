@@ -690,7 +690,7 @@
     "subtitle": "이벤트별 접수 기간을 관리하고 참석자 명단을 확인합니다.",
     "add": "새 이벤트",
     "list": "이벤트 목록",
-    "attendees": "참석자 보기",
+    "attendees": "응답 현황 보기",
     "edit": "수정",
     "saved": "이벤트를 저장했습니다",
     "stats": {
@@ -734,14 +734,18 @@
       "endBeforeStart": "접수 종료는 접수 시작보다 빠를 수 없습니다.",
       "required": "필수 항목입니다.",
       "cancel": "취소",
-      "save": "저장"
+      "save": "저장",
+      "announcement": "연결된 공지",
+      "announcementPlaceholder": "공지 선택 (선택 사항)",
+      "announcementHint": "이벤트 카테고리의 공지만 연결할 수 있습니다.",
+      "existingAnnouncement": "기존에 연결된 공지"
     },
     "breadcrumb": "이동 경로",
     "back": "이벤트로 돌아가기",
-    "attendeesEyebrow": "이벤트 참석자",
-    "attendeesSubtitle": "체크인 순서와 신청 당시의 순을 표시합니다.",
+    "attendeesEyebrow": "이벤트 응답 현황",
+    "attendeesSubtitle": "참석 · 불참 · 미정과 아직 응답하지 않은 청년을 확인합니다.",
     "refresh": "새로고침",
-    "attendeeList": "참석자 명단",
+    "attendeeList": "응답 명단",
     "attendeeStats": {
       "total": "전체 참석자",
       "totalSub": "체크인 완료",
@@ -753,18 +757,32 @@
       "order": "#",
       "name": "이름",
       "group": "순",
-      "checkedInAt": "체크인 시간"
+      "checkedInAt": "체크인 시간",
+      "status": "응답",
+      "respondedAt": "응답 시간"
     },
     "attendeeEmpty": {
-      "heading": "아직 참석자가 없습니다",
-      "description": "앱에서 체크인하면 여기에 표시됩니다."
+      "heading": "해당하는 응답이 없습니다",
+      "description": "다른 응답 상태를 선택해 주세요."
     },
     "errors": {
       "summary": "오류",
       "load": "이벤트를 불러올 수 없습니다.",
       "save": "이벤트를 저장할 수 없습니다.",
-      "attendees": "참석자 명단을 불러올 수 없습니다."
-    }
+      "attendees": "응답 명단을 불러올 수 없습니다.",
+      "announcements": "공지를 불러올 수 없습니다."
+    },
+    "responseStatus": {
+      "ALL": "전체",
+      "GOING": "참석",
+      "NOT_GOING": "불참",
+      "MAYBE": "미정",
+      "PENDING": "미응답"
+    },
+    "responseSummary": "전체 {{expected}}명 중 {{responded}}명 응답",
+    "pendingHint": "응답 대기",
+    "respondedHint": "앱 응답",
+    "retryHint": "새로고침을 눌러 다시 시도해 주세요."
   },
   "groups": {
     "eyebrow": "양육 관리",
