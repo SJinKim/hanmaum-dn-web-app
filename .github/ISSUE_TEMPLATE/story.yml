@@ -1,0 +1,43 @@
+name: User Story
+description: Neue Funktion aus Nutzersicht
+labels: ["type:story"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: Story
+      description: "Als <Rolle> möchte ich <Ziel>, damit <Nutzen>."
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Kontext
+      description: Hintergrund, Nutzer, Bezug zu Produktziel / Entscheidungen
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Akzeptanzkriterien
+      description: "Testbar, im Format Gegeben / Wenn / Dann – inkl. Fehler- und Randfälle"
+      value: |
+        1. **Gegeben** … **wenn** … **dann** …
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Nicht Teil dieser Story
+  - type: input
+    id: figma
+    attributes:
+      label: Figma-Frames
+      description: Links zu den Frames (bei UI-Stories, wird vom Designer ergänzt)
+  - type: textarea
+    id: design
+    attributes:
+      label: Technisches Design
+      description: Wird vom Architekten ergänzt (oder Link auf docs/design/…)
+  - type: textarea
+    id: open
+    attributes:
+      label: Offene Fragen

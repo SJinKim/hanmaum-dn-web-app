@@ -1,0 +1,36 @@
+name: Bug
+description: Fehler melden
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Was passiert?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Was sollte passieren?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Schritte zum Reproduzieren
+      value: |
+        1.
+        2.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Wo?
+      multiple: true
+      options: [Web, Android, iOS, Backend, Infrastruktur]
+  - type: textarea
+    id: env
+    attributes:
+      label: Umgebung / Version / Logs
+      description: Keine Passwörter, Tokens oder personenbezogenen Daten einfügen.

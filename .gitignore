@@ -46,7 +46,7 @@ src/environments/environment.local.ts
 # Local tooling & docs (not tracked)
 .claude/
 .superpowers/
-AGENTS.md
 CONTRIBUTING.md
 design-specs/
-tasks/
+tasks/*
+!tasks/lessons.md
