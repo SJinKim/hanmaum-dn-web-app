@@ -1,7 +1,7 @@
 # Entscheidung: <Frage in einem Satz>
 
 **Stufe:** 1 (Produkt) / 2 (Technik) · **Tragweite:** klein / mittel / groß
-**Führende Rolle:** <PO Claude B | Architekt Codex> · **Blockiert:** #<nr>, #<nr> · **Antwort sinnvoll bis:** <Datum>
+**Führende Rolle:** <PO Shepherd | Architekt Cornerstone> · **Blockiert:** #<nr>, #<nr> · **Antwort sinnvoll bis:** <Datum>
 
 ## Kurzfassung
 - **Frage:** …
