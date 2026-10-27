@@ -8,8 +8,10 @@ project_number: 7                # Nummer des GitHub Project (Board)
 stage_field: Stage
 base_branch: dev                 # Branches abzweigen von und PRs gegen diesen Branch
 auto_merge: false                # true = nach Review (+ QA bei ui/size:M) + grüner CI automatisch mergen
-codex_cloud_review: auto         # mention = Developer kommentiert "@codex review" | auto = GitHub-Integration reviewt selbst | off
+codex_cloud_review: off          # mention = Developer kommentiert "@codex review" | auto = GitHub-Integration reviewt selbst | off
 figma_file: https://www.figma.com/design/KSEMYc00jcgvyQ6qWt1cm4/DN-Web
+staging_url: https://dn-admin-dashboard.st.graceops.de   # st-Umgebung für st-Tests
+tester_login: graceops-tester    # Passwort nur in Jins Keychain (graceops-tester), nie im Repo
 
 # Sprache
 language_docs: de                # Issues, Kommentare, Doku
