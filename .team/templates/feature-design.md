@@ -1,6 +1,6 @@
 # Technisches Design: <KEY>-<nr> <Titel>
 
-**Story:** #<nr> · **Figma:** <Frame-Links oder „keine UI“> · **Architekt:** Codex · **Stand:** YYYY-MM-DD
+**Story:** #<nr> · **Figma:** <Frame-Links oder „keine UI“> · **Architekt:** Cornerstone · **Stand:** YYYY-MM-DD
 
 ## Ziel in einem Satz
 

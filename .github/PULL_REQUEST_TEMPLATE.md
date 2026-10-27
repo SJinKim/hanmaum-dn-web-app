@@ -1,7 +1,7 @@
 ## Was und warum
 Closes #
 
-**Agent:** Claude A / Codex / Claude B · **Reviewer laut Matrix:** Codex / Claude A
+**Agent:** Builder / Bezalel / Cornerstone · **Reviewer laut Matrix:** Cornerstone / Bezalel
 
 ## Umsetzung
 - …
