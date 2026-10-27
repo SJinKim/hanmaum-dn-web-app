@@ -8,7 +8,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:scripts": "node --test scripts/*.test.mjs",
+    "test:scripts": "node --test scripts/*.test.mjs e2e/support/*.test.mjs",
+    "e2e:st": "node scripts/e2e-st.mjs",
+    "e2e:harness": "node --test e2e/harness/harness.test.mjs",
+    "e2e:typecheck": "tsc -p e2e/tsconfig.json",
     "prebuild": "node scripts/generate-vercel-env.mjs",
     "lint": "ng lint"
   },

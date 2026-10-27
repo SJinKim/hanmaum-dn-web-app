@@ -33,6 +33,10 @@ describe('Guide Home report presentation and entry routing', () => {
     expect(element.querySelector('[data-testid="guide-home-entry"]')).toBeNull();
     expect(element.querySelector('a[href*="/edit"]')).toBeNull();
   });
+  it('marks the status block for the st regression (HDN-272) and shows the report date in it', () => {
+    const status = render().nativeElement.querySelector('[data-testid="guide-home-status"]');
+    expect(status?.textContent).toContain('2026.10.18');
+  });
   it('labels a multi-week gap as the latest saved report rather than last week', () => {
     const data = guideHomeFixture(); data.currentSunday = '2026-11-01'; state.snapshot.set(data);
     expect(render().componentInstance.previousLabel()).toBe('home.guide.latestRecord');
