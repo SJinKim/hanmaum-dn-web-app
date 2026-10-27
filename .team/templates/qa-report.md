@@ -1,4 +1,9 @@
-**[Claude B · QA]** Abnahme #<nr> – **bestanden / nicht bestanden**
+**[Shepherd · QA]** ✅ Abgenommen / ❌ Zurückgewiesen
+Tests: <grün>/<gesamt> grün
+Figma: <keine Abweichungen | n Abweichungen (…)> · bei Mobile –
+st: <AK1 ✅ AK2 ❌ – …> · vor dem Merge –
+
+Abnahme #<nr> – Details:
 
 ### Akzeptanzkriterien
 | # | Kriterium | Ergebnis | Nachweis |
