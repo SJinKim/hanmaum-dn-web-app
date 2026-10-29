@@ -12,7 +12,7 @@
   }
   @if (navigationFailed()) { <p role="alert" class="type-body text-ink-strong">{{ 'home.guide.navigationFailed' | translate }}</p> }
   @if (state.snapshot(); as data) {
-    <div class="flex flex-wrap items-center justify-between gap-[var(--space-16)] rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card">
+    <div data-testid="guide-home-status" class="flex flex-wrap items-center justify-between gap-[var(--space-16)] rounded-[var(--radius-lg)] border border-line-subtle bg-surface p-card">
       <div class="flex flex-col gap-[var(--space-8)]">
         <div class="flex flex-wrap items-center gap-[var(--space-8)]"><strong class="type-h3 text-ink-strong">{{ date(report()?.serviceDate ?? data.currentSunday) }}</strong>
           <app-badge [variant]="data.waitingForCurrentSunday ? 'neutral' : data.status === 'COMPLETE' ? 'active' : 'pending'" [label]="('home.guide.' + (!data.attendance ? 'EMPTY' : data.waitingForCurrentSunday ? 'waiting' : data.status)) | translate" />
