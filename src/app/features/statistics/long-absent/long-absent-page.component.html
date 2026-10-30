@@ -1,0 +1,224 @@
+<!--
+  Figma: 장기결석자 · Desktop 1956:177795 / 1956:177834, Tablet 1960:181432 / 1961:181644,
+  Phone 1960:181869 / 1961:181675. Dialogs 1959:178678 (memo), 1959:180923 (undo).
+-->
+<div class="flex flex-col gap-gutter">
+  <app-page-header
+    [eyebrow]="'statistics.eyebrow' | translate"
+    [heading]="'statistics.title' | translate"
+    [subtitle]="'statistics.subtitle' | translate" />
+
+  <app-analytics-tabs
+    [count]="summary.openCount()"
+    [loading]="summary.loading()"
+    [failed]="summary.failed() && !summary.forbidden()"
+    (retry)="summary.load()" />
+
+  @if (forbidden()) {
+    <app-empty-state
+      iconClass="pi pi-ban"
+      data-testid="long-absent-forbidden"
+      [heading]="'statistics.longAbsent.states.forbidden' | translate"
+      [description]="'statistics.longAbsent.states.forbiddenDescription' | translate" />
+  } @else {
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card"
+      [attr.aria-busy]="state.status() === 'loading'">
+      <div class="flex flex-col gap-[var(--space-12)] lg:flex-row lg:items-end lg:justify-between">
+        <div class="flex flex-col gap-[var(--space-4)]">
+          <h2 #listHeading tabindex="-1" class="type-h3 text-ink-strong focus:outline-none">
+            {{ 'statistics.longAbsent.heading' | translate }}
+            @if (state.status() === 'ready') {
+              <span class="type-body-sm text-ink-muted font-normal tabular-nums" data-testid="long-absent-total">
+                {{ 'statistics.longAbsent.total' | translate: { count: state.totalCount() } }}
+              </span>
+            }
+          </h2>
+          <p class="type-caption text-ink-muted">{{ 'statistics.longAbsent.subtitle' | translate }}</p>
+        </div>
+        @if (state.status() === 'ready' && state.totalCount() > 0) {
+          <div class="w-full lg:w-[360px]" data-testid="long-absent-filter">
+            <app-segmented-control
+              [options]="filterOptions()"
+              [value]="state.filter()"
+              (valueChange)="onFilterChange($event)"
+              [ariaLabel]="'statistics.longAbsent.filter.label' | translate" />
+          </div>
+        }
+      </div>
+
+      @switch (state.status()) {
+        @case ('loading') {
+          <div class="flex flex-col gap-[var(--space-12)]" data-testid="long-absent-loading">
+            @for (line of [0, 1, 2, 3]; track line) {
+              <app-skeleton variant="line" />
+            }
+          </div>
+        }
+        @case ('error') {
+          <app-empty-state
+            variant="error"
+            data-testid="long-absent-error"
+            [heading]="'statistics.longAbsent.states.error' | translate"
+            [actionLabel]="'statistics.longAbsent.states.retry' | translate"
+            actionIcon="pi pi-refresh"
+            (action)="retry()" />
+        }
+        @default {
+          @if (state.totalCount() === 0) {
+            <app-empty-state
+              variant="no-data"
+              data-testid="long-absent-empty"
+              [heading]="'statistics.longAbsent.states.empty' | translate" />
+          } @else if (state.visibleRows().length === 0) {
+            <app-empty-state
+              variant="no-results"
+              data-testid="long-absent-no-results"
+              [heading]="'statistics.longAbsent.states.noResults' | translate" />
+          } @else if (breakpoint.isDesktop()) {
+            <div class="overflow-x-auto">
+              <app-data-table
+                [columns]="columns()"
+                [rows]="records()"
+                [selectable]="false"
+                [caption]="'statistics.longAbsent.heading' | translate">
+                <ng-template appDataCell="name" let-record>
+                  @if (rowOf(record); as row) {
+                    <span
+                      class="type-body text-ink-strong block truncate"
+                      tabindex="0"
+                      data-testid="long-absent-name"
+                      [pTooltip]="displayName(row)"
+                      tooltipEvent="both">
+                      {{ displayName(row) }}
+                    </span>
+                  }
+                </ng-template>
+                <ng-template appDataCell="absence" let-record>
+                  @if (rowOf(record); as row) {
+                    @let badge = urgencyBadge(row);
+                    <span [attr.data-urgency]="badge.variant">
+                      <app-badge size="medium" [variant]="badge.variant" [label]="badge.label" />
+                    </span>
+                  }
+                </ng-template>
+                <ng-template appDataCell="contact" let-record>
+                  @if (rowOf(record); as row) {
+                    <ng-container *ngTemplateOutlet="contactCell; context: { $implicit: row }" />
+                  }
+                </ng-template>
+                <ng-template appDataCell="memo" let-record>
+                  @if (rowOf(record); as row) {
+                    <ng-container *ngTemplateOutlet="memoCell; context: { $implicit: row }" />
+                  }
+                </ng-template>
+              </app-data-table>
+            </div>
+          } @else {
+            <ul class="flex flex-col gap-[var(--space-12)]" data-testid="long-absent-cards">
+              @for (row of state.visibleRows(); track row.memberPublicId) {
+                @let badge = urgencyBadge(row);
+                <li
+                  class="border-line-subtle bg-surface flex flex-col gap-[var(--space-12)] rounded-[var(--radius-lg)] border p-[var(--space-16)]"
+                  data-testid="long-absent-card">
+                  <div class="flex items-start justify-between gap-[var(--space-12)]">
+                    <span class="flex min-w-px flex-1 flex-col gap-[var(--space-2)]">
+                      <span
+                        class="type-body text-ink-strong truncate"
+                        tabindex="0"
+                        [pTooltip]="displayName(row)"
+                        tooltipEvent="both">{{ displayName(row) }}</span>
+                      <span class="type-caption text-ink-muted truncate">
+                        {{ groupLabel(row) }} · {{ 'statistics.longAbsent.columns.lastSunday' | translate }} {{ day(row.lastSundayDate) }}
+                      </span>
+                    </span>
+                    <span class="shrink-0" [attr.data-urgency]="badge.variant">
+                      <app-badge size="medium" [variant]="badge.variant" [label]="badge.label" />
+                    </span>
+                  </div>
+                  <ng-container *ngTemplateOutlet="memoCell; context: { $implicit: row }" />
+                  <ng-container *ngTemplateOutlet="contactCell; context: { $implicit: row }" />
+                </li>
+              }
+            </ul>
+          }
+        }
+      }
+    </section>
+  }
+</div>
+
+<ng-template #contactCell let-row>
+  <span class="flex min-w-px flex-wrap items-center gap-[var(--space-8)]" data-testid="long-absent-contact">
+    @if (row.contacted) {
+      <span class="flex min-w-px flex-1 flex-col">
+        <span class="type-caption text-ink-strong font-semibold">{{ 'statistics.longAbsent.contacted' | translate }}</span>
+        <span class="type-caption text-ink-muted truncate" data-testid="long-absent-contacted-by">{{ contactLine(row) }}</span>
+      </span>
+      @if (canWrite()) {
+        <p-button
+          size="small"
+          severity="secondary"
+          [text]="true"
+          [label]="'statistics.longAbsent.undoContact' | translate"
+          [disabled]="state.isBusy(row)"
+          data-testid="long-absent-undo"
+          (onClick)="openUndo(row, $event)" />
+      }
+    } @else if (canWrite()) {
+      <p-button
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        icon="pi pi-check"
+        [label]="'statistics.longAbsent.markContacted' | translate"
+        [loading]="state.isBusy(row)"
+        data-testid="long-absent-mark"
+        (onClick)="markContacted(row)" />
+    } @else {
+      <span class="type-caption text-ink-muted">{{ 'statistics.longAbsent.notContacted' | translate }}</span>
+    }
+  </span>
+</ng-template>
+
+<ng-template #memoCell let-row>
+  <span class="flex min-w-px items-center gap-[var(--space-8)]" data-testid="long-absent-memo">
+    @if (row.memo) {
+      <span
+        class="type-body-sm text-ink min-w-px flex-1 truncate"
+        tabindex="0"
+        data-testid="long-absent-memo-text"
+        [pTooltip]="row.memo"
+        tooltipEvent="both"
+        tooltipStyleClass="whitespace-pre-line max-w-[360px]">{{ row.memo }}</span>
+    } @else {
+      <span class="type-body-sm text-ink-disabled flex-1">{{ 'statistics.longAbsent.noMemo' | translate }}</span>
+    }
+    @if (canWrite()) {
+      <button
+        class="text-ink-muted hover:bg-surface-subtle flex size-[32px] shrink-0 items-center justify-center rounded-[var(--radius-md)] focus-visible:[outline:2px_solid_var(--color-focus)] disabled:opacity-50"
+        type="button"
+        data-testid="long-absent-edit-memo"
+        [disabled]="state.isBusy(row)"
+        [pTooltip]="(row.memo ? 'statistics.longAbsent.editMemo' : 'statistics.longAbsent.addMemo') | translate"
+        [attr.aria-label]="((row.memo ? 'statistics.longAbsent.editMemo' : 'statistics.longAbsent.addMemo') | translate) + ' · ' + row.fullName"
+        (click)="openMemo(row, $event)">
+        <i class="pi pi-pencil text-[16px]" aria-hidden="true"></i>
+      </button>
+    }
+  </span>
+</ng-template>
+
+<app-long-absent-memo-dialog
+  [row]="memoRow()"
+  [saving]="dialogSaving()"
+  (save)="saveMemo($event)"
+  (dismiss)="closeDialogs()" />
+
+<app-long-absent-undo-dialog
+  [row]="undoRow()"
+  [saving]="dialogSaving()"
+  (confirm)="confirmUndo($event)"
+  (dismiss)="closeDialogs()" />
+
+<p-toast />

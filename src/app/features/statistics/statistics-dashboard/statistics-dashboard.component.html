@@ -1,5 +1,5 @@
 <!--
-  Figma: 통계 · Light 193:3961, Dark 197:2984.
+  Figma: 통계 · Light 193:3961, Dark 197:2984; tabs (#277) under the header.
 -->
 <div class="flex flex-col gap-gutter">
   <div class="flex flex-col gap-[var(--space-12)] lg:flex-row lg:items-end lg:justify-between">
@@ -15,6 +15,12 @@
         [ariaLabel]="'statistics.period.label' | translate" />
     </div>
   </div>
+
+  <app-analytics-tabs
+    [count]="summary.openCount()"
+    [loading]="summary.loading()"
+    [failed]="summary.failed() && !summary.forbidden()"
+    (retry)="summary.load()" />
 
   <div class="grid grid-cols-1 gap-[var(--space-12)] lg:grid-cols-3 lg:gap-[var(--space-24)]">
     <div class="lg:col-span-2" data-chart="growth">

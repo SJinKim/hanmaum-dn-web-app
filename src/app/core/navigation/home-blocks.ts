@@ -1,3 +1,4 @@
+import { SUPER_ROLES } from './feature-access';
 import { NavRole } from './nav-config';
 
 /**
@@ -15,7 +16,7 @@ import { NavRole } from './nav-config';
  * |------------------|-------------|--------|--------|
  * | 승인 대기        | —           | ✓      | ✓      |
  * | 응답 대기        | ✓           | ✓      | ✓      |
- * | 장기 미출석자    | —           | —      | ✓      |
+ * | 장기 미출석자    | —           | ✓ #277 | ✓      |
  * | 순별 참석 현황   | 자기 순만   | 전체   | 전체   |
  * | 현황             | 자기 순 기준| 전체   | 전체   |
  * | 최근 활동        | 자기 순 기준| ✓      | ✓      |
@@ -83,9 +84,8 @@ export interface HomeBlock {
   readonly hiddenForRoles?: readonly string[];
   /**
    * No endpoint backs this block yet, so it is absent for everyone regardless of
-   * role — same reasoning as `NavItem.pending`. 장기 미출석자 has no attendance
-   * query behind it in `openapi.yaml`, and 통계 화면 is the `/analytics` screen
-   * (#60), reached through the navigation rather than drawn on Home.
+   * role — same reasoning as `NavItem.pending`. 통계 화면 is the `/analytics`
+   * screen (#60), reached through the navigation rather than drawn on Home.
    */
   readonly pending?: boolean;
 }
@@ -100,7 +100,8 @@ export const HOME_BLOCKS: readonly HomeBlock[] = [
   { id: 'guide', roles: ['admin', 'pastor', 'guide_viewer', 'guide_editor'] },
   { id: 'pendingApprovals', roles: ['admin', 'pastor', 'note_taker'] },
   { id: 'awaitingRsvps', hiddenForRoles: NEWCOMER_ROLES },
-  { id: 'longAbsent', roles: ['pastor'], pending: true },
+  // #277: 장기결석자 · 미연락 for pastor and admin, from the memo-free summary.
+  { id: 'longAbsent', roles: SUPER_ROLES },
   {
     id: 'groupAttendance',
     ownGroupRoles: ['leader'],
