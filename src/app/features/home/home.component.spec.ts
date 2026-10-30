@@ -7,6 +7,7 @@ import { MemberSummary } from '../../core/models/member.model';
 import { NewcomerVisit } from '../../core/models/newcomer-visit.model';
 import { AuthService } from '../../core/services/auth.service';
 import { GuideHomeComponent } from './guide-home.component';
+import { LongAbsentHomeComponent } from './long-absent-home.component';
 import { HomeComponent } from './home.component';
 import { GroupAttendanceRow, HomeSnapshot, SundayCheckins, SundayGroupCounts } from './home.model';
 import { HomeService } from './home.service';
@@ -85,6 +86,10 @@ const ROWS: GroupAttendanceRow[] = [
 @Component({ selector: 'app-guide-home', standalone: true, template: 'Guide Home' })
 class GuideHomeStub {}
 
+/** The real block reads its own summary; its behaviour lives in long-absent-home.component.spec.ts. */
+@Component({ selector: 'app-long-absent-home', standalone: true, template: 'Long Absent Home' })
+class LongAbsentHomeStub {}
+
 interface Harness {
   fixture: ComponentFixture<HomeComponent>;
   home: jasmine.SpyObj<HomeService>;
@@ -113,7 +118,10 @@ function createHarness(
   const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
   router.navigate.and.resolveTo(true);
 
-  TestBed.overrideComponent(HomeComponent, { remove: { imports: [GuideHomeComponent] }, add: { imports: [GuideHomeStub] } });
+  TestBed.overrideComponent(HomeComponent, {
+    remove: { imports: [GuideHomeComponent, LongAbsentHomeComponent] },
+    add: { imports: [GuideHomeStub, LongAbsentHomeStub] },
+  });
   TestBed.configureTestingModule({
     imports: [HomeComponent],
     providers: [
@@ -221,9 +229,22 @@ describe('HomeComponent', () => {
 
     it('never renders a block no endpoint backs yet', () => {
       const { text } = createHarness(['ADMIN']);
-      expect(text()).not.toContain('home.longAbsent');
       expect(text()).not.toContain('home.statistics');
     });
+
+    for (const roles of [['ADMIN'], ['pastor'], ['Pastor', 'guide_viewer']]) {
+      it(`shows 장기결석자 to ${roles.join(' + ')} in the attention group (#277)`, () => {
+        const { fixture } = createHarness(roles);
+        expect(fixture.nativeElement.querySelector('app-long-absent-home')).not.toBeNull();
+      });
+    }
+
+    for (const roles of [['USER'], ['group_leader'], ['note_taker'], ['general_operations_editor'], ['guide_editor'], ['newcomer_editor']]) {
+      it(`hides 장기결석자 from ${roles.join(' + ')} (#277)`, () => {
+        const { fixture } = createHarness(roles);
+        expect(fixture.nativeElement.querySelector('app-long-absent-home')).toBeNull();
+      });
+    }
 
     it('drops 순별 참석 and 최근 활동 for a note_taker and loads neither (#207)', () => {
       const { text, home } = createHarness(['note_taker']);
@@ -429,7 +450,10 @@ describe('HomeComponent', () => {
       home.loadSundayGroupCounts.and.returnValue(of(SUNDAY_COUNTS));
       home.loadSundayCheckins.and.returnValue(of(CHECKINS));
       home.loadQuickRecords.and.returnValue(of(visitPage(0)));
-      TestBed.overrideComponent(HomeComponent, { remove: { imports: [GuideHomeComponent] }, add: { imports: [GuideHomeStub] } });
+      TestBed.overrideComponent(HomeComponent, {
+        remove: { imports: [GuideHomeComponent, LongAbsentHomeComponent] },
+        add: { imports: [GuideHomeStub, LongAbsentHomeStub] },
+      });
   TestBed.configureTestingModule({
         imports: [HomeComponent],
         providers: [

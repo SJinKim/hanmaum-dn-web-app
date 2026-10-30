@@ -3,6 +3,8 @@ import { provideRouter } from '@angular/router';
 import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 
+import { longAbsenceSummaryFixture } from '../../../core/models/long-absent.fixtures.spec';
+import { LongAbsentApi } from '../../../core/services/long-absent-api.service';
 import { DashboardStats } from '../statistics.model';
 import { StatisticsService } from '../statistics.service';
 import { StatisticsDashboardComponent } from './statistics-dashboard.component';
@@ -51,10 +53,13 @@ const STATS: DashboardStats = {
 
 describe('StatisticsDashboardComponent', () => {
   let service: jasmine.SpyObj<StatisticsService>;
+  let longAbsent: jasmine.SpyObj<LongAbsentApi>;
 
   beforeEach(() => {
     service = jasmine.createSpyObj<StatisticsService>('StatisticsService', ['getDashboard']);
     service.getDashboard.and.returnValue(of(STATS));
+    longAbsent = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo']);
+    longAbsent.summary.and.returnValue(of(longAbsenceSummaryFixture({ uncontactedCount: 5 })));
 
     TestBed.configureTestingModule({
       imports: [StatisticsDashboardComponent],
@@ -62,6 +67,7 @@ describe('StatisticsDashboardComponent', () => {
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'ko' }),
         { provide: StatisticsService, useValue: service },
+        { provide: LongAbsentApi, useValue: longAbsent },
       ],
     });
     const translate = TestBed.inject(TranslateService);
@@ -155,5 +161,35 @@ describe('StatisticsDashboardComponent', () => {
     service.getDashboard.and.returnValue(of({ ...STATS, trainingStages: [] }));
     const el: HTMLElement = render().nativeElement;
     expect(el.querySelector('[data-chart="trainingStages"] app-empty-state')).not.toBeNull();
+  });
+
+  describe('tabs (#277)', () => {
+    it('shows the 장기결석자 tab with the open count from the summary, never loading the list', () => {
+      const el: HTMLElement = render().nativeElement;
+      expect(longAbsent.summary).toHaveBeenCalledTimes(1);
+      expect(longAbsent.list).not.toHaveBeenCalled();
+      expect(el.querySelector('[data-testid="tab-count"]')?.textContent).toContain('5');
+      expect(el.querySelectorAll('[data-chart]').length).toBeGreaterThan(0);
+    });
+
+    it('keeps the charts when the summary fails and offers a retry without a made-up 0', () => {
+      longAbsent.summary.and.returnValue(throwError(() => new Error('down')));
+      const fixture = render();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelector('[data-testid="tab-count"]')).toBeNull();
+      expect(el.querySelector('[data-chart="growth"] app-chart')).not.toBeNull();
+
+      longAbsent.summary.and.returnValue(of(longAbsenceSummaryFixture({ uncontactedCount: 0 })));
+      (el.querySelector('[data-testid="tab-count-retry"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(el.querySelector('[data-testid="tab-count"]')?.textContent).toContain('0');
+    });
+
+    it('keeps the period switch working beside the tabs', () => {
+      const fixture = render();
+      fixture.componentInstance.onPeriodChange('year');
+      fixture.detectChanges();
+      expect(service.getDashboard).toHaveBeenCalledWith('year');
+    });
   });
 });

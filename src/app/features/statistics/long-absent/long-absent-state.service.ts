@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, Observable, Subject, catchError, finalize, map, of, switchMap } from 'rxjs';
+import { EMPTY, Observable, Subject, catchError, defer, finalize, map, of, switchMap } from 'rxjs';
 import { readApiError } from '../../../core/http/api-error';
 import {
   LongAbsence,
@@ -105,14 +105,14 @@ export class LongAbsentState {
       contacted,
       ...(memoUpdate ? { memoUpdate } : {}),
     };
-    return this.write(row, this.api.setContactStatus(row.memberPublicId, body));
+    return this.write(row, () => this.api.setContactStatus(row.memberPublicId, body));
   }
 
   /** `null` clears the memo on purpose. */
   setMemo(row: LongAbsence, memo: string | null): Observable<LongAbsentWriteResult> {
     return this.write(
       row,
-      this.api.setMemo(row.memberPublicId, { lastSundayDate: row.lastSundayDate, version: row.version, memo }),
+      () => this.api.setMemo(row.memberPublicId, { lastSundayDate: row.lastSundayDate, version: row.version, memo }),
     );
   }
 
@@ -124,31 +124,33 @@ export class LongAbsentState {
     this.status.set('forbidden');
   }
 
-  private write(row: LongAbsence, request: Observable<LongAbsence>): Observable<LongAbsentWriteResult> {
+  private write(row: LongAbsence, call: () => Observable<LongAbsence>): Observable<LongAbsentWriteResult> {
     const id = row.memberPublicId;
-    if (this.busy().has(id) || this.status() === 'forbidden') return EMPTY;
-    this.reads.next(null);
-    this.setBusy(id, true);
-    return request.pipe(
-      map((saved): LongAbsentWriteResult => {
-        this.rows.update(rows => rows.map(r => (r.memberPublicId === id ? saved : r)));
-        this.reads.next({ quiet: true });
-        return 'saved';
-      }),
-      catchError((error: unknown) => {
-        const status = readApiError(error)?.status;
-        if (status === 403) {
-          this.revoke();
-          return of<LongAbsentWriteResult>('forbidden');
-        }
-        if (status === 409 || status === 404) {
+    return defer(() => {
+      if (this.busy().has(id) || this.status() === 'forbidden') return EMPTY;
+      this.reads.next(null);
+      this.setBusy(id, true);
+      return call().pipe(
+        map((saved): LongAbsentWriteResult => {
+          this.rows.update(rows => rows.map(r => (r.memberPublicId === id ? saved : r)));
           this.reads.next({ quiet: true });
-          return of<LongAbsentWriteResult>(status === 409 ? 'conflict' : 'notFound');
-        }
-        return of<LongAbsentWriteResult>('failed');
-      }),
-      finalize(() => this.setBusy(id, false)),
-    );
+          return 'saved';
+        }),
+        catchError((error: unknown) => {
+          const status = readApiError(error)?.status;
+          if (status === 403) {
+            this.revoke();
+            return of<LongAbsentWriteResult>('forbidden');
+          }
+          if (status === 409 || status === 404) {
+            this.reads.next({ quiet: true });
+            return of<LongAbsentWriteResult>(status === 409 ? 'conflict' : 'notFound');
+          }
+          return of<LongAbsentWriteResult>('failed');
+        }),
+        finalize(() => this.setBusy(id, false)),
+      );
+    });
   }
 
   private setBusy(id: string, busy: boolean): void {
