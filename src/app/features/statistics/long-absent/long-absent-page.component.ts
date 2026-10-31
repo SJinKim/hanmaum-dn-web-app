@@ -116,12 +116,12 @@ export class LongAbsentPageComponent {
     this.lang();
     const header = (key: string) => this.translate.instant(`statistics.longAbsent.columns.${key}`);
     return [
-      { type: 'custom', key: 'name', header: header('name'), width: '200px', sortable: false },
-      { type: 'text', key: 'group', header: header('group'), width: '140px', sortable: false },
-      { type: 'date', key: 'lastSunday', header: header('lastSunday'), width: '130px', sortable: false },
-      { type: 'custom', key: 'absence', header: header('absence'), width: '170px', sortable: false },
-      { type: 'custom', key: 'contact', header: header('contact'), width: '220px', sortable: false },
-      { type: 'custom', key: 'memo', header: header('memo'), width: '260px', sortable: false },
+      { type: 'custom', key: 'name', header: header('name'), width: '180px', sortable: false },
+      { type: 'text', key: 'group', header: header('group'), width: '130px', sortable: false },
+      { type: 'date', key: 'lastSunday', header: header('lastSunday'), width: '120px', sortable: false },
+      { type: 'custom', key: 'absence', header: header('absence'), width: '160px', sortable: false },
+      { type: 'custom', key: 'contact', header: header('contact'), width: '280px', sortable: false },
+      { type: 'custom', key: 'memo', header: header('memo'), width: '250px', sortable: false },
     ];
   });
 
