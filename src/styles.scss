@@ -148,6 +148,12 @@
   --color-badge-group-leader-bg: var(--amber-50);
   --color-badge-group-leader-fg: var(--amber-700);
 
+  // Badge, 장기결석자 urgency (#277): Figma color/badge/urgency-{amber,orange,red}-{bg,fg}.
+  // Own pairs, not the status badges: 3–5 months amber, 6–11 orange, 12+ red.
+  --color-badge-urgency-amber-bg:  var(--amber-50);  --color-badge-urgency-amber-fg:  var(--amber-700);
+  --color-badge-urgency-orange-bg: var(--orange-50); --color-badge-urgency-orange-fg: var(--orange-700);
+  --color-badge-urgency-red-bg:    var(--red-50);    --color-badge-urgency-red-fg:    var(--red-700);
+
   // Category — the -dot values are mode-invariant, see below.
   --color-category-next-leader-bg:  var(--pink-50);   --color-category-next-leader-fg:  var(--pink-700);
   --color-category-discipleship-bg: var(--violet-50); --color-category-discipleship-fg: var(--violet-700);
@@ -217,6 +223,10 @@
 
   --color-badge-group-leader-bg: var(--amber-950);
   --color-badge-group-leader-fg: var(--amber-400);
+
+  --color-badge-urgency-amber-bg:  var(--amber-950);  --color-badge-urgency-amber-fg:  var(--amber-400);
+  --color-badge-urgency-orange-bg: var(--orange-950); --color-badge-urgency-orange-fg: var(--orange-300);
+  --color-badge-urgency-red-bg:    var(--red-950);    --color-badge-urgency-red-fg:    var(--red-300);
 
   --color-category-next-leader-bg:  var(--pink-950);   --color-category-next-leader-fg:  var(--pink-300);
   --color-category-discipleship-bg: var(--violet-950); --color-category-discipleship-fg: var(--violet-300);

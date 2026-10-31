@@ -75,6 +75,10 @@
             }
           </div>
         }
+
+        @if (showsBlock('longAbsent')) {
+          <app-long-absent-home />
+        }
       </div>
     }
     @case ('sunday') {

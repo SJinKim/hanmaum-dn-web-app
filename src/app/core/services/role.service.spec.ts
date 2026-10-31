@@ -332,8 +332,30 @@ describe('RoleService', () => {
     it('drops blocks no endpoint backs yet, for every role', () => {
       ['ADMIN', 'PASTOR', 'USER'].forEach(role => {
         const roles = withRoles([role]);
-        expect(roles.showsHomeBlock('longAbsent')).toBeFalse();
         expect(roles.showsHomeBlock('statistics')).toBeFalse();
+      });
+    });
+
+    it('shows 장기결석자 to admin and pastor only, in any case (#277)', () => {
+      ['ADMIN', 'admin', 'PASTOR', 'pastor'].forEach(role => {
+        expect(withRoles([role]).showsHomeBlock('longAbsent')).withContext(role).toBeTrue();
+      });
+      expect(withRoles(['pastor', 'guide_viewer']).showsHomeBlock('longAbsent')).toBeTrue();
+      [
+        'USER', 'member', 'leader', 'group_leader', 'note_taker', 'general_operations_editor',
+        'training_editor', 'newcomer_editor', 'guide_editor',
+      ].forEach(role => {
+        expect(withRoles([role]).showsHomeBlock('longAbsent')).withContext(role).toBeFalse();
+      });
+    });
+
+    it('keeps analytics, both tabs, to admin and pastor (#277)', () => {
+      ['ADMIN', 'pastor'].forEach(role => {
+        expect(withRoles([role]).canRead('analytics')).withContext(role).toBeTrue();
+        expect(withRoles([role]).canWrite('analytics')).withContext(role).toBeTrue();
+      });
+      ['USER', 'group_leader', 'note_taker', 'general_operations_editor', 'guide_editor'].forEach(role => {
+        expect(withRoles([role]).canRead('analytics')).withContext(role).toBeFalse();
       });
     });
 

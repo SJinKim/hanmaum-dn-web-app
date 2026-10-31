@@ -12,6 +12,7 @@
     "e2e:st": "node scripts/e2e-st.mjs",
     "e2e:harness": "node --test e2e/harness/harness.test.mjs",
     "e2e:typecheck": "tsc -p e2e/tsconfig.json",
+    "e2e:long-absent": "playwright test -c e2e/playwright.long-absent.config.ts",
     "prebuild": "node scripts/generate-vercel-env.mjs",
     "lint": "ng lint"
   },

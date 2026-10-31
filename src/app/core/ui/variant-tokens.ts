@@ -19,7 +19,7 @@ export interface VariantTokens {
 }
 
 /**
- * Badge variants. Ten come from Figma (95:42); `group-leader` is the web-only
+ * Badge variants. Ten come from Figma (95:42), the three urgency steps from #277; `group-leader` is the web-only
  * extension documented in styles.scss — 순장 has no Figma token yet and reuses
  * the amber pair until one exists.
  *
@@ -39,6 +39,9 @@ export const BADGE_VARIANTS = [
   'training-progress',
   'ministry-active',
   'group-leader',
+  'urgency-3',
+  'urgency-6',
+  'urgency-12',
   'neutral',
 ] as const;
 
@@ -71,8 +74,19 @@ export function resolveMemberPillStage(value: string | null | undefined): Member
   return value && STAGE_NAMES.has(value) ? (value as MemberPillStage) : 'none';
 }
 
+/**
+ * Figma: Badge Urgency3/6/12 (#277). The variant names the step, the token pair
+ * its colour — `color/badge/urgency-{amber,orange,red}`.
+ */
+const BADGE_TOKEN_NAMES: Partial<Record<BadgeVariant, string>> = {
+  'urgency-3': 'urgency-amber',
+  'urgency-6': 'urgency-orange',
+  'urgency-12': 'urgency-red',
+};
+
 export function badgeTokens(variant: string | null | undefined): VariantTokens {
-  const name = resolveBadgeVariant(variant);
+  const resolved = resolveBadgeVariant(variant);
+  const name = BADGE_TOKEN_NAMES[resolved] ?? resolved;
   return {
     background: `var(--color-badge-${name}-bg)`,
     color: `var(--color-badge-${name}-fg)`,

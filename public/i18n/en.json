@@ -70,7 +70,11 @@
       "pendingApprovals": "Pending approvals",
       "approve": "Approve",
       "awaitingRsvps": "Awaiting response",
-      "confirm": "Review"
+      "confirm": "Review",
+      "longAbsent": "Long-term absent · not contacted",
+      "longAbsentSixPlus": "6 mo.+ {{count}}",
+      "longAbsentOpen": "View list",
+      "retry": "Try again"
     },
     "attendance": {
       "heading": "Attendance by group",
@@ -1032,6 +1036,77 @@
       "services": "Services · this week",
       "groupShare": "Attendance by group",
       "ministries": "Members per ministry"
+    },
+    "tabs": {
+      "label": "Analytics views",
+      "statistics": "Statistics",
+      "longAbsent": "Long-term absent",
+      "countLoading": "Loading open count",
+      "countFailed": "Reload count"
+    },
+    "longAbsent": {
+      "heading": "Long-term absent",
+      "total": "{{count}} in total",
+      "subtitle": "Members whose last Sunday check-in was 3 or more months ago · longest absence first",
+      "filter": {
+        "label": "Contact status",
+        "all": "All {{count}}",
+        "open": "Not contacted {{count}}",
+        "done": "Contacted {{count}}"
+      },
+      "columns": {
+        "name": "Name",
+        "group": "Group",
+        "lastSunday": "Last Sunday",
+        "absence": "Absent for",
+        "contact": "Contact",
+        "memo": "Memo"
+      },
+      "badge": "{{months}} mo. · {{level}} mo.+",
+      "noGroup": "No group",
+      "contacted": "Contacted",
+      "notContacted": "Not contacted",
+      "unknownActor": "Unknown",
+      "markContacted": "Contacted",
+      "undoContact": "Undo contact",
+      "noMemo": "No memo",
+      "editMemo": "Edit memo",
+      "addMemo": "Add memo",
+      "states": {
+        "empty": "Nobody has been absent for 3 months or more",
+        "noResults": "Nobody matches this filter",
+        "error": "Could not load the long-term absent list",
+        "retry": "Try again",
+        "forbidden": "No access",
+        "forbiddenDescription": "Only pastors and admins can see the long-term absent list."
+      },
+      "dialog": {
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "memoDialog": {
+        "title": "Edit memo",
+        "label": "Memo (reason for absence)",
+        "privacy": "Organisational feedback only — no diagnoses or health details.",
+        "tooLong": "A memo can hold at most {{max}} characters."
+      },
+      "undoDialog": {
+        "title": "Undo contact",
+        "message": "Undo the contact mark for {{name}}? The existing memo stays.",
+        "label": "Anything new to add to the memo? (optional)",
+        "tooLong": "Together with the existing memo, at most {{max}} characters fit.",
+        "confirm": "Undo contact"
+      },
+      "toast": {
+        "contacted": "Marked as contacted",
+        "undone": "Contact mark undone",
+        "memoSaved": "Memo saved",
+        "conflict": "Something changed in the meantime. The list was reloaded.",
+        "notFound": "This member can no longer be found. The list was reloaded.",
+        "forbidden": "No access",
+        "saveFailed": "Could not save. Please try again.",
+        "refreshFailed": "Saved, but the list could not be refreshed."
+      }
     }
   },
   "archive": {

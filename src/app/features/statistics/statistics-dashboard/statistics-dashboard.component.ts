@@ -12,6 +12,8 @@ import {
   SegmentOption,
   SegmentedControlComponent,
 } from '../../../core/ui/segmented-control/segmented-control.component';
+import { AnalyticsSummaryState } from '../analytics-tabs/analytics-summary-state.service';
+import { AnalyticsTabsComponent } from '../analytics-tabs/analytics-tabs.component';
 import { ChartDatum, DashboardStats, StatisticsPeriod } from '../statistics.model';
 import { StatisticsService } from '../statistics.service';
 
@@ -30,12 +32,17 @@ const MONTH_BUCKET = /^\d{4}-\d{2}$/;
  * Every chart reads the dashboard endpoint (server #229). The period switch
  * reloads it; 성별 분포, 양육 단계, 예배별 집계 and 사역별 인원 are snapshots
  * and do not change with it.
+ *
+ * #277: the 통계 tab of the two analytics tabs. It loads the memo-free
+ * 장기결석자 summary for the tab counter and never the person list.
  */
 @Component({
   selector: 'app-statistics-dashboard',
   standalone: true,
+  providers: [AnalyticsSummaryState],
   imports: [
     TranslatePipe,
+    AnalyticsTabsComponent,
     ChartComponent,
     EmptyStateComponent,
     PageHeaderComponent,
@@ -48,6 +55,7 @@ const MONTH_BUCKET = /^\d{4}-\d{2}$/;
 export class StatisticsDashboardComponent {
   private readonly service = inject(StatisticsService);
   private readonly translate = inject(TranslateService);
+  readonly summary = inject(AnalyticsSummaryState);
 
   /** Recomputes the translated labels when the language changes. */
   private readonly lang = toSignal(this.translate.onLangChange);
@@ -58,6 +66,7 @@ export class StatisticsDashboardComponent {
   readonly period = signal<StatisticsPeriod>('quarter');
 
   constructor() {
+    this.summary.load();
     toObservable(this.period)
       .pipe(
         tap(() => this.loading.set(true)),

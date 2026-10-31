@@ -41,6 +41,7 @@ import {
   totalAttendanceRow,
 } from './home.model';
 import { GuideHomeComponent } from './guide-home.component';
+import { LongAbsentHomeComponent } from './long-absent-home.component';
 import { HomeService, QUICK_RECORD_PAGE_SIZE } from './home.service';
 
 /**
@@ -73,6 +74,7 @@ import { HomeService, QUICK_RECORD_PAGE_SIZE } from './home.service';
     AccordionSectionComponent,
     NgTemplateOutlet,
     GuideHomeComponent,
+    LongAbsentHomeComponent,
   ],
   templateUrl: './home.component.html',
 })
