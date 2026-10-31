@@ -25,7 +25,7 @@ interface ReadRequest {
 }
 
 /**
- * 장기결석자 follow-up (#277). Provided by the page, so the list and every memo
+ * 장기결석자 follow-up (#277, #279). Provided by the page, so the list and every memo
  * go away with it — no storage, no URL, no global cache. Keeps the server order
  * (longest absence first) and filters on a copy.
  */
@@ -116,6 +116,18 @@ export class LongAbsentState {
     );
   }
 
+  /**
+   * 복귀 (#279): ends the loaded phase without a check-in. On success the person
+   * leaves the current list at once; the server's own list follows. A 409 (the
+   * phase moved on, or someone else was faster) reloads and never retries.
+   */
+  markReturned(row: LongAbsence): Observable<LongAbsentWriteResult> {
+    const body = { lastSundayDate: row.lastSundayDate, version: row.version };
+    return this.write(row, () =>
+      this.api.markReturned(row.memberPublicId, body).pipe(map(() => null)),
+    );
+  }
+
   /** 403: forget every person and memo and stop asking. */
   revoke(): void {
     this.reads.next(null);
@@ -124,7 +136,8 @@ export class LongAbsentState {
     this.status.set('forbidden');
   }
 
-  private write(row: LongAbsence, call: () => Observable<LongAbsence>): Observable<LongAbsentWriteResult> {
+  /** `call` answers the saved row, or `null` when the person left the current list. */
+  private write(row: LongAbsence, call: () => Observable<LongAbsence | null>): Observable<LongAbsentWriteResult> {
     const id = row.memberPublicId;
     return defer(() => {
       if (this.busy().has(id) || this.status() === 'forbidden') return EMPTY;
@@ -132,7 +145,9 @@ export class LongAbsentState {
       this.setBusy(id, true);
       return call().pipe(
         map((saved): LongAbsentWriteResult => {
-          this.rows.update(rows => rows.map(r => (r.memberPublicId === id ? saved : r)));
+          this.rows.update(rows =>
+            saved ? rows.map(r => (r.memberPublicId === id ? saved : r)) : rows.filter(r => r.memberPublicId !== id),
+          );
           this.reads.next({ quiet: true });
           return 'saved';
         }),

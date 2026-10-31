@@ -10,7 +10,7 @@ describe('LongAbsentHomeComponent (#277)', () => {
   let api: jasmine.SpyObj<LongAbsentApi>;
 
   beforeEach(() => {
-    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo']);
+    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo', 'markReturned', 'history', 'phase', 'changes']);
     TestBed.configureTestingModule({
       imports: [LongAbsentHomeComponent],
       providers: [provideRouter([]), provideTranslateService({ fallbackLang: 'ko' })],
