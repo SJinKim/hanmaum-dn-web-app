@@ -1108,15 +1108,14 @@
         "forbidden": "No access",
         "saveFailed": "Could not save. Please try again.",
         "refreshFailed": "Saved, but the list could not be refreshed.",
-        "returned": "Marked as back"
+        "returned": "{{name}} was marked as returned"
       },
-      "markReturned": "Back",
+      "markReturned": "Returned",
       "showHistory": "History",
       "returnDialog": {
-        "title": "Mark as back",
-        "message": "Mark {{name}} as back?",
-        "hint": "No check-in is recorded. The current absence ends, and any further absence counts from today.",
-        "confirm": "Mark as back"
+        "title": "Mark as returned?",
+        "message": "They leave the long-absence list right away and the count on Home drops immediately. No attendance record is created. Absences are counted again from now.",
+        "confirm": "Mark as returned"
       },
       "conflictDialog": {
         "message": "This absence changed in the meantime. Your text was not saved. Copy it if needed, then close."
@@ -1140,8 +1139,8 @@
         }
       },
       "panel": {
-        "title": "{{name}} · History",
-        "close": "Close history",
+        "title": "{{name}} · Long-absence history",
+        "close": "Close",
         "status": "Status",
         "returnedBy": "Marked as back",
         "memo": "Memo",

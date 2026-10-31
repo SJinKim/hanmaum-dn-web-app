@@ -1108,15 +1108,14 @@
         "forbidden": "접근 권한이 없어요",
         "saveFailed": "저장하지 못했어요. 다시 시도해 주세요.",
         "refreshFailed": "저장했지만 명단을 새로 고치지 못했어요.",
-        "returned": "복귀로 표시했어요"
+        "returned": "{{name}} 님을 돌아옴으로 처리했어요"
       },
-      "markReturned": "복귀",
+      "markReturned": "돌아옴",
       "showHistory": "이력",
       "returnDialog": {
-        "title": "복귀 처리",
-        "message": "{{name}}님을 복귀로 표시할까요?",
-        "hint": "출석 체크인은 기록되지 않아요. 현재 결석 기간이 종료되고, 이후 결석은 오늘부터 다시 계산돼요.",
-        "confirm": "복귀로 표시"
+        "title": "돌아옴으로 처리할까요?",
+        "message": "장기결석자 목록에서 바로 빠지고, 홈의 장기결석자 수도 곧바로 줄어요. 출석 기록은 만들어지지 않아요. 이후 결석은 지금부터 다시 세요.",
+        "confirm": "돌아옴 처리"
       },
       "conflictDialog": {
         "message": "그 사이 이 결석 기간이 바뀌었어요. 작성한 내용은 저장되지 않았어요. 필요하면 복사한 뒤 닫아 주세요."
@@ -1140,8 +1139,8 @@
         }
       },
       "panel": {
-        "title": "{{name}} · 이력",
-        "close": "이력 닫기",
+        "title": "{{name}} · 장기결석 이력",
+        "close": "닫기",
         "status": "상태",
         "returnedBy": "복귀 처리",
         "memo": "메모",

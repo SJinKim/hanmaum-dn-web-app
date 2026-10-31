@@ -27,9 +27,8 @@ import { LongAbsence } from '../../../core/models/long-absent.model';
 
       <div class="flex flex-col gap-[var(--space-8)]" data-testid="return-dialog">
         <p class="type-body text-ink break-words">
-          {{ 'statistics.longAbsent.returnDialog.message' | translate: { name: row()?.fullName } }}
+          {{ 'statistics.longAbsent.returnDialog.message' | translate }}
         </p>
-        <p class="type-caption text-ink-muted">{{ 'statistics.longAbsent.returnDialog.hint' | translate }}</p>
       </div>
 
       <ng-template #footer>

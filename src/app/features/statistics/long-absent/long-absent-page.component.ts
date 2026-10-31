@@ -366,7 +366,7 @@ export class LongAbsentPageComponent {
     request.subscribe({ complete: () => this.dialogSaving.set(false), next: result => {
       this.dialogSaving.set(false);
       if (result === 'saved') {
-        this.toast('success', savedKey);
+        this.toast('success', savedKey, row);
       } else {
         const { severity, key } = RESULT_TOASTS[result];
         this.toast(severity, key);
@@ -392,7 +392,10 @@ export class LongAbsentPageComponent {
     setTimeout(() => target?.focus());
   }
 
-  private toast(severity: string, key: string): void {
-    this.messages.add({ severity, summary: this.translate.instant(`statistics.longAbsent.toast.${key}`) });
+  private toast(severity: string, key: string, row?: LongAbsence): void {
+    this.messages.add({
+      severity,
+      summary: this.translate.instant(`statistics.longAbsent.toast.${key}`, { name: row?.fullName }),
+    });
   }
 }
