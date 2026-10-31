@@ -159,7 +159,7 @@ export class LongAbsentPhaseState {
     this.status.set('loading');
     this.changesStatus.set('loading');
     this.details.next(target);
-    this.changePages.next({ target, page: 0 });
+    if (this.target() === target) this.changePages.next({ target, page: 0 });
   }
 
   private clear(): void {

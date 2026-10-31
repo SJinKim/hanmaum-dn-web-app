@@ -6,8 +6,12 @@ import { provideRouter } from '@angular/router';
 import { TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
 import {
+  longAbsenceChangeFixture,
   longAbsenceFixture,
+  longAbsenceHistoryItemFixture,
   longAbsenceListFixture,
+  longAbsencePhaseFixture,
+  longAbsenceReturnFixture,
   longAbsenceSummaryFixture,
   pageFixture,
 } from '../../../core/models/long-absent.fixtures.spec';
@@ -74,7 +78,9 @@ describe('LongAbsentPageComponent (#277)', () => {
     el(f).querySelector<HTMLElement>(`[data-testid="${id}"]`);
   const dialogText = () => document.body.querySelector('.p-dialog')?.textContent ?? '';
 
-  afterEach(() => document.body.querySelectorAll('.p-dialog-mask, .p-dialog').forEach(n => n.remove()));
+  afterEach(() =>
+    document.body.querySelectorAll('.p-dialog-mask, .p-dialog, .p-drawer-mask, .p-drawer').forEach(n => n.remove()),
+  );
 
   it('loads the list once and the summary for the tab, and starts on 미연락 with the total visible', () => {
     const f = render();
@@ -381,5 +387,140 @@ describe('LongAbsentPageComponent (#277)', () => {
     const stored = JSON.stringify({ ...localStorage }) + JSON.stringify({ ...sessionStorage });
     expect(stored).not.toContain('직장 때문에 이사');
     expect(location.href).not.toContain('memo');
+  });
+
+  describe('복귀 and history (#279)', () => {
+    const confirmButton = () => document.body.querySelector('[data-testid="return-confirm"] button') as HTMLButtonElement;
+
+    function openReturn(): ComponentFixture<LongAbsentPageComponent> {
+      const f = render();
+      all(f, 'long-absent-return')[0].querySelector('button')?.click();
+      f.detectChanges();
+      return f;
+    }
+
+    it('loads the history of closed phases on open, without memos', () => {
+      api.history.and.returnValue(of(pageFixture([longAbsenceHistoryItemFixture()])));
+      const f = render();
+      expect(api.history).toHaveBeenCalledOnceWith(0);
+      expect(all(f, 'long-absent-history-name').map(n => n.textContent?.trim())).toEqual(['홍길동']);
+      expect(one(f, 'long-absent-history-end')?.textContent).toContain('statistics.longAbsent.history.endReason.MANUAL_RETURN');
+      expect(one(f, 'long-absent-history-returned-by')?.textContent).toContain('Max Mustermann');
+      expect(one(f, 'long-absent-history')?.textContent).not.toContain('직장 때문에 이사');
+    });
+
+    it('keeps history empty and error apart from the current list', () => {
+      let f = render();
+      expect(one(f, 'long-absent-history-empty')).not.toBeNull();
+      f.destroy();
+      api.history.and.returnValue(throwError(() => httpError(500)));
+      f = render();
+      expect(one(f, 'long-absent-history-error')).not.toBeNull();
+      expect(all(f, 'long-absent-name').length).toBe(2);
+    });
+
+    it('asks for confirmation only, then drops the person and refreshes list, counter and history', () => {
+      const f = openReturn();
+      const row = f.componentInstance.returnRow()!;
+      expect(document.body.querySelector('[data-testid="return-dialog"]')).not.toBeNull();
+      expect(document.body.querySelector('.p-dialog textarea')).toBeNull();
+      expect(api.markReturned).not.toHaveBeenCalled();
+
+      api.markReturned.and.returnValue(of(longAbsenceReturnFixture({ memberPublicId: row.memberPublicId })));
+      api.list.and.returnValue(of(longAbsenceListFixture().filter(r => r.memberPublicId !== row.memberPublicId)));
+      api.summary.and.returnValue(of(longAbsenceSummaryFixture({ uncontactedCount: 1, totalCount: 2 })));
+      api.history.and.returnValue(of(pageFixture([longAbsenceHistoryItemFixture({ memberPublicId: row.memberPublicId, fullName: row.fullName })])));
+      confirmButton().click();
+      f.detectChanges();
+
+      expect(api.markReturned).toHaveBeenCalledOnceWith(row.memberPublicId, { lastSundayDate: row.lastSundayDate, version: row.version });
+      expect(f.componentInstance.returnRow()).toBeNull();
+      expect(all(f, 'long-absent-name').map(n => n.textContent?.trim())).not.toContain(row.fullName);
+      expect(one(f, 'tab-count')?.textContent).toContain('1');
+      expect(api.history).toHaveBeenCalledTimes(2);
+      expect(all(f, 'long-absent-history-name').map(n => n.textContent?.trim())).toContain(row.fullName);
+    });
+
+    it('a parallel return (409) closes the dialog, reloads and does not retry', () => {
+      const f = openReturn();
+      api.markReturned.and.returnValue(throwError(() => httpError(409, 'LONG_ABSENCE_VERSION_CONFLICT')));
+      confirmButton().click();
+      f.detectChanges();
+      expect(api.markReturned).toHaveBeenCalledTimes(1);
+      expect(f.componentInstance.returnRow()).toBeNull();
+      expect(api.list).toHaveBeenCalledTimes(2);
+    });
+
+    it('a failed return keeps the dialog for a deliberate retry', () => {
+      const f = openReturn();
+      api.markReturned.and.returnValue(throwError(() => httpError(500)));
+      confirmButton().click();
+      f.detectChanges();
+      expect(f.componentInstance.returnRow()).not.toBeNull();
+      expect(api.list).toHaveBeenCalledTimes(1);
+    });
+
+    it('hides 복귀 for read-only roles and history for phases the server has not stored', () => {
+      TestBed.inject(AuthService).roles.set(['leader']);
+      const f = render();
+      expect(all(f, 'long-absent-return').length).toBe(0);
+      f.componentInstance.onFilterChange('all');
+      f.detectChanges();
+      // Only Max Mustermann has a stored phase in the fixture.
+      expect(all(f, 'long-absent-current-history').length).toBe(1);
+    });
+
+    it('opens the panel of a past phase with its memo and changes; an empty memo is just empty', () => {
+      const item = longAbsenceHistoryItemFixture();
+      api.history.and.returnValue(of(pageFixture([item])));
+      api.phase.and.returnValue(of(longAbsencePhaseFixture({ memo: null })));
+      api.changes.and.returnValue(
+        of(pageFixture([
+          longAbsenceChangeFixture({ memo: null }),
+          longAbsenceChangeFixture({ publicId: 'c2', kind: 'CONTACT_CHANGED', contacted: true, memo: null, origin: 'LEGACY_SNAPSHOT', occurredAt: null, actorSubject: null, actorMember: null }),
+        ])),
+      );
+      const f = render();
+      one(f, 'long-absent-history-open')?.querySelector('button')?.click();
+      f.detectChanges();
+      expect(api.phase).toHaveBeenCalledOnceWith(item.memberPublicId, item.phasePublicId);
+      const panel = document.body.querySelector('[data-testid="history-panel"]');
+      expect(panel?.querySelector('[data-testid="panel-memo-empty"]')).not.toBeNull();
+      expect(panel?.textContent).not.toMatch(/삭제|deleted/i);
+      expect(panel?.querySelectorAll('[data-testid="panel-change"]').length).toBe(2);
+      expect(panel?.textContent).toContain('statistics.longAbsent.panel.unknownTime');
+
+      f.componentInstance.closePanel();
+      f.detectChanges();
+      expect(f.componentInstance.phase.isOpen()).toBeFalse();
+      expect(f.componentInstance.phase.phase()).toBeNull();
+    });
+
+    it('a memo saved while the panel shows that person re-reads the panel', () => {
+      const f = render();
+      f.componentInstance.onFilterChange('all');
+      f.detectChanges();
+      api.phase.and.returnValue(of(longAbsencePhaseFixture({ isCurrent: true })));
+      api.changes.and.returnValue(of(pageFixture([longAbsenceChangeFixture()])));
+      one(f, 'long-absent-current-history')?.querySelector('button')?.click();
+      f.detectChanges();
+      const row = f.componentInstance.state.rows().find(r => r.phasePublicId)!;
+      api.setMemo.and.returnValue(of({ ...row, memo: null, version: row.version + 1 }));
+      api.phase.and.returnValue(of(longAbsencePhaseFixture({ isCurrent: true, memo: null })));
+      api.changes.and.returnValue(of(pageFixture([longAbsenceChangeFixture({ memo: null })])));
+      f.componentInstance.memoRow.set(row);
+      f.componentInstance.saveMemo(null);
+      f.detectChanges();
+      expect(api.phase).toHaveBeenCalledTimes(2);
+      expect(f.componentInstance.phase.phase()?.memo).toBeNull();
+      expect(f.componentInstance.phase.changes().map(c => c.memo)).toEqual([null]);
+    });
+
+    it('a 403 from the history drops the whole page', () => {
+      api.history.and.returnValue(throwError(() => httpError(403)));
+      const f = render();
+      expect(one(f, 'long-absent-forbidden')).not.toBeNull();
+      expect(all(f, 'long-absent-name').length).toBe(0);
+    });
   });
 });

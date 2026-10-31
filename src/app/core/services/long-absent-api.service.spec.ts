@@ -2,7 +2,15 @@ import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { readApiError } from '../http/api-error';
-import { longAbsenceFixture, longAbsenceSummaryFixture } from '../models/long-absent.fixtures.spec';
+import {
+  longAbsenceChangeFixture,
+  longAbsenceFixture,
+  longAbsenceHistoryItemFixture,
+  longAbsencePhaseFixture,
+  longAbsenceReturnFixture,
+  longAbsenceSummaryFixture,
+  pageFixture,
+} from '../models/long-absent.fixtures.spec';
 import { LongAbsence, LongAbsenceSummary } from '../models/long-absent.model';
 import { LongAbsentApi } from './long-absent-api.service';
 
@@ -85,4 +93,42 @@ describe('LongAbsentApi (#277)', () => {
       expect(readApiError(error)).toEqual(jasmine.objectContaining({ status, code }));
     });
   }
+
+  describe('#279', () => {
+    const PHASE = '00000000-0000-4000-8000-0000000000c1';
+
+    it('marks a return with only lastSundayDate and version', () => {
+      let saved: unknown;
+      api.markReturned(ID, { lastSundayDate: '2026-07-26', version: 3 }).subscribe(r => (saved = r));
+      const req = http.expectOne(`${BASE}/${ID}/return`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ lastSundayDate: '2026-07-26', version: 3 });
+      req.flush({ success: true, message: null, data: longAbsenceReturnFixture() });
+      expect(saved).toEqual(longAbsenceReturnFixture());
+    });
+
+    it('pages the history and filters by member only when asked', () => {
+      api.history(2).subscribe();
+      const all = http.expectOne(r => r.url === `${BASE}/history`);
+      expect(all.request.params.get('page')).toBe('2');
+      expect(all.request.params.get('size')).toBe('20');
+      expect(all.request.params.has('memberPublicId')).toBeFalse();
+      all.flush({ success: true, message: null, data: pageFixture([longAbsenceHistoryItemFixture()]) });
+
+      api.history(0, ID).subscribe();
+      const one = http.expectOne(r => r.url === `${BASE}/history`);
+      expect(one.request.params.get('memberPublicId')).toBe(ID);
+      one.flush({ success: true, message: null, data: pageFixture([]) });
+    });
+
+    it('reads one phase and its paged changes', () => {
+      api.phase(ID, PHASE).subscribe();
+      http.expectOne(`${BASE}/${ID}/phases/${PHASE}`).flush({ success: true, message: null, data: longAbsencePhaseFixture() });
+      api.changes(ID, PHASE, 1).subscribe();
+      const req = http.expectOne(r => r.url === `${BASE}/${ID}/phases/${PHASE}/changes`);
+      expect(req.request.params.get('page')).toBe('1');
+      expect(req.request.params.get('size')).toBe('20');
+      req.flush({ success: true, message: null, data: pageFixture([longAbsenceChangeFixture()]) });
+    });
+  });
 });
