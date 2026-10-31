@@ -19,7 +19,7 @@ describe('LongAbsentState (#277)', () => {
   let input: LongAbsence[];
 
   beforeEach(() => {
-    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo']);
+    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo', 'markReturned', 'history', 'phase', 'changes']);
     input = longAbsenceListFixture();
     api.list.and.returnValue(of(input));
     TestBed.configureTestingModule({ providers: [LongAbsentState, { provide: LongAbsentApi, useValue: api }] });

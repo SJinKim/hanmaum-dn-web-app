@@ -1060,7 +1060,8 @@
         "lastSunday": "Last Sunday",
         "absence": "Absent for",
         "contact": "Contact",
-        "memo": "Memo"
+        "memo": "Memo",
+        "actions": "Actions"
       },
       "badge": "{{months}} mo. · {{level}} mo.+",
       "noGroup": "No group",
@@ -1082,7 +1083,8 @@
       },
       "dialog": {
         "cancel": "Cancel",
-        "save": "Save"
+        "save": "Save",
+        "close": "Close"
       },
       "memoDialog": {
         "title": "Edit memo",
@@ -1105,7 +1107,57 @@
         "notFound": "This member can no longer be found. The list was reloaded.",
         "forbidden": "No access",
         "saveFailed": "Could not save. Please try again.",
-        "refreshFailed": "Saved, but the list could not be refreshed."
+        "refreshFailed": "Saved, but the list could not be refreshed.",
+        "returned": "Marked as back"
+      },
+      "markReturned": "Back",
+      "showHistory": "History",
+      "returnDialog": {
+        "title": "Mark as back",
+        "message": "Mark {{name}} as back?",
+        "hint": "No check-in is recorded. The current absence ends, and any further absence counts from today.",
+        "confirm": "Mark as back"
+      },
+      "conflictDialog": {
+        "message": "This absence changed in the meantime. Your text was not saved. Copy it if needed, then close."
+      },
+      "history": {
+        "heading": "Past long absences",
+        "subtitle": "Closed absences · most recently ended first · memos are deleted 90 days after the end",
+        "error": "Could not load past long absences",
+        "empty": "No closed long absences",
+        "ongoing": "Ongoing",
+        "endReason": {
+          "CHECK_IN": "Ended by check-in",
+          "MANUAL_RETURN": "Marked as back"
+        },
+        "columns": {
+          "name": "Name",
+          "period": "Absence",
+          "end": "Ended",
+          "contact": "Contact",
+          "actions": ""
+        }
+      },
+      "panel": {
+        "title": "{{name}} · History",
+        "close": "Close history",
+        "status": "Status",
+        "returnedBy": "Marked as back",
+        "memo": "Memo",
+        "empty": "Empty",
+        "changes": "Changes",
+        "changesError": "Some changes could not be loaded.",
+        "noChanges": "No changes",
+        "more": "Show more",
+        "notFound": "This absence can no longer be found",
+        "error": "Could not load the history",
+        "unknownTime": "Time unknown",
+        "change": {
+          "memo": "Memo changed",
+          "contacted": "Marked as contacted",
+          "notContacted": "Marked as not contacted"
+        }
       }
     }
   },

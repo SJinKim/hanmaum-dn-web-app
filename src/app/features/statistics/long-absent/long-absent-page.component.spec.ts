@@ -9,8 +9,9 @@ import {
   longAbsenceFixture,
   longAbsenceListFixture,
   longAbsenceSummaryFixture,
+  pageFixture,
 } from '../../../core/models/long-absent.fixtures.spec';
-import { LongAbsence } from '../../../core/models/long-absent.model';
+import { LongAbsence, LongAbsenceHistoryItem } from '../../../core/models/long-absent.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { LongAbsentApi } from '../../../core/services/long-absent-api.service';
 import { BreakpointService } from '../../../core/ui/breakpoint.service';
@@ -37,9 +38,12 @@ describe('LongAbsentPageComponent (#277)', () => {
   let desktop: ReturnType<typeof signal<boolean>>;
 
   beforeEach(() => {
-    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo']);
+    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', [
+      'list', 'summary', 'setContactStatus', 'setMemo', 'markReturned', 'history', 'phase', 'changes',
+    ]);
     api.list.and.returnValue(of(longAbsenceListFixture()));
     api.summary.and.returnValue(of(longAbsenceSummaryFixture()));
+    api.history.and.returnValue(of(pageFixture<LongAbsenceHistoryItem>([])));
     desktop = signal(true);
     TestBed.configureTestingModule({
       imports: [LongAbsentPageComponent],
@@ -325,16 +329,28 @@ describe('LongAbsentPageComponent (#277)', () => {
       expect(api.setMemo).toHaveBeenCalledTimes(1);
     });
 
-    it('drops the draft on 409, reloads and never resends', () => {
+    it('keeps the draft readable on 409 (#279 AK 5), reloads and never resends it', () => {
       const f = openMemo();
       api.setMemo.and.returnValue(throwError(() => httpError(409, 'LONG_ABSENCE_NOT_CURRENT')));
       type(f, '초안');
       save().click();
       f.detectChanges();
-      expect(f.componentInstance.memoRow()).toBeNull();
+      expect(f.componentInstance.memoRow()).not.toBeNull();
+      expect(f.componentInstance.dialogConflict()).toBeTrue();
+      const input = document.body.querySelector<HTMLTextAreaElement>('[data-testid="memo-input"]');
+      expect(input?.value).toBe('초안');
+      expect(input?.readOnly).toBeTrue();
+      expect(document.body.querySelector('[data-testid="memo-conflict"]')).not.toBeNull();
+      expect(document.body.querySelector('[data-testid="memo-save"]')).toBeNull();
       expect(api.setMemo).toHaveBeenCalledTimes(1);
       expect(api.list).toHaveBeenCalledTimes(2);
       expect(api.summary).toHaveBeenCalledTimes(2);
+
+      f.componentInstance.closeDialogs();
+      f.detectChanges();
+      expect(f.componentInstance.memoRow()).toBeNull();
+      expect(f.componentInstance.dialogConflict()).toBeFalse();
+      expect(api.setMemo).toHaveBeenCalledTimes(1);
     });
 
     it('drops people, memo and draft on 403', () => {

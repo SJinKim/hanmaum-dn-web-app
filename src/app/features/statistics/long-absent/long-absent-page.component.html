@@ -1,6 +1,7 @@
 <!--
-  Figma: 장기결석자 · Desktop 1956:177795 / 1956:177834, Tablet 1960:181432 / 1961:181644,
-  Phone 1960:181869 / 1961:181675. Dialogs 1959:178678 (memo), 1959:180923 (undo).
+  Figma: 장기결석자 (HDN-279) · Desktop 1989:183279 / 1989:183953, Tablet 1992:184822 / 1992:185249,
+  Phone 1992:185086 / 1992:185507. Dialogs 1959:178678 (memo), 1959:180923 (undo),
+  1990:183709 (복귀). 이력 panel 1991:184602, phone full screen 1992:185670.
 -->
 <div class="flex flex-col gap-gutter">
   <app-page-header
@@ -112,6 +113,11 @@
                     <ng-container *ngTemplateOutlet="memoCell; context: { $implicit: row }" />
                   }
                 </ng-template>
+                <ng-template appDataCell="actions" let-record>
+                  @if (rowOf(record); as row) {
+                    <ng-container *ngTemplateOutlet="actionsCell; context: { $implicit: row }" />
+                  }
+                </ng-template>
               </app-data-table>
             </div>
           } @else {
@@ -138,6 +144,7 @@
                   </div>
                   <ng-container *ngTemplateOutlet="memoCell; context: { $implicit: row }" />
                   <ng-container *ngTemplateOutlet="contactCell; context: { $implicit: row }" />
+                  <ng-container *ngTemplateOutlet="actionsCell; context: { $implicit: row }" />
                 </li>
               }
             </ul>
@@ -145,8 +152,149 @@
         }
       }
     </section>
+
+    <section
+      class="bg-surface border-line-subtle shadow-elevation-sm flex flex-col gap-[var(--space-16)] rounded-[var(--radius-lg)] border p-card"
+      data-testid="long-absent-history"
+      [attr.aria-busy]="history.status() === 'loading'">
+      <div class="flex flex-col gap-[var(--space-4)]">
+        <h2 class="type-h3 text-ink-strong">
+          {{ 'statistics.longAbsent.history.heading' | translate }}
+          @if (history.status() === 'ready') {
+            <span class="type-body-sm text-ink-muted font-normal tabular-nums" data-testid="long-absent-history-total">
+              {{ 'statistics.longAbsent.total' | translate: { count: history.totalElements() } }}
+            </span>
+          }
+        </h2>
+        <p class="type-caption text-ink-muted">{{ 'statistics.longAbsent.history.subtitle' | translate }}</p>
+      </div>
+
+      @switch (history.status()) {
+        @case ('error') {
+          <app-empty-state
+            variant="error"
+            data-testid="long-absent-history-error"
+            [heading]="'statistics.longAbsent.history.error' | translate"
+            [actionLabel]="'statistics.longAbsent.states.retry' | translate"
+            actionIcon="pi pi-refresh"
+            (action)="history.load(history.page())" />
+        }
+        @case ('ready') {
+          @if (history.totalElements() === 0) {
+            <app-empty-state
+              variant="no-data"
+              data-testid="long-absent-history-empty"
+              [heading]="'statistics.longAbsent.history.empty' | translate" />
+          } @else {
+            @if (breakpoint.isDesktop()) {
+              <div class="overflow-x-auto">
+                <app-data-table
+                  [columns]="historyColumns()"
+                  [rows]="historyRecords()"
+                  [selectable]="false"
+                  [caption]="'statistics.longAbsent.history.heading' | translate">
+                  <ng-template appDataCell="name" let-record>
+                    <span class="type-body text-ink-strong block truncate" data-testid="long-absent-history-name">{{ record.title }}</span>
+                  </ng-template>
+                  <ng-template appDataCell="end" let-record>
+                    @if (historyItemOf(record); as item) {
+                      <ng-container *ngTemplateOutlet="endCell; context: { $implicit: item }" />
+                    }
+                  </ng-template>
+                  <ng-template appDataCell="actions" let-record>
+                    @if (historyItemOf(record); as item) {
+                      <ng-container *ngTemplateOutlet="historyButton; context: { $implicit: item }" />
+                    }
+                  </ng-template>
+                </app-data-table>
+              </div>
+            } @else {
+              <ul class="flex flex-col gap-[var(--space-12)]" data-testid="long-absent-history-cards">
+                @for (item of history.items(); track item.phasePublicId) {
+                  <li
+                    class="border-line-subtle bg-surface flex flex-col gap-[var(--space-8)] rounded-[var(--radius-lg)] border p-[var(--space-16)]"
+                    data-testid="long-absent-history-card">
+                    <span class="flex flex-col gap-[var(--space-2)]">
+                      <span class="type-body text-ink-strong truncate" data-testid="long-absent-history-name">{{ displayName(item) }}</span>
+                      <span class="type-caption text-ink-muted">{{ historyPeriod(item) }}</span>
+                    </span>
+                    <ng-container *ngTemplateOutlet="endCell; context: { $implicit: item }" />
+                    <span class="type-caption text-ink-muted break-words">{{ historyContact(item) }}</span>
+                    <ng-container *ngTemplateOutlet="historyButton; context: { $implicit: item }" />
+                  </li>
+                }
+              </ul>
+            }
+            @if (history.totalPages() > 1) {
+              <p-paginator
+                data-testid="long-absent-history-pager"
+                [first]="history.page() * history.pageSize()"
+                [rows]="history.pageSize()"
+                [totalRecords]="history.totalElements()"
+                (onPageChange)="onHistoryPage($event)" />
+            }
+          }
+        }
+        @default {
+          <div class="flex flex-col gap-[var(--space-12)]" data-testid="long-absent-history-loading">
+            @for (line of [0, 1, 2]; track line) {
+              <app-skeleton variant="line" />
+            }
+          </div>
+        }
+      }
+    </section>
   }
 </div>
+
+<ng-template #endCell let-item>
+  <span class="flex min-w-px flex-col" data-testid="long-absent-history-end">
+    <span class="type-caption text-ink-strong font-semibold">{{ historyEnd(item) }}</span>
+    @if (historyReturnedBy(item); as by) {
+      <span class="type-caption text-ink-muted truncate" data-testid="long-absent-history-returned-by">{{ by }}</span>
+    }
+  </span>
+</ng-template>
+
+<ng-template #historyButton let-item>
+  <p-button
+    size="small"
+    severity="secondary"
+    [text]="true"
+    icon="pi pi-history"
+    [label]="'statistics.longAbsent.showHistory' | translate"
+    [ariaLabel]="('statistics.longAbsent.showHistory' | translate) + ' · ' + item.fullName"
+    data-testid="long-absent-history-open"
+    (onClick)="openPastHistory(item, $event)" />
+</ng-template>
+
+<ng-template #actionsCell let-row>
+  <span class="flex flex-wrap items-center gap-[var(--space-4)]" data-testid="long-absent-actions">
+    @if (canWrite()) {
+      <p-button
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        icon="pi pi-user-plus"
+        [label]="'statistics.longAbsent.markReturned' | translate"
+        [ariaLabel]="('statistics.longAbsent.markReturned' | translate) + ' · ' + row.fullName"
+        [disabled]="state.isBusy(row)"
+        data-testid="long-absent-return"
+        (onClick)="openReturn(row, $event)" />
+    }
+    @if (row.phasePublicId) {
+      <p-button
+        size="small"
+        severity="secondary"
+        [text]="true"
+        icon="pi pi-history"
+        [pTooltip]="'statistics.longAbsent.showHistory' | translate"
+        [ariaLabel]="('statistics.longAbsent.showHistory' | translate) + ' · ' + row.fullName"
+        data-testid="long-absent-current-history"
+        (onClick)="openCurrentHistory(row, $event)" />
+    }
+  </span>
+</ng-template>
 
 <ng-template #contactCell let-row>
   <span class="flex min-w-px flex-wrap items-center gap-[var(--space-8)]" data-testid="long-absent-contact">
@@ -212,13 +360,23 @@
 <app-long-absent-memo-dialog
   [row]="memoRow()"
   [saving]="dialogSaving()"
+  [conflict]="dialogConflict()"
   (save)="saveMemo($event)"
   (dismiss)="closeDialogs()" />
 
 <app-long-absent-undo-dialog
   [row]="undoRow()"
   [saving]="dialogSaving()"
+  [conflict]="dialogConflict()"
   (confirm)="confirmUndo($event)"
   (dismiss)="closeDialogs()" />
+
+<app-long-absent-return-dialog
+  [row]="returnRow()"
+  [saving]="dialogSaving()"
+  (confirm)="confirmReturn()"
+  (dismiss)="closeDialogs()" />
+
+<app-long-absent-history-panel (dismiss)="closePanel()" />
 
 <p-toast />

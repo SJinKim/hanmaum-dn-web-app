@@ -1,4 +1,4 @@
-import { LongAbsence } from '../../../core/models/long-absent.model';
+import { LongAbsence, LongAbsenceActor } from '../../../core/models/long-absent.model';
 
 /** UTF-16 code units, as the server counts — an emoji may be two. */
 export function memoLength(text: string): number {
@@ -30,11 +30,16 @@ export function formatInstant(instant: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Berlin' }).format(date);
 }
 
-/** Who marked the phase: the member's name, else the bare account, else nothing. */
-export function contactActor(row: LongAbsence): string | null {
-  return row.contactedByMember?.fullName ?? row.contactedBy ?? null;
+/** An actor: the member's name, else the bare account, else nothing. */
+export function actorName(member: Pick<LongAbsenceActor, 'fullName'> | null, subject: string | null): string | null {
+  return member?.fullName ?? subject ?? null;
 }
 
-export function displayName(row: LongAbsence): string {
+/** Who marked the phase as contacted. */
+export function contactActor(row: LongAbsence): string | null {
+  return actorName(row.contactedByMember, row.contactedBy);
+}
+
+export function displayName(row: Pick<LongAbsence, 'fullName' | 'discriminator'>): string {
   return row.discriminator ? `${row.fullName} (${row.discriminator})` : row.fullName;
 }

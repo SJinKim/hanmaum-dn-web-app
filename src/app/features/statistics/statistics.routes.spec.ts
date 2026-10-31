@@ -8,7 +8,9 @@ import { of } from 'rxjs';
 import {
   longAbsenceListFixture,
   longAbsenceSummaryFixture,
+  pageFixture,
 } from '../../core/models/long-absent.fixtures.spec';
+import { LongAbsenceHistoryItem } from '../../core/models/long-absent.model';
 import { AuthService } from '../../core/services/auth.service';
 import { LongAbsentApi } from '../../core/services/long-absent-api.service';
 import { DashboardStats } from './statistics.model';
@@ -23,9 +25,10 @@ describe('STATISTICS_ROUTES (#277)', () => {
   let stats: jasmine.SpyObj<StatisticsService>;
 
   function setup(roles: string[]): void {
-    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo']);
+    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo', 'markReturned', 'history', 'phase', 'changes']);
     api.list.and.returnValue(of(longAbsenceListFixture()));
     api.summary.and.returnValue(of(longAbsenceSummaryFixture()));
+    api.history.and.returnValue(of(pageFixture<LongAbsenceHistoryItem>([])));
     stats = jasmine.createSpyObj<StatisticsService>('StatisticsService', ['getDashboard']);
     stats.getDashboard.and.returnValue(of({ genderDistribution: [], growthTrend: [], attendanceRate: [], serviceAttendance: [], divisionAttendance: [], trainingStages: [], ministryHeadcount: [] } as unknown as DashboardStats));
     TestBed.configureTestingModule({
