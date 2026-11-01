@@ -241,7 +241,7 @@ export class LongAbsentPageComponent {
   }
 
   historyPeriod(item: LongAbsenceHistoryItem): string {
-    return `${this.day(item.absentSince)} – ${this.day(item.endedOn)}`;
+    return `${this.day(item.absentSince)} ~ ${this.day(item.endedOn)}`;
   }
 
   historyEnd(item: LongAbsenceHistoryItem): string {
@@ -315,7 +315,7 @@ export class LongAbsentPageComponent {
 
   /** 이력 of the member: the current phase (once stored) and all closed ones. */
   openCurrentHistory(row: LongAbsence, event: Event): void {
-    this.openPanel({ memberPublicId: row.memberPublicId, phasePublicId: row.phasePublicId, fullName: displayName(row) }, event);
+    this.openPanel({ memberPublicId: row.memberPublicId, phasePublicId: row.phasePublicId, fullName: displayName(row), absenceMonths: row.absenceMonths }, event);
   }
 
   openPastHistory(item: LongAbsenceHistoryItem, event: Event): void {

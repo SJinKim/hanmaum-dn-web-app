@@ -474,6 +474,13 @@ describe('LongAbsentPageComponent (#277)', () => {
       expect(all(f, 'long-absent-current-history').length).toBe(f.componentInstance.state.rows().length);
     });
 
+    it('passes the server absenceMonths of the row to the panel instead of recomputing it', () => {
+      const f = render();
+      const row = f.componentInstance.state.rows()[0];
+      f.componentInstance.openCurrentHistory(row, new Event('click'));
+      expect(f.componentInstance.phase.target()?.absenceMonths).toBe(row.absenceMonths);
+    });
+
     it('opens the panel of a person: ended phases load their memo lazily; an empty memo is just empty', () => {
       const item = longAbsenceHistoryItemFixture();
       api.history.and.returnValue(of(pageFixture([item])));

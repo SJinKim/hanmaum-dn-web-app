@@ -13,6 +13,8 @@ export interface LongAbsentPhaseTarget {
   readonly memberPublicId: string;
   readonly phasePublicId: string | null;
   readonly fullName: string;
+  /** Server-computed full months from the list row; absent when opened from the past list. */
+  readonly absenceMonths?: number | null;
 }
 
 export type LongAbsentPhaseStatus = 'closed' | 'loading' | 'ready' | 'error' | 'notFound' | 'forbidden';

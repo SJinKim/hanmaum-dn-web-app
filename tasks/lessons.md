@@ -94,3 +94,9 @@
 - **Rule**: Eine Design-Abgabe ist erst fertig, wenn jeder Frame **gegen seine Referenz**
   geprüft wurde — Screenshot *und* Geometrie-Read, nebeneinander, nicht jeder Frame für sich.
   Der Defekt war auf dem Screenshot sichtbar; mir fehlte der direkte Vergleich F1↔F2.
+
+### 2026-11-01 — Serverzahlen nicht nachrechnen (#279)
+- **Mistake**: Das Verlauf-Panel berechnete „N개월째“ aus `absentSince` und der Browser-Zeit; die Liste zeigte denselben Wert vom Server anders.
+- **Rule**: Zahlen, die der Server in einem anderen Endpunkt schon liefert (z. B. `absenceMonths`), nie aus Datumsfeldern nachrechnen. Beim Öffnen von Detailansichten den Wert aus der Quelle mitgeben; fehlt er, die Angabe weglassen.
+- **Mistake**: `ui`-Ticket ohne Figma-Zugriff aus dem Issue-Text gebaut.
+- **Rule**: Bei `ui`-Tickets vor dem PR Figma prüfen oder früh im Issue melden; bei Abweichung gilt Figma.

@@ -5,7 +5,6 @@ import { ButtonModule } from "primeng/button";
 import { DrawerModule } from "primeng/drawer";
 import {
   LongAbsenceChange,
-  LongAbsencePhase,
   LongAbsencePhaseMeta,
 } from "../../../core/models/long-absent.model";
 import { BreakpointService } from "../../../core/ui/breakpoint.service";
@@ -44,7 +43,7 @@ import { LongAbsentPhaseState } from "./long-absent-phase-state.service";
       [modal]="true"
       [blockScroll]="true"
       [style]="breakpoint.isPhone() ? {} : { width: 'min(100vw, 480px)' }"
-      [ariaCloseLabel]="'statistics.longAbsent.panel.close' | translate"
+      [showCloseIcon]="false"
     >
       <ng-template #header>
         <span class="flex min-w-px flex-col gap-[var(--space-2)]">
@@ -57,6 +56,14 @@ import { LongAbsentPhaseState } from "./long-absent-phase-state.service";
             }}
           </h2>
         </span>
+        <p-button
+          class="ml-auto"
+          variant="text"
+          size="small"
+          [label]="('statistics.longAbsent.panel.close' | translate) + ' ×'"
+          (onClick)="dismiss.emit()"
+          data-testid="panel-close"
+        />
       </ng-template>
 
       <div
@@ -103,11 +110,14 @@ import { LongAbsentPhaseState } from "./long-absent-phase-state.service";
                   >
                     <h3 class="type-body-sm text-ink-strong font-semibold">
                       {{ "statistics.longAbsent.panel.current" | translate }} ·
-                      {{ day(p.absentSince) }} ·
-                      {{
-                        "statistics.longAbsent.panel.monthsSince"
-                          | translate: { count: monthsSince(p) }
-                      }}
+                      {{ day(p.absentSince) }}
+                      @if (months() !== null) {
+                        ·
+                        {{
+                          "statistics.longAbsent.panel.monthsSince"
+                            | translate: { count: months() }
+                        }}
+                      }
                     </h3>
                     <p
                       class="type-body-sm text-ink"
@@ -215,7 +225,7 @@ import { LongAbsentPhaseState } from "./long-absent-phase-state.service";
             >
               <h3 class="type-body-sm text-ink-strong font-semibold">
                 {{ "statistics.longAbsent.panel.endedPeriod" | translate }} ·
-                {{ day(item.absentSince) }} – {{ day(item.endedOn) }}
+                {{ day(item.absentSince) }} ~ {{ day(item.endedOn) }}
               </h3>
               <p class="type-body-sm text-ink" data-testid="panel-end">
                 {{ "statistics.longAbsent.panel.endReason" | translate }} ·
@@ -340,16 +350,8 @@ export class LongAbsentHistoryPanelComponent {
       !this.state.closed().length,
   );
 
-  monthsSince(phase: LongAbsencePhase): number {
-    const start = new Date(`${phase.absentSince}T00:00:00`);
-    const now = new Date();
-    return Math.max(
-      1,
-      (now.getFullYear() - start.getFullYear()) * 12 +
-        now.getMonth() -
-        start.getMonth(),
-    );
-  }
+  /** Full months as the server counted them on the list row; never recomputed here. */
+  readonly months = computed(() => this.state.target()?.absenceMonths ?? null);
 
   endLine(phase: { endReason: string | null }): string {
     this.lang();
