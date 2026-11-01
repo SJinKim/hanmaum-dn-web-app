@@ -4,6 +4,7 @@ import { Subject, of, throwError } from 'rxjs';
 import {
   longAbsenceFixture,
   longAbsenceListFixture,
+  longAbsenceReturnFixture,
 } from '../../../core/models/long-absent.fixtures.spec';
 import { LongAbsence } from '../../../core/models/long-absent.model';
 import { LongAbsentApi } from '../../../core/services/long-absent-api.service';
@@ -19,7 +20,7 @@ describe('LongAbsentState (#277)', () => {
   let input: LongAbsence[];
 
   beforeEach(() => {
-    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo']);
+    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo', 'markReturned', 'history', 'phase', 'changes']);
     input = longAbsenceListFixture();
     api.list.and.returnValue(of(input));
     TestBed.configureTestingModule({ providers: [LongAbsentState, { provide: LongAbsentApi, useValue: api }] });
@@ -186,5 +187,52 @@ describe('LongAbsentState (#277)', () => {
     write(state.setContacted(row, true));
     stale.next(input);
     expect(state.rows()[0].contacted).toBeTrue();
+  });
+
+  describe('복귀 (#279)', () => {
+    it('sends only lastSundayDate and version, drops the person at once and reloads', () => {
+      state.load();
+      const row = state.rows()[2];
+      const reload = new Subject<LongAbsence[]>();
+      api.list.and.returnValue(reload);
+      api.markReturned.and.returnValue(of(longAbsenceReturnFixture()));
+      expect(write(state.markReturned(row))).toEqual(['saved']);
+      expect(api.markReturned).toHaveBeenCalledOnceWith(row.memberPublicId, {
+        lastSundayDate: row.lastSundayDate,
+        version: row.version,
+      });
+      expect(state.rows().map(r => r.memberPublicId)).not.toContain(row.memberPublicId);
+      expect(state.totalCount()).toBe(2);
+      reload.next(input.filter(r => r.memberPublicId !== row.memberPublicId));
+      expect(api.list).toHaveBeenCalledTimes(2);
+    });
+
+    it('answers a parallel return (409) with a reload, keeps the row until then and never retries', () => {
+      state.load();
+      const row = state.rows()[0];
+      api.markReturned.and.returnValue(throwError(() => httpError(409, 'LONG_ABSENCE_NOT_CURRENT')));
+      expect(write(state.markReturned(row))).toEqual(['conflict']);
+      expect(api.markReturned).toHaveBeenCalledTimes(1);
+      expect(api.list).toHaveBeenCalledTimes(2);
+    });
+
+    it('ignores a second click while the first return is in flight', () => {
+      state.load();
+      const row = state.rows()[0];
+      const pending = new Subject<ReturnType<typeof longAbsenceReturnFixture>>();
+      api.markReturned.and.returnValue(pending);
+      write(state.markReturned(row));
+      expect(write(state.markReturned(row))).toEqual([]);
+      expect(api.markReturned).toHaveBeenCalledTimes(1);
+      expect(state.isBusy(row)).toBeTrue();
+    });
+
+    it('revokes everything on 403', () => {
+      state.load();
+      api.markReturned.and.returnValue(throwError(() => httpError(403)));
+      expect(write(state.markReturned(state.rows()[0]))).toEqual(['forbidden']);
+      expect(state.status()).toBe('forbidden');
+      expect(state.rows()).toEqual([]);
+    });
   });
 });

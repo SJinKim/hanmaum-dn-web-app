@@ -58,7 +58,7 @@ describe('StatisticsDashboardComponent', () => {
   beforeEach(() => {
     service = jasmine.createSpyObj<StatisticsService>('StatisticsService', ['getDashboard']);
     service.getDashboard.and.returnValue(of(STATS));
-    longAbsent = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo']);
+    longAbsent = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['list', 'summary', 'setContactStatus', 'setMemo', 'markReturned', 'history', 'phase', 'changes']);
     longAbsent.summary.and.returnValue(of(longAbsenceSummaryFixture({ uncontactedCount: 5 })));
 
     TestBed.configureTestingModule({

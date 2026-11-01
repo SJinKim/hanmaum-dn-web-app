@@ -36,6 +36,15 @@ export interface LongAbsentUndo {
       </ng-template>
 
       <div class="flex flex-col gap-[var(--space-12)]">
+        @if (conflict()) {
+          <div
+            class="bg-[var(--color-badge-pending-bg)] text-[var(--color-badge-pending-fg)] type-body-sm flex gap-[var(--space-8)] rounded-[var(--radius-md)] p-[var(--space-12)]"
+            role="alert"
+            data-testid="undo-conflict">
+            <i class="pi pi-exclamation-triangle mt-[2px]" aria-hidden="true"></i>
+            <span>{{ 'statistics.longAbsent.conflictDialog.message' | translate }}</span>
+          </div>
+        }
         <p class="type-body text-ink break-words">
           {{ 'statistics.longAbsent.undoDialog.message' | translate: { name: row()?.fullName } }}
         </p>
@@ -49,6 +58,7 @@ export interface LongAbsentUndo {
             rows="4"
             class="w-full"
             data-testid="undo-details"
+            [readonly]="conflict()"
             [formControl]="details"
             [attr.aria-invalid]="tooLong()"
             aria-describedby="long-absent-undo-hint long-absent-undo-count"></textarea>
@@ -75,17 +85,19 @@ export interface LongAbsentUndo {
 
       <ng-template #footer>
         <p-button
-          [label]="'statistics.longAbsent.dialog.cancel' | translate"
+          [label]="(conflict() ? 'statistics.longAbsent.dialog.close' : 'statistics.longAbsent.dialog.cancel') | translate"
           severity="secondary"
           [outlined]="true"
           [disabled]="saving()"
           (onClick)="dismiss.emit()" />
-        <p-button
-          [label]="'statistics.longAbsent.undoDialog.confirm' | translate"
-          [loading]="saving()"
-          [disabled]="saving() || tooLong()"
-          data-testid="undo-confirm"
-          (onClick)="submit()" />
+        @if (!conflict()) {
+          <p-button
+            [label]="'statistics.longAbsent.undoDialog.confirm' | translate"
+            [loading]="saving()"
+            [disabled]="saving() || tooLong()"
+            data-testid="undo-confirm"
+            (onClick)="submit()" />
+        }
       </ng-template>
     </p-dialog>
   `,
@@ -93,6 +105,11 @@ export interface LongAbsentUndo {
 export class LongAbsentUndoDialogComponent {
   readonly row = input<LongAbsence | null>(null);
   readonly saving = input(false);
+  /**
+   * 409 (#279 AK 5): the phase or version moved on. The draft stays visible and
+   * copyable but can no longer be saved — it never goes into a newer phase.
+   */
+  readonly conflict = input(false);
   readonly confirm = output<LongAbsentUndo>();
   readonly dismiss = output<void>();
 
@@ -115,7 +132,7 @@ export class LongAbsentUndoDialogComponent {
   }
 
   submit(): void {
-    if (this.saving() || this.tooLong()) return;
+    if (this.conflict() || this.saving() || this.tooLong()) return;
     this.confirm.emit({ memo: memoWithAddition(this.row()?.memo ?? null, this.details.value) });
   }
 }

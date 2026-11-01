@@ -35,6 +35,15 @@ import { memoLength } from './long-absent-format';
       </ng-template>
 
       <div class="flex flex-col gap-[var(--space-8)]">
+        @if (conflict()) {
+          <div
+            class="bg-[var(--color-badge-pending-bg)] text-[var(--color-badge-pending-fg)] type-body-sm flex gap-[var(--space-8)] rounded-[var(--radius-md)] p-[var(--space-12)]"
+            role="alert"
+            data-testid="memo-conflict">
+            <i class="pi pi-exclamation-triangle mt-[2px]" aria-hidden="true"></i>
+            <span>{{ 'statistics.longAbsent.conflictDialog.message' | translate }}</span>
+          </div>
+        }
         <label for="long-absent-memo" class="type-caption text-ink-muted">
           {{ 'statistics.longAbsent.memoDialog.label' | translate }}
         </label>
@@ -44,6 +53,7 @@ import { memoLength } from './long-absent-format';
           rows="6"
           class="w-full"
           data-testid="memo-input"
+          [readonly]="conflict()"
           [formControl]="memo"
           [attr.aria-invalid]="tooLong()"
           aria-describedby="long-absent-memo-hint long-absent-memo-count"></textarea>
@@ -69,17 +79,19 @@ import { memoLength } from './long-absent-format';
 
       <ng-template #footer>
         <p-button
-          [label]="'statistics.longAbsent.dialog.cancel' | translate"
+          [label]="(conflict() ? 'statistics.longAbsent.dialog.close' : 'statistics.longAbsent.dialog.cancel') | translate"
           severity="secondary"
           [outlined]="true"
           [disabled]="saving()"
           (onClick)="dismiss.emit()" />
-        <p-button
-          [label]="'statistics.longAbsent.dialog.save' | translate"
-          [loading]="saving()"
-          [disabled]="!canSave()"
-          data-testid="memo-save"
-          (onClick)="submit()" />
+        @if (!conflict()) {
+          <p-button
+            [label]="'statistics.longAbsent.dialog.save' | translate"
+            [loading]="saving()"
+            [disabled]="!canSave()"
+            data-testid="memo-save"
+            (onClick)="submit()" />
+        }
       </ng-template>
     </p-dialog>
   `,
@@ -88,6 +100,11 @@ export class LongAbsentMemoDialogComponent {
   /** The row being edited; `null` closes the dialog. */
   readonly row = input<LongAbsence | null>(null);
   readonly saving = input(false);
+  /**
+   * 409 (#279 AK 5): the phase or version moved on. The draft stays visible and
+   * copyable but can no longer be saved — it never goes into a newer phase.
+   */
+  readonly conflict = input(false);
   /** The memo to store, `null` to clear it. */
   readonly save = output<string | null>();
   readonly dismiss = output<void>();
@@ -98,7 +115,7 @@ export class LongAbsentMemoDialogComponent {
   private readonly value = toSignal(this.memo.valueChanges, { initialValue: '' });
   readonly length = computed(() => memoLength(this.value()));
   readonly tooLong = computed(() => this.length() > LONG_ABSENCE_MEMO_MAX);
-  readonly canSave = computed(() => !this.saving() && !this.tooLong() && this.value() !== (this.row()?.memo ?? ''));
+  readonly canSave = computed(() => !this.conflict() && !this.saving() && !this.tooLong() && this.value() !== (this.row()?.memo ?? ''));
 
   constructor() {
     // A new row starts from its own memo; the draft of the previous one is gone.
