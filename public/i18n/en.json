@@ -1115,7 +1115,10 @@
       "returnDialog": {
         "title": "Mark as returned?",
         "message": "They leave the long-absence list right away and the count on Home drops immediately. No attendance record is created. Absences are counted again from now.",
-        "confirm": "Mark as returned"
+        "confirm": "Mark as returned",
+        "conflictTitle": "Someone handled this first",
+        "conflictMessage": "This absence period changed in the meantime. The list is up to date.",
+        "reload": "Load latest"
       },
       "conflictDialog": {
         "message": "This absence changed in the meantime. Your text was not saved. Copy it if needed, then close."
@@ -1141,22 +1144,26 @@
       "panel": {
         "title": "{{name}} · Long-absence history",
         "close": "Close",
-        "status": "Status",
-        "returnedBy": "Marked as back",
         "memo": "Memo",
         "empty": "Empty",
         "changes": "Changes",
         "changesError": "Some changes could not be loaded.",
-        "noChanges": "No changes",
         "more": "Show more",
-        "notFound": "This absence can no longer be found",
         "error": "Could not load the history",
         "unknownTime": "Time unknown",
         "change": {
           "memo": "Memo changed",
           "contacted": "Marked as contacted",
           "notContacted": "Marked as not contacted"
-        }
+        },
+        "emptyHeading": "No long-absence history yet",
+        "emptyText": "Once this person's absence periods are recorded, they appear here.",
+        "current": "Ongoing",
+        "monthsSince": "month {{count}}",
+        "endedPeriod": "Ended period",
+        "endReason": "Ended by",
+        "memoError": "Couldn't load the memo.",
+        "closedError": "Couldn't load the ended periods."
       }
     }
   },

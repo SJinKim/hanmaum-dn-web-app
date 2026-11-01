@@ -441,14 +441,19 @@ describe('LongAbsentPageComponent (#277)', () => {
       expect(all(f, 'long-absent-history-name').map(n => n.textContent?.trim())).toContain(row.fullName);
     });
 
-    it('a parallel return (409) closes the dialog, reloads and does not retry', () => {
+    it('a parallel return (409) shows the conflict dialog, reloads and does not retry', () => {
       const f = openReturn();
       api.markReturned.and.returnValue(throwError(() => httpError(409, 'LONG_ABSENCE_VERSION_CONFLICT')));
       confirmButton().click();
       f.detectChanges();
       expect(api.markReturned).toHaveBeenCalledTimes(1);
-      expect(f.componentInstance.returnRow()).toBeNull();
+      expect(f.componentInstance.returnRow()).not.toBeNull();
+      expect(f.componentInstance.dialogConflict()).toBeTrue();
+      expect(document.body.querySelector('[data-testid="return-conflict"]')).not.toBeNull();
       expect(api.list).toHaveBeenCalledTimes(2);
+      (document.body.querySelector('[data-testid="return-reload"] button') as HTMLButtonElement).click();
+      f.detectChanges();
+      expect(f.componentInstance.returnRow()).toBeNull();
     });
 
     it('a failed return keeps the dialog for a deliberate retry', () => {
@@ -460,40 +465,53 @@ describe('LongAbsentPageComponent (#277)', () => {
       expect(api.list).toHaveBeenCalledTimes(1);
     });
 
-    it('hides 복귀 for read-only roles and history for phases the server has not stored', () => {
+    it('hides 복귀 for read-only roles; 이력 stays available for every person', () => {
       TestBed.inject(AuthService).roles.set(['leader']);
       const f = render();
       expect(all(f, 'long-absent-return').length).toBe(0);
       f.componentInstance.onFilterChange('all');
       f.detectChanges();
-      // Only Max Mustermann has a stored phase in the fixture.
-      expect(all(f, 'long-absent-current-history').length).toBe(1);
+      expect(all(f, 'long-absent-current-history').length).toBe(f.componentInstance.state.rows().length);
     });
 
-    it('opens the panel of a past phase with its memo and changes; an empty memo is just empty', () => {
+    it('opens the panel of a person: ended phases load their memo lazily; an empty memo is just empty', () => {
       const item = longAbsenceHistoryItemFixture();
       api.history.and.returnValue(of(pageFixture([item])));
       api.phase.and.returnValue(of(longAbsencePhaseFixture({ memo: null })));
+      const f = render();
+      one(f, 'long-absent-history-open')?.querySelector('button')?.click();
+      f.detectChanges();
+      expect(api.history).toHaveBeenCalledWith(0, item.memberPublicId, 5);
+      expect(api.phase).toHaveBeenCalledOnceWith(item.memberPublicId, item.phasePublicId);
+      const panel = document.body.querySelector('[data-testid="history-panel"]');
+      expect(panel?.querySelectorAll('[data-testid="panel-closed"]').length).toBe(1);
+      expect(panel?.querySelector('[data-testid="panel-memo-empty"]')).not.toBeNull();
+      expect(panel?.textContent).not.toMatch(/삭제|deleted/i);
+
+      f.componentInstance.closePanel();
+      f.detectChanges();
+      expect(f.componentInstance.phase.isOpen()).toBeFalse();
+      expect(f.componentInstance.phase.closed()).toEqual([]);
+    });
+
+    it('shows the current phase with its changes; legacy entries read as unknown time', () => {
+      const f = render();
+      f.componentInstance.onFilterChange('all');
+      f.detectChanges();
+      api.phase.and.returnValue(of(longAbsencePhaseFixture({ isCurrent: true })));
       api.changes.and.returnValue(
         of(pageFixture([
           longAbsenceChangeFixture({ memo: null }),
           longAbsenceChangeFixture({ publicId: 'c2', kind: 'CONTACT_CHANGED', contacted: true, memo: null, origin: 'LEGACY_SNAPSHOT', occurredAt: null, actorSubject: null, actorMember: null }),
         ])),
       );
-      const f = render();
-      one(f, 'long-absent-history-open')?.querySelector('button')?.click();
+      const row = f.componentInstance.state.rows().find(r => r.phasePublicId)!;
+      all(f, 'long-absent-current-history')[f.componentInstance.state.rows().indexOf(row)]?.querySelector('button')?.click();
       f.detectChanges();
-      expect(api.phase).toHaveBeenCalledOnceWith(item.memberPublicId, item.phasePublicId);
       const panel = document.body.querySelector('[data-testid="history-panel"]');
-      expect(panel?.querySelector('[data-testid="panel-memo-empty"]')).not.toBeNull();
-      expect(panel?.textContent).not.toMatch(/삭제|deleted/i);
+      expect(panel?.querySelector('[data-testid="panel-current"]')).not.toBeNull();
       expect(panel?.querySelectorAll('[data-testid="panel-change"]').length).toBe(2);
       expect(panel?.textContent).toContain('statistics.longAbsent.panel.unknownTime');
-
-      f.componentInstance.closePanel();
-      f.detectChanges();
-      expect(f.componentInstance.phase.isOpen()).toBeFalse();
-      expect(f.componentInstance.phase.phase()).toBeNull();
     });
 
     it('a memo saved while the panel shows that person re-reads the panel', () => {
@@ -502,9 +520,9 @@ describe('LongAbsentPageComponent (#277)', () => {
       f.detectChanges();
       api.phase.and.returnValue(of(longAbsencePhaseFixture({ isCurrent: true })));
       api.changes.and.returnValue(of(pageFixture([longAbsenceChangeFixture()])));
-      one(f, 'long-absent-current-history')?.querySelector('button')?.click();
-      f.detectChanges();
       const row = f.componentInstance.state.rows().find(r => r.phasePublicId)!;
+      all(f, 'long-absent-current-history')[f.componentInstance.state.rows().indexOf(row)]?.querySelector('button')?.click();
+      f.detectChanges();
       api.setMemo.and.returnValue(of({ ...row, memo: null, version: row.version + 1 }));
       api.phase.and.returnValue(of(longAbsencePhaseFixture({ isCurrent: true, memo: null })));
       api.changes.and.returnValue(of(pageFixture([longAbsenceChangeFixture({ memo: null })])));

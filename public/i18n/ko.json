@@ -1115,7 +1115,10 @@
       "returnDialog": {
         "title": "돌아옴으로 처리할까요?",
         "message": "장기결석자 목록에서 바로 빠지고, 홈의 장기결석자 수도 곧바로 줄어요. 출석 기록은 만들어지지 않아요. 이후 결석은 지금부터 다시 세요.",
-        "confirm": "돌아옴 처리"
+        "confirm": "돌아옴 처리",
+        "conflictTitle": "다른 사람이 먼저 처리했어요",
+        "conflictMessage": "그 사이 이 결석 기간이 바뀌었어요. 목록을 최신 상태로 불러왔어요.",
+        "reload": "최신 상태 불러오기"
       },
       "conflictDialog": {
         "message": "그 사이 이 결석 기간이 바뀌었어요. 작성한 내용은 저장되지 않았어요. 필요하면 복사한 뒤 닫아 주세요."
@@ -1141,22 +1144,26 @@
       "panel": {
         "title": "{{name}} · 장기결석 이력",
         "close": "닫기",
-        "status": "상태",
-        "returnedBy": "복귀 처리",
         "memo": "메모",
         "empty": "비어 있음",
         "changes": "변경 기록",
         "changesError": "변경 기록 일부를 불러오지 못했어요.",
-        "noChanges": "변경 기록이 없어요",
         "more": "더 보기",
-        "notFound": "이 결석 기간을 더 이상 찾을 수 없어요",
         "error": "이력을 불러오지 못했어요",
         "unknownTime": "시간 알 수 없음",
         "change": {
           "memo": "메모 변경",
           "contacted": "연락함으로 변경",
           "notContacted": "미연락으로 변경"
-        }
+        },
+        "emptyHeading": "아직 장기결석 이력이 없어요",
+        "emptyText": "이 청년의 결석 기간이 기록되면 여기에 표시돼요",
+        "current": "진행 중",
+        "monthsSince": "{{count}}개월째",
+        "endedPeriod": "종료된 기간",
+        "endReason": "종료 사유",
+        "memoError": "메모를 불러오지 못했어요.",
+        "closedError": "종료된 기간을 불러오지 못했어요."
       }
     }
   },

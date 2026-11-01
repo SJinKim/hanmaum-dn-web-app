@@ -313,14 +313,15 @@ export class LongAbsentPageComponent {
     this.run(this.state.markReturned(row), 'returned', row, true);
   }
 
-  /** 이력 of the current phase; only once the server has stored it. */
+  /** 이력 of the member: the current phase (once stored) and all closed ones. */
   openCurrentHistory(row: LongAbsence, event: Event): void {
-    if (!row.phasePublicId) return;
     this.openPanel({ memberPublicId: row.memberPublicId, phasePublicId: row.phasePublicId, fullName: displayName(row) }, event);
   }
 
   openPastHistory(item: LongAbsenceHistoryItem, event: Event): void {
-    this.openPanel({ memberPublicId: item.memberPublicId, phasePublicId: item.phasePublicId, fullName: displayName(item) }, event);
+    // The person may be on the current list again; then that phase leads the panel.
+    const current = this.state.rows().find(row => row.memberPublicId === item.memberPublicId);
+    this.openPanel({ memberPublicId: item.memberPublicId, phasePublicId: current?.phasePublicId ?? null, fullName: displayName(item) }, event);
   }
 
   closePanel(): void {
@@ -361,7 +362,7 @@ export class LongAbsentPageComponent {
    * an open 이력 panel of the same person read fresh from the server.
    */
   private run(request: Observable<LongAbsentWriteResult>, savedKey: string, row: LongAbsence, fromDialog = false): void {
-    const keepsDraft = this.memoRow() !== null || this.undoRow() !== null;
+    const keepsDraft = this.memoRow() !== null || this.undoRow() !== null || this.returnRow() !== null;
     if (fromDialog) this.dialogSaving.set(true);
     request.subscribe({ complete: () => this.dialogSaving.set(false), next: result => {
       this.dialogSaving.set(false);

@@ -186,7 +186,8 @@ export async function fakeApi(page: Page, rows: Row[] = people()): Promise<Backe
     }
     const url = new URL(request.url());
     if (request.method() === 'GET' && path === `${BASE}/history`) {
-      return json(route, 200, { success: true, message: null, data: pageOf(backend.closed.map(historyItem), url) });
+      const member = url.searchParams.get('memberPublicId');
+      return json(route, 200, { success: true, message: null, data: pageOf(backend.closed.filter(c => !member || c.row.memberPublicId === member).map(historyItem), url) });
     }
     const phase = path.match(new RegExp(`^${BASE}/([^/]+)/phases/([^/]+)(/changes)?$`));
     if (request.method() === 'GET' && phase) {

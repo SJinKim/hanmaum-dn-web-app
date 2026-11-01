@@ -281,16 +281,14 @@
         data-testid="long-absent-return"
         (onClick)="openReturn(row, $event)" />
     }
-    @if (row.phasePublicId) {
-      <p-button
-        size="small"
-        severity="secondary"
-        [text]="true"
-        [label]="'statistics.longAbsent.showHistory' | translate"
-        [ariaLabel]="('statistics.longAbsent.showHistory' | translate) + ' · ' + row.fullName"
-        data-testid="long-absent-current-history"
-        (onClick)="openCurrentHistory(row, $event)" />
-    }
+    <p-button
+      size="small"
+      severity="secondary"
+      [text]="true"
+      [label]="'statistics.longAbsent.showHistory' | translate"
+      [ariaLabel]="('statistics.longAbsent.showHistory' | translate) + ' · ' + row.fullName"
+      data-testid="long-absent-current-history"
+      (onClick)="openCurrentHistory(row, $event)" />
   </span>
 </ng-template>
 
@@ -372,6 +370,7 @@
 <app-long-absent-return-dialog
   [row]="returnRow()"
   [saving]="dialogSaving()"
+  [conflict]="dialogConflict()"
   (confirm)="confirmReturn()"
   (dismiss)="closeDialogs()" />
 

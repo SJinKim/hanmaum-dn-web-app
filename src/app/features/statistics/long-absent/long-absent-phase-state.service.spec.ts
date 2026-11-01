@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import {
   longAbsenceChangeFixture,
+  longAbsenceHistoryItemFixture,
   longAbsencePhaseFixture,
   pageFixture,
 } from '../../../core/models/long-absent.fixtures.spec';
@@ -23,7 +24,8 @@ describe('LongAbsentPhaseState (#279)', () => {
   let state: LongAbsentPhaseState;
 
   beforeEach(() => {
-    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['phase', 'changes']);
+    api = jasmine.createSpyObj<LongAbsentApi>('LongAbsentApi', ['phase', 'changes', 'history']);
+    api.history.and.returnValue(of(pageFixture([])));
     api.phase.and.returnValue(of(longAbsencePhaseFixture()));
     api.changes.and.returnValue(of(pageFixture([change(2), change(1)])));
     TestBed.configureTestingModule({ providers: [LongAbsentPhaseState, { provide: LongAbsentApi, useValue: api }] });
@@ -32,8 +34,8 @@ describe('LongAbsentPhaseState (#279)', () => {
 
   it('opens with the detail and the first page of changes', () => {
     state.open(TARGET);
-    expect(api.phase).toHaveBeenCalledOnceWith(TARGET.memberPublicId, TARGET.phasePublicId);
-    expect(api.changes).toHaveBeenCalledOnceWith(TARGET.memberPublicId, TARGET.phasePublicId, 0);
+    expect(api.phase).toHaveBeenCalledOnceWith(TARGET.memberPublicId, TARGET.phasePublicId as string);
+    expect(api.changes).toHaveBeenCalledOnceWith(TARGET.memberPublicId, TARGET.phasePublicId as string, 0);
     expect(state.status()).toBe('ready');
     expect(state.phase()?.memo).toBe('직장 때문에 이사');
     expect(state.changes().length).toBe(2);
@@ -90,6 +92,27 @@ describe('LongAbsentPhaseState (#279)', () => {
     state.open(TARGET);
     state.refreshFor('00000000-0000-4000-8000-000000000009');
     expect(api.phase).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads ended phases of the member and each memo lazily, a few at a time', () => {
+    const items = [1, 2].map(n => longAbsenceHistoryItemFixture({ phasePublicId: `p${n}` }));
+    api.history.and.returnValue(of(pageFixture(items)));
+    state.open({ ...TARGET, phasePublicId: null });
+    expect(api.history).toHaveBeenCalledOnceWith(0, TARGET.memberPublicId, 5);
+    expect(api.phase).toHaveBeenCalledTimes(2);
+    expect(state.status()).toBe('ready');
+    expect(state.closed().length).toBe(2);
+    expect(state.memos()['p1'].status).toBe('ready');
+  });
+
+  it('a failing memo of one card is a partial failure with its own retry', () => {
+    api.history.and.returnValue(of(pageFixture([longAbsenceHistoryItemFixture({ phasePublicId: 'p1' })])));
+    api.phase.and.returnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    state.open({ ...TARGET, phasePublicId: null });
+    expect(state.memos()['p1'].status).toBe('error');
+    api.phase.and.returnValue(of(longAbsencePhaseFixture({ memo: 'x' })));
+    state.retryMemo('p1');
+    expect(state.memos()['p1']).toEqual({ status: 'ready', memo: 'x' });
   });
 
   it('forgets everything on close', () => {

@@ -22,28 +22,37 @@ import { LongAbsence } from '../../../core/models/long-absent.model';
       [resizable]="false"
       [closeOnEscape]="!saving()">
       <ng-template #header>
-        <h2 class="type-h3 text-ink-strong">{{ 'statistics.longAbsent.returnDialog.title' | translate }}</h2>
+        <h2 class="type-h3 text-ink-strong">
+          {{ (conflict() ? 'statistics.longAbsent.returnDialog.conflictTitle' : 'statistics.longAbsent.returnDialog.title') | translate }}
+        </h2>
       </ng-template>
 
       <div class="flex flex-col gap-[var(--space-8)]" data-testid="return-dialog">
-        <p class="type-body text-ink break-words">
-          {{ 'statistics.longAbsent.returnDialog.message' | translate }}
+        <p class="type-body text-ink break-words" [attr.data-testid]="conflict() ? 'return-conflict' : null">
+          {{ (conflict() ? 'statistics.longAbsent.returnDialog.conflictMessage' : 'statistics.longAbsent.returnDialog.message') | translate }}
         </p>
       </div>
 
       <ng-template #footer>
-        <p-button
-          [label]="'statistics.longAbsent.dialog.cancel' | translate"
-          severity="secondary"
-          [outlined]="true"
-          [disabled]="saving()"
-          (onClick)="dismiss.emit()" />
-        <p-button
-          [label]="'statistics.longAbsent.returnDialog.confirm' | translate"
-          [loading]="saving()"
-          [disabled]="saving()"
-          data-testid="return-confirm"
-          (onClick)="saving() || confirm.emit()" />
+        @if (conflict()) {
+          <p-button
+            [label]="'statistics.longAbsent.returnDialog.reload' | translate"
+            data-testid="return-reload"
+            (onClick)="dismiss.emit()" />
+        } @else {
+          <p-button
+            [label]="'statistics.longAbsent.dialog.cancel' | translate"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="saving()"
+            (onClick)="dismiss.emit()" />
+          <p-button
+            [label]="'statistics.longAbsent.returnDialog.confirm' | translate"
+            [loading]="saving()"
+            [disabled]="saving()"
+            data-testid="return-confirm"
+            (onClick)="saving() || confirm.emit()" />
+        }
       </ng-template>
     </p-dialog>
   `,
@@ -51,6 +60,8 @@ import { LongAbsence } from '../../../core/models/long-absent.model';
 export class LongAbsentReturnDialogComponent {
   readonly row = input<LongAbsence | null>(null);
   readonly saving = input(false);
+  /** 409: someone else changed the phase first; the list has already been reloaded. */
+  readonly conflict = input(false);
   readonly confirm = output<void>();
   readonly dismiss = output<void>();
 }
